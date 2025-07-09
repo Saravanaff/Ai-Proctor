@@ -19,19 +19,15 @@ def disconnect():
     print("🔌 Disconnected from server")
 
 last_processed_time = 0
-<<<<<<< HEAD
 frame_interval = 0.5  # process every 0.5 seconds
 data_path = "storage/face_data.json"
-=======
-frame_interval = 0.5
->>>>>>> b5d6694ba1ecd400161ca5e1393797f7b397914a
 
 @sio.on("process-frame")
 def handle_frame(data):
     global last_processed_time
 
     if time.time() - last_processed_time < frame_interval:
-        return
+        return  # Skip this frame
 
     try:
         last_processed_time = time.time()
@@ -48,16 +44,17 @@ def handle_frame(data):
             print("⚠️ Failed to decode image")
             return
 
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-        )
-        faces_haar = face_cascade.detectMultiScale(
-            gray, scaleFactor=1.1, minNeighbors=5
-        )
+        # Resize image to 1/2 for faster processing
+        small_img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
+        rgb_small = cv2.cvtColor(small_img, cv2.COLOR_BGR2RGB)
 
-        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        faces_fr = face_recognition.face_locations(rgb_img)
+        faces_fr = face_recognition.face_locations(rgb_small)
+
+        # Scale coordinates back to original size
+        fr_faces_scaled = [
+            [top * 2, right * 2, bottom * 2, left * 2]
+            for top, right, bottom, left in faces_fr
+        ]
 
         result_data = {
             "fr_faces": [list(map(int, face)) for face in fr_faces_scaled],
@@ -66,21 +63,8 @@ def handle_frame(data):
 
         sio.emit("result", result_data)
 
-<<<<<<< HEAD
-=======
-        for (x, y, w, h) in faces_haar:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        for top, right, bottom, left in faces_fr:
-            cv2.rectangle(img, (left, top), (right, bottom), (255, 0, 0), 2)
-
-        cv2.imshow("Detection", img)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            sio.disconnect()
-            cv2.destroyAllWindows()
-
->>>>>>> b5d6694ba1ecd400161ca5e1393797f7b397914a
         del img, small_img, rgb_small
-        gc.collect()
+        gc.collect()  # Clean up
 
     except Exception as e:
         print("🚨 Error:", e)
@@ -97,8 +81,8 @@ def save_face_data(data):
 
         if encoding_array.shape[0] != 128:
             print("Received encoding size is not 128, Aborting....")
-            return 
-        
+            return
+
         encoding_array = encoding_array.tolist()
 
         face_data = {
@@ -114,7 +98,7 @@ def save_face_data(data):
                         stored_entry = [stored_entry]
                 except json.JSONDecodeError:
                     stored_entry = []
-        
+
         else:
             stored_entry=[]
 
@@ -125,14 +109,14 @@ def save_face_data(data):
                 update = True
                 print(f"Updated face data for {name}")
                 break
-        
+
         if not update:
             stored_entry.append(face_data)
             print(f"Added new face data {name}")
 
         with open(data_path,"w") as f:
             json.dump(stored_entry,f,indent = 2)
-                    
+
 
         sio.emit("face_data_saved", {"status": True})
         print("Face data saved successfully")
@@ -151,8 +135,8 @@ def face_auth(data):
         if encoding_array.shape[0] != 128:
             print("Received encoding size is not 128, Aborting....")
             sio.emit("auth_result", {"status": False, "message": "Invalid encoding size"})
-            return 
-        
+            return
+
         with open("storage/face_data.json","r") as f:
             stored_data = json.load(f)
 
@@ -164,26 +148,26 @@ def face_auth(data):
         if not target:
             print(f"No face data found for {name}")
             sio.emit("auth_result", {"status":False,"reason":"User not found"})
-            return 
-        
+            return
+
         stored_encoding = np.array(target["encoding"])
 
         match = face_recognition.compare_faces([stored_encoding],encoding_array)
         distance = face_recognition.face_distance([stored_encoding],encoding_array)[0]
 
         if match[0]:
-            print(f"Authenticated: {name} , Distance : {distance:.4f}")  
+            print(f"Authenticated: {name} , Distance : {distance:.4f}")
             sio.emit("auth_result",{"status":True, "reason":"Face matched"})
         else:
-            print("Face Mismatch") 
+            print("Face Mismatch")
             sio.emit("auth_result",{"status":False,"reason":"Face Mismatch"})
 
     except Exception as e:
         print("Error in a face_auth",e)
-        sio.emit("auth_result",{"status":False, "reason":str(e)})     
+        sio.emit("auth_result",{"status":False, "reason":str(e)})
 
 
-        
+
 
 
 
@@ -195,4 +179,3 @@ try:
 except KeyboardInterrupt:
     sio.disconnect()
     cv2.destroyAllWindows()
-
