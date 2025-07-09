@@ -1,66 +1,58 @@
 import cv2
 import face_recognition
 import numpy as np
+import json
+import os
 
+# ✅ Load stored face data
+face_data_path = "storage/face_data.json"
+if not os.path.exists(face_data_path):
+    print("❌ No face data found. Run the registration step first.")
+    exit()
+
+with open(face_data_path, "r") as f:
+    data = json.load(f)
+    known_encoding = np.array(data["encoding"])
+    known_name = data["name"]
+
+# 🎥 Open webcam
 cap = cv2.VideoCapture(0)
-
-
-
-
-img2 = face_recognition.load_image_file('sources/ragul.png')
-img2_encode = face_recognition.face_encodings(img2)[0]
-
-known_face_encodings = [img2_encode]
-known_face_names = ['Ragul']
-
-face_locations = []
-face_encodings = []
-face_names = []
-process_this_frame = True
+print("🔍 Identifying... (press 'q' to quit)")
 
 while True:
-    ret,frame =  cap.read()
-    small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
-    rgb_small_frame = small_frame[:, :, ::-1]  # Convert BGR to RGB
+    ret, frame = cap.read()
+    if not ret:
+        print("⚠️ Failed to capture frame")
+        break
 
+    # Resize for faster detection
+    small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+    rgb_small_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+
+    # Detect face(s) in current frame
     face_locations = face_recognition.face_locations(rgb_small_frame)
-    print (f"Found {len(face_locations)} face(s) in the frame.")
-    face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations) 
-    print (f"Found {len(face_encodings)} face encodings in the frame.")
+    face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
 
-    face_names = []
-    for face_encoding in face_encodings:
-        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-        name = "Unknown"
+    for face_encoding, face_location in zip(face_encodings, face_locations):
+        match = face_recognition.compare_faces([known_encoding], face_encoding)[0]
 
-        # If a match was found in known_face_encodings, use the first one.
-        face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
-        best_match_index = np.argmin(face_distances)
-        if matches[best_match_index]:
-            name = known_face_names[best_match_index]
+        top, right, bottom, left = [v * 2 for v in face_location]  # rescale to original size
 
-        face_names.append(name)
+        if match:
+            label = f"{known_name}"
+            color = (0, 255, 0)
+        else:
+            label = "Unknown"
+            color = (0, 0, 255)
 
-    process_this_frame = not process_this_frame
+        # Draw box + label
+        cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
+        cv2.putText(frame, label, (left, top - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
 
-    for (top, right, bottom, left), name in zip(face_locations, face_names):
-        # Scale back up face locations since the frame we detected in was scaled to 1/4 size
-        top *= 4
-        right *= 4
-        bottom *= 4
-        left *= 4
+    cv2.imshow("Face Identification", frame)
 
-        # Draw a box around the face
-        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-
-        # Draw a label with a name below the face
-        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 255, 0), cv2.FILLED)
-        font = cv2.FONT_HERSHEY_DUPLEX
-        cv2.putText(frame, name, (left + 6, bottom - 6), font, 0.5, (255, 255, 255), 1)
-
-    cv2.imshow('Face Recognition', frame)
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
 cap.release()
