@@ -73,21 +73,52 @@ def handle_frame(data):
 def save_face_data(data):
     try:
         print("📝 Saving face data...")
-        blob = data["blob"]
+        print(data)
+        blob = data["buffer"]
         name = data["name"]
-        encoding_array = np.frombuffer(blob,dtype=np.float32)
 
+        # Convert buffer to numpy array and decode
+        image_array = np.frombuffer(blob, dtype=np.uint8)
+        img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
+        if img is None:
+            print("Could not decode image from buffer")
+            sio.emit("face_data_saved",{"status":False, "reason":"Image decode failed"})
+            return 
+        
+        #Convert to RGB
+        cv2.imshow("Received img", img)
+        cv2.waitKey(1)
+        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        if encoding_array.shape[0] != 128:
-            print("Received encoding size is not 128, Aborting....")
+        #Detect face locations
+        face_locations = face_recognition.face_locations(rgb_img)
+        print("Face count: ", len(face_locations))
+
+        if len(face_locations)!=1:
+            print("Expect exactly 1 face, found", len(face_locations))
+            sio.emit("face_data_saved",{"status":False,"reason":"Must have exactly one face"})
+            return 
+        
+        #Extract face encodings
+        try:
+            encodings = face_recognition.face_encodings(rgb_img, face_locations)
+        except Exception as e:
+            print("Encoding failed:",e)
+            sio.emit("face_data_saved", {"status": False, "reason": "Face encoding failed"})
             return
 
-        encoding_array = encoding_array.tolist()
+        if len(encodings) ==0:
+            print("Failed to extract face encoding")
+            sio.emit("face_data_saved", {"status": False, "reason": "Face encoding failed"})
+            return
+
+
+        encoding = encodings[0].tolist()
 
         face_data = {
             "name": name,
-            "encoding": encoding_array
+            "encoding": encoding
         }
 
         if os.path.exists(data_path):
@@ -105,7 +136,7 @@ def save_face_data(data):
         update = False
         for entry in stored_entry:
             if entry["name"] ==name:
-                entry["encoding"] = encoding_array
+                entry["encoding"] = encoding
                 update = True
                 print(f"Updated face data for {name}")
                 break
@@ -122,6 +153,7 @@ def save_face_data(data):
         print("Face data saved successfully")
 
     except Exception as e:
+        sio.emit("face_data_saved", {"status": False})
         print("🚨 Error saving face data:", e)
 
 
@@ -129,7 +161,7 @@ def save_face_data(data):
 def face_auth(data):
     try:
         print("Authentication process starts..")
-        blob = data["blob"]
+        blob = data["buffer"]
         name = data["name"]
         encoding_array = np.frombuffer(blob, dtype=np.float32)
         if encoding_array.shape[0] != 128:
