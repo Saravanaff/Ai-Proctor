@@ -3,29 +3,37 @@ import numpy as np
 import cv2
 import face_recognition
 import time
+import gc
 
 sio = socketio.Client()
 
 @sio.event
 def connect():
     print("✅ Connected to Node.js socket server")
-    sio.emit("register-python")  # Register this socket as the Python client
+    sio.emit("register-python")
 
 @sio.event
 def disconnect():
     print("🔌 Disconnected from server")
 
+last_processed_time = 0
+frame_interval = 0.5  # process every 0.5 seconds
+
 @sio.on("process-frame")
 def handle_frame(data):
+    global last_processed_time
+
+    if time.time() - last_processed_time < frame_interval:
+        return  # Skip this frame
+
     try:
-        print("📥 Frame received from Node.js")
+        last_processed_time = time.time()
 
         buffer = data["buffer"]
         metadata = data["metadata"]
-        width = int(metadata["width"])
-        height = int(metadata["height"])
+        width, height = int(metadata["width"]), int(metadata["height"])
+        print("width:", width, "height:", height)
 
-        # Convert buffer to OpenCV image
         image_array = np.frombuffer(buffer, dtype=np.uint8)
         img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
@@ -33,45 +41,42 @@ def handle_frame(data):
             print("⚠️ Failed to decode image")
             return
 
-        # Haar Cascade face detection
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-        )
-        faces_haar = face_cascade.detectMultiScale(
-            gray, scaleFactor=1.1, minNeighbors=5
-        )
+        # Resize image to 1/2 for faster processing
+        small_img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
+        rgb_small = cv2.cvtColor(small_img, cv2.COLOR_BGR2RGB)
 
-        # face_recognition detection
-        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        faces_fr = face_recognition.face_locations(rgb_img)
+        faces_fr = face_recognition.face_locations(rgb_small)
 
-        # Prepare result to send back
+        # Scale coordinates back to original size
+        fr_faces_scaled = [
+            [top * 2, right * 2, bottom * 2, left * 2]
+            for top, right, bottom, left in faces_fr
+        ]
+
         result_data = {
-            "haar_faces": [list(map(int, face)) for face in faces_haar],
-            "fr_faces": [list(map(int, [top, right, bottom, left])) for top, right, bottom, left in faces_fr],
-            "face_found": len(faces_haar) > 0 or len(faces_fr) > 0,
+            "fr_faces": [list(map(int, face)) for face in fr_faces_scaled],
+            "face_found": len(fr_faces_scaled) > 0,
         }
 
-        # Send result back to Node.js
         sio.emit("result", result_data)
 
         # Show the frame with rectangles
-        for (x, y, w, h) in faces_haar:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        for top, right, bottom, left in faces_fr:
+        for top, right, bottom, left in fr_faces_scaled:
             cv2.rectangle(img, (left, top), (right, bottom), (255, 0, 0), 2)
 
         cv2.imshow("Detection", img)
-        cv2.waitKey(1)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            sio.disconnect()
+            cv2.destroyAllWindows()
+
+        del img, small_img, rgb_small
+        gc.collect()  # Clean up
 
     except Exception as e:
         print("🚨 Error:", e)
 
-# Connect to the Node.js server
 sio.connect("http://localhost:3001")
 
-# Keep the program running
 try:
     while True:
         time.sleep(1)
