@@ -2,7 +2,6 @@ import cv2
 import mediapipe as mp
 import math
 
-# Function to draw a filled circle over the iris
 def colour_eye(img, r, l):
     x1 = int(r.x * w)
     y1 = int(r.y * h)
@@ -13,8 +12,7 @@ def colour_eye(img, r, l):
     radius = int(math.sqrt((mx - x1)**2 + (my - y1)**2))
     cv2.circle(img, (mx, my), radius, (0, 0, 255), -1)  # Filled red circle
 
-# Initialize video capture and MediaPipe face mesh
-cap = cv2.VideoCapture(2)
+cap = cv2.VideoCapture(0)
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True)
 
@@ -77,7 +75,7 @@ while cap.isOpened():
         else:
             direction += " and CENTER"
 
-        cv2.putText(img, direction, (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
+        cv2.putText(img, direction, (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 2)
 
     cv2.imshow("Eye movement", img)
     k = cv2.waitKey(1)

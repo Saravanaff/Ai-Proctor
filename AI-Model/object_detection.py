@@ -2,23 +2,18 @@ from ultralytics import YOLO
 import cv2
 import time
 
-# Load YOLOv8n model (pretrained on COCO)
 model = YOLO('yolov8n.pt')  # You can use yolov8s.pt for better accuracy
 
-# Open webcam
 cap = cv2.VideoCapture(0)
 
-# Set webcam properties for better performance
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 cap.set(cv2.CAP_PROP_FPS, 30)
 
-# List of target classes
 TARGET_CLASSES = ['person', 'cell phone', 'headphones']
 
-# Performance optimization variables
 frame_count = 0
-detection_interval = 10  # Run detection every 10 frames for better performance
+detection_interval = 2  # Run detection every 10 frames for better performance
 last_detections = []
 
 while True:
