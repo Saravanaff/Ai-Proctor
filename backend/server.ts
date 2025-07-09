@@ -6,7 +6,7 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
-let pythonSocket:any = null;
+let pythonSocket: any = null;
 io.on("connection", (socket) => {
   console.log("A client connected");
 
@@ -15,9 +15,30 @@ io.on("connection", (socket) => {
     pythonSocket = socket;
   });
 
-  socket.on("photo-save",(data)=>{
-    console.log("photo there");
-  })
+  socket.on("photo-save", (data) => {
+
+    if (pythonSocket) {
+      pythonSocket.emit("save-face-data", data)
+    }
+  });
+
+  if (pythonSocket) {
+    pythonSocket.on("face_data_saved", (data: any) => {
+      console.log("Result from Python", data);
+    });
+  }
+
+  socket.on("authenticate", (data) => {
+    if (pythonSocket) {
+      pythonSocket.emit("auth_face", data);
+    }
+  });
+
+  if (pythonSocket) {
+    pythonSocket.on("auth_result", (data: any) => {
+      console.log("Result from Python", data);
+    })
+  }
 
   socket.on("frame", (data) => {
 
@@ -27,7 +48,7 @@ io.on("connection", (socket) => {
   });
 
   if (pythonSocket) {
-    pythonSocket.on("result", (data:any) => {
+    pythonSocket.on("result", (data: any) => {
       console.log("🎯 Result from Python", data);
       socket.emit("fres", data);
     });
