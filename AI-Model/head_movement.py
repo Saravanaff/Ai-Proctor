@@ -96,7 +96,7 @@ while cap.isOpened():
 
         fps =  1/totalTime
         print("FPS: ",fps)
-        cv2.putText(img,"FPS: "+ str(int(fps)), (20,450),cv2.FONT_HERSHEY_SIMPLEX,1,(255,0,0))
+        cv2.putText(img,"FPS: "+ str(int(fps)), (20,450),cv2.FONT_HERSHEY_SIMPLEX,1,(0,0,0))
         
         mp_drawing.draw_landmarks(
             image=img,

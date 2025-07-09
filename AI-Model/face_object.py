@@ -2,25 +2,23 @@ import cv2
 from ultralytics import YOLO
 import mediapipe as mp
 
-# Global Constants
 TARGET_CLASSES = ['person', 'cell phone', 'headphones']
 drawing_spec = mp.solutions.drawing_utils.DrawingSpec(thickness=1, circle_radius=1)
 
-# Performance optimization variables
 frame_count = 0
-face_detection_interval = 5    # Run face detection every 5 frames (increased for better performance)
-object_detection_interval = 10  # Run object detection every 10 frames (increased for better performance)
+face_detection_interval = 5 
+object_detection_interval = 10
 last_object_detections = []
 
 def initialize_models():
     """Initialize YOLO and MediaPipe models."""
-    yolo_model = YOLO('yolov8n.pt')  # Or yolov8s.pt for better accuracy
+    yolo_model = YOLO('yolov8n.pt') 
     face_mesh = mp.solutions.face_mesh.FaceMesh(
         static_image_mode=False,
-        max_num_faces=2,  # Reduced from 5 for better performance
-        refine_landmarks=False,  # Disabled for better performance
-        min_detection_confidence=0.6,  # Higher threshold
-        min_tracking_confidence=0.6   # Higher threshold
+        max_num_faces=2,
+        refine_landmarks=False,
+        min_detection_confidence=0.6,
+        min_tracking_confidence=0.6
     )
     return yolo_model, face_mesh
 
@@ -57,10 +55,8 @@ def detect_objects(frame, yolo_model, should_run=True):
     global last_object_detections
     
     if should_run:
-        # Clear previous detections
         last_object_detections = []
         
-        # Run detection with optimized settings
         results = yolo_model.predict(
             source=frame, 
             conf=0.5,           # Higher confidence threshold
@@ -82,7 +78,6 @@ def detect_objects(frame, yolo_model, should_run=True):
                         conf = box.conf[0].item()
                         last_object_detections.append((xyxy, class_name, conf))
     
-    # Draw bounding boxes from stored detections
     for detection in last_object_detections:
         xyxy, class_name, conf = detection
         label = f"{class_name} {conf:.2f}"
@@ -110,11 +105,9 @@ def main():
 
         frame_count += 1
         
-        # Run face detection every N frames
         should_run_face = (frame_count % face_detection_interval == 0)
         frame = detect_faces(frame, face_mesh, should_run_face)
         
-        # Run object detection every M frames
         should_run_object = (frame_count % object_detection_interval == 0)
         frame = detect_objects(frame, yolo_model, should_run_object)
 
