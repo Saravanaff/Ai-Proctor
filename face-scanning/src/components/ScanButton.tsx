@@ -1,12 +1,6 @@
 import React from "react";
 
-
-const ScanButton: any = ({
-  call,
-  isScanning
-}:any) => {
-  
-
+const ScanButton: any = ({ call, isScanning }: any) => {
   return (
     <div
       style={{
@@ -35,7 +29,7 @@ const ScanButton: any = ({
           transition: "all 0.3s ease",
         }}
       >
-        Caputure
+        Capture
       </button>
     </div>
   );
