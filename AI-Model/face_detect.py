@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import face_recognition
 import time
+import gc
 
 sio = socketio.Client()
 
@@ -15,15 +16,23 @@ def connect():
 def disconnect():
     print("🔌 Disconnected from server")
 
+last_processed_time = 0
+frame_interval = 0.5
+
 @sio.on("process-frame")
 def handle_frame(data):
+    global last_processed_time
+
+    if time.time() - last_processed_time < frame_interval:
+        return
+
     try:
-        print("📥 Frame received from Node.js")
+        last_processed_time = time.time()
 
         buffer = data["buffer"]
         metadata = data["metadata"]
-        width = int(metadata["width"])
-        height = int(metadata["height"])
+        width, height = int(metadata["width"]), int(metadata["height"])
+        print("width:", width, "height:", height)
 
         image_array = np.frombuffer(buffer, dtype=np.uint8)
         img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
@@ -44,9 +53,8 @@ def handle_frame(data):
         faces_fr = face_recognition.face_locations(rgb_img)
 
         result_data = {
-            "haar_faces": [list(map(int, face)) for face in faces_haar],
-            "fr_faces": [list(map(int, [top, right, bottom, left])) for top, right, bottom, left in faces_fr],
-            "face_found": len(faces_haar) > 0 or len(faces_fr) > 0,
+            "fr_faces": [list(map(int, face)) for face in fr_faces_scaled],
+            "face_found": len(fr_faces_scaled) > 0,
         }
 
         sio.emit("result", result_data)
@@ -57,7 +65,12 @@ def handle_frame(data):
             cv2.rectangle(img, (left, top), (right, bottom), (255, 0, 0), 2)
 
         cv2.imshow("Detection", img)
-        cv2.waitKey(1)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            sio.disconnect()
+            cv2.destroyAllWindows()
+
+        del img, small_img, rgb_small
+        gc.collect()
 
     except Exception as e:
         print("🚨 Error:", e)
