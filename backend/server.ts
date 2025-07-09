@@ -15,13 +15,14 @@ io.on("connection", (socket) => {
     pythonSocket = socket;
   });
 
+  socket.on("photo-save",(data)=>{
+    console.log("photo there");
+  })
+
   socket.on("frame", (data) => {
-    console.log("📷 Got frame from frontend");
 
     if (pythonSocket) {
       pythonSocket.emit("process-frame", data);
-    } else {
-      console.log("⚠️ Python not connected");
     }
   });
 

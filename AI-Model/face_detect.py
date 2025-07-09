@@ -19,15 +19,19 @@ def disconnect():
     print("🔌 Disconnected from server")
 
 last_processed_time = 0
+<<<<<<< HEAD
 frame_interval = 0.5  # process every 0.5 seconds
 data_path = "storage/face_data.json"
+=======
+frame_interval = 0.5
+>>>>>>> b5d6694ba1ecd400161ca5e1393797f7b397914a
 
 @sio.on("process-frame")
 def handle_frame(data):
     global last_processed_time
 
     if time.time() - last_processed_time < frame_interval:
-        return  # Skip this frame
+        return
 
     try:
         last_processed_time = time.time()
@@ -44,17 +48,16 @@ def handle_frame(data):
             print("⚠️ Failed to decode image")
             return
 
-        # Resize image to 1/2 for faster processing
-        small_img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
-        rgb_small = cv2.cvtColor(small_img, cv2.COLOR_BGR2RGB)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+        faces_haar = face_cascade.detectMultiScale(
+            gray, scaleFactor=1.1, minNeighbors=5
+        )
 
-        faces_fr = face_recognition.face_locations(rgb_small)
-
-        # Scale coordinates back to original size
-        fr_faces_scaled = [
-            [top * 2, right * 2, bottom * 2, left * 2]
-            for top, right, bottom, left in faces_fr
-        ]
+        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        faces_fr = face_recognition.face_locations(rgb_img)
 
         result_data = {
             "fr_faces": [list(map(int, face)) for face in fr_faces_scaled],
@@ -63,8 +66,21 @@ def handle_frame(data):
 
         sio.emit("result", result_data)
 
+<<<<<<< HEAD
+=======
+        for (x, y, w, h) in faces_haar:
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        for top, right, bottom, left in faces_fr:
+            cv2.rectangle(img, (left, top), (right, bottom), (255, 0, 0), 2)
+
+        cv2.imshow("Detection", img)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            sio.disconnect()
+            cv2.destroyAllWindows()
+
+>>>>>>> b5d6694ba1ecd400161ca5e1393797f7b397914a
         del img, small_img, rgb_small
-        gc.collect()  # Clean up
+        gc.collect()
 
     except Exception as e:
         print("🚨 Error:", e)
