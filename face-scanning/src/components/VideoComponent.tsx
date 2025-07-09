@@ -12,8 +12,8 @@ import {
   ScanButton,
   LoadingIndicator,
 } from "./";
-import io from "socket.io-client";
 
+import io from "socket.io-client";
 const VideoComponent: React.FC<VideoComponentProps> = ({
   onScanComplete,
   customSteps,
@@ -23,19 +23,30 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const [socket, setSocket] = useState<any>(null);
   const intervalRef = useRef<any>(null);
   const [circle,setCircle]=useState(false);
+  const [name,setName]=useState("");
+
+  
 
 useEffect(() => {
+  setName("sriram");
   let stream: MediaStream;
   const video = videoRef.current;
   if (!video) return;
 
   const setup = async () => {
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream = await navigator.mediaDevices.getUserMedia({ video:{
+        width:1280,
+        height:720
+      } });
       video.srcObject = stream;
+      const track=stream.getVideoTracks()[0];
+      console.log(track.getSettings());
 
       const socket = io("http://localhost:3001");
       setSocket(socket);
+
+      
 
       intervalRef.current = setInterval(() => {
         if (!video || video.readyState < 2) return;
@@ -110,6 +121,38 @@ useEffect(() => {
   };
 }, []);
 
+const capturePhoto = (): Promise<Blob | null> => {
+        return new Promise((resolve) => {
+          const video = videoRef.current;
+          if (!video || video.readyState < 2) return resolve(null);
+
+          const width = video.videoWidth;
+          const height = video.videoHeight;
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(null);
+
+          ctx.drawImage(video, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            if(blob){
+              blob.arrayBuffer().then((buffer)=>{
+                socket.emit('photo-save',{
+                  buffer,
+                  name:name
+                });
+              });
+            }
+          }, "image/jpeg", 0.9);
+        });
+};
+
+  
+
 
   const steps = customSteps || defaultScanSteps;
   const {
@@ -170,9 +213,8 @@ useEffect(() => {
         <StepCounter currentStep={currentStep} totalSteps={steps.length} />
 
         <ScanButton
-          onScan={onScanClick}
-          isScanning={isScanning}
-          isLastStep={currentStep === steps.length}
+          call={capturePhoto}
+          isScanning={false}
         />
 
         {(isLoading || !videoStream) && (
