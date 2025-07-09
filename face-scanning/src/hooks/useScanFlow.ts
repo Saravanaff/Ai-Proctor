@@ -16,7 +16,6 @@ export const useScanFlow = (steps: ScanStep[], scanDuration: number = 2000) => {
   const handleScan = async (): Promise<boolean> => {
     setIsScanning(true);
 
-    // Simulate scanning process
     return new Promise((resolve) => {
       setTimeout(() => {
         const result: ScanResult = {
