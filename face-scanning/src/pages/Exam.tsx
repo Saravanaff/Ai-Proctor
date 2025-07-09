@@ -1,6 +1,5 @@
 import WebcamFeed from "./WebcamFeed";
 import QuestionPanel from "./QuestionPanel";
-import {useRouter} from 'next/router';
 import React, { useEffect, useState } from "react";
 // const dummyQuestions = [
 //   {
@@ -64,6 +63,106 @@ import React, { useEffect, useState } from "react";
 
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+// const dummyQuestions = [
+//   {
+//     question: "What is the capital of France?",
+//     options: ["Berlin", "Madrid", "Paris", "Rome"],
+//   },
+//   {
+//     question: "Which number is prime?",
+//     options: ["4", "6", "9", "7"],
+//   },
+//   {
+//     question: "What is 5 + 3?",
+//     options: ["6", "7", "8", "9"],
+//   },
+// ];
+
+// export default function ExamPage() {
+//   const router = useRouter();
+//   const { examId } = router.query;
+
+//   const [timeLeft, setTimeLeft] = useState(60 * 60); // 5 mins (in seconds)
+
+//   useEffect(() => {
+//     const timer = setInterval(() => {
+//       setTimeLeft((prev) => {
+//         if (prev <= 1) {
+//           clearInterval(timer);
+//           alert("Time's up!");
+//           return 0;
+//         }
+//         return prev - 1;
+//       });
+//     }, 1000);
+//     return () => clearInterval(timer);
+//   }, []);
+
+//   const formatTime = (seconds: number) => {
+//     const m = Math.floor(seconds / 60)
+//       .toString()
+//       .padStart(2, "0");
+//     const s = (seconds % 60).toString().padStart(2, "0");
+//     return `${m}:${s}`;
+//   };
+
+//   const styles = {
+//     container: {
+//       minHeight: "100vh",
+//       padding: "24px",
+//       background: "linear-gradient(to bottom right, #ede9fe, #e0f2fe, #bfdbfe)",
+//       fontFamily: "Inter, sans-serif",
+//     },
+//     wrapper: {
+//       maxWidth: "1400px",
+//       margin: "0 auto",
+//     },
+//     titleRow: {
+//       display: "flex",
+//       justifyContent: "space-between",
+//       alignItems: "center",
+//       marginBottom: "2rem",
+//     },
+//     title: {
+//       fontSize: "2.5rem",
+//       fontWeight: 800,
+//       color: "#5b21b6",
+//     },
+//     timer: {
+//       fontSize: "1.5rem",
+//       fontWeight: 600,
+//       color: "#1e3a8a",
+//     },
+//     grid: {
+//       display: "grid",
+//       gridTemplateColumns: "repeat(9, 1fr)",
+//       gridTemplateRows: "repeat(9, 1fr)",
+//       gap: "16px",
+//       minHeight: "80vh",
+//     },
+//   };
+
+//   return (
+//     <div style={styles.container}>
+//       <div style={styles.wrapper}>
+//         <div style={styles.titleRow}>
+//           <h1 style={styles.title}>Exam ID: {examId}</h1>
+//           <span style={styles.timer}>⏱ {formatTime(timeLeft)}</span>
+//         </div>
+
+//         <div style={styles.grid}>
+//           <div style={{ gridColumnStart: 9, gridRowStart: 1 }}>
+//             <WebcamFeed />
+//           </div>
+//           <div style={{ gridColumn: "1 / span 7", gridRow: "1 / span 7" }}>
+//             <QuestionPanel questions={dummyQuestions} />
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 const dummyQuestions = [
   {
     question: "What is the capital of France?",
@@ -80,10 +179,8 @@ const dummyQuestions = [
 ];
 
 export default function ExamPage() {
-  const router = useRouter();
-  const { examId } = router.query;
-
-  const [timeLeft, setTimeLeft] = useState(60 * 60); // 5 mins (in seconds)
+  const [timeLeft, setTimeLeft] = useState(60 * 60); // 5 mins
+  const [showInstructions, setShowInstructions] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -118,21 +215,34 @@ export default function ExamPage() {
       maxWidth: "1400px",
       margin: "0 auto",
     },
-    titleRow: {
+    topRow: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: "2rem",
+      marginBottom: "1.5rem",
     },
-    title: {
-      fontSize: "2.5rem",
-      fontWeight: 800,
-      color: "#5b21b6",
+    instructionsBtn: {
+      margin: "0 auto",
+      backgroundColor: "#3b82f6",
+      color: "white",
+      padding: "10px 20px",
+      borderRadius: "8px",
+      fontWeight: 600,
+      fontSize: "1rem",
+      border: "none",
+      cursor: "pointer",
     },
     timer: {
       fontSize: "1.5rem",
       fontWeight: 600,
       color: "#1e3a8a",
+    },
+    instructionsBox: {
+      backgroundColor: "#fff",
+      padding: "16px",
+      borderRadius: "12px",
+      boxShadow: "0 2px 12px rgba(0, 0, 0, 0.15)",
+      marginBottom: "1.5rem",
     },
     grid: {
       display: "grid",
@@ -141,15 +251,53 @@ export default function ExamPage() {
       gap: "16px",
       minHeight: "80vh",
     },
+    instructionTitle: {
+      fontSize: "1.2rem",
+      fontWeight: 700,
+      marginBottom: "0.5rem",
+      color: "#1e3a8a",
+    },
+    instructionItem: {
+      fontSize: "1rem",
+      marginBottom: "6px",
+      color: "#374151",
+    },
   };
+
+  const instructionList = [
+    "Do not switch tabs or open other windows.",
+    "You cannot revisit submitted questions.",
+    "Your webcam will be monitored throughout the exam.",
+    "Time once lost cannot be regained. Manage wisely.",
+    "Cheating or suspicious activity will disqualify you.",
+    "Attempt all questions carefully and review before submitting.",
+  ];
 
   return (
     <div style={styles.container}>
       <div style={styles.wrapper}>
-        <div style={styles.titleRow}>
-          <h1 style={styles.title}>Exam ID: {examId}</h1>
+        <div style={styles.topRow}>
+          <button
+            style={styles.instructionsBtn}
+            onClick={() => setShowInstructions(!showInstructions)}
+          >
+            {showInstructions ? "Hide Instructions" : "Show Instructions"}
+          </button>
           <span style={styles.timer}>⏱ {formatTime(timeLeft)}</span>
         </div>
+
+        {showInstructions && (
+          <div style={styles.instructionsBox}>
+            <p style={styles.instructionTitle}>Exam Instructions:</p>
+            <ul>
+              {instructionList.map((text, idx) => (
+                <li key={idx} style={styles.instructionItem}>
+                  {text}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div style={styles.grid}>
           <div style={{ gridColumnStart: 9, gridRowStart: 1 }}>
@@ -163,4 +311,3 @@ export default function ExamPage() {
     </div>
   );
 }
-
