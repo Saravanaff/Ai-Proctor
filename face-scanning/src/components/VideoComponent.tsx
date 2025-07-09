@@ -24,94 +24,92 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const intervalRef = useRef<any>(null);
   const [circle,setCircle]=useState(false);
 
-  useEffect(() => {
-    if (videoStream) {
-      const newSocket = io("http://localhost:3001");
-      setSocket(newSocket);
+useEffect(() => {
+  let stream: MediaStream;
+  const video = videoRef.current;
+  if (!video) return;
 
-      const videoTrack = videoStream.getVideoTracks()[0];
+  const setup = async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
 
-      if(typeof window === "undefined") {
-        return ;
-      }
-      if(!videoTrack){
-        console.error("No Video Track Found!");
-        return ;
-      }
-      if(typeof (window as any).ImageCapture !== "function"){
-        console.error("ImageCapture API is not supported");
-        return ;
-      }
-      
-      const imageCapture = new (window as any).ImageCapture(videoTrack);
+      const socket = io("http://localhost:3001");
+      setSocket(socket);
 
-      intervalRef.current = setInterval(async () => {
-        try {
-          const bitmap = await imageCapture.grabFrame();
+      intervalRef.current = setInterval(() => {
+        if (!video || video.readyState < 2) return;
 
-          const width = bitmap.width;
-          const height = bitmap.height;
+        const width = video.videoWidth;
+        const height = video.videoHeight;
 
-          const circle = {
-            x: width / 2,
-            y: height / 2,
-            radius: Math.min(width, height) / 3, 
-          };
+        const radius = Math.min(width, height) / 3;
+        const circle = {
+          x: width / 2,
+          y: height / 2,
+          radius,
+        };
 
-          const boundingSize = circle.radius * 2;
-          const canvas = document.createElement("canvas");
-          canvas.width = boundingSize;
-          canvas.height = boundingSize;
+        const boundingSize = radius * 2;
+        const canvas = document.createElement("canvas");
+        canvas.width = boundingSize;
+        canvas.height = boundingSize;
 
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
 
-          ctx.beginPath();
-          ctx.arc(circle.radius, circle.radius, circle.radius, 0, 2 * Math.PI);
-          ctx.clip();
+        ctx.beginPath();
+        ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
+        ctx.clip();
 
-          ctx.drawImage(
-            bitmap,
-            circle.x - circle.radius,
-            circle.y - circle.radius,
-            boundingSize,
-            boundingSize,
-            0,
-            0,
-            boundingSize,
-            boundingSize
-          );
+        ctx.drawImage(
+          video,
+          circle.x - radius,
+          circle.y - radius,
+          boundingSize,
+          boundingSize,
+          0,
+          0,
+          boundingSize,
+          boundingSize
+        );
 
-          canvas.toBlob((blob) => {
-            if (blob) {
-              blob.arrayBuffer().then((buffer) => {
-                newSocket.emit("frame", {
-                  buffer,
-                  metadata: {
-                    circle,
-                    width: boundingSize,
-                    height: boundingSize,
-                  },
-                });
+        canvas.toBlob((blob) => {
+          if (blob) {
+            blob.arrayBuffer().then((buffer) => {
+              socket.emit("frame", {
+                buffer,
+                metadata: {
+                  circle,
+                  width: boundingSize,
+                  height: boundingSize,
+                },
               });
-            }
-          }, "image/jpeg", 0.7);
-        } catch (err) {
-          console.error("Frame capture error:", err);
-        }
+            });
+          }
+        }, "image/jpeg", 0.7);
+
       }, 1000 / 30); 
 
-      newSocket.on("fres", (data: any) => {
-        console.log("receive",data);
-        setCircle(data.face_found);
-      });
+        socket.on("fres", (data: any) => {
+          console.log("receive",data);
+          setCircle(data.face_found);
+        });
+      
 
-      return () => {
-        clearInterval(intervalRef.current);
-        newSocket.disconnect();
-      };
+    } catch (err) {
+      console.error("Camera setup failed:", err);
     }
-  }, [videoStream]);
+  };
+
+  setup();
+
+  return () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+  };
+}, []);
+
 
   const steps = customSteps || defaultScanSteps;
   const {
