@@ -30,6 +30,19 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
       setSocket(newSocket);
 
       const videoTrack = videoStream.getVideoTracks()[0];
+
+      if(typeof window === "undefined") {
+        return ;
+      }
+      if(!videoTrack){
+        console.error("No Video Track Found!");
+        return ;
+      }
+      if(typeof (window as any).ImageCapture !== "function"){
+        console.error("ImageCapture API is not supported");
+        return ;
+      }
+      
       const imageCapture = new (window as any).ImageCapture(videoTrack);
 
       intervalRef.current = setInterval(async () => {
@@ -91,7 +104,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
       newSocket.on("fres", (data: any) => {
         console.log("receive",data);
         setCircle(data.face_found);
-    });
+      });
 
       return () => {
         clearInterval(intervalRef.current);
