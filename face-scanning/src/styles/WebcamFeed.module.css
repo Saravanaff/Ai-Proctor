@@ -1,0 +1,20 @@
+.webcam-container {
+    border: 4px solid #60a5fa;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+  }
+  
+  .webcam-title {
+    text-align: center;
+    font-weight: bold;
+    color: #1d4ed8;
+    margin-bottom: 8px;
+  }
+  
+  .webcam-element {
+    border-radius: 8px;
+    width: 100%;
+  }
+  

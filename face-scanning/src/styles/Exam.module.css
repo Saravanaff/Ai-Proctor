@@ -1,0 +1,27 @@
+.exam-container {
+  min-height: 100vh;
+  padding: 24px;
+  background: linear-gradient(to bottom right, #ede9fe, #e0f2fe, #bfdbfe);
+  font-family: 'Inter', sans-serif;
+}
+
+.exam-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.exam-title {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #5b21b6;
+  margin-bottom: 2rem;
+}
+
+.exam-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  gap: 16px;
+  min-height: 80vh;
+}
