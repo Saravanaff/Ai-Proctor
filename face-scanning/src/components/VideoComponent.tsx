@@ -14,6 +14,7 @@ import {
 } from "./";
 
 import io from "socket.io-client";
+
 const VideoComponent: React.FC<VideoComponentProps> = ({
   onScanComplete,
   customSteps,
@@ -22,137 +23,131 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const { videoRef, videoStream, isLoading, error }: any = useVideoStream();
   const [socket, setSocket] = useState<any>(null);
   const intervalRef = useRef<any>(null);
-  const [circle,setCircle]=useState(false);
-  const [name,setName]=useState("");
+  const [circle, setCircle] = useState(false);
+  const [name, setName] = useState("sriram");
 
-  
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
 
-useEffect(() => {
-  setName("sriram");
-  let stream: MediaStream;
-  const video = videoRef.current;
-  if (!video) return;
+  useEffect(() => {
+    let stream: MediaStream;
+    const video = videoRef.current;
+    if (!video) return;
 
-  const setup = async () => {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video:{
-        width:1280,
-        height:720
-      } });
-      video.srcObject = stream;
-      const track=stream.getVideoTracks()[0];
-      console.log(track.getSettings());
-
-      const socket = io("http://localhost:3001");
-      setSocket(socket);
-
-      
-
-      intervalRef.current = setInterval(() => {
-        if (!video || video.readyState < 2) return;
-
-        const width = video.videoWidth;
-        const height = video.videoHeight;
-
-        const radius = Math.min(width, height) / 3;
-        const circle = {
-          x: width / 2,
-          y: height / 2,
-          radius,
-        };
-
-        const boundingSize = radius * 2;
-        const canvas = document.createElement("canvas");
-        canvas.width = boundingSize;
-        canvas.height = boundingSize;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        ctx.beginPath();
-        ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
-        ctx.clip();
-
-        ctx.drawImage(
-          video,
-          circle.x - radius,
-          circle.y - radius,
-          boundingSize,
-          boundingSize,
-          0,
-          0,
-          boundingSize,
-          boundingSize
-        );
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            blob.arrayBuffer().then((buffer) => {
-              socket.emit("frame", {
-                buffer,
-                metadata: {
-                  circle,
-                  width: boundingSize,
-                  height: boundingSize,
-                },
-              });
-            });
-          }
-        }, "image/jpeg", 0.7);
-
-      }, 1000 / 30); 
-
-        socket.on("fres", (data: any) => {
-          console.log("receive",data);
-          setCircle(data.face_found);
+    const setup = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 1280, height: 720 },
         });
-      
+        video.srcObject = stream;
 
-    } catch (err) {
-      console.error("Camera setup failed:", err);
-    }
-  };
+        const socket = io("http://localhost:3001");
+        setSocket(socket);
 
-  setup();
-
-  return () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (stream) stream.getTracks().forEach((t) => t.stop());
-  };
-}, []);
-
-const capturePhoto = (): Promise<Blob | null> => {
-        return new Promise((resolve) => {
-          const video = videoRef.current;
-          if (!video || video.readyState < 2) return resolve(null);
+        intervalRef.current = setInterval(() => {
+          if (!video || video.readyState < 2) return;
 
           const width = video.videoWidth;
           const height = video.videoHeight;
+          const radius = Math.min(width, height) / 3;
 
+          const circle = {
+            x: width / 2,
+            y: height / 2,
+            radius,
+          };
+
+          const boundingSize = radius * 2;
           const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
+          canvas.width = boundingSize;
+          canvas.height = boundingSize;
 
           const ctx = canvas.getContext("2d");
-          if (!ctx) return resolve(null);
+          if (!ctx) return;
 
-          ctx.drawImage(video, 0, 0, width, height);
+          ctx.beginPath();
+          ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
+          ctx.clip();
+
+          ctx.drawImage(
+            video,
+            circle.x - radius,
+            circle.y - radius,
+            boundingSize,
+            boundingSize,
+            0,
+            0,
+            boundingSize,
+            boundingSize
+          );
 
           canvas.toBlob((blob) => {
-            if(blob){
-              blob.arrayBuffer().then((buffer)=>{
-                socket.emit('photo-save',{
+            if (blob) {
+              blob.arrayBuffer().then((buffer) => {
+                socket.emit("frame", {
                   buffer,
-                  name:name
+                  metadata: {
+                    circle,
+                    width: boundingSize,
+                    height: boundingSize,
+                  },
                 });
               });
             }
-          }, "image/jpeg", 0.9);
+          }, "image/jpeg", 0.7);
+        }, 1000 / 30);
+
+        socket.on("fres", (data: any) => {
+          setCircle(data.face_found);
         });
-};
+      } catch (err) {
+        console.error("Camera setup failed:", err);
+      }
+    };
 
-  
+    setup();
 
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (stream) stream.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  const capturePhoto = (): Promise<Blob | null> => {
+    return new Promise((resolve) => {
+      const video = videoRef.current;
+      if (!video || video.readyState < 2) return resolve(null);
+
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(null);
+
+      ctx.drawImage(video, 0, 0, width, height);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          blob.arrayBuffer().then((buffer) => {
+            socket.emit("photo-save", {
+              buffer,
+              name: name,
+            });
+          });
+
+          setShowSuccess(true);
+
+          setTimeout(() => {
+            setShowSuccess(false);
+            setShowOverlay(true);
+          }, 1000);
+        }
+      }, "image/jpeg", 0.9);
+    });
+  };
 
   const steps = customSteps || defaultScanSteps;
   const {
@@ -207,20 +202,40 @@ const capturePhoto = (): Promise<Blob | null> => {
           instruction={currentStepData.instruction}
         />
         <VideoStream videoRef={videoRef} videoStream={videoStream} />
-        <FaceDetectionOverlay faceDetected={circle} />
-        <FooterOverlay description={currentStepData.description} />
 
+        <FaceDetectionOverlay faceDetected={circle} showSuccess={showSuccess} />
+
+        <FooterOverlay description={currentStepData.description} />
         <StepCounter currentStep={currentStep} totalSteps={steps.length} />
 
-        <ScanButton
-          call={capturePhoto}
-          isScanning={false}
-        />
+        <ScanButton call={capturePhoto} isScanning={false} />
 
         {(isLoading || !videoStream) && (
           <LoadingIndicator
             message={isLoading ? "Accessing camera..." : "Camera not available"}
           />
+        )}
+
+        {showOverlay && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              backgroundColor: "rgba(0,0,0,0.7)",
+              zIndex: 100,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              color: "#fff",
+              fontSize: "40px",
+              fontWeight: "bold",
+            }}
+          >
+            <button className="click" >Enter Exam</button>
+          </div>
         )}
       </div>
     </>

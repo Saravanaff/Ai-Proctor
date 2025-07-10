@@ -1,0 +1,22 @@
+.floatingCamera {
+  position: fixed;
+  width: 200px;
+  height: 150px;
+  border: 2px solid #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 1000;
+  cursor: move;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+
+.floatingCamera:active {
+  cursor: grabbing;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
