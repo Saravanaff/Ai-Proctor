@@ -16,3 +16,9 @@ ultralytics
 # - MediaPipe 0.10.7 is the latest version supporting Python 3.12
 # - Ultralytics automatically handles YOLO model downloads
 # - NumPy version is compatible with all other packages
+
+#voice detection
+sounddevice
+numpy
+silero_vad
+datetime
