@@ -30,13 +30,16 @@ io.on("connection", (socket) => {
 
   socket.on("authenticate", (data) => {
     if (pythonSocket) {
-      pythonSocket.emit("auth_face", data);
+      pythonSocket.emit("drag_camera", data);
     }
   });
 
   if (pythonSocket) {
-    pythonSocket.on("auth_result", (data: any) => {
-      console.log("Result from Python", data);
+    pythonSocket.on("drag_camera", (data: any) => {
+      if (data) {
+        console.log("Drag camera Result : ", data);
+      }
+
     })
   }
 
@@ -47,9 +50,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("authenticate",(data)=>{
-    console.log("frame from drag camera received",data.metadata.width);
-  })
 
   if (pythonSocket) {
     pythonSocket.on("result", (data: any) => {
