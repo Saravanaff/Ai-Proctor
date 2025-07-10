@@ -47,6 +47,8 @@ const FloatingCamera = ({ socket }: any) => {
                     width,
                     height,
                   },
+                  name:"sriram"
+
                 });
               });
             }
