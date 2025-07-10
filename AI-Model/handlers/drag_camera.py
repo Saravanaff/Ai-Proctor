@@ -17,6 +17,7 @@ import time
 #global result
 auth_status=False
 head_position="Forward"
+frame_count=0
 
 # # ------------------ Model Initialization ------------------
 # yolo_model = YOLO("yolov8n.pt")  # Lightweight model
@@ -137,7 +138,10 @@ def detect_head_direction(img: np.ndarray) -> str:
 def setup_drag_camera_handler(sio):
     @sio.on("drag_camera")
     def handle_drag_camera(data):
-        global last_head_time, last_auth_time, auth_status, head_position
+        global last_head_time, last_auth_time, auth_status, head_position,frame_count
+        frame_count+=1
+        if(frame_count%2!=0):
+            return
         buffer = data["buffer"]
         metadata= data["metadata"]
         name = data["name"]
@@ -152,13 +156,13 @@ def setup_drag_camera_handler(sio):
             # last_head_time = now
 
         # if now - last_auth_time > AUTH_COOLDOWN:
-        #     auth_status = authenticate_face(rgb_img, name)
+        auth_status = authenticate_face(rgb_img, name)
         #     last_auth_time = now
 
         # Emit results
         sio.emit("drag_camera", {
             # "no_of_person": person_count,
-            # "auth_face": auth_status,
+            "auth_face": auth_status,
             "head_position": head_position,
             # "object_detected": object_array
         })

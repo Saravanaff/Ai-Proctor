@@ -15,7 +15,10 @@ const FloatingCamera = ({ socket }: any) => {
     let audioStream:MediaStream;
     const startCamera = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true});
+        stream = await navigator.mediaDevices.getUserMedia({ video:{
+          height:480,
+          width:480
+        }});
         audioStream=await navigator.mediaDevices.getUserMedia({audio:true});
 
         if (videoRef.current) {

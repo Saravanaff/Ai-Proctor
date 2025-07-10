@@ -3,6 +3,7 @@ import { VideoComponentProps } from "../types";
 import { defaultScanSteps } from "../constants/scanConfig";
 import { useVideoStream } from "../hooks/useVideoStream";
 import { useScanFlow } from "../hooks/useScanFlow";
+import { gname } from "./GetName";
 import {
   VideoStream,
   FaceDetectionOverlay,
@@ -24,7 +25,6 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const { videoRef, videoStream, isLoading, error }: any = useVideoStream();
   const intervalRef = useRef<any>(null);
   const [circle, setCircle] = useState(false);
-  const [name, setName] = useState("sriram");
   const router=useRouter();
 
 
@@ -135,7 +135,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           blob.arrayBuffer().then((buffer) => {
             socket.emit("photo-save", {
               buffer,
-              name: name,
+              name: gname,
             });
           });
           const mediaStream = video.srcObject as MediaStream;

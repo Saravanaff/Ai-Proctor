@@ -6,12 +6,15 @@ import gc
 
 last_processed_time = 0
 frame_interval = 0.5
-
+frame_count=0
 def setup_process_frame_handler(sio):
     @sio.on("process-frame")
     def handle_frame(data):
         global last_processed_time
-
+        global frame_count
+        frame_count+=1
+        if frame_count%10!=0:
+            return
         if time.time() - last_processed_time < frame_interval:
             return
 

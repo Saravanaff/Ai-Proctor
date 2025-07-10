@@ -5,7 +5,7 @@ import json
 import os
 
 # ✅ Set the target user to identify
-target_name = "sriram"  # Change this if needed
+target_name = "Saro"  # Change this if needed
 
 # 📂 Load stored face data
 face_data_path = "storage/face_data.json"

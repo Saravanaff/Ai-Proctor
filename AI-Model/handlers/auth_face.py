@@ -2,10 +2,15 @@ import numpy as np
 import json
 import face_recognition
 
+frame_count=0
 def setup_auth_face_handler(sio):
     @sio.on("auth_face")
     def face_auth(data):
         try:
+            global frame_count
+            frame_count+=1
+            if(frame_count%10==0):
+                return
             print("Authentication process starts..")
             blob = data["buffer"]
             name = data["name"]
