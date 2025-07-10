@@ -12,7 +12,7 @@ import {
   ScanButton,
   LoadingIndicator,
 } from "./";
-
+import { useRouter } from "next/router";
 import io from "socket.io-client";
 
 const VideoComponent: React.FC<VideoComponentProps> = ({
@@ -25,6 +25,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const intervalRef = useRef<any>(null);
   const [circle, setCircle] = useState(false);
   const [name, setName] = useState("sriram");
+  const router=useRouter();
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
@@ -115,6 +116,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
   const capturePhoto = (): Promise<Blob | null> => {
     return new Promise((resolve) => {
+      clearInterval(intervalRef.current);
       const video = videoRef.current;
       if (!video || video.readyState < 2) return resolve(null);
 
@@ -144,6 +146,10 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             setShowSuccess(false);
             setShowOverlay(true);
           }, 1000);
+          resolve(blob);
+        }
+        else{
+          resolve(null);
         }
       }, "image/jpeg", 0.9);
     });
@@ -234,7 +240,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
               fontWeight: "bold",
             }}
           >
-            <button className="click" >Enter Exam</button>
+            <button className="click" onClick={()=>router.push('/fullscreen')}>Enter Exam</button>
           </div>
         )}
       </div>

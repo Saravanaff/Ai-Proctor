@@ -9,113 +9,90 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
 }));
 
 
-
 const ExamPage: React.FC = () => {
     
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
-  const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-    const [initialSize, setInitialSize] = useState<{ width: number; height: number } | null>(null);
-
-useEffect(() => {
-  setInitialSize({ width: window.innerWidth, height: window.innerHeight });
-}, []);
+  
 
   const handleChange = (qId: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [qId]: value }));
   };
 
-  const requestFullscreen = async () => {
-    const el = document.documentElement;
-    try {
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if ((el as any).webkitRequestFullscreen) await (el as any).webkitRequestFullscreen();
-      else if ((el as any).msRequestFullscreen) await (el as any).msRequestFullscreen();
-      setFullscreenAllowed(true);
-    } catch (err) {
-      alert("You must allow fullscreen to continue the exam.");
-    }
-  };
 
   useEffect(() => {
     // Start webcam only after page loads
-    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-      if (videoRef.current) videoRef.current.srcObject = stream;
-    });
+    try {
 
-    const preventActions = (e: any) => {
-      if (
-        e instanceof KeyboardEvent &&
-        ["F12", "Control", "Meta", "Alt", "Tab"].includes(e.key)
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      if (e instanceof MouseEvent && e.button === 2) {
-        e.preventDefault();
-      }
-    };
+      const preventActions = (e: any) => {
+        if (
+          e instanceof KeyboardEvent &&
+          ["F12", "Control", "Meta", "Alt", "Tab"].includes(e.key)
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (e instanceof MouseEvent && e.button === 2) {
+          e.preventDefault();
+        }
+      };
 
-    const blurHandler = () => {
-      if (fullscreenAllowed) setBlocked(true);
-    };
-
-    const focusHandler = () => {
-      if (fullscreenAllowed) setBlocked(true);
-    };
-
-    const fullscreenChangeHandler = () => {
-      if (!document.fullscreenElement && fullscreenAllowed) {
+      const blurHandler = () => {
         setBlocked(true);
-      }
-    };
+      };
 
-    const sizeHandler = () => {
-      const widthDiff = Math.abs(window.innerWidth - window.screen.width);
-      const heightDiff = Math.abs(window.innerHeight - window.screen.height);
-      if ((widthDiff > 10 || heightDiff > 10) && fullscreenAllowed) {
+      const focusHandler = () => {
         setBlocked(true);
-      }
-    };
+      };
 
-    window.addEventListener("blur", blurHandler);
-    window.addEventListener("focus", focusHandler);
-    document.addEventListener("fullscreenchange", fullscreenChangeHandler);
-    window.addEventListener("keydown", preventActions);
-    window.addEventListener("contextmenu", preventActions);
-    window.addEventListener("copy", preventActions);
-    window.addEventListener("cut", preventActions);
-    window.addEventListener("paste", preventActions);
-    window.addEventListener("resize", sizeHandler);
+      const fullscreenChangeHandler = () => {
+        if (!document.fullscreenElement) {
+          setBlocked(true);
+        }
+      };
 
-    return () => {
-      window.removeEventListener("blur", blurHandler);
-      window.removeEventListener("focus", focusHandler);
-      document.removeEventListener("fullscreenchange", fullscreenChangeHandler);
-      window.removeEventListener("keydown", preventActions);
-      window.removeEventListener("contextmenu", preventActions);
-      window.removeEventListener("copy", preventActions);
-      window.removeEventListener("cut", preventActions);
-      window.removeEventListener("paste", preventActions);
-      window.removeEventListener("resize", sizeHandler);
-    };
-  }, [fullscreenAllowed]);
+      const sizeHandler = () => {
+        const widthDiff = Math.abs(window.innerWidth - window.screen.width);
+        const heightDiff = Math.abs(window.innerHeight - window.screen.height);
+        if ((widthDiff > 10 || heightDiff > 10)) {
+          setBlocked(true);
+        }
+      };
 
-  if (!fullscreenAllowed) {
-    return (
-      <div className={styles.blockScreen}>
-        <h2>Fullscreen is required to start the exam</h2>
-        <button onClick={requestFullscreen}>Enter Fullscreen</button>
-      </div>
-    );
-  }
+      window.addEventListener("blur", blurHandler);
+      window.addEventListener("focus", focusHandler);
+      document.addEventListener("fullscreenchange", fullscreenChangeHandler);
+      window.addEventListener("keydown", preventActions);
+      window.addEventListener("contextmenu", preventActions);
+      window.addEventListener("copy", preventActions);
+      window.addEventListener("cut", preventActions);
+      window.addEventListener("paste", preventActions);
+      window.addEventListener("resize", sizeHandler);
+
+    
+      return () => {
+        window.removeEventListener("blur", blurHandler);
+        window.removeEventListener("focus", focusHandler);
+        document.removeEventListener("fullscreenchange", fullscreenChangeHandler);
+        window.removeEventListener("keydown", preventActions);
+        window.removeEventListener("contextmenu", preventActions);
+        window.removeEventListener("copy", preventActions);
+        window.removeEventListener("cut", preventActions);
+        window.removeEventListener("paste", preventActions);
+        window.removeEventListener("resize", sizeHandler);
+      };
+
+    }catch(e){
+      console.log("Error in useEffect");
+    }
+  }, []);
+
 
   if (blocked) {
     return (
       <div className={styles.overlay}>
-        <h2>⚠️ Exam Blocked</h2>
-        <p>Tab switch, fullscreen exit, or suspicious resize detected.</p>
+        <h1>⚠️ Exam Blocked</h1><br/>
+        {/* <h2>Tab switch, fullscreen exit, or suspicious resize detected.</h2> */}
       </div>
     );
   }
@@ -155,7 +132,6 @@ useEffect(() => {
       </main>
 
       <FloatingCamera />
-      <video ref={videoRef} style={{ display: "none" }} autoPlay muted />
     </div>
   );
 };
