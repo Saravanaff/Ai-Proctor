@@ -47,6 +47,10 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("authenticate",(data)=>{
+    console.log("frame from drag camera received",data.metadata.width);
+  })
+
   if (pythonSocket) {
     pythonSocket.on("result", (data: any) => {
       console.log("🎯 Result from Python", data);

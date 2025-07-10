@@ -13,7 +13,8 @@ import {
   LoadingIndicator,
 } from "./";
 import { useRouter } from "next/router";
-import io from "socket.io-client";
+import socket from "./socket";
+
 
 const VideoComponent: React.FC<VideoComponentProps> = ({
   onScanComplete,
@@ -21,11 +22,11 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   scanDuration = 2000,
 }) => {
   const { videoRef, videoStream, isLoading, error }: any = useVideoStream();
-  const [socket, setSocket] = useState<any>(null);
   const intervalRef = useRef<any>(null);
   const [circle, setCircle] = useState(false);
   const [name, setName] = useState("sriram");
   const router=useRouter();
+
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
@@ -42,8 +43,6 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         });
         video.srcObject = stream;
 
-        const socket = io("http://localhost:3001");
-        setSocket(socket);
 
         intervalRef.current = setInterval(() => {
           if (!video || video.readyState < 2) return;
@@ -139,6 +138,13 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
               name: name,
             });
           });
+          const mediaStream = video.srcObject as MediaStream;
+          if (mediaStream) {
+            console.log(mediaStream.getTracks());
+            mediaStream.getTracks().forEach((track) => track.stop());
+            video.srcObject = null;
+
+        }
 
           setShowSuccess(true);
 
@@ -151,6 +157,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         else{
           resolve(null);
         }
+        
       }, "image/jpeg", 0.9);
     });
   };

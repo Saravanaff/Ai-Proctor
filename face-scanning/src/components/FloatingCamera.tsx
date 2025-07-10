@@ -1,23 +1,71 @@
 import React, { useRef, useEffect, useState } from "react";
 import styles from "../styles/FloatingCamera.module.css";
 
-const FloatingCamera = () => {
+const FloatingCamera = ({ socket }: any) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraRef = useRef<HTMLDivElement>(null);
-
+  const interRef = useRef<any>(null);
+  const audRef=useRef<any>(null);
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then((stream) => {
+    let stream: MediaStream;
+    let audioStream:MediaStream;
+    const startCamera = async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true});
+        audioStream=await navigator.mediaDevices.getUserMedia({audio:true});
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-      });
-  }, []);
+
+        interRef.current = setInterval(async() => {
+          const video = videoRef.current;
+          if (!video || video.readyState < 2) return;
+
+          const width = video.videoWidth;
+          const height = video.videoHeight;
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+
+          ctx.drawImage(video, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              blob.arrayBuffer().then((buffer) => {
+                socket.emit("authenticate", {
+                  buffer,
+                  metadata: {
+                    width,
+                    height,
+                  },
+                });
+              });
+            }
+          }, "image/jpeg", 0.7);
+        }, 1000 / 30);
+      } catch (error) {
+        console.error("Camera access failed:", error);
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      if (interRef.current) clearInterval(interRef.current);
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [socket]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setDragging(true);

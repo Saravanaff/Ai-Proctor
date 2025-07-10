@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import styles from "../styles/ExamPage.module.css";
 import FloatingCamera from "./FloatingCamera";
-
+import socket from "./socket";
 const questions = Array.from({ length: 10 }, (_, i) => ({
   id: i + 1,
   question: `Sample Question ${i + 1}?`,
@@ -21,7 +21,6 @@ const ExamPage: React.FC = () => {
 
 
   useEffect(() => {
-    // Start webcam only after page loads
     try {
 
       const preventActions = (e: any) => {
@@ -131,7 +130,7 @@ const ExamPage: React.FC = () => {
         <button className={styles.submitButton}>Submit</button>
       </main>
 
-      <FloatingCamera />
+      <FloatingCamera socket={socket}/>
     </div>
   );
 };
