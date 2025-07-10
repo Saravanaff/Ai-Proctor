@@ -74,7 +74,7 @@ export default function Verification() {
           <button
             className={styles.nextButton}
             disabled={!isVerified}
-            onClick={() => router.push('/') }
+            onClick={() => router.push('/video') }
           >
             Next
           </button>

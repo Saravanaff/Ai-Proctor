@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import styles from "../styles/FloatingCamera.module.css";
-
+import { gname } from "./GetName";
 const FloatingCamera = ({ socket }: any) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraRef = useRef<HTMLDivElement>(null);
@@ -47,7 +47,7 @@ const FloatingCamera = ({ socket }: any) => {
                     width,
                     height,
                   },
-                  name:"sriram"
+                  name:gname
 
                 });
               });

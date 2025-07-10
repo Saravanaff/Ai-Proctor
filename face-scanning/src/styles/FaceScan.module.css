@@ -67,3 +67,9 @@
   background-color: #777;
   cursor: not-allowed;
 }
+
+.inside{
+  padding:40px;
+  background-color: rgba(128, 128, 128, 0.235);
+  box-shadow: 1px 1px 5px white;
+}
