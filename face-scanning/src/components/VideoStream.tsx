@@ -1,7 +1,10 @@
 import React from "react";
-import { VideoStreamProps } from "../types";
 
-const VideoStream:React.FC<VideoStreamProps> = ({ videoRef, videoStream }) => {
+interface VideoStreamProps {
+  videoRef: React.RefObject<HTMLVideoElement>;
+}
+
+const VideoStream: any = ({ videoRef }:any) => {
   return (
     <div
       style={{

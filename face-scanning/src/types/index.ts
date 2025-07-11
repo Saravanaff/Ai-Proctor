@@ -27,6 +27,5 @@ export interface OverlayProps {
 }
 
 export interface VideoStreamProps {
-  videoRef: React.RefObject<HTMLVideoElement | null>;
-  videoStream: MediaStream | null;
+  videoRef: React.RefObject<HTMLVideoElement|null>;
 }

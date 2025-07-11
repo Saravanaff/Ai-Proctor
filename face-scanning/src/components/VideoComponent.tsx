@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { VideoComponentProps } from "../types";
 import { defaultScanSteps } from "../constants/scanConfig";
-import { useVideoStream } from "../hooks/useVideoStream";
 import { useScanFlow } from "../hooks/useScanFlow";
 import { gname } from "./GetName";
 import {
@@ -16,20 +15,19 @@ import {
 import { useRouter } from "next/router";
 import socket from "./socket";
 
-
 const VideoComponent: React.FC<VideoComponentProps> = ({
   onScanComplete,
   customSteps,
   scanDuration = 2000,
 }) => {
-  const { videoRef, videoStream, isLoading, error }: any = useVideoStream();
+  const videoRef = useRef<HTMLVideoElement>(null);
   const intervalRef = useRef<any>(null);
   const [circle, setCircle] = useState(false);
-  const router=useRouter();
-
-
   const [showSuccess, setShowSuccess] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     let stream: MediaStream;
@@ -38,11 +36,17 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
     const setup = async () => {
       try {
+        setIsLoading(true);
+        if (video.srcObject) {
+          (video.srcObject as MediaStream).getTracks().forEach((track) => track.stop());
+          video.srcObject = null;
+        }
+
         stream = await navigator.mediaDevices.getUserMedia({
           video: { width: 1280, height: 720 },
         });
         video.srcObject = stream;
-
+        setIsLoading(false);
 
         intervalRef.current = setInterval(() => {
           if (!video || video.readyState < 2) return;
@@ -102,6 +106,8 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         });
       } catch (err) {
         console.error("Camera setup failed:", err);
+        setError("Unable to access camera");
+        setIsLoading(false);
       }
     };
 
@@ -138,13 +144,12 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
               name: gname,
             });
           });
+
           const mediaStream = video.srcObject as MediaStream;
           if (mediaStream) {
-            console.log(mediaStream.getTracks());
             mediaStream.getTracks().forEach((track) => track.stop());
             video.srcObject = null;
-
-        }
+          }
 
           setShowSuccess(true);
 
@@ -152,12 +157,11 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             setShowSuccess(false);
             setShowOverlay(true);
           }, 1000);
+
           resolve(blob);
-        }
-        else{
+        } else {
           resolve(null);
         }
-        
       }, "image/jpeg", 0.9);
     });
   };
@@ -199,59 +203,56 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   }
 
   return (
-    <>
-      <div
-        style={{
-          height: "100vh",
-          width: "100vw",
-          position: "relative",
-          overflow: "hidden",
-          backgroundColor: "#000",
-        }}
-      >
-        <HeaderOverlay
-          icon={currentStepData.icon}
-          title={currentStepData.title}
-          instruction={currentStepData.instruction}
-        />
-        <VideoStream videoRef={videoRef} videoStream={videoStream} />
+    <div
+      style={{
+        height: "100vh",
+        width: "100vw",
+        position: "relative",
+        overflow: "hidden",
+        backgroundColor: "#000",
+      }}
+    >
+      <HeaderOverlay
+        icon={currentStepData.icon}
+        title={currentStepData.title}
+        instruction={currentStepData.instruction}
+      />
 
-        <FaceDetectionOverlay faceDetected={circle} showSuccess={showSuccess} />
+      <VideoStream videoRef={videoRef} />
 
-        <FooterOverlay description={currentStepData.description} />
-        <StepCounter currentStep={currentStep} totalSteps={steps.length} />
+      <FaceDetectionOverlay faceDetected={circle} showSuccess={showSuccess} />
+      <FooterOverlay description={currentStepData.description} />
+      <StepCounter currentStep={currentStep} totalSteps={steps.length} />
+      <ScanButton call={capturePhoto} isScanning={false} />
 
-        <ScanButton call={capturePhoto} isScanning={false} />
+      {isLoading && (
+        <LoadingIndicator message="Accessing camera..." />
+      )}
 
-        {(isLoading || !videoStream) && (
-          <LoadingIndicator
-            message={isLoading ? "Accessing camera..." : "Camera not available"}
-          />
-        )}
-
-        {showOverlay && (
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100vw",
-              height: "100vh",
-              backgroundColor: "rgba(0,0,0,0.7)",
-              zIndex: 100,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              color: "#fff",
-              fontSize: "40px",
-              fontWeight: "bold",
-            }}
-          >
-            <button className="click" onClick={()=>router.push('/fullscreen')}>Enter Exam</button>
-          </div>
-        )}
-      </div>
-    </>
+      {showOverlay && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0,0,0,0.7)",
+            zIndex: 100,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            color: "#fff",
+            fontSize: "40px",
+            fontWeight: "bold",
+          }}
+        >
+          <button className="click" onClick={() => router.push("/fullscreen")}>
+            Enter Exam
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 
