@@ -13,17 +13,37 @@ const ExamPage: React.FC = () => {
     
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
+  const [lookAlert,setlookAlert]=useState(false);
+  const [object,setObject]=useState(false);
+  const [num,setNum]=useState(false);
+  const [authFaceMissing, setAuthFaceMissing] = useState(false);
+  let face:any;
+const handleAuthFaceMissing = () => {
+  setAuthFaceMissing(true);
+  setTimeout(() => setAuthFaceMissing(false), 3000);
+};
+
   
 
   const handleChange = (qId: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [qId]: value }));
   };
 
+  const detectObject=()=>{
+    setObject(true);
+    setTimeout(()=>setObject(false),3000);
+  }
+
+  const number=(a:number)=>{
+    face=a;
+    setNum(true);
+    setTimeout(()=> setNum(false),3000);
+  }
 
   useEffect(() => {
     try {
 
-      const preventActions = (e: any) => {
+      const preventActions:any = (e: any) => {
         if (
           e instanceof KeyboardEvent &&
           ["F12", "Control", "Meta", "Alt", "Tab"].includes(e.key)
@@ -43,6 +63,8 @@ const ExamPage: React.FC = () => {
       const focusHandler = () => {
         setBlocked(true);
       };
+
+      
 
       const fullscreenChangeHandler = () => {
         if (!document.fullscreenElement) {
@@ -85,6 +107,13 @@ const ExamPage: React.FC = () => {
       console.log("Error in useEffect");
     }
   }, []);
+  let s:any;
+  const lookingAlert=(side:any)=>{
+        s=side;
+        setlookAlert(true);
+        setTimeout(() => setlookAlert(false), 3000);
+
+      }
 
 
   if (blocked) {
@@ -130,7 +159,33 @@ const ExamPage: React.FC = () => {
         <button className={styles.submitButton}>Submit</button>
       </main>
 
-      <FloatingCamera socket={socket}/>
+      <FloatingCamera socket={socket} onLookingAway={lookingAlert} detect={detectObject} number={number} onAuthFaceMissing={handleAuthFaceMissing}/>
+              {lookAlert && (
+          <div className={styles.alertBox} style={{ backgroundColor: "#fdd835" }}>
+            ⚠️ Please stay focused on the screen! You are Turning {s}
+          </div>
+        )}
+
+        {object && (
+          <div className={styles.alertBox} style={{ backgroundColor: "#e53935" }}>
+            📵 Unauthorized device detected (e.g., mobile phone)
+          </div>
+        )}
+
+        {num && (
+          <div className={styles.alertBox} style={{ backgroundColor: "#1e88e5" }}>
+            👥 {face} faces detected.
+          </div>
+        )}
+
+        {authFaceMissing && (
+          <div className={styles.alertBox} style={{ backgroundColor: "#8e24aa" }}>
+            🧑‍💻 Authenticated face not detected. Please ensure you are in front of the camera.
+          </div>
+        )}
+
+
+
     </div>
   );
 };

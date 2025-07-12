@@ -11,12 +11,25 @@ from threading import Lock
 auth_status = False
 head_position = "Forward"
 frame_count = 0
-detected_objects = {}
+
+detected_objects = {
+    "person" : False,
+    "cell phone": False,
+}
 person_count = 0
+
 last_yolo_process = 0
+last_head_process = 0
+last_auth_process = 0
+
+
+AUTH_INTERVAL = 1.0
+HEAD_INTERVAL = 0.5
 
 # Processing lock
 yolo_lock = Lock()
+auth_lock = Lock()
+head_lock = Lock()
 processing_yolo = False
 
 # Model initialization
@@ -39,17 +52,21 @@ def detect_person_and_objects(image: np.ndarray) -> tuple[int, dict]:
         result = yolo_model.predict(image, verbose=False)[0]
         processing_yolo = False
 
-    TARGET_CLASSES = {'person', 'cell phone', 'laptop'}
-
-    detected_objects = {}
+    detected_objects = {
+    "person" : False,
+    "cell phone": False,
+    }
     person_count = 0
 
     for box in result.boxes:
         label = yolo_model.names[int(box.cls[0])]
-        if label in TARGET_CLASSES:
-            detected_objects[label] = True
-            if label == "person":
-                person_count += 1
+        
+        if label == "person":
+            detected_objects["person"]=True
+            person_count += 1
+
+        if label == "cell phone":
+            detected_objects["cell phone"] = True
 
     return person_count, detected_objects
 
@@ -127,6 +144,7 @@ def setup_drag_camera_handler(sio):
     def handle_drag_camera(data):
         global last_yolo_process, auth_status, head_position
         global detected_objects, person_count, processing_yolo
+        global last_head_process, last_auth_process
 
         buffer = data["buffer"]
         metadata = data["metadata"]
@@ -137,8 +155,17 @@ def setup_drag_camera_handler(sio):
 
         now = time.time()
 
-        auth_status = authenticate_face(rgb_img, name)
-        head_position = detect_head_direction(rgb_img)
+        if now - last_auth_process > AUTH_INTERVAL:
+            with auth_lock:
+                if now - last_auth_process > AUTH_INTERVAL:
+                    auth_status = authenticate_face(rgb_img, name)
+                    last_auth_process = now
+
+        if now - last_head_process > HEAD_INTERVAL:
+            with head_lock:
+                if now - last_head_process > HEAD_INTERVAL:
+                    head_position = detect_head_direction(rgb_img)
+                    last_head_process = now
 
         if not processing_yolo and (now - last_yolo_process > 0.5):
             person_count, detected_objects = detect_person_and_objects(rgb_img)

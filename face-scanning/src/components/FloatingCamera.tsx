@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import styles from "../styles/FloatingCamera.module.css";
 import { gname } from "./GetName";
-const FloatingCamera = ({ socket }: any) => {
+const FloatingCamera = ({ socket,onLookingAway,detect,number,onAuthFaceMissing}: any) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraRef = useRef<HTMLDivElement>(null);
   const interRef = useRef<any>(null);
@@ -9,10 +9,20 @@ const FloatingCamera = ({ socket }: any) => {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [borderColor, setBorderColor] = useState("white");
 
+  let look=0;
+  let person=0;
+  let auth=0;
+  let item=0;
   useEffect(() => {
     let stream: MediaStream;
     let audioStream:MediaStream;
+    const changeColor = async () => {
+      setBorderColor("red");
+      setTimeout(() => setBorderColor("white"), 3000);
+    };
+
     const startCamera = async () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video:{
@@ -64,6 +74,39 @@ const FloatingCamera = ({ socket }: any) => {
 
     startCamera();
 
+    socket.on("alert", (data:any) => {
+      console.log(data);
+    if(data.head_position!="Forward"){
+      look++;
+      if(look%150!==0) return;
+      look=0;
+      onLookingAway(data.head_position);
+    }
+    if(data.object_detected["cell phone"]){
+      item++;
+      if(item%10!=0) return;
+      item=0;
+      detect();
+      changeColor();
+    }
+    if(data.no_of_person!=1){
+      person++;
+      if(person%120!=0) return;
+      person=0;
+      number(data.no_of_person);
+      changeColor();
+    }
+    else if(!data.auth_face){
+      auth++;
+      if(auth%180!=0) return;
+      auth=0;
+      changeColor();
+      onAuthFaceMissing();
+    }
+
+
+  });
+
     return () => {
       if (interRef.current) clearInterval(interRef.current);
       if (stream) {
@@ -106,10 +149,10 @@ const FloatingCamera = ({ socket }: any) => {
     <div
       ref={cameraRef}
       className={styles.floatingCamera}
-      style={{ left: `${position.x}px`, top: `${position.y}px` }}
+      style={{ left: `${position.x}px`, top: `${position.y}px`,border: `2px solid ${borderColor}`, }}
       onMouseDown={handleMouseDown}
     >
-      <video ref={videoRef} autoPlay muted width={200} height={150} />
+      <video className={styles.video} ref={videoRef} autoPlay muted width={200} height={150} />
     </div>
   );
 };

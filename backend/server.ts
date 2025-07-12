@@ -25,6 +25,7 @@ io.on("connection", (socket) => {
   if (pythonSocket) {
     pythonSocket.on("face_data_saved", (data: any) => {
       console.log("Result from Python", data);
+
     });
   }
 
@@ -35,9 +36,10 @@ io.on("connection", (socket) => {
   });
 
   if (pythonSocket) {
-    pythonSocket.on("drag_camera", (data: any) => {
+    pythonSocket.on("drag_camera_result", (data: any) => {
       if (data) {
         console.log("Drag camera Result : ", data);
+        socket.emit('alert',data);
       }
 
     })
