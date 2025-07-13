@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import styles from "../styles/ExamPage.module.css";
+import { useRouter } from "next/router";
 import FloatingCamera from "./FloatingCamera";
 import socket from "./socket";
 const questions = Array.from({ length: 10 }, (_, i) => ({
@@ -10,7 +11,11 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
 
 
 const ExamPage: React.FC = () => {
-    
+    const router = useRouter();
+
+const handleSubmit = () => {
+  router.push("/end");
+};
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
   const [lookAlert,setlookAlert]=useState(false);
@@ -156,7 +161,10 @@ const handleAuthFaceMissing = () => {
             </div>
           </div>
         ))}
-        <button className={styles.submitButton}>Submit</button>
+        <button className={styles.submitButton} onClick={handleSubmit}>
+  Submit
+</button>
+
       </main>
 
       <FloatingCamera socket={socket} onLookingAway={lookingAlert} detect={detectObject} number={number} onAuthFaceMissing={handleAuthFaceMissing}/>
