@@ -126,13 +126,13 @@ def detect_head_direction(img: np.ndarray) -> str:
 
         x, y = angles[0] * 360, angles[1] * 360
 
-        if y < -10:
+        if y < -25:
             return "Right"
-        elif y > 10:
+        elif y > 25:
             return "Left"
-        elif x < -10:
+        elif x < -25:
             return "Down"
-        elif x > 10:
+        elif x > 25:
             return "Up"
         else:
             return "Forward"
