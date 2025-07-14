@@ -2,6 +2,10 @@ import socketio
 import numpy as np
 import cv2
 import face_recognition
+import time
+import gc
+import json
+import os
 
 sio = socketio.Client()
 
@@ -14,13 +18,24 @@ def connect():
 def disconnect():
     print("🔌 Disconnected from server")
 
+last_processed_time = 0
+frame_interval = 0.5  # process every 0.5 seconds
+data_path = "storage/face_data.json"
+
 @sio.on("process-frame")
 def handle_frame(data):
+    global last_processed_time
+
+    if time.time() - last_processed_time < frame_interval:
+        return  # Skip this frame
+
     try:
+        last_processed_time = time.time()
+
         buffer = data["buffer"]
         metadata = data["metadata"]
-        width = int(metadata["width"])
-        height = int(metadata["height"])
+        width, height = int(metadata["width"]), int(metadata["height"])
+        print("width:", width, "height:", height)
 
         image_array = np.frombuffer(buffer, dtype=np.uint8)
         img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
@@ -29,108 +44,168 @@ def handle_frame(data):
             print("⚠️ Failed to decode image")
             return
 
-        # Option 1: Haar Cascade
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-        faces_haar = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+        # Resize image to 1/2 for faster processing
+        small_img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
+        rgb_small = cv2.cvtColor(small_img, cv2.COLOR_BGR2RGB)
 
-        # Option 2: face_recognition
-        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        faces_fr = face_recognition.face_locations(rgb_img)
+        faces_fr = face_recognition.face_locations(rgb_small)
 
-        # Prepare result
+        # Scale coordinates back to original size
+        fr_faces_scaled = [
+            [top * 2, right * 2, bottom * 2, left * 2]
+            for top, right, bottom, left in faces_fr
+        ]
+
         result_data = {
-            "haar_faces": [list(map(int, face)) for face in faces_haar],  # convert to list for JSON
-            "fr_faces": [list(map(int, [top, right, bottom, left])) for top, right, bottom, left in faces_fr],
-            "face_found": len(faces_haar) > 0 or len(faces_fr) > 0,
+            "fr_faces": [list(map(int, face)) for face in fr_faces_scaled],
+            "face_found": len(fr_faces_scaled) > 0,
         }
-        print(result_data)
+
         sio.emit("result", result_data)
 
-        for (x, y, w, h) in faces_haar:
-            cv2import socketio
-import numpy as np
-import cv2
-import face_recognition
+        del img, small_img, rgb_small
+        gc.collect()  # Clean up
 
-sio = socketio.Client()
+    except Exception as e:
+        print("🚨 Error:", e)
 
-@sio.event
-def connect():
-    print("✅ Connected to Node.js socket server")
-    sio.emit("register-python")
-
-@sio.event
-def disconnect():
-    print("🔌 Disconnected from server")
-
-@sio.on("process-frame")
-def handle_frame(data):
+@sio.on("save-face-data")
+def save_face_data(data):
     try:
-        buffer = data["buffer"]
-        metadata = data["metadata"]
-        width = int(metadata["width"])
-        height = int(metadata["height"])
+        print("📝 Saving face data...")
+        print(data)
+        blob = data["buffer"]
+        name = data["name"]
 
-        image_array = np.frombuffer(buffer, dtype=np.uint8)
+        # Convert buffer to numpy array and decode
+        image_array = np.frombuffer(blob, dtype=np.uint8)
         img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
         if img is None:
-            print("⚠️ Failed to decode image")
+            print("Could not decode image from buffer")
+            sio.emit("face_data_saved",{"status":False, "reason":"Image decode failed"})
+            return 
+        
+        #Convert to RGB
+        cv2.imshow("Received img", img)
+        cv2.waitKey(1)
+        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        #Detect face locations
+        face_locations = face_recognition.face_locations(rgb_img)
+        print("Face count: ", len(face_locations))
+
+        if len(face_locations)!=1:
+            print("Expect exactly 1 face, found", len(face_locations))
+            sio.emit("face_data_saved",{"status":False,"reason":"Must have exactly one face"})
+            return 
+        
+        #Extract face encodings
+        try:
+            encodings = face_recognition.face_encodings(rgb_img, face_locations)
+        except Exception as e:
+            print("Encoding failed:",e)
+            sio.emit("face_data_saved", {"status": False, "reason": "Face encoding failed"})
             return
 
-        # Option 1: Haar Cascade
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-        faces_haar = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+        if len(encodings) ==0:
+            print("Failed to extract face encoding")
+            sio.emit("face_data_saved", {"status": False, "reason": "Face encoding failed"})
+            return
 
-        # Option 2: face_recognition
-        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        faces_fr = face_recognition.face_locations(rgb_img)
 
-        # Prepare result
-        result_data = {
-            "haar_faces": [list(map(int, face)) for face in faces_haar],  # convert to list for JSON
-            "fr_faces": [list(map(int, [top, right, bottom, left])) for top, right, bottom, left in faces_fr],
-            "face_found": len(faces_haar) > 0 or len(faces_fr) > 0,
+        encoding = encodings[0].tolist()
+
+        face_data = {
+            "name": name,
+            "encoding": encoding
         }
-        print(result_data)
-        sio.emit("result", result_data)
 
-        for (x, y, w, h) in faces_haar:
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        if os.path.exists(data_path):
+            with open(data_path,"r") as f:
+                try:
+                    stored_entry= json.load(f)
+                    if isinstance(stored_entry,dict):
+                        stored_entry = [stored_entry]
+                except json.JSONDecodeError:
+                    stored_entry = []
 
-        for top, right, bottom, left in faces_fr:
-            cv2.rectangle(img, (left, top), (right, bottom), (255, 0, 0), 2)
+        else:
+            stored_entry=[]
 
-        cv2.imshow("Detection", img)
-        cv2.waitKey(1)
+        update = False
+        for entry in stored_entry:
+            if entry["name"] ==name:
+                entry["encoding"] = encoding
+                update = True
+                print(f"Updated face data for {name}")
+                break
+
+        if not update:
+            stored_entry.append(face_data)
+            print(f"Added new face data {name}")
+
+        with open(data_path,"w") as f:
+            json.dump(stored_entry,f,indent = 2)
+
+
+        sio.emit("face_data_saved", {"status": True})
+        print("Face data saved successfully")
 
     except Exception as e:
-        print("🚨 Error:", e)
+        sio.emit("face_data_saved", {"status": False})
+        print("🚨 Error saving face data:", e)
 
-sio.connect("http://localhost:3001")
-try:
-    import time
-    while True:
-        time.sleep(1)
-except KeyboardInterrupt:
-    sio.disconnect()
-    cv2.destroyAllWindows()
-.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-        for top, right, bottom, left in faces_fr:
-            cv2.rectangle(img, (left, top), (right, bottom), (255, 0, 0), 2)
+@sio.on("auth_face")
+def face_auth(data):
+    try:
+        print("Authentication process starts..")
+        blob = data["buffer"]
+        name = data["name"]
+        encoding_array = np.frombuffer(blob, dtype=np.float32)
+        if encoding_array.shape[0] != 128:
+            print("Received encoding size is not 128, Aborting....")
+            sio.emit("auth_result", {"status": False, "message": "Invalid encoding size"})
+            return
 
-        cv2.imshow("Detection", img)
-        cv2.waitKey(1)
+        with open("storage/face_data.json","r") as f:
+            stored_data = json.load(f)
+
+        if isinstance(stored_data, dict):
+            stored_data = [stored_data]
+
+        target = next((entry for entry in stored_data if entry["name"] == name),None)
+
+        if not target:
+            print(f"No face data found for {name}")
+            sio.emit("auth_result", {"status":False,"reason":"User not found"})
+            return
+
+        stored_encoding = np.array(target["encoding"])
+
+        match = face_recognition.compare_faces([stored_encoding],encoding_array)
+        distance = face_recognition.face_distance([stored_encoding],encoding_array)[0]
+
+        if match[0]:
+            print(f"Authenticated: {name} , Distance : {distance:.4f}")
+            sio.emit("auth_result",{"status":True, "reason":"Face matched"})
+        else:
+            print("Face Mismatch")
+            sio.emit("auth_result",{"status":False,"reason":"Face Mismatch"})
 
     except Exception as e:
-        print("🚨 Error:", e)
+        print("Error in a face_auth",e)
+        sio.emit("auth_result",{"status":False, "reason":str(e)})
+
+
+
+
+
 
 sio.connect("http://localhost:3001")
+
 try:
-    import time
     while True:
         time.sleep(1)
 except KeyboardInterrupt:

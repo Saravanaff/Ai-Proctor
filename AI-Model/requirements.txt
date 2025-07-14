@@ -1,18 +1,32 @@
 # AI-Model Requirements
 # Compatible with Python 3.8 - 3.12 (Recommended: Python 3.12)
+# WARNING: MediaPipe does not support Python 3.13 yet!
 
 # Computer Vision and Image Processing
-opencv-python
+opencv-python>=4.8.0,<5.0.0
 
 # MediaPipe for face, hand, and pose tracking
-# Note: MediaPipe supports up to Python 3.12
-mediapipe
+# Note: MediaPipe supports up to Python 3.12 only
+# For Python 3.13, we'll use alternative libraries
+mediapipe>=0.10.0; python_version<"3.13"
+
+# Alternative face detection for Python 3.13
+face-recognition; python_version>="3.13"
+dlib; python_version>="3.13"
 
 # YOLO object detection
-ultralytics
+ultralytics>=8.0.0
 
 # Note: 
 # - OpenCV versions are pinned for stability
 # - MediaPipe 0.10.7 is the latest version supporting Python 3.12
+# - For Python 3.13, face-recognition and dlib are used as alternatives
 # - Ultralytics automatically handles YOLO model downloads
 # - NumPy version is compatible with all other packages
+
+# Voice detection
+sounddevice>=0.4.0
+numpy>=1.21.0,<2.0.0
+silero-vad>=4.0.0
+# Note: datetime is a built-in Python module, no need to install
+python-socketio>=5.0.0

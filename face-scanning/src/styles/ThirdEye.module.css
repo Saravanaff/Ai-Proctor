@@ -1,0 +1,100 @@
+.container {
+  text-align: center;
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+  background-color: #f9fafb;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.title {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #111827;
+}
+
+.svgContainer {
+  margin-bottom: 2rem;
+}
+
+.permissionGroup {
+  margin-top: 1.2rem;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.tick {
+  font-size: 1.5rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.btn {
+  padding: 0.7rem 1.5rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1.5rem;
+  transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+  background-color: #2563eb;
+}
+
+.startBtn {
+  background-color: #10b981;
+}
+
+.startBtn:hover {
+  background-color: #059669;
+}
+
+.videoPreview {
+  margin-top: 1.5rem;
+  width: 100%;
+  max-width: 480px;
+  border-radius: 12px;
+  border: 2px solid #ccc;
+}
+
+.successBox,
+.errorBox {
+  padding: 1rem;
+  margin-top: 1.5rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 10px;
+}
+
+.successBox {
+  color: #10b981;
+  background-color: #d1fae5;
+}
+
+.errorBox {
+  color: #ef4444;
+  background-color: #fee2e2;
+}
+
+.nextButton {
+  margin-top: 1rem;
+  padding: 0.6rem 1.4rem;
+  font-size: 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.nextButton:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}

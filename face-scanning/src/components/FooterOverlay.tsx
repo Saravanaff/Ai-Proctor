@@ -19,7 +19,7 @@ const FooterOverlay: React.FC<FooterOverlayProps> = ({ description }) => {
         alignItems: "center",
         padding: "30px 20px",
         background: overlayStyles.gradient.bottom,
-        color: overlayStyles.colors.primary,
+        color:overlayStyles.colors.primary,
         fontSize: "16px",
         textAlign: "center",
         flexDirection: "column",

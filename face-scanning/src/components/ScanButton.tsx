@@ -1,22 +1,6 @@
 import React from "react";
 
-interface ScanButtonProps {
-  onScan: () => void;
-  isScanning: boolean;
-  isLastStep: boolean;
-}
-
-const ScanButton: React.FC<ScanButtonProps> = ({
-  onScan,
-  isScanning,
-  isLastStep,
-}) => {
-  const getButtonText = () => {
-    if (isScanning) return "Scanning...";
-    if (isLastStep) return "Complete";
-    return "Next";
-  };
-
+const ScanButton: any = ({ call, isScanning }: any) => {
   return (
     <div
       style={{
@@ -28,7 +12,7 @@ const ScanButton: React.FC<ScanButtonProps> = ({
       }}
     >
       <button
-        onClick={onScan}
+        onClick={call}
         disabled={isScanning}
         style={{
           backgroundColor: isScanning
@@ -45,7 +29,7 @@ const ScanButton: React.FC<ScanButtonProps> = ({
           transition: "all 0.3s ease",
         }}
       >
-        {getButtonText()}
+        Capture
       </button>
     </div>
   );
