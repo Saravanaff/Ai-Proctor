@@ -1,0 +1,107 @@
+/* Main layout container */
+.fullscreenContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background-color: #f5f7fa;
+  height: 100vh;
+  padding: 2rem;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Webcam video container with border */
+.videoWrapper {
+  margin-top: 60px;
+  width: 80%;
+  max-width: 640px;
+  border: 4px solid #1e3a8a;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  background-color: #000;
+}
+
+/* Video itself */
+.fullscreenVideo {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* 🔵 "Third Eye Activated" Alert */
+.initialNotice {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #2563eb;
+  color: white;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  animation: fadeInOut 4s ease-in-out forwards;
+  z-index: 1000;
+}
+
+.initialIcon {
+  font-size: 20px;
+}
+
+/* 🔴 "You Are Under Surveillance" Square Alert */
+.sideNotice {
+  position: fixed;
+  top: 90px;
+  right: 20px;
+  background-color: #dc2626;
+  color: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  width: 260px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 3px solid #b91c1c;
+  z-index: 999;
+  animation: fadeIn 1s ease;
+}
+
+.surveillanceIcon {
+  font-size: 22px;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+/* Animation for alerts */
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
