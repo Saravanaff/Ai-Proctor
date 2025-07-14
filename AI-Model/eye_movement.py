@@ -1,85 +1,98 @@
 import cv2
 import mediapipe as mp
-import math
 
-def colour_eye(img, r, l):
-    x1 = int(r.x * w)
-    y1 = int(r.y * h)
-    x2 = int(l.x * w)
-    y2 = int(l.y * h)
-    mx = (x1 + x2) // 2
-    my = (y1 + y2) // 2
-    radius = int(math.sqrt((mx - x1)**2 + (my - y1)**2))
-    cv2.circle(img, (mx, my), radius, (0, 0, 255), -1)  # Filled red circle
-
-cap = cv2.VideoCapture(0)
+# Initialize MediaPipe FaceMesh
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True)
+mp_drawing = mp.solutions.drawing_utils
+
+# Webcam
+cap = cv2.VideoCapture(0)
 
 while cap.isOpened():
-    _, img = cap.read()
-    img = cv2.flip(img, 1)
-    imgRGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    res = face_mesh.process(imgRGB)
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-    h, w, c = img.shape
-    landmark_points = res.multi_face_landmarks
+    h, w = frame.shape[:2]
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results = face_mesh.process(rgb_frame)
 
-    if landmark_points:
-        landmarks = landmark_points[0].landmark
+    r_gaze_direction = "No Face"
+    l_gaze_direction = "No Face"
 
-        # Right eye iris and corners
-        rr = landmarks[471]
-        rl = landmarks[469]
-        colour_eye(img, rr, rl)  # Right iris color fill
+    if results.multi_face_landmarks:
+        for face_landmarks in results.multi_face_landmarks:
+            # Get landmark coords (normalized to pixel + normalized x)
+            def get_landmark_point(id):
+                lm = face_landmarks.landmark[id]
+                return int(lm.x * w), int(lm.y * h), lm.x
 
-        # Left eye iris and corners
-        lr = landmarks[474]
-        ll = landmarks[476]
-        colour_eye(img, lr, ll)  # Left iris color fill
+            # Right eye landmarks
+            x_163, y_163, norm_163 = get_landmark_point(163)  # Outer corner
+            x_157, y_157, norm_157 = get_landmark_point(157)  # Inner corner
+            x_471, y_471, norm_471 = get_landmark_point(471)  # Iris right
+            x_469, y_469, norm_469 = get_landmark_point(469)  # Iris left
 
-        # Iris movement detection (right eye)
-        right_outer = landmarks[33]
-        right_inner = landmarks[133]
-        right_top = landmarks[159]
-        right_bottom = landmarks[145]
-        right_iris = landmarks[468]
+            #Left eye landmarks
+            x_390, y_390, norm_390 = get_landmark_point(390) # Outer corner
+            x_384, y_384, norm_384 = get_landmark_point(384) # Inner corner
+            x_474, y_474, norm_474 = get_landmark_point(474) # Iris left
+            x_476, y_476, norm_476 = get_landmark_point(476) # Iris right
 
-        x_outer = int(right_outer.x * w)
-        x_inner = int(right_inner.x * w)
-        x_iris = int(right_iris.x * w)
 
-        y_top = int(right_top.y * h)
-        y_bottom = int(right_bottom.y * h)
-        y_iris = int(right_iris.y * h)
+            # Compute eye width and iris center
+            r_eye_width = norm_163 - norm_157
+            r_iris_center = (norm_471 + norm_469) / 2
+            r_iris_ratio = (r_iris_center - norm_157) / r_eye_width
 
-        horizontal_center = (x_outer + x_inner) // 2
-        vertical_center = (y_top + y_bottom) // 2
+            l_eye_width = norm_390 - norm_384
+            l_iris_center = (norm_474 + norm_476) / 2
+            l_iris_ratio = (l_iris_center - norm_384) / l_eye_width
 
-        # Thresholds (you can tweak these)
-        horiz_thresh = 5
-        vert_thresh = 3
 
-        direction = ""
-        if x_iris < horizontal_center - horiz_thresh:
-            direction += "Iris moved RIGHT"
-        elif x_iris > horizontal_center + horiz_thresh:
-            direction += "Iris moved LEFT"
-        else:
-            direction += "Iris Center"
 
-        if y_iris < vertical_center - vert_thresh:
-            direction += " and UP"
-        elif y_iris > vertical_center + vert_thresh:
-            direction += " and DOWN"
-        else:
-            direction += " and CENTER"
 
-        cv2.putText(img, direction, (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 0), 2)
+            # Gaze estimation
+            if r_iris_ratio < 0.35:
+                r_gaze_direction = "Left"
+            elif r_iris_ratio > 0.65:
+                r_gaze_direction = "Right"
+            else:
+                r_gaze_direction = "Center"
 
-    cv2.imshow("Eye movement", img)
-    k = cv2.waitKey(1)
-    if k == ord('q'):
+            if l_iris_ratio < 0.35:
+                l_gaze_direction = "Right"
+            elif l_iris_ratio > 0.65:
+                l_gaze_direction = "Left"
+            else:
+                l_gaze_direction = "Center"
+            
+
+            # Draw eye corner vertical lines
+            cv2.line(frame, (x_163, 0), (x_163, h), (0, 255, 0), 1)
+            cv2.line(frame, (x_157, 0), (x_157, h), (0, 0, 255), 1)
+            cv2.line(frame, (x_390, 0), (x_390, h), (0, 255, 0), 1)
+            cv2.line(frame, (x_384, 0), (x_384, h), (0, 0, 255), 1)
+
+            # Draw iris points
+            cv2.circle(frame, (x_471, y_471), 3, (255, 255, 0), -1)
+            cv2.circle(frame, (x_469, y_469), 3, (255, 255, 0), -1)
+            cv2.circle(frame, (x_474, y_474), 3, (255, 255, 0), -1)
+            cv2.circle(frame, (x_476, y_476), 3, (255, 255, 0), -1)
+
+            # Optional: Draw bounding box for eye
+            cv2.rectangle(frame, (x_157, y_157 - 10), (x_163, y_157 + 10), (255, 0, 0), 1)
+            cv2.rectangle(frame, (x_384, y_384 - 10), (x_390, y_384 + 10), (255, 0, 0), 1)
+
+            # Show gaze direction and iris ratio
+            cv2.putText(frame, f"Right Eye : {r_gaze_direction}", (30, 50),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 2)
+            cv2.putText(frame, f"Left  Eye : {l_gaze_direction}", (30, 90),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 2)
+ 
+    cv2.imshow("Gaze Tracking", frame)
+    if cv2.waitKey(1) & 0xFF == 27:
         break
 
 cap.release()
