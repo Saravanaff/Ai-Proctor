@@ -18,6 +18,8 @@ detected_objects = {
 }
 person_count = 0
 
+eyes = ["center","center"]  #[left_eye, right_eye]
+
 last_yolo_process = 0
 last_head_process = 0
 last_auth_process = 0
@@ -97,6 +99,8 @@ def authenticate_face(image: np.ndarray, name: str) -> bool:
     return False
 
 def detect_head_direction(img: np.ndarray) -> str:
+    head_result = ""
+    eyes = ["",""]
     res = face_mesh.process(img)
     h, w, c = img.shape
 
@@ -127,17 +131,59 @@ def detect_head_direction(img: np.ndarray) -> str:
         x, y = angles[0] * 360, angles[1] * 360
 
         if y < -25:
-            return "Right"
+            head_result = "Right"
         elif y > 25:
-            return "Left"
+            head_result = "Left"
         elif x < -25:
-            return "Down"
+            head_result = "Down"
         elif x > 25:
-            return "Up"
+            head_result = "Up"
         else:
-            return "Forward"
+            head_result = "Forward"
+        
+        def get_landmark_point(id):
+            lm = facelm.landmark[id]
+            return int(lm.x * w), int(lm.y * h), lm.x
+        
+        # Right eye landmarks
+        x_163, y_163, norm_163 = get_landmark_point(163)  # Outer corner
+        x_157, y_157, norm_157 = get_landmark_point(157)  # Inner corner
+        x_471, y_471, norm_471 = get_landmark_point(471)  # Iris right
+        x_469, y_469, norm_469 = get_landmark_point(469)  # Iris left
+        #Left eye landmarks
+        x_390, y_390, norm_390 = get_landmark_point(390) # Outer corner
+        x_384, y_384, norm_384 = get_landmark_point(384) # Inner corner
+        x_474, y_474, norm_474 = get_landmark_point(474) # Iris left
+        x_476, y_476, norm_476 = get_landmark_point(476) # Iris right
+        # Compute eye width and iris center
+        # Right Eye
+        r_eye_width = norm_163 - norm_157
+        r_iris_center = (norm_471 + norm_469) / 2
+        r_iris_ratio = (r_iris_center - norm_157) / r_eye_width
+        
+        # Left Eye
+        l_eye_width = norm_390 - norm_384
+        l_iris_center = (norm_474 + norm_476) / 2
+        l_iris_ratio = (l_iris_center - norm_384) / l_eye_width
 
-    return "Error"
+        # Gaze estimation
+        
+        if r_iris_ratio < 0.35:
+            eyes[1] = "Left"
+        elif r_iris_ratio > 0.65:
+            eyes[1] = "Right"
+        else:
+            eyes[1] = "Center"
+        if l_iris_ratio < 0.35:
+            eyes[0] = "Right"
+        elif l_iris_ratio > 0.65:
+            eyes[0] = "Left"
+        else:
+            eyes[0] = "Center"
+
+        return head_result, eyes
+
+    return "Error",["Error","Error"]
 
 def setup_drag_camera_handler(sio):
     @sio.on("drag_camera")
@@ -145,6 +191,7 @@ def setup_drag_camera_handler(sio):
         global last_yolo_process, auth_status, head_position
         global detected_objects, person_count, processing_yolo
         global last_head_process, last_auth_process
+        global eyes
 
         buffer = data["buffer"]
         metadata = data["metadata"]
@@ -164,7 +211,7 @@ def setup_drag_camera_handler(sio):
         if now - last_head_process > HEAD_INTERVAL:
             with head_lock:
                 if now - last_head_process > HEAD_INTERVAL:
-                    head_position = detect_head_direction(rgb_img)
+                    head_position, eyes = detect_head_direction(rgb_img)
                     last_head_process = now
 
         if not processing_yolo and (now - last_yolo_process > 0.5):
@@ -176,5 +223,6 @@ def setup_drag_camera_handler(sio):
             "no_of_person": person_count,
             "auth_face": auth_status,
             "head_position": head_position,
+            "eyes": eyes,
             "object_detected": detected_objects,
         })
