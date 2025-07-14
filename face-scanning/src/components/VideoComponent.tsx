@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { VideoComponentProps } from "../types";
 import { defaultScanSteps } from "../constants/scanConfig";
 import { useScanFlow } from "../hooks/useScanFlow";
+import AudioStreamSender from "./AudioComponent";
 import { gname } from "./GetName";
 import {
   VideoStream,
@@ -252,6 +253,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           </button>
         </div>
       )}
+       <AudioStreamSender />
     </div>
   );
 };

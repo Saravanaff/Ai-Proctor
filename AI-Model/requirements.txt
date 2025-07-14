@@ -30,3 +30,5 @@ numpy>=1.21.0,<2.0.0
 silero-vad>=4.0.0
 # Note: datetime is a built-in Python module, no need to install
 python-socketio>=5.0.0
+torch 
+torchaudio 

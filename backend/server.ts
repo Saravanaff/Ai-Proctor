@@ -13,7 +13,24 @@ io.on("connection", (socket) => {
   socket.on("register-python", () => {
     console.log("🐍 Python connected");
     pythonSocket = socket;
+
+     pythonSocket.on("vad-result", (vadData: any) => {
+    console.log("🗣️ VAD Result from Python:", vadData);
+    socket.emit("vad-result", vadData);
   });
+
+  pythonSocket.on("vad-error", (error: any) => {
+    console.error("❌ VAD Error from Python:", error);
+    socket.emit("vad-error", error);
+  });
+  });
+
+  socket.on("process-audio", (data) => {
+  if (pythonSocket) {
+    console.log("🔁 Forwarding audio to Python for VAD...");
+    pythonSocket.emit("process-audio", data);
+  }
+});
 
   socket.on("photo-save", (data) => {
 

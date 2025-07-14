@@ -4,12 +4,12 @@ export const useAudioStream = () => {
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
-    let stream: MediaStream;
+    let localStream: MediaStream | null = null;
 
     const getAudioStream = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        setAudioStream(stream);
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setAudioStream(localStream);
       } catch (e) {
         console.error("Microphone access error:", e);
         setAudioStream(null);
@@ -19,8 +19,8 @@ export const useAudioStream = () => {
     getAudioStream();
 
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      if (localStream) {
+        localStream.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
