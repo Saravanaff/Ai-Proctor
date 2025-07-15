@@ -95,63 +95,36 @@ const FloatingCamera = ({
 
     socket.on("alert", (data: any) => {
       console.log(data);
+    if(data.head_position[0]!="Forward"){
+      look++;
+      if(look%150!==0) return;
+      look=0;
+      onLookingAway(data.head_position);
+    }
+    if(data.object_detected["cell phone"]){
+      item++;
+      if(item%10!=0) return;
+      item=0;
+      detect();
+      changeColor();
+    }
+    if(data.no_of_person!=1){
+      person++;
+      if(person%120!=0) return;
+      person=0;
+      number(data.no_of_person);
+      changeColor();
+    }
+    else if(!data.auth_face){
+      auth++;
+      if(auth%600!=0) return;
+      auth=0;
+      changeColor();
+      onAuthFaceMissing();
+    }
 
-      if (data.head_position !== "Forward") {
-        setLook((prev) => {
-          const newCount = prev + 1;
-          if (newCount >= 150) {
-            onLookingAway(data.head_position);
-            return 0; 
-          }
-          return newCount;
-        });
-      } else {
-        
-        setLook(0);
-      }
 
-      if (data.object_detected && data.object_detected["cell phone"]) {
-        setItem((prev) => {
-          const newCount = prev + 1;
-          if (newCount >= 10) {
-            detect();
-            changeColor();
-            return 0; 
-          }
-          return newCount;
-        });
-      } else {
-        setItem(0);
-      }
-
-      if (data.no_of_person !== 1) {
-        setPerson((prev) => {
-          const newCount = prev + 1;
-          if (newCount >= 120) {
-            number(data.no_of_person);
-            changeColor();
-            return 0; 
-          }
-          return newCount;
-        });
-      } else {
-        setPerson(0);
-      }
-
-      if (data.no_of_person === 1 && !data.auth_face) {
-        setAuth((prev) => {
-          const newCount = prev + 1;
-          if (newCount >= 180) {
-            changeColor();
-            onAuthFaceMissing();
-            return 0; 
-          }
-          return newCount;
-        });
-      } else {
-        setAuth(0);
-      }
-    });
+  });
 
     return () => {
       if (interRef.current) clearInterval(interRef.current);
