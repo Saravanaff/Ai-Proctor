@@ -35,12 +35,10 @@ export const useSocket = (options: UseSocketOptions = {}): UseSocketReturn => {
     onError,
   } = options;
 
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const socketRef = useRef<Socket | null>(null);
 
   const connect = () => {
     if (socketRef.current?.connected) {
@@ -101,7 +99,6 @@ export const useSocket = (options: UseSocketOptions = {}): UseSocketReturn => {
     });
 
     socketRef.current = socketInstance;
-    setSocket(socketInstance);
     socketInstance.connect();
   };
 
@@ -109,7 +106,6 @@ export const useSocket = (options: UseSocketOptions = {}): UseSocketReturn => {
     if (socketRef.current) {
       socketRef.current.disconnect();
       socketRef.current = null;
-      setSocket(null);
       setIsConnected(false);
       setIsConnecting(false);
     }
@@ -152,7 +148,7 @@ export const useSocket = (options: UseSocketOptions = {}): UseSocketReturn => {
   }, [auth]);
 
   return {
-    socket,
+    socket: socketRef.current,
     isConnected,
     isConnecting,
     error,

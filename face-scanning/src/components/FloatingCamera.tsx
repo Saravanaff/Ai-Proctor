@@ -16,16 +16,10 @@ const FloatingCamera = ({
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [borderColor, setBorderColor] = useState("white");
-
-  let look=0;
-  let person=0;
-  let auth=0;
-  let item=0;
-
-  // const [look, setLook] = useState(0);
-  // const [person, setPerson] = useState(0);
-  // const [auth, setAuth] = useState(0);
-  // const [item, setItem] = useState(0);
+  const [look, setLook] = useState(0);
+  const [person, setPerson] = useState(0);
+  const [auth, setAuth] = useState(0);
+  const [item, setItem] = useState(0);
 
   useEffect(() => {
     let stream: MediaStream;
@@ -94,37 +88,58 @@ const FloatingCamera = ({
     startCamera();
 
     socket.on("alert", (data: any) => {
-      console.log(data);
-    if(data.head_position[0]!="Forward"){
-      look++;
-      if(look%150!==0) return;
-      look=0;
-      onLookingAway(data.head_position);
-    }
-    if(data.object_detected["cell phone"]){
-      item++;
-      if(item%10!=0) return;
-      item=0;
-      detect();
-      changeColor();
-    }
-    if(data.no_of_person!=1){
-      person++;
-      if(person%120!=0) return;
-      person=0;
-      number(data.no_of_person);
-      changeColor();
-    }
-    else if(!data.auth_face){
-      auth++;
-      if(auth%600!=0) return;
-      auth=0;
-      changeColor();
-      onAuthFaceMissing();
-    }
+      // console.log(data);
+      console.log({
+        "head pos":data.head_position,
+        "object ":data.object_detected["cell phone"],
+        "persons ":data.no_of_person,
+        "auth ":data.auth_face,
+      })
 
-
-  });
+      if(data.head_position !== "Forward"){
+        setLook(prev => {
+          const newLook = prev + 1;
+          if(newLook % 150 === 0) {
+            onLookingAway(data.head_position);
+            return 0;
+          }
+          return newLook;
+        });
+      }
+      if(data.object_detected["cell phone"]){
+        setItem(prev => {
+          const newItem = prev + 1;
+          if(newItem % 10 === 0) {
+            detect();
+            changeColor();
+            return 0;
+          }
+          return newItem;
+        });
+      }
+      if(data.no_of_person !== 1){
+        setPerson(prev => {
+          const newPerson = prev + 1;
+          if(newPerson % 120 === 0) {
+            number(data.no_of_person);
+            changeColor();
+            return 0;
+          }
+          return newPerson;
+        });
+      }
+      else if(!data.auth_face){
+        setAuth(prev => {
+          const newAuth = prev + 1;
+          if(newAuth % 600 === 0) {
+            changeColor();
+            onAuthFaceMissing();
+            return 0;
+          }
+          return newAuth;
+        });
+      }
+    });
 
     return () => {
       if (interRef.current) clearInterval(interRef.current);
