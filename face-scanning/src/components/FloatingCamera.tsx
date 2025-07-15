@@ -89,27 +89,21 @@ const FloatingCamera = ({
 
     socket.on("alert", (data: any) => {
       // console.log(data);
-      console.log({
-        "head pos":data.head_position,
-        "object ":data.object_detected["cell phone"],
-        "persons ":data.no_of_person,
-        "auth ":data.auth_face,
-      })
 
-      if(data.head_position !== "Forward"){
-        setLook(prev => {
+      if (data.head_position !== "Forward") {
+        setLook((prev) => {
           const newLook = prev + 1;
-          if(newLook % 150 === 0) {
+          if (newLook % 150 === 0) {
             onLookingAway(data.head_position);
             return 0;
           }
           return newLook;
         });
       }
-      if(data.object_detected["cell phone"]){
-        setItem(prev => {
+      if (data.object_detected["cell phone"]) {
+        setItem((prev) => {
           const newItem = prev + 1;
-          if(newItem % 10 === 0) {
+          if (newItem % 10 === 0) {
             detect();
             changeColor();
             return 0;
@@ -117,21 +111,20 @@ const FloatingCamera = ({
           return newItem;
         });
       }
-      if(data.no_of_person !== 1){
-        setPerson(prev => {
+      if (data.no_of_person !== 1) {
+        setPerson((prev) => {
           const newPerson = prev + 1;
-          if(newPerson % 120 === 0) {
+          if (newPerson % 120 === 0) {
             number(data.no_of_person);
             changeColor();
             return 0;
           }
           return newPerson;
         });
-      }
-      else if(!data.auth_face){
-        setAuth(prev => {
+      } else if (!data.auth_face) {
+        setAuth((prev) => {
           const newAuth = prev + 1;
-          if(newAuth % 600 === 0) {
+          if (newAuth % 600 === 0) {
             changeColor();
             onAuthFaceMissing();
             return 0;
