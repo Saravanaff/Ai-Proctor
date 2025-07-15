@@ -76,7 +76,7 @@ const FloatingCamera = ({ socket,onLookingAway,detect,number,onAuthFaceMissing}:
 
     socket.on("alert", (data:any) => {
       console.log(data);
-    if(data.head_position!="Forward"){
+    if(data.head_position[0]!="Forward"){
       look++;
       if(look%150!==0) return;
       look=0;
@@ -98,7 +98,7 @@ const FloatingCamera = ({ socket,onLookingAway,detect,number,onAuthFaceMissing}:
     }
     else if(!data.auth_face){
       auth++;
-      if(auth%180!=0) return;
+      if(auth%600!=0) return;
       auth=0;
       changeColor();
       onAuthFaceMissing();

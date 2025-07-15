@@ -69,6 +69,7 @@
 .optionLabel {
   background: #f1f5f9;
   padding: 10px;
+  color: black;
   border-radius: 8px;
   display: flex;
   align-items: center;
