@@ -95,29 +95,36 @@ const FloatingCamera = ({
 
     socket.on("alert", (data: any) => {
       console.log(data);
-    if(data.head_position[0]!="Forward"){
+    if(data.head_position !=="Forward"){
       look++;
-      if(look%150!==0) return;
+      if(look%150 !== 0) return;
+      look=0;
+      onLookingAway(data.head_position);
+    }
+    if(data.eyes[0] === "Center" && data.eyes[1] === "Center"){
+      console.log("looking away with eyes");
+      look++;
+      if(look%150 !== 0) return;
       look=0;
       onLookingAway(data.head_position);
     }
     if(data.object_detected["cell phone"]){
       item++;
-      if(item%10!=0) return;
+      if(item%10 !== 0) return;
       item=0;
       detect();
       changeColor();
     }
-    if(data.no_of_person!=1){
+    if(data.no_of_person !== 1){
       person++;
-      if(person%120!=0) return;
+      if(person%120 !== 0) return;
       person=0;
       number(data.no_of_person);
       changeColor();
     }
     else if(!data.auth_face){
       auth++;
-      if(auth%600!=0) return;
+      if(auth%600 !== 0) return;
       auth=0;
       changeColor();
       onAuthFaceMissing();
