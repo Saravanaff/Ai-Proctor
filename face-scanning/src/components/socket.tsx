@@ -1,3 +1,5 @@
-import io from 'socket.io-client';
-const socket=io("http://localhost:3001");
+import { io } from "socket.io-client";
+
+const socket = io("https://stored-salem-memorabilia-babe.trycloudflare.com");
+
 export default socket;
