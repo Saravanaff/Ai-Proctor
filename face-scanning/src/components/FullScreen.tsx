@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import styles from "../styles/ExamPage.module.css";
 import FloatingCamera from "./FloatingCamera";
 import socket from "./socket";
+import { useRouter } from "next/router";
 const questions = Array.from({ length: 10 }, (_, i) => ({
   id: i + 1,
   question: `Sample Question ${i + 1}?`,
@@ -9,7 +10,7 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
 }));
 
 
-const ExamPage: React.FC = () => {
+const ExamPage: React.FC = ({screen}:any) => {
     
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
@@ -18,6 +19,7 @@ const ExamPage: React.FC = () => {
   const [num,setNum]=useState(false);
   const [authFaceMissing, setAuthFaceMissing] = useState(false);
   let face:any;
+  const router=useRouter();
 const handleAuthFaceMissing = () => {
   setAuthFaceMissing(true);
   setTimeout(() => setAuthFaceMissing(false), 3000);
@@ -156,7 +158,7 @@ const handleAuthFaceMissing = () => {
             </div>
           </div>
         ))}
-        <button className={styles.submitButton}>Submit</button>
+        <button className={styles.submitButton} onClick={()=>router.push('/end')}>Submit</button>
       </main>
 
       <FloatingCamera socket={socket} onLookingAway={lookingAlert} detect={detectObject} number={number} onAuthFaceMissing={handleAuthFaceMissing}/>

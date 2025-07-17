@@ -8,6 +8,10 @@
     "socket.io-client": "^4.8.1",
     "ts-node": "^10.9.2"
   },
+  "scripts": {
+    "dev": "npx ts-node server.ts"
+    
+  },
   "devDependencies": {
     "typescript": "^5.8.3"
   }

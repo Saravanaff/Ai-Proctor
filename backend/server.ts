@@ -4,7 +4,11 @@ import { Server } from "socket.io";
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {transports:["polling","websocket"], cors: { 
+  origin: "*",
+  methods:["GET","POST"],
+},
+ });
 
 let pythonSocket: any = null;
 io.on("connection", (socket) => {

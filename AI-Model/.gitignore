@@ -1,2 +1,4 @@
 yolov8n.pt
+yolov8m.pt
+yolov8l.pt
 __pycache__/

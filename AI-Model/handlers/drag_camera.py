@@ -35,7 +35,7 @@ head_lock = Lock()
 processing_yolo = False
 
 # Model initialization
-yolo_model = YOLO("yolov8n.pt")
+yolo_model = YOLO("yolov8m.pt")
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, refine_landmarks=True)
 
@@ -130,13 +130,13 @@ def detect_head_direction(img: np.ndarray) -> str:
 
         x, y = angles[0] * 360, angles[1] * 360
 
-        if y < -25:
+        if y < -20:
             head_result = "Right"
-        elif y > 25:
+        elif y > 20:
             head_result = "Left"
-        elif x < -25:
+        elif x < -15:
             head_result = "Down"
-        elif x > 25:
+        elif x > 20:
             head_result = "Up"
         else:
             head_result = "Forward"
@@ -160,14 +160,13 @@ def detect_head_direction(img: np.ndarray) -> str:
         r_eye_width = norm_163 - norm_157
         r_iris_center = (norm_471 + norm_469) / 2
         r_iris_ratio = (r_iris_center - norm_157) / r_eye_width
-        
+
         # Left Eye
         l_eye_width = norm_390 - norm_384
         l_iris_center = (norm_474 + norm_476) / 2
         l_iris_ratio = (l_iris_center - norm_384) / l_eye_width
 
         # Gaze estimation
-        
         if r_iris_ratio < 0.35:
             eyes[1] = "Left"
         elif r_iris_ratio > 0.65:
