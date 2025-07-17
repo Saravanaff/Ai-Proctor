@@ -101,7 +101,7 @@ const FloatingCamera = ({
       look=0;
       onLookingAway(data.head_position);
     }
-    if(data.eyes[0] === "Center" && data.eyes[1] === "Center"){
+    if(data.head_position=='Forward' && data.eyes[0] !== "Center" && data.eyes[1] !== "Center"){
       console.log("looking away with eyes");
       look++;
       if(look%150 !== 0) return;
