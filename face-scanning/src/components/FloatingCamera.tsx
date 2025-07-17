@@ -17,15 +17,15 @@ const FloatingCamera = ({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [borderColor, setBorderColor] = useState("white");
 
-  // let look=0;
-  // let person=0;
-  // let auth=0;
-  // let item=0;
+  let look=0;
+  let person=0;
+  let auth=0;
+  let item=0;
 
-  const [look, setLook] = useState(0);
-  const [person, setPerson] = useState(0);
-  const [auth, setAuth] = useState(0);
-  const [item, setItem] = useState(0);
+  // const [look, setLook] = useState(0);
+  // const [person, setPerson] = useState(0);
+  // const [auth, setAuth] = useState(0);
+  // const [item, setItem] = useState(0);
 
   useEffect(() => {
     let stream: MediaStream;
