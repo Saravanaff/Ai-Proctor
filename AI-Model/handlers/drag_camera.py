@@ -145,40 +145,93 @@ def detect_head_direction(img: np.ndarray) -> str:
             lm = facelm.landmark[id]
             return int(lm.x * w), int(lm.y * h), lm.x
         
-        # Right eye landmarks
-        x_163, y_163, norm_163 = get_landmark_point(163)  # Outer corner
-        x_157, y_157, norm_157 = get_landmark_point(157)  # Inner corner
-        x_471, y_471, norm_471 = get_landmark_point(471)  # Iris right
-        x_469, y_469, norm_469 = get_landmark_point(469)  # Iris left
-        #Left eye landmarks
-        x_390, y_390, norm_390 = get_landmark_point(390) # Outer corner
-        x_384, y_384, norm_384 = get_landmark_point(384) # Inner corner
-        x_474, y_474, norm_474 = get_landmark_point(474) # Iris left
-        x_476, y_476, norm_476 = get_landmark_point(476) # Iris right
-        # Compute eye width and iris center
-        # Right Eye
-        r_eye_width = norm_163 - norm_157
-        r_iris_center = (norm_471 + norm_469) / 2
-        r_iris_ratio = (r_iris_center - norm_157) / r_eye_width
+        def up_down(o_cor,i_cor, iris_center,iris_cor,t1,t2,lid):
+            # Key points
+            o_cor = get_landmark_point(o_cor)
+            i_cor = get_landmark_point(i_cor)
+            iris_center = get_landmark_point(iris_center)
+            iris_cor = get_landmark_point(iris_cor)
+            t1 = get_landmark_point(t1)
+            t2 = get_landmark_point(t2)
+            lid = get_landmark_point(lid)
 
-        # Left Eye
-        l_eye_width = norm_390 - norm_384
-        l_iris_center = (norm_474 + norm_476) / 2
-        l_iris_ratio = (l_iris_center - norm_384) / l_eye_width
+            # Iris radius & mask
+            radius = int(np.linalg.norm(np.array(iris_center) - np.array(iris_cor)))
+            iris_mask = np.zeros((h, w), dtype=np.uint8)
+            cv2.circle(iris_mask, iris_center[:2], radius, 255, -1)
 
-        # Gaze estimation
-        if r_iris_ratio < 0.35:
-            eyes[1] = "Left"
-        elif r_iris_ratio > 0.65:
-            eyes[1] = "Right"
-        else:
-            eyes[1] = "Center"
-        if l_iris_ratio < 0.35:
-            eyes[0] = "Right"
-        elif l_iris_ratio > 0.65:
-            eyes[0] = "Left"
-        else:
-            eyes[0] = "Center"
+            # Horizontal split line
+            y_line = int((o_cor[1] + i_cor[1]) / 2)
+            above_mask = np.zeros((h, w), dtype=np.uint8)
+            below_mask = np.zeros((h, w), dtype=np.uint8)
+            above_mask[:y_line, :] = 255
+            below_mask[y_line:, :] = 255
+
+            # Area split
+            iris_above = cv2.bitwise_and(iris_mask, iris_mask, mask=above_mask)
+            iris_below = cv2.bitwise_and(iris_mask, iris_mask, mask=below_mask)
+
+            # Area calculation
+            total_area = cv2.countNonZero(iris_mask)
+            above_area = cv2.countNonZero(iris_above)
+            below_area = cv2.countNonZero(iris_below)
+
+            # Ratio and direction
+            ratio = above_area / total_area if total_area > 0 else 0
+            if ratio > 0.7:
+                direction = "Up"
+            elif ratio < 0.45:
+                direction = "Down"
+            else:
+                direction = "Center"
+
+            # Additional check with 159
+            y_mid_iris = int((t1[1] + t2[1]) / 2)
+            if lid[1] >= y_mid_iris:
+                direction = "Down"
+
+            return direction
+        
+        def direction(o_cor, i_cor, iris_right, iris_left):
+
+            gaze_direction = "No Face"
+            x_o_cor, y_o_cor, norm_o_cor = get_landmark_point(o_cor)  # Outer corner
+            x_i_cor, y_i_cor, norm_i_cor = get_landmark_point(i_cor)  # Inner corner
+            x_iris_right, y_iris_right, norm_iris_right = get_landmark_point(iris_right)  # Iris right
+            x_iris_left, y_iris_left, norm_iris_left = get_landmark_point(iris_left)  # Iris left
+    
+
+            # Compute eye width and iris center
+            eye_width = norm_o_cor - norm_i_cor
+            iris_center = (norm_iris_right + norm_iris_left) / 2
+            iris_ratio = (iris_center - norm_i_cor) / eye_width
+
+            # Gaze estimation
+            if (o_cor == 163):
+                if iris_ratio < 0.35:
+                    gaze_direction = "Left"
+                elif iris_ratio > 0.65:
+                    gaze_direction = "Right"
+                else:
+                    gaze_direction = "Center"
+            else:
+                if iris_ratio < 0.35:
+                    gaze_direction = "Right"
+                elif iris_ratio > 0.65:
+                    gaze_direction = "Left"
+                else:
+                    gaze_direction = "Center"
+                
+            if gaze_direction == "Center":
+                if(o_cor == 163):
+                    gaze_direction = up_down(33, 133, 468, 469, 161, 173, 159)
+                else:
+                    gaze_direction = up_down(263, 362, 473, 476, 388, 398, 386)
+            
+            return gaze_direction
+        
+        eyes[0] = direction(390, 384, 474, 476) # Left eye
+        eyes[1] = direction(163, 157, 471, 469) # Right eye
 
         return head_result, eyes
 
@@ -194,8 +247,8 @@ def setup_drag_camera_handler(sio):
 
         buffer = data["buffer"]
         metadata = data["metadata"]
-        # name = data["name"]
-        name = "sriram"
+        name = data["name"]
+        # name = "sriram"
         img = decode_image(buffer)
         rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
