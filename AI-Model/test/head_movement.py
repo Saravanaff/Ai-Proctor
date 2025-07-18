@@ -9,7 +9,7 @@ face_mesh=mp_face_mesh.FaceMesh(min_detection_confidence=0.5,min_tracking_confid
 mp_drawing=mp.solutions.drawing_utils
 drawing_spec = mp_drawing.DrawingSpec(thickness=1,circle_radius=1)
 
-cap= cv2.VideoCapture(0)
+cap= cv2.VideoCapture(1)
 
 # 263 = left_eye_left_corner
 # 33 = right_eye_right_corner
