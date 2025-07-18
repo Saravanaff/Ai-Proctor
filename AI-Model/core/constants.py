@@ -8,6 +8,13 @@ detected_objects = {
     "person": False,
     "cell phone": False,
 }
+
+third_eye_objects = {
+    "person": 0,
+    "laptop": 0,
+    "unauth_device": False,
+}
+
 person_count = 0
 
 eyes = ["center", "center"]

@@ -15,7 +15,7 @@ export default function Verification() {
     setVideoStatus('checking');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
+        video: true
       });
       stream.getTracks().forEach((track) => track.stop());
       setVideoStatus('success');

@@ -5,14 +5,15 @@ import { Socket } from "socket.io-client";
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server, {transports:["polling","websocket"], cors: { 
-  origin: "*",
-  methods:["GET","POST"],
-},
- });
+const io = new Server(server, {
+  transports: ["polling", "websocket"], cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 
 let pythonSocket: any = null;
-let mobileSocket:any=null;
+let mobileSocket: any = null;
 io.on("connection", (socket) => {
   console.log("A client connected");
 
@@ -21,16 +22,29 @@ io.on("connection", (socket) => {
     pythonSocket = socket;
   });
 
-  socket.on("mobile",()=>{
+  socket.on("mobile", () => {
     console.log("Third Eye Connected");
   });
 
 
   //these are mobile sockets kindly please write mobile socket listeners between these comments
-  socket.on('video',(data:any)=>{
-      console.log("Third Eye video has received");
-    });
+  socket.on("video", (data: any) => {
+    console.log("Third Eye video has received");
+    if (pythonSocket) {
+      pythonSocket.emit("thirdeye_cam", data);
+    }
+  });
   //end
+  if (pythonSocket) {
+    pythonSocket.on("thirdeye_cam_result", (data: any) => {
+      if (data) {
+        console.log("Third Eye Camera Result : ", data);
+        socket.emit('thirdeye_alert', data);
+      }
+
+    })
+  }
+
 
   socket.on("photo-save", (data) => {
 
@@ -58,7 +72,7 @@ io.on("connection", (socket) => {
     pythonSocket.on("drag_camera_result", (data: any) => {
       if (data) {
         console.log("Drag camera Result : ", data);
-        socket.emit('alert',data);
+        socket.emit('alert', data);
       }
 
     })
