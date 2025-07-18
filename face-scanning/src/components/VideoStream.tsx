@@ -1,5 +1,4 @@
 import React from "react";
-
 interface VideoStreamProps {
   videoRef: React.RefObject<HTMLVideoElement>;
 }

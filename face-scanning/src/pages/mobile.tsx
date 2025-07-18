@@ -16,8 +16,11 @@ export default function ThirdEye() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const newSocket = io("https://stored-salem-memorabilia-babe.trycloudflare.com");
+    const newSocket = io("http://localhost:3001");
     setSocket(newSocket);
+    if(newSocket){
+      newSocket.emit('mobile');
+    }
     newSocket.on("connect", () => {
       setIsConnected(true);
       toast({
@@ -25,6 +28,7 @@ export default function ThirdEye() {
         description: "Connected to Third Eye server.",
         variant: "success",
       });
+      newSocket.emit('summa');
     });
 
     newSocket.on("disconnect", (reason) => {
@@ -56,25 +60,30 @@ export default function ThirdEye() {
   }, []);
 
   const captureAndSendFrame = () => {
-    if (!videoRef.current || !canvasRef.current || !socket || !isConnected) return;
+  if (!videoRef.current || !canvasRef.current || !socket || !isConnected) return;
 
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx || video.videoWidth === 0 || video.videoHeight === 0) return;
+  const video = videoRef.current;
+  const canvas = canvasRef.current;
+  const ctx = canvas.getContext("2d");
+  if (!ctx || video.videoWidth === 0 || video.videoHeight === 0) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const frameData = canvas.toDataURL("image/jpeg");
-    socket.emit("video-frame", frameData);
-  };
+  canvas.toBlob((blob) => {
+    if (blob) {
+      blob.arrayBuffer().then((buffer) => {
+        socket.emit("video", buffer);
+      });
+    }
+  }, "image/jpeg", 0.7);
+};
 
   const startStreaming = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: { exact: "user" } } 
+        video: true 
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -88,7 +97,7 @@ export default function ThirdEye() {
       }
       frameIntervalRef.current = setInterval(() => {
         captureAndSendFrame();
-      }, 1000 / 15);
+      }, 1000 / 30);
       setIsStreamingFrames(true);
       toast({
         title: "Third Eye Activated",
@@ -148,7 +157,7 @@ export default function ThirdEye() {
         autoPlay 
         playsInline 
         muted 
-        style={{ transform: 'rotate(0deg)', objectFit: 'cover' }} // Ensures video fills and can be rotated if needed
+        style={{ transform: 'rotate(0deg)', objectFit: 'cover' }}
       />
       <canvas ref={canvasRef} style={{ display: "none" }} />
 

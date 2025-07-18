@@ -1,6 +1,7 @@
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { Socket } from "socket.io-client";
 
 const app = express();
 const server = createServer(app);
@@ -11,6 +12,7 @@ const io = new Server(server, {transports:["polling","websocket"], cors: {
  });
 
 let pythonSocket: any = null;
+let mobileSocket:any=null;
 io.on("connection", (socket) => {
   console.log("A client connected");
 
@@ -18,6 +20,17 @@ io.on("connection", (socket) => {
     console.log("🐍 Python connected");
     pythonSocket = socket;
   });
+
+  socket.on("mobile",()=>{
+    console.log("Third Eye Connected");
+  });
+
+
+  //these are mobile sockets kindly please write mobile socket listeners between these comments
+  socket.on('video',(data:any)=>{
+      console.log("Third Eye video has received");
+    });
+  //end
 
   socket.on("photo-save", (data) => {
 
@@ -38,6 +51,8 @@ io.on("connection", (socket) => {
       pythonSocket.emit("drag_camera", data);
     }
   });
+
+
 
   if (pythonSocket) {
     pythonSocket.on("drag_camera_result", (data: any) => {
