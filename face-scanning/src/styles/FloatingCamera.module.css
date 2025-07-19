@@ -1,8 +1,8 @@
 .floatingCamera {
   position: fixed;
   object-fit: cover;
-  width: 200px;
-  height: 200px;
+  width: 15%;
+  height: 10%;
   border-radius: 8px;
   overflow: hidden;
   z-index: 1000;

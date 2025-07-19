@@ -10,7 +10,12 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
 }));
 
 
-const ExamPage: React.FC = ({screen}:any) => {
+interface ExamPageProps {
+  screenSharingRef: any;
+  screenSharingStream: any;
+}
+
+const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStream }) => {
     
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
@@ -18,12 +23,14 @@ const ExamPage: React.FC = ({screen}:any) => {
   const [object,setObject]=useState(false);
   const [num,setNum]=useState(false);
   const [authFaceMissing, setAuthFaceMissing] = useState(false);
+  
   let face:any;
   const router=useRouter();
-const handleAuthFaceMissing = () => {
-  setAuthFaceMissing(true);
-  setTimeout(() => setAuthFaceMissing(false), 3000);
-};
+
+  const handleAuthFaceMissing = () => {
+    setAuthFaceMissing(true);
+    setTimeout(() => setAuthFaceMissing(false), 3000);
+  };
 
   
 
@@ -111,11 +118,11 @@ const handleAuthFaceMissing = () => {
   }, []);
   let s:any;
   const lookingAlert=(side:any)=>{
-        s=side;
-        setlookAlert(true);
-        setTimeout(() => setlookAlert(false), 3000);
+    s=side;
+    setlookAlert(true);
+    setTimeout(() => setlookAlert(false), 3000);
 
-      }
+  }
 
 
   if (blocked) {
@@ -161,8 +168,16 @@ const handleAuthFaceMissing = () => {
         <button className={styles.submitButton} onClick={()=>router.push('/end')}>Submit</button>
       </main>
 
-      <FloatingCamera socket={socket} onLookingAway={lookingAlert} detect={detectObject} number={number} onAuthFaceMissing={handleAuthFaceMissing}/>
-              {lookAlert && (
+      <FloatingCamera 
+        socket={socket}
+        onLookingAway={lookingAlert}
+        detect={detectObject} 
+        number={number} 
+        onAuthFaceMissing={handleAuthFaceMissing}
+        screenSharingRef={screenSharingRef}
+        screenSharingStream={screenSharingStream}
+      />
+        {lookAlert && (
           <div className={styles.alertBox} style={{ backgroundColor: "#fdd835" }}>
             ⚠️ Please stay focused on the screen! You are Turning {s}
           </div>

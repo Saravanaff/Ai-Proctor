@@ -7,6 +7,8 @@ const FloatingCamera = ({
   detect,
   number,
   onAuthFaceMissing,
+  screenSharingRef,
+  screenSharingStream,
 }: any) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraRef = useRef<HTMLDivElement>(null);
@@ -17,10 +19,10 @@ const FloatingCamera = ({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [borderColor, setBorderColor] = useState("white");
 
-  let look=0;
-  let person=0;
-  let auth=0;
-  let item=0;
+  let look = 0;
+  let person = 0;
+  let auth = 0;
+  let item = 0;
 
   // const [look, setLook] = useState(0);
   // const [person, setPerson] = useState(0);
@@ -95,43 +97,44 @@ const FloatingCamera = ({
 
     socket.on("alert", (data: any) => {
       console.log(data);
-    if(data.head_position !=="Forward"){
-      look++;
-      if(look%150 !== 0) return;
-      look=0;
-      onLookingAway(data.head_position);
-    }
-    if(data.head_position=='Forward' && data.eyes[0] !== "Center" && data.eyes[1] !== "Center"){
-      console.log("looking away with eyes");
-      look++;
-      if(look%150 !== 0) return;
-      look=0;
-      onLookingAway(data.head_position);
-    }
-    if(data.object_detected["cell phone"]){
-      item++;
-      if(item%10 !== 0) return;
-      item=0;
-      detect();
-      changeColor();
-    }
-    if(data.no_of_person !== 1){
-      person++;
-      if(person%120 !== 0) return;
-      person=0;
-      number(data.no_of_person);
-      changeColor();
-    }
-    else if(!data.auth_face){
-      auth++;
-      if(auth%600 !== 0) return;
-      auth=0;
-      changeColor();
-      onAuthFaceMissing();
-    }
-
-
-  });
+      if (data.head_position !== "Forward") {
+        look++;
+        if (look % 150 !== 0) return;
+        look = 0;
+        onLookingAway(data.head_position);
+      }
+      if (
+        data.head_position == "Forward" &&
+        data.eyes[0] !== "Center" &&
+        data.eyes[1] !== "Center"
+      ) {
+        console.log("looking away with eyes");
+        look++;
+        if (look % 150 !== 0) return;
+        look = 0;
+        onLookingAway(data.head_position);
+      }
+      if (data.object_detected["cell phone"]) {
+        item++;
+        if (item % 10 !== 0) return;
+        item = 0;
+        detect();
+        changeColor();
+      }
+      if (data.no_of_person !== 1) {
+        person++;
+        if (person % 120 !== 0) return;
+        person = 0;
+        number(data.no_of_person);
+        changeColor();
+      } else if (!data.auth_face) {
+        auth++;
+        if (auth % 600 !== 0) return;
+        auth = 0;
+        changeColor();
+        onAuthFaceMissing();
+      }
+    });
 
     return () => {
       if (interRef.current) clearInterval(interRef.current);
@@ -140,6 +143,13 @@ const FloatingCamera = ({
       }
     };
   }, [socket]);
+
+  // Handle screen sharing stream
+  useEffect(() => {
+    if (screenSharingRef.current && screenSharingStream) {
+      screenSharingRef.current.srcObject = screenSharingStream;
+    }
+  }, [screenSharingStream]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setDragging(true);
@@ -187,9 +197,13 @@ const FloatingCamera = ({
         ref={videoRef}
         autoPlay
         muted
-        width={200}
-        height={150}
       />
+      {/* <video
+        className={styles.video}
+        ref={screenSharingRef}
+        autoPlay
+        muted
+      /> */}
     </div>
   );
 };
