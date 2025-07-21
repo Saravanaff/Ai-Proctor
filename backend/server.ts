@@ -1,103 +1,117 @@
 import express from "express";
-import { createServer } from "http";
+import { createServer as createHttpsServer } from "https";
 import { Server } from "socket.io";
-import { Socket } from "socket.io-client";
+import { createCA, createCert } from "mkcert";
+import fs from "fs";
+import path from "path";
 
-const app = express();
-const server = createServer(app);
-const io = new Server(server, {
-  transports: ["polling", "websocket"], cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-  },
+async function startServer() {
+  const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
+  const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
+  const ca = fs.readFileSync(path.join(__dirname, "rootCA.pem"));
+
+  const app = express();
+
+  app.get('/',(req,res)=>{
+    res.send("DVD Paiya");
+  });
+
+  app.get("/ca", (req, res) => {
+  const caPath = path.join(__dirname, "rootCA.pem");
+  res.setHeader("Content-Type", "application/x-pem-file");
+  res.download(caPath, "rootCA.pem");
 });
 
-let pythonSocket: any = null;
-let mobileSocket: any = null;
-io.on("connection", (socket) => {
-  console.log("A client connected");
 
-  socket.on("register-python", () => {
-    console.log("🐍 Python connected");
-    pythonSocket = socket;
+  const httpsServer = createHttpsServer({
+    key,
+    cert,
+    ca,
+  }, app);
+
+  
+
+  const io = new Server(httpsServer, {
+    transports: ["polling", "websocket"],
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"],
+    },
   });
 
-  socket.on("mobile", () => {
-    console.log("Third Eye Connected");
-  });
+  let pythonSocket: any = null;
+  let mobileSocket: any = null;
 
+  io.on("connection", (socket) => {
+    console.log("A client connected");
 
-  //these are mobile sockets kindly please write mobile socket listeners between these comments
-  socket.on("video", (data: any) => {
-    console.log("Third Eye video has received");
-    if (pythonSocket) {
-      pythonSocket.emit("thirdeye_cam", data);
-    }
-  });
-  //end
-  if (pythonSocket) {
-    pythonSocket.on("thirdeye_cam_result", (data: any) => {
-      if (data) {
-        console.log("Third Eye Camera Result : ", data);
-        socket.emit('thirdeye_alert', data);
-      }
-
-    })
-  }
-
-
-  socket.on("photo-save", (data) => {
-
-    if (pythonSocket) {
-      pythonSocket.emit("save-face-data", data)
-    }
-  });
-
-  if (pythonSocket) {
-    pythonSocket.on("face_data_saved", (data: any) => {
-      console.log("Result from Python", data);
-
+    socket.on("register-python", () => {
+      console.log("🐍 Python connected");
+      pythonSocket = socket;
     });
-  }
 
-  socket.on("authenticate", (data) => {
-    if (pythonSocket) {
-      pythonSocket.emit("drag_camera", data);
-    }
-  });
-
-
-
-  if (pythonSocket) {
-    pythonSocket.on("drag_camera_result", (data: any) => {
-      if (data) {
-        console.log("Drag camera Result : ", data);
-        socket.emit('alert', data);
-      }
-
-    })
-  }
-
-  socket.on("frame", (data) => {
-
-    if (pythonSocket) {
-      pythonSocket.emit("process-frame", data);
-    }
-  });
-
-
-  if (pythonSocket) {
-    pythonSocket.on("result", (data: any) => {
-      console.log("🎯 Result from Python", data);
-      socket.emit("fres", data);
+    socket.on("mobile", () => {
+      console.log("Third Eye Connected");
     });
-  }
 
-  socket.on("disconnect", () => {
-    console.log("A client disconnected");
+    socket.on("video", (data: any) => {
+      console.log("Third Eye video received");
+      if (pythonSocket) {
+        pythonSocket.emit("thirdeye_cam", data);
+      }
+    });
+
+    socket.on("photo-save", (data) => {
+      if (pythonSocket) {
+        pythonSocket.emit("save-face-data", data);
+      }
+    });
+
+    socket.on("authenticate", (data) => {
+      if (pythonSocket) {
+        pythonSocket.emit("drag_camera", data);
+      }
+    });
+
+    socket.on("frame", (data) => {
+      if (pythonSocket) {
+        pythonSocket.emit("process-frame", data);
+      }
+    });
+
+    if (pythonSocket) {
+      pythonSocket.on("thirdeye_cam_result", (data: any) => {
+        if (data) {
+          console.log("Third Eye Camera Result : ", data);
+          socket.emit("thirdeye_alert", data);
+        }
+      });
+
+      pythonSocket.on("face_data_saved", (data: any) => {
+        // console.log("Result from Python", data);
+      });
+
+      pythonSocket.on("drag_camera_result", (data: any) => {
+        if (data) {
+          // console.log("Drag camera Result : ", data);
+          socket.emit("alert", data);
+        }
+      });
+
+      pythonSocket.on("result", (data: any) => {
+        // console.log("🎯 Result from Python", data);
+        socket.emit("fres", data);
+      });
+    }
+
+    socket.on("disconnect", () => {
+      console.log("A client disconnected");
+    });
   });
-});
 
-server.listen(3001, () => {
-  console.log("Node.js socket server running on http://localhost:3001");
-});
+  httpsServer.listen(3001, () => {
+    console.log("✅ HTTPS Socket.IO server running at https://localhost:3001");
+  });
+}
+
+startServer().catch(console.error);

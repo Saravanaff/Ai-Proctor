@@ -1,11 +1,14 @@
 .container {
-  min-height: 100vh;
-  background: linear-gradient(to bottom, #000000, #1a1f2c);
-  color: #ffffff;
-  padding: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: black;
+  overflow: hidden;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
+  width: 100vw;
+  height: 100vh;
 }
 
 .header {
@@ -43,6 +46,12 @@
   font-size: 0.9rem;
   transition: all 0.3s ease;
 }
+.landscapeVideo {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  transform: rotate(90deg);
+}
 
 .initialNotice {
   background: rgba(0, 162, 255, 0.15);
@@ -57,15 +66,13 @@
 }
 
 .video {
-  width: 90%;
-  max-width: 400px;
-  aspect-ratio: 16/9;
-  border-radius: 15px;
-  margin: 20px 0;
-  background: #000;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  object-fit: cover;
+  transform-origin: center center;
 }
+
 
 .button {
   padding: 12px 30px;

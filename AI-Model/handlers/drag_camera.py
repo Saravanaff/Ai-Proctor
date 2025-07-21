@@ -27,6 +27,13 @@ def setup_drag_camera_handler(sio):
         if not constants.processing_yolo and (now - constants.last_yolo_process > 0.5):
             constants.person_count, constants.detected_objects = yolo_detect.detect_person_and_objects(rgb_img)
             constants.last_yolo_process = now
+        print({
+            "no_of_person": constants.person_count,
+            "auth_face": constants.auth_status,
+            "head_position": constants.head_position,
+            "eyes": constants.eyes,
+            "object_detected": constants.detected_objects,
+        })
 
         sio.emit("drag_camera_result", {
             "no_of_person": constants.person_count,
@@ -34,4 +41,4 @@ def setup_drag_camera_handler(sio):
             "head_position": constants.head_position,
             "eyes": constants.eyes,
             "object_detected": constants.detected_objects,
-        })
+        });

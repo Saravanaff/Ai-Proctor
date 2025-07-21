@@ -3,14 +3,17 @@
     "@types/express": "^5.0.3",
     "@types/socket.io": "^3.0.1",
     "axios": "^1.10.0",
+    "cloudflared": "^0.7.0",
     "express": "^5.1.0",
+    "localtunnel": "^2.0.2",
+    "mkcert": "^3.2.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "zcatalyst-cli": "^1.20.1"
   },
   "scripts": {
     "dev": "npx ts-node server.ts"
-    
   },
   "devDependencies": {
     "typescript": "^5.8.3"

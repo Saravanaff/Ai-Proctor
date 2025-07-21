@@ -5,7 +5,7 @@ from core import constants, image_utils, yolo_detect
 def setup_thirdeye_cam_handler(sio2):
     @sio2.on("thirdeye_cam")
     def handle_thirdeye_cam(data):
-        print("Received data from thirdeye_cam:", data)
+        # print("Received data from thirdeye_cam:", data)
         buffer = data
         img = image_utils.decode_image(buffer)
         rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
