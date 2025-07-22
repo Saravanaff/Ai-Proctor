@@ -382,4 +382,5 @@ export default function ThirdEye() {
       </div>
     </div>
   );
+  
 }
