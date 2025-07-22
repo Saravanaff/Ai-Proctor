@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "../styles/ExamPage.module.css";
 import FloatingCamera from "./FloatingCamera";
 import socket from "./socket";
@@ -11,21 +11,22 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
 
 
 interface ExamPageProps {
-  screenSharingRef: any;
-  screenSharingStream: any;
+  screenSharingRef: React.RefObject<HTMLVideoElement | null>;
+  screenSharingStream: MediaStream | null;
+  onStopRecording?: () => void;
 }
 
-const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStream }) => {
+const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStream, onStopRecording }) => {
     
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
   const [lookAlert,setlookAlert]=useState(false);
   const [object,setObject]=useState(false);
-  const [num,setNum]=useState(false);
+  const [num, setNum] = useState(false);
   const [authFaceMissing, setAuthFaceMissing] = useState(false);
+  const [faceCount, setFaceCount] = useState<number>(0);
   
-  let face:any;
-  const router=useRouter();
+  const router = useRouter();
 
   const handleAuthFaceMissing = () => {
     setAuthFaceMissing(true);
@@ -33,6 +34,14 @@ const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStre
   };
 
   
+
+  const handleSubmit = () => {
+    // Stop recording before submitting
+    if (onStopRecording) {
+      onStopRecording();
+    }
+    router.push('/end');
+  };
 
   const handleChange = (qId: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [qId]: value }));
@@ -43,26 +52,30 @@ const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStre
     setTimeout(()=>setObject(false),3000);
   }
 
-  const number=(a:number)=>{
-    face=a;
+  const number = (a: number) => {
+    setFaceCount(a);
     setNum(true);
-    setTimeout(()=> setNum(false),3000);
+    setTimeout(() => setNum(false), 3000);
   }
 
   useEffect(() => {
     try {
 
-      const preventActions:any = (e: any) => {
-        if (
-          e instanceof KeyboardEvent &&
-          ["F12", "Control", "Meta", "Alt", "Tab"].includes(e.key)
-        ) {
+      const preventKeyboardActions = (e: KeyboardEvent) => {
+        if (["F12", "Control", "Meta", "Alt", "Tab"].includes(e.key)) {
           e.preventDefault();
           e.stopPropagation();
         }
-        if (e instanceof MouseEvent && e.button === 2) {
+      };
+
+      const preventMouseActions = (e: MouseEvent) => {
+        if (e.button === 2) {
           e.preventDefault();
         }
+      };
+
+      const preventClipboardActions = (e: Event) => {
+        e.preventDefault();
       };
 
       const blurHandler = () => {
@@ -92,11 +105,11 @@ const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStre
       window.addEventListener("blur", blurHandler);
       window.addEventListener("focus", focusHandler);
       document.addEventListener("fullscreenchange", fullscreenChangeHandler);
-      window.addEventListener("keydown", preventActions);
-      window.addEventListener("contextmenu", preventActions);
-      window.addEventListener("copy", preventActions);
-      window.addEventListener("cut", preventActions);
-      window.addEventListener("paste", preventActions);
+      window.addEventListener("keydown", preventKeyboardActions);
+      window.addEventListener("contextmenu", preventMouseActions);
+      window.addEventListener("copy", preventClipboardActions);
+      window.addEventListener("cut", preventClipboardActions);
+      window.addEventListener("paste", preventClipboardActions);
       window.addEventListener("resize", sizeHandler);
 
     
@@ -104,24 +117,24 @@ const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStre
         window.removeEventListener("blur", blurHandler);
         window.removeEventListener("focus", focusHandler);
         document.removeEventListener("fullscreenchange", fullscreenChangeHandler);
-        window.removeEventListener("keydown", preventActions);
-        window.removeEventListener("contextmenu", preventActions);
-        window.removeEventListener("copy", preventActions);
-        window.removeEventListener("cut", preventActions);
-        window.removeEventListener("paste", preventActions);
+        window.removeEventListener("keydown", preventKeyboardActions);
+        window.removeEventListener("contextmenu", preventMouseActions);
+        window.removeEventListener("copy", preventClipboardActions);
+        window.removeEventListener("cut", preventClipboardActions);
+        window.removeEventListener("paste", preventClipboardActions);
         window.removeEventListener("resize", sizeHandler);
       };
 
-    }catch(e){
-      console.log("Error in useEffect");
+    } catch (e) {
+      console.log("Error in useEffect", e);
     }
   }, []);
-  let s:any;
-  const lookingAlert=(side:any)=>{
-    s=side;
+  
+  const [lookDirection, setLookDirection] = useState<string>('');
+  const lookingAlert = (side: string) => {
+    setLookDirection(side);
     setlookAlert(true);
     setTimeout(() => setlookAlert(false), 3000);
-
   }
 
 
@@ -165,7 +178,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStre
             </div>
           </div>
         ))}
-        <button className={styles.submitButton} onClick={()=>router.push('/end')}>Submit</button>
+        <button className={styles.submitButton} onClick={handleSubmit}>Submit</button>
       </main>
 
       <FloatingCamera 
@@ -179,7 +192,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStre
       />
         {lookAlert && (
           <div className={styles.alertBox} style={{ backgroundColor: "#fdd835" }}>
-            ⚠️ Please stay focused on the screen! You are Turning {s}
+            ⚠️ Please stay focused on the screen! You are Turning {lookDirection}
           </div>
         )}
 
@@ -191,7 +204,7 @@ const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStre
 
         {num && (
           <div className={styles.alertBox} style={{ backgroundColor: "#1e88e5" }}>
-            👥 {face} faces detected.
+            👥 {faceCount} faces detected.
           </div>
         )}
 
