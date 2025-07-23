@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import styles from "../styles/FloatingCamera.module.css";
 import { gname } from "./GetName";
+import { useToast } from "@/hooks/use-toast";
 const FloatingCamera = ({
   socket,
   onLookingAway,
@@ -18,11 +19,18 @@ const FloatingCamera = ({
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [borderColor, setBorderColor] = useState("white");
+  const { toast } = useToast();
 
   let look = 0;
   let person = 0;
   let auth = 0;
   let item = 0;
+  let tnot=0;
+  let mlap=0;
+  let uauth=0;
+  let mp=0;
+  let zp=0;
+
 
   // const [look, setLook] = useState(0);
   // const [person, setPerson] = useState(0);
@@ -95,6 +103,51 @@ const FloatingCamera = ({
 
     startCamera();
 
+    socket.on("thirdeye_alert",(data:any)=>{
+      if(data.laptop<1){
+        tnot++;
+        if(tnot%150!==0)return;
+        tnot=0;
+        toast({
+          title: "Third Eye Alert",
+          description: "Laptop not detected!",
+          variant: "destructive",
+        });
+      }
+      if(data.laptop>1){
+        mlap++;
+        if(mlap%150!==0)return;
+        mlap=0;
+        toast({
+          title: "Third Eye Alert",
+          description: "Multiple laptops detected!",
+          variant: "destructive",
+        });
+      }
+      if(data.unauth_device==true){
+        uauth++;
+        if(uauth%150!=0) return;
+        uauth=0;
+        toast({
+          title: "Third Eye Alert",
+          description: "Unauthorized device detected!",
+          variant: "destructive",
+        });
+      }
+
+      if(data.person>1){
+        mp++;
+        if(mp%150!=0) return;
+        uauth=0;
+        toast({
+          title: "Multiple Persons",
+          description: "Multiple Persons Detected",
+          variant: "destructive",
+        });
+      }
+
+    })
+
     socket.on("alert", (data: any) => {
       console.log(data);
       if (data.head_position !== "Forward") {
@@ -121,7 +174,14 @@ const FloatingCamera = ({
         detect();
         changeColor();
       }
-      if (data.no_of_person !== 1) {
+      if (data.no_of_person<1) {
+        zp++;
+        if (zp % 150 !== 0) return;
+        zp = 0;
+        number(data.no_of_p);
+        changeColor();
+      }
+      else if (data.no_of_person>1) {
         person++;
         if (person % 120 !== 0) return;
         person = 0;

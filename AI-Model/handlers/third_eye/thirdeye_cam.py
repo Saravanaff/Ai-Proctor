@@ -14,5 +14,5 @@ def setup_thirdeye_cam_handler(sio2):
         if not constants.processing_yolo and (now - constants.last_yolo_process > 0.5):
             constants.third_eye_objects = yolo_detect.thirdeye_object_detect(rgb_img)
             constants.last_yolo_process = now
-
+        # print(constants.third_eye_objects)
         sio2.emit("thirdeye_cam_result", constants.third_eye_objects)

@@ -13,7 +13,7 @@ async function startServer() {
   const app = express();
 
   app.get('/',(req,res)=>{
-    res.send("DVD Paiya");
+    res.send("DVD");
   });
 
   app.get("/ca", (req, res) => {
@@ -21,6 +21,7 @@ async function startServer() {
   res.setHeader("Content-Type", "application/x-pem-file");
   res.download(caPath, "rootCA.pem");
 });
+  
 
 
   const httpsServer = createHttpsServer({
@@ -55,7 +56,7 @@ async function startServer() {
     });
 
     socket.on("video", (data: any) => {
-      console.log("Third Eye video received");
+      // console.log("Third Eye video received");
       if (pythonSocket) {
         pythonSocket.emit("thirdeye_cam", data);
       }
@@ -81,6 +82,7 @@ async function startServer() {
 
     if (pythonSocket) {
       pythonSocket.on("thirdeye_cam_result", (data: any) => {
+        console.log("hi");
         if (data) {
           console.log("Third Eye Camera Result : ", data);
           socket.emit("thirdeye_alert", data);
@@ -99,7 +101,6 @@ async function startServer() {
       });
 
       pythonSocket.on("result", (data: any) => {
-        // console.log("🎯 Result from Python", data);
         socket.emit("fres", data);
       });
     }

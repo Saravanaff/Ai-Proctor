@@ -103,7 +103,6 @@ const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStre
       };
 
       window.addEventListener("blur", blurHandler);
-      window.addEventListener("focus", focusHandler);
       document.addEventListener("fullscreenchange", fullscreenChangeHandler);
       window.addEventListener("keydown", preventKeyboardActions);
       window.addEventListener("contextmenu", preventMouseActions);
@@ -115,7 +114,6 @@ const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStre
     
       return () => {
         window.removeEventListener("blur", blurHandler);
-        window.removeEventListener("focus", focusHandler);
         document.removeEventListener("fullscreenchange", fullscreenChangeHandler);
         window.removeEventListener("keydown", preventKeyboardActions);
         window.removeEventListener("contextmenu", preventMouseActions);
@@ -213,8 +211,6 @@ const ExamPage: React.FC<ExamPageProps> = ({ screenSharingRef, screenSharingStre
             🧑‍💻 Authenticated face not detected. Please ensure you are in front of the camera.
           </div>
         )}
-
-
 
     </div>
   );

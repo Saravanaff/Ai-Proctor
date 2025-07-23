@@ -46,7 +46,7 @@ def detect_head_direction(img: np.ndarray) -> tuple[str, list[str]]:
         head_result = "Right"
     elif y_angle > 20:
         head_result = "Left"
-    elif x_angle < -15:
+    elif x_angle < -16:
         head_result = "Down"
     elif x_angle > 20:
         head_result = "Up"

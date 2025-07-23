@@ -20,7 +20,6 @@ export default function ThirdEye() {
   const [videoRotation, setVideoRotation] = useState(0);
   const { toast } = useToast();
 
-  // Orientation logic
   useEffect(() => {
     const handleOrientationChange = () => {
       const angle = screen.orientation?.angle??0;
@@ -38,7 +37,6 @@ export default function ThirdEye() {
     };
   }, []);
 
-  // Prevent navigation away
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
@@ -58,7 +56,6 @@ export default function ThirdEye() {
     };
   }, []);
 
-  // Socket setup
   useEffect(() => {
     const newSocket = io("https://192.168.87.168:3001/");
     setSocket(newSocket);
@@ -299,7 +296,7 @@ export default function ThirdEye() {
 
   return (
     <div className={styles.container} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
+      <div style={{ position: 'relative', width: '100%', height: '100%'}}>
         <video
           ref={videoRef}
           autoPlay
@@ -307,8 +304,8 @@ export default function ThirdEye() {
           muted
           className={styles.video}
           style={{
-    transform: `translate(-50%, -50%) rotate(${-videoRotation}deg) scaleX(-1)`,
-    width: "100vh",
+    transform: `translate(-50%, -50%)  scaleX(-1)`,
+    width: "100%",
     height: "100vw",
     background: "black"
   }}

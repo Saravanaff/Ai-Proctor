@@ -41,4 +41,4 @@ def setup_drag_camera_handler(sio):
             "head_position": constants.head_position,
             "eyes": constants.eyes,
             "object_detected": constants.detected_objects,
-        });
+        })

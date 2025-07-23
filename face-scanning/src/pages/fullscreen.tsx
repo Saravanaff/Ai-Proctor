@@ -1,25 +1,22 @@
-import React from "react";
-import { useState, useRef, useEffect } from "react";
+// Fullscreen.tsx
+import React, { useState, useRef, useEffect } from "react";
 import ExamPage from "@/components/FullScreen";
 import styles from "../styles/ExamPage.module.css";
 import socket from "@/components/socket";
 
 const Fullscreen = () => {
   const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
-  const [screenSharingStream, setScreenSharingStream] =
-    useState<MediaStream | null>(null);
+  const [screenSharingStream, setScreenSharingStream] = useState<MediaStream | null>(null);
   const screenSharingRef = useRef<HTMLVideoElement>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordingStatus, setRecordingStatus] = useState('');
 
-  // Function to handle recording completion
+  // Handles what to do after recording completes
   const handleRecordingComplete = async (blob: Blob) => {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `screen-recording-${timestamp}.webm`;
-      
-      // Create download link
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -29,7 +26,7 @@ const Fullscreen = () => {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       setRecordingStatus(`Recording downloaded as ${filename}`);
       console.log('Recording downloaded:', filename);
     } catch (error) {
@@ -38,73 +35,59 @@ const Fullscreen = () => {
     }
   };
 
-  const requestFullscreen = async () => {
-    const el = document.documentElement;
+  // Requests screen sharing, then requests fullscreen
+  const requestPermissions = async () => {
     try {
-      // Request screen sharing FIRST, before entering fullscreen
+      // Request screen sharing
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          displaySurface: "monitor",
-        },
+        video: { displaySurface: "monitor" },
         audio: false,
       });
 
-      // Only after screen sharing is granted, request fullscreen
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if ((el as unknown as { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen)
-        await (el as unknown as { webkitRequestFullscreen: () => Promise<void> }).webkitRequestFullscreen();
-      else if ((el as unknown as { msRequestFullscreen?: () => Promise<void> }).msRequestFullscreen)
-        await (el as unknown as { msRequestFullscreen: () => Promise<void> }).msRequestFullscreen();
+      stream.getVideoTracks()[0].addEventListener("ended", () => {
+        setScreenSharingStream(null);
+        setFullscreenAllowed(false);
+        setIsRecording(false);
+        setRecordingStatus("");
+      });
 
       setScreenSharingStream(stream);
+
+      // Now request fullscreen
+      const el = document.documentElement;
+      if (el.requestFullscreen) await el.requestFullscreen();
+      else if ((el as any).webkitRequestFullscreen) await (el as any).webkitRequestFullscreen();
+      else if ((el as any).msRequestFullscreen) await (el as any).msRequestFullscreen();
+
       setFullscreenAllowed(true);
-      
-      // Initialize MediaRecorder for local screen recording
-      const recorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm'
-      });
-      
+
+      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
       const chunks: Blob[] = [];
-      
+
       recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunks.push(event.data);
-        }
+        if (event.data.size > 0) chunks.push(event.data);
       };
-      
+
       recorder.onstop = async () => {
-        console.log('Screen recording stopped');
         if (chunks.length > 0) {
           const recordedBlob = new Blob(chunks, { type: 'video/webm' });
           await handleRecordingComplete(recordedBlob);
         }
       };
-      
-      setMediaRecorder(recorder);
-      
-      // Automatically start recording when entering fullscreen
-      setTimeout(() => {
-        recorder.start(1000); // Collect data every second
-        setIsRecording(true);
-        setRecordingStatus('Recording started automatically');
-        console.log('Auto-started screen recording');
-      }, 1000); // Small delay to ensure everything is set up
-      
-    } catch (err) {
-      console.error("Error requesting fullscreen or screen sharing:", err);
-      alert(
-        "You must allow fullscreen and screen sharing to continue the exam."
-      );
-    }
-  };
 
-  const startRecording = () => {
-    if (mediaRecorder && mediaRecorder.state === 'inactive') {
-      // Start recording
-      mediaRecorder.start(1000); // Collect data every second
-      setIsRecording(true);
-      setRecordingStatus('Recording started');
-      console.log('Screen recording started');
+      setMediaRecorder(recorder);
+
+      setTimeout(() => {
+        if (recorder.state === 'inactive') {
+          recorder.start(1000);
+          setIsRecording(true);
+          setRecordingStatus('Recording started automatically');
+          console.log('Auto-started screen recording');
+        }
+      }, 1000);
+    } catch (err) {
+      console.error("Error requesting permissions:", err);
+      alert("You must allow fullscreen and screen sharing to continue the exam.");
     }
   };
 
@@ -117,21 +100,19 @@ const Fullscreen = () => {
     }
   };
 
-
-  // Cleanup effect for screen sharing stream and recording
+  // Clean up only on unmount
   useEffect(() => {
     return () => {
       if (screenSharingStream) {
-        screenSharingStream.getTracks().forEach((track) => {
-          track.stop();
-        });
+        screenSharingStream.getTracks().forEach((track) => track.stop());
       }
       if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.stop();
       }
     };
-  }, [screenSharingStream, mediaRecorder]);
+  }, []); // No dependencies → cleanup only on component unmount
 
+  // UI before fullscreen + screen share granted
   if (!fullscreenAllowed) {
     return (
       <div className={styles.blockScreen}>
@@ -139,13 +120,14 @@ const Fullscreen = () => {
         <p style={{ color: '#666', marginBottom: '20px' }}>
           ⚠️ Recording will start automatically and download when completed
         </p>
-        <button onClick={requestFullscreen}>
+        <button onClick={requestPermissions}>
           Allow Screen Sharing & Enter Fullscreen
         </button>
       </div>
     );
   }
 
+  // UI after permissions granted and recording is running
   return (
     <>
       {fullscreenAllowed && (
@@ -175,6 +157,7 @@ const Fullscreen = () => {
               </div>
             )}
           </div>
+
           <ExamPage
             screenSharingRef={screenSharingRef}
             screenSharingStream={screenSharingStream}
