@@ -57,7 +57,7 @@ export default function ThirdEye() {
   }, []);
 
   useEffect(() => {
-    const newSocket = io("https://192.168.87.168:3001/");
+    const newSocket = io("https://192.168.55.168:3001/");
     setSocket(newSocket);
 
     newSocket.emit("mobile");

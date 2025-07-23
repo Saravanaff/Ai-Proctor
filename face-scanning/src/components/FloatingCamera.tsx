@@ -189,7 +189,7 @@ const FloatingCamera = ({
         changeColor();
       } else if (!data.auth_face) {
         auth++;
-        if (auth % 600 !== 0) return;
+        if (auth % 200 !== 0) return;
         auth = 0;
         changeColor();
         onAuthFaceMissing();
