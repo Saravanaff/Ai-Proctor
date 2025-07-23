@@ -4,8 +4,12 @@ import { Server } from "socket.io";
 import { createCA, createCert } from "mkcert";
 import fs from "fs";
 import path from "path";
+import dotenv from "dotenv";
 
-const serverPort =  process.env.SERVER_PORT;
+// Load environment variables from .env file
+dotenv.config();
+
+const serverPort = process.env.SERVER_PORT ;
 
 async function startServer() {
   const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
@@ -14,25 +18,24 @@ async function startServer() {
 
   const app = express();
 
-  app.get('/',(req,res)=>{
+  app.get("/", (req, res) => {
     res.send("DVD");
   });
 
   app.get("/ca", (req, res) => {
-  const caPath = path.join(__dirname, "rootCA.pem");
-  res.setHeader("Content-Type", "application/x-pem-file");
-  res.download(caPath, "rootCA.pem");
-});
-  
+    const caPath = path.join(__dirname, "rootCA.pem");
+    res.setHeader("Content-Type", "application/x-pem-file");
+    res.download(caPath, "rootCA.pem");
+  });
 
-
-  const httpsServer = createHttpsServer({
-    key,
-    cert,
-    ca,
-  }, app);
-
-  
+  const httpsServer = createHttpsServer(
+    {
+      key,
+      cert,
+      ca,
+    },
+    app
+  );
 
   const io = new Server(httpsServer, {
     transports: ["polling", "websocket"],
@@ -113,7 +116,7 @@ async function startServer() {
   });
 
   httpsServer.listen(serverPort, () => {
-    console.log("✅ HTTPS Socket.IO server running at https://localhost:3001");
+    console.log(`✅ HTTPS Socket.IO server running at ${serverPort}`);
   });
 }
 

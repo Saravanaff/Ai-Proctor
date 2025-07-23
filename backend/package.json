@@ -4,6 +4,7 @@
     "@types/socket.io": "^3.0.1",
     "axios": "^1.10.0",
     "cloudflared": "^0.7.0",
+    "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "localtunnel": "^2.0.2",
     "mkcert": "^3.2.0",
