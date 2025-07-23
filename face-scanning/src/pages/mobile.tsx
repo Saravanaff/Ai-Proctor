@@ -20,6 +20,9 @@ export default function ThirdEye() {
   const [videoRotation, setVideoRotation] = useState(0);
   const { toast } = useToast();
 
+   const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || "hello";
+
+
   useEffect(() => {
     const handleOrientationChange = () => {
       const angle = screen.orientation?.angle??0;
@@ -57,7 +60,7 @@ export default function ThirdEye() {
   }, []);
 
   useEffect(() => {
-    const newSocket = io("https://192.168.55.168:3001/");
+    const newSocket = io(SERVER_URL);
     setSocket(newSocket);
 
     newSocket.emit("mobile");
