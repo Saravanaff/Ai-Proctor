@@ -5,6 +5,8 @@ import { createCA, createCert } from "mkcert";
 import fs from "fs";
 import path from "path";
 
+const serverPort =  process.env.SERVER_PORT;
+
 async function startServer() {
   const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
   const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
@@ -110,7 +112,7 @@ async function startServer() {
     });
   });
 
-  httpsServer.listen(3001, () => {
+  httpsServer.listen(serverPort, () => {
     console.log("✅ HTTPS Socket.IO server running at https://localhost:3001");
   });
 }
