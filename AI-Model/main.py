@@ -10,6 +10,16 @@ from handlers.drag_camera import setup_drag_camera_handler
 #Third Eye
 from handlers.third_eye.thirdeye_cam import setup_thirdeye_cam_handler
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+server_url = os.getenv("SERVER_URL")
+print("Serrver :: ",server_url )
+
+
 sio = socketio.Client(ssl_verify=False)
 
 # Laptop
@@ -22,7 +32,7 @@ setup_drag_camera_handler(sio)
 #Third Eye
 setup_thirdeye_cam_handler(sio)
 
-sio.connect("https://localhost:3001")
+sio.connect(server_url)
 
 try:
     while True:
