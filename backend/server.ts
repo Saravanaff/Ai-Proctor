@@ -7,9 +7,9 @@ import path from "path";
 import dotenv from "dotenv";
 
 // Load environment variables from .env file
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, ".env") });
 
-const serverPort = process.env.SERVER_PORT ;
+const serverPort = process.env.SERVER_PORT;
 
 async function startServer() {
   const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
