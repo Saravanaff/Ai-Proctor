@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, Shield, Camera, Wifi, WifiOff } from "lucide-react";
+import { Eye, Shield, Camera, Wifi, WifiOff,Maximize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { io, Socket } from "socket.io-client";
 import styles from "../styles/ThirdEye.module.css";
@@ -15,8 +15,11 @@ export default function ThirdEye() {
   const [isConnected, setIsConnected] = useState(false);
   const { toast } = useToast();
 
+  const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
+  console.log("Server URL:", serverUrl);
+
   useEffect(() => {
-    const newSocket = io("http://localhost:3001");
+    const newSocket = io(serverUrl);
     setSocket(newSocket);
     if(newSocket){
       newSocket.emit('mobile');
@@ -125,61 +128,123 @@ export default function ThirdEye() {
     toast({ title: "Streaming Stopped", description: "Camera stream ended." });
   };
 
+  
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <Eye size={24} className="text-gradient" />
-        <h1>Third Eye Surveillance</h1>
-        {isConnected ? (
-          <Wifi size={20} className="text-green-400" />
-        ) : (
-          <WifiOff size={20} className="text-red-400" />
-        )}
+    <div
+      className={styles.container}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ position: "relative", width: "100%", height: "100%" }}>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={styles.video}
+          style={{
+            transform: `translate(-50%, -50%)`,
+            objectFit: "contain",
+            width: "100%",
+            height: "100vw",
+            background: "black",
+          }}
+        />
+        <canvas ref={canvasRef} style={{ display: "none" }} />
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 40,
+            display: "flex",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <button
+            className={`${styles.button} ${
+              isStreamingFrames ? styles.stopButton : styles.startButton
+            }`}
+            onClick={isStreamingFrames ? stopStreaming : startStreaming}
+            disabled={!isConnected}
+            style={{ pointerEvents: "auto" }}
+          >
+            {isStreamingFrames ? (
+              <>
+                <Eye className="mr-2 inline" size={18} />
+                Stop Surveillance
+              </>
+            ) : (
+              <>
+                <Maximize2 className="mr-2 inline" size={18} />
+                Start Surveillance
+              </>
+            )}
+          </button>
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            top: 20,
+            left: 20,
+            minWidth: 220,
+            maxWidth: 320,
+            background: "rgba(0,0,0,0.65)",
+            borderRadius: 12,
+            padding: "14px 18px",
+            zIndex: 10,
+            color: "#fff",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
+          }}
+        >
+          <div
+            className={styles.header}
+            style={{
+              margin: 0,
+              background: "none",
+              border: "none",
+              animation: "none",
+              padding: 0,
+            }}
+          >
+            <Eye size={22} className="text-gradient" />
+            <span style={{ fontWeight: 600, fontSize: 18 }}>Third Eye</span>
+            {isConnected ? (
+              <Wifi size={18} className="text-green-400" />
+            ) : (
+              <WifiOff size={18} className="text-red-400" />
+            )}
+          </div>
+          {showInitialNotice && (
+            <div
+              className={`${styles.notice} ${styles.initialNotice}`}
+              style={{
+                margin: "8px 0 0 0",
+                background: "rgba(0,162,255,0.12)",
+              }}
+            >
+              <Camera className="inline mr-2" size={16} />
+              <span>Initializing...</span>
+            </div>
+          )}
+          {showSurveillanceNotice && (
+            <div
+              className={`${styles.notice} ${styles.surveillanceNotice}`}
+              style={{ margin: "8px 0 0 0", background: "rgba(255,0,0,0.12)" }}
+            >
+              <Shield className="inline mr-2" size={16} />
+              <span>Surveillance Engaged</span>
+            </div>
+          )}
+        </div>
       </div>
-
-      {showInitialNotice && (
-        <div className={`${styles.notice} ${styles.initialNotice}`}>
-          <Camera className="inline mr-2" size={20} />
-          <span>Initializing surveillance systems...</span>
-        </div>
-      )}
-
-      {showSurveillanceNotice && (
-        <div className={`${styles.notice} ${styles.surveillanceNotice}`}>
-          <Shield className="inline mr-2" size={20} />
-          <span>Active Surveillance Mode Engaged</span>
-        </div>
-      )}
-
-      <video 
-        ref={videoRef} 
-        className={styles.video} 
-        autoPlay 
-        playsInline 
-        muted 
-        style={{ transform: 'rotate(0deg)', objectFit: 'cover' }}
-      />
-      <canvas ref={canvasRef} style={{ display: "none" }} />
-
-      <button
-        className={`${styles.button} ${
-          isStreamingFrames ? styles.stopButton : styles.startButton
-        }`}
-        onClick={isStreamingFrames ? stopStreaming : startStreaming}
-        disabled={!isConnected}
-      >
-        {isStreamingFrames ? (
-          <>
-            <Eye className="mr-2 inline" size={18} />
-            Stop Surveillance
-          </>
-        ) : (
-          <>
-            <Camera className="mr-2 inline" size={18} />
-            Start Surveillance
-          </>
-        )}
-      </button>
     </div>
   );
 }
