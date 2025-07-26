@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import ExamPage from "@/components/FullScreen";
 import styles from "../styles/ExamPage.module.css";
 import socket from "@/components/socket";
+import { sleep } from "@/utils/delay";
 
 const Fullscreen = () => {
   const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
@@ -35,8 +36,26 @@ const Fullscreen = () => {
     }
   };
 
+  const requestFullscreenPermissions = async() => {
+      // Now request fullscreen
+      try {
+        const el = document.documentElement;
+        if (el.requestFullscreen) await el.requestFullscreen();
+        else if ((el as any).webkitRequestFullscreen) await (el as any).webkitRequestFullscreen();
+        else if ((el as any).msRequestFullscreen) await (el as any).msRequestFullscreen();
+
+        setFullscreenAllowed(true);
+      }
+      catch(err){
+        console.log("Error While Requesting FullScreen : ", err);
+      }
+  }
+
   // Requests screen sharing, then requests fullscreen
-  const requestPermissions = async () => {
+  const requestScreenRecordPermissions = async () => {
+    if(isRecording){
+      return ;
+    }
     try {
       // Request screen sharing
       const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -53,13 +72,7 @@ const Fullscreen = () => {
 
       setScreenSharingStream(stream);
 
-      // Now request fullscreen
-      const el = document.documentElement;
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if ((el as any).webkitRequestFullscreen) await (el as any).webkitRequestFullscreen();
-      else if ((el as any).msRequestFullscreen) await (el as any).msRequestFullscreen();
 
-      setFullscreenAllowed(true);
 
       const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
       const chunks: Blob[] = [];
@@ -84,10 +97,10 @@ const Fullscreen = () => {
           setRecordingStatus('Recording started automatically');
           console.log('Auto-started screen recording');
         }
-      }, 1000);
+      }, 10);
     } catch (err) {
       console.error("Error requesting permissions:", err);
-      alert("You must allow fullscreen and screen sharing to continue the exam.");
+      alert("You must allow screen sharing to continue the exam.");
     }
   };
 
@@ -110,19 +123,28 @@ const Fullscreen = () => {
         mediaRecorder.stop();
       }
     };
-  }, []); // No dependencies → cleanup only on component unmount
+  }, []); 
 
-  // UI before fullscreen + screen share granted
+  
   if (!fullscreenAllowed) {
     return (
       <div className={styles.blockScreen}>
         <h2>Screen sharing and fullscreen are required to start the exam</h2>
-        <p style={{ color: '#666', marginBottom: '20px' }}>
+        {/* <p style={{ color: '#666', marginBottom: '20px' }}>
           ⚠️ Recording will start automatically and download when completed
-        </p>
-        <button onClick={requestPermissions}>
-          Allow Screen Sharing & Enter Fullscreen
-        </button>
+        </p> */}
+        {!isRecording && (
+          <button onClick={requestScreenRecordPermissions}>
+            Allow Screen Sharing
+          </button>
+        )}
+        {isRecording && (
+          <button
+            onClick={requestFullscreenPermissions}
+          >
+            Enter Exam
+          </button>
+        )}
       </div>
     );
   }

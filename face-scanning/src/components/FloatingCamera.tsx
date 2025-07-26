@@ -25,12 +25,11 @@ const FloatingCamera = ({
   let person = 0;
   let auth = 0;
   let item = 0;
-  let tnot=0;
-  let mlap=0;
-  let uauth=0;
-  let mp=0;
-  let zp=0;
-
+  let tnot = 0;
+  let mlap = 0;
+  let uauth = 0;
+  let mp = 0;
+  let zp = 0;
 
   // const [look, setLook] = useState(0);
   // const [person, setPerson] = useState(0);
@@ -103,31 +102,31 @@ const FloatingCamera = ({
 
     startCamera();
 
-    socket.on("thirdeye_alert",(data:any)=>{
-      if(data.laptop<1){
+    socket.on("thirdeye_alert", (data: any) => {
+      if (data.laptop < 1) {
         tnot++;
-        if(tnot%150!==0)return;
-        tnot=0;
+        if (tnot % 150 !== 0) return;
+        tnot = 0;
         toast({
           title: "Third Eye Alert",
           description: "Laptop not detected!",
           variant: "destructive",
         });
       }
-      if(data.laptop>1){
+      if (data.laptop > 1) {
         mlap++;
-        if(mlap%150!==0)return;
-        mlap=0;
+        if (mlap % 150 !== 0) return;
+        mlap = 0;
         toast({
           title: "Third Eye Alert",
           description: "Multiple laptops detected!",
           variant: "destructive",
         });
       }
-      if(data.unauth_device==true){
+      if (data.unauth_device == true) {
         uauth++;
-        if(uauth%150!=0) return;
-        uauth=0;
+        if (uauth % 150 != 0) return;
+        uauth = 0;
         toast({
           title: "Third Eye Alert",
           description: "Unauthorized device detected!",
@@ -135,18 +134,17 @@ const FloatingCamera = ({
         });
       }
 
-      if(data.person>1){
+      if (data.person > 1) {
         mp++;
-        if(mp%150!=0) return;
-        uauth=0;
+        if (mp % 150 != 0) return;
+        uauth = 0;
         toast({
           title: "Multiple Persons",
           description: "Multiple Persons Detected",
           variant: "destructive",
         });
       }
-
-    })
+    });
 
     socket.on("alert", (data: any) => {
       console.log(data);
@@ -174,14 +172,13 @@ const FloatingCamera = ({
         detect();
         changeColor();
       }
-      if (data.no_of_person<1) {
+      if (data.no_of_person < 1) {
         zp++;
         if (zp % 150 !== 0) return;
         zp = 0;
         number(data.no_of_p);
         changeColor();
-      }
-      else if (data.no_of_person>1) {
+      } else if (data.no_of_person > 1) {
         person++;
         if (person % 120 !== 0) return;
         person = 0;
@@ -200,6 +197,9 @@ const FloatingCamera = ({
       if (interRef.current) clearInterval(interRef.current);
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
+      }
+      if (audioStream) {
+        audioStream.getTracks().forEach((track) => track.stop());
       }
     };
   }, [socket]);
@@ -252,12 +252,7 @@ const FloatingCamera = ({
       }}
       onMouseDown={handleMouseDown}
     >
-      <video
-        className={styles.video}
-        ref={videoRef}
-        autoPlay
-        muted
-      />
+      <video className={styles.video} ref={videoRef} autoPlay muted />
       {/* <video
         className={styles.video}
         ref={screenSharingRef}

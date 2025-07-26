@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, Shield, Camera, Wifi, WifiOff, RotateCcw, Maximize2, Video } from "lucide-react";
+import {
+  Eye,
+  Shield,
+  Camera,
+  Wifi,
+  WifiOff,
+  RotateCcw,
+  Maximize2,
+  Video,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { io, Socket } from "socket.io-client";
 import styles from "../styles/ThirdEye.module.css";
@@ -20,12 +29,11 @@ export default function ThirdEye() {
   const [videoRotation, setVideoRotation] = useState(0);
   const { toast } = useToast();
 
-   const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || "hello";
-
+  const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
   useEffect(() => {
     const handleOrientationChange = () => {
-      const angle = screen.orientation?.angle??0;
+      const angle = screen.orientation?.angle ?? 0;
       setVideoRotation(angle);
       setOrientationAllowed(window.innerWidth > window.innerHeight);
     };
@@ -96,6 +104,17 @@ export default function ThirdEye() {
   }, []);
 
   useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+      }
+      if (frameIntervalRef.current) {
+        clearInterval(frameIntervalRef.current);
+      }
+    };
+  }, [cameraStream]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setShowInitialNotice(false);
       setShowSurveillanceNotice(true);
@@ -124,7 +143,8 @@ export default function ThirdEye() {
       setOrientationAllowed(false);
       toast({
         title: "Orientation Required",
-        description: "Please rotate your device to landscape and allow orientation lock.",
+        description:
+          "Please rotate your device to landscape and allow orientation lock.",
         variant: "destructive",
       });
     }
@@ -132,7 +152,9 @@ export default function ThirdEye() {
 
   const requestCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+      });
       setCameraStream(stream);
       setCameraAllowed(true);
       if (videoRef.current) {
@@ -158,8 +180,10 @@ export default function ThirdEye() {
     const el = document.documentElement;
     try {
       if (el.requestFullscreen) await el.requestFullscreen();
-      else if ((el as any).webkitRequestFullscreen) await (el as any).webkitRequestFullscreen();
-      else if ((el as any).msRequestFullscreen) await (el as any).msRequestFullscreen();
+      else if ((el as any).webkitRequestFullscreen)
+        await (el as any).webkitRequestFullscreen();
+      else if ((el as any).msRequestFullscreen)
+        await (el as any).msRequestFullscreen();
       setFullscreenAllowed(true);
     } catch (err) {
       setFullscreenAllowed(false);
@@ -193,7 +217,8 @@ export default function ThirdEye() {
   }, []);
 
   const captureAndSendFrame = () => {
-    if (!videoRef.current || !canvasRef.current || !socket || !isConnected) return;
+    if (!videoRef.current || !canvasRef.current || !socket || !isConnected)
+      return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -204,13 +229,17 @@ export default function ThirdEye() {
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob((blob) => {
-      if (blob) {
-        blob.arrayBuffer().then((buffer) => {
-          socket.emit("video", buffer);
-        });
-      }
-    }, "image/jpeg", 0.7);
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          blob.arrayBuffer().then((buffer) => {
+            socket.emit("video", buffer);
+          });
+        }
+      },
+      "image/jpeg",
+      0.7
+    );
   };
 
   const startStreaming = async () => {
@@ -225,8 +254,10 @@ export default function ThirdEye() {
     try {
       const el = document.documentElement;
       if (el.requestFullscreen) await el.requestFullscreen();
-      else if ((el as any).webkitRequestFullscreen) await (el as any).webkitRequestFullscreen();
-      else if ((el as any).msRequestFullscreen) await (el as any).msRequestFullscreen();
+      else if ((el as any).webkitRequestFullscreen)
+        await (el as any).webkitRequestFullscreen();
+      else if ((el as any).msRequestFullscreen)
+        await (el as any).msRequestFullscreen();
       setFullscreenAllowed(true);
 
       if (videoRef.current && videoRef.current.srcObject !== cameraStream) {
@@ -298,8 +329,18 @@ export default function ThirdEye() {
   }
 
   return (
-    <div className={styles.container} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <div style={{ position: 'relative', width: '100%', height: '100%'}}>
+    <div
+      className={styles.container}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ position: "relative", width: "100%", height: "100%" }}>
         <video
           ref={videoRef}
           autoPlay
@@ -307,29 +348,32 @@ export default function ThirdEye() {
           muted
           className={styles.video}
           style={{
-    transform: `translate(-50%, -50%)  scaleX(-1)`,
-    width: "100%",
-    height: "100vw",
-    background: "black"
-  }}
+            transform: `translate(-50%, -50%)`,
+            objectFit: "contain",
+            width: "100%",
+            height: "100vw",
+            background: "black",
+          }}
         />
         <canvas ref={canvasRef} style={{ display: "none" }} />
-        <div style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 40,
-          display: 'flex',
-          justifyContent: 'center',
-          pointerEvents: 'none',
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 40,
+            display: "flex",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}
+        >
           <button
             className={`${styles.button} ${
               isStreamingFrames ? styles.stopButton : styles.startButton
             }`}
             onClick={isStreamingFrames ? stopStreaming : startStreaming}
             disabled={!isConnected}
-            style={{ pointerEvents: 'auto' }}
+            style={{ pointerEvents: "auto" }}
           >
             {isStreamingFrames ? (
               <>
@@ -344,20 +388,31 @@ export default function ThirdEye() {
             )}
           </button>
         </div>
-        <div style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          minWidth: 220,
-          maxWidth: 320,
-          background: 'rgba(0,0,0,0.65)',
-          borderRadius: 12,
-          padding: '14px 18px',
-          zIndex: 10,
-          color: '#fff',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.18)'
-        }}>
-          <div className={styles.header} style={{ margin: 0, background: 'none', border: 'none', animation: 'none', padding: 0 }}>
+        <div
+          style={{
+            position: "absolute",
+            top: 20,
+            left: 20,
+            minWidth: 220,
+            maxWidth: 320,
+            background: "rgba(0,0,0,0.65)",
+            borderRadius: 12,
+            padding: "14px 18px",
+            zIndex: 10,
+            color: "#fff",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
+          }}
+        >
+          <div
+            className={styles.header}
+            style={{
+              margin: 0,
+              background: "none",
+              border: "none",
+              animation: "none",
+              padding: 0,
+            }}
+          >
             <Eye size={22} className="text-gradient" />
             <span style={{ fontWeight: 600, fontSize: 18 }}>Third Eye</span>
             {isConnected ? (
@@ -367,13 +422,22 @@ export default function ThirdEye() {
             )}
           </div>
           {showInitialNotice && (
-            <div className={`${styles.notice} ${styles.initialNotice}`} style={{ margin: '8px 0 0 0', background: 'rgba(0,162,255,0.12)' }}>
+            <div
+              className={`${styles.notice} ${styles.initialNotice}`}
+              style={{
+                margin: "8px 0 0 0",
+                background: "rgba(0,162,255,0.12)",
+              }}
+            >
               <Camera className="inline mr-2" size={16} />
               <span>Initializing...</span>
             </div>
           )}
           {showSurveillanceNotice && (
-            <div className={`${styles.notice} ${styles.surveillanceNotice}`} style={{ margin: '8px 0 0 0', background: 'rgba(255,0,0,0.12)' }}>
+            <div
+              className={`${styles.notice} ${styles.surveillanceNotice}`}
+              style={{ margin: "8px 0 0 0", background: "rgba(255,0,0,0.12)" }}
+            >
               <Shield className="inline mr-2" size={16} />
               <span>Surveillance Engaged</span>
             </div>
@@ -382,5 +446,4 @@ export default function ThirdEye() {
       </div>
     </div>
   );
-  
 }
