@@ -24,7 +24,7 @@ def setup_drag_camera_handler(sio):
                     constants.head_position, constants.eyes = head_pose.detect_head_direction(rgb_img)
                     constants.last_head_process = now
 
-        if not constants.processing_yolo and (now - constants.last_yolo_process > 0.5):
+        if not constants.processing_yolo and (now - constants.last_yolo_process > 0.2):
             constants.person_count, constants.detected_objects = yolo_detect.detect_person_and_objects(rgb_img)
             constants.last_yolo_process = now
 

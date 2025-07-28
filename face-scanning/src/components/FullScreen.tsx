@@ -3,6 +3,7 @@ import styles from "../styles/ExamPage.module.css";
 import FloatingCamera from "./FloatingCamera";
 import socket from "./socket";
 import { useRouter } from "next/router";
+import { useToast } from "@/hooks/use-toast";
 const questions = Array.from({ length: 10 }, (_, i) => ({
   id: i + 1,
   question: `Sample Question ${i + 1}?`,
@@ -18,6 +19,7 @@ const ExamPage: React.FC = ({screen}:any) => {
   const [object,setObject]=useState(false);
   const [num,setNum]=useState(false);
   const [authFaceMissing, setAuthFaceMissing] = useState(false);
+  const {toast}=useToast();
   let face:any;
   const router=useRouter();
 const handleAuthFaceMissing = () => {

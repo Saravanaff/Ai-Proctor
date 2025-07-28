@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import styles from "../styles/FloatingCamera.module.css";
 import { gname } from "./GetName";
+import { useToast } from "@/hooks/use-toast";
 const FloatingCamera = ({
   socket,
   onLookingAway,
@@ -16,11 +17,17 @@ const FloatingCamera = ({
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [borderColor, setBorderColor] = useState("white");
+  const {toast}=useToast();
 
   let look=0;
   let person=0;
   let auth=0;
   let item=0;
+  let np=0;
+  let mp=0;
+  let uauth=0;
+  let lp=0;
+  let mlp=0;
 
   // const [look, setLook] = useState(0);
   // const [person, setPerson] = useState(0);
@@ -93,6 +100,64 @@ const FloatingCamera = ({
 
     startCamera();
 
+    socket.on("thirdeye_alert",(data:any)=>{
+      if(data.person==0){
+        np++;
+        if(np%100!==0){
+          return;
+        }
+        np=0;
+        toast({
+          title:"Canditate is not present",
+          description:"No persons are there",
+          variant:"destructive"
+        });
+      }
+      if(data.person>1){
+        mp++;
+        if(mp%100!==0){
+          return;
+        }
+        mp=0;
+        toast({
+          title:"More number of persons are present",
+          description:"Please ensure candidate is present in isolated area",
+          variant:"destructive"
+        })
+      }
+      if(data.laptop>1){
+        lp++;
+        if(lp%150!==0) return;
+        lp=0;
+        toast({
+          title:"Laptop other than Canditate is present",
+          description:"More number of Laptops are present",
+          variant:"destructive"
+        })
+      }
+
+      if(data.laptop<1){
+        mlp++;
+        if(mlp%150!=0) return;
+        mlp=0;
+          toast({
+            title:"Candiate Laptop is not present",
+            description:"No laptop is present",
+            variant:"destructive"
+          })
+        
+      }
+      if(data.unauth_device==true){
+        uauth++;
+        if(uauth%50!==0) return;
+        uauth=0;
+        toast({
+          title:"Unauthorized Device Detected",
+          description:"Dont keep Gadgets Nearby",
+          variant:"destructive"
+        });
+      }
+    })
     socket.on("alert", (data: any) => {
       console.log(data);
     if(data.head_position !=="Forward"){
