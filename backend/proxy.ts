@@ -33,6 +33,7 @@ const ioServer = new Server(httpsServer, {
 
 let backendSocket: ClientSocket;
 
+
 function connectToBackend() {
   backendSocket = clientIo("http://localhost:3001", {
     transports: ["websocket"],
