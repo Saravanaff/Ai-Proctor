@@ -15,7 +15,7 @@ export default function ThirdEye() {
   const [isConnected, setIsConnected] = useState(false);
   const { toast } = useToast();
 
-  const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
+  const serverUrl = "https://10.167.56.168:3002/";
   console.log("Server URL:", serverUrl);
 
   useEffect(() => {

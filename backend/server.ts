@@ -1,20 +1,19 @@
 import express from "express";
-import { createServer as createHttpsServer } from "https";
+import { createServer as createHttpsServer } from "http";
 import { Server } from "socket.io";
 import { createCA, createCert } from "mkcert";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 
-// Load environment variables from .env file
 dotenv.config({ path: path.join(__dirname, ".env") });
 
-const serverPort = process.env.SERVER_PORT;
+const serverPort = 3001;
 
 async function startServer() {
-  const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
-  const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
-  const ca = fs.readFileSync(path.join(__dirname, "rootCA.pem"));
+  // const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
+  // const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
+  // const ca = fs.readFileSync(path.join(__dirname, "rootCA.pem"));
 
   const app = express();
 
@@ -29,11 +28,6 @@ async function startServer() {
   });
 
   const httpsServer = createHttpsServer(
-    {
-      key,
-      cert,
-      ca,
-    },
     app
   );
 
@@ -46,7 +40,7 @@ async function startServer() {
   });
 
   let pythonSocket: any = null;
-  let mobileSocket: any = null;
+  let proxy: any = null;
 
   io.on("connection", (socket) => {
     console.log("A client connected");
@@ -56,16 +50,19 @@ async function startServer() {
       pythonSocket = socket;
     });
 
-    socket.on("mobile", () => {
-      console.log("Third Eye Connected");
+    socket.on('proxy',()=>{
+      console.log("proxy connected successfully");
+      proxy=socket;
+      if(proxy){
+          proxy.on("videos", (data: any) => {
+            console.log("third");
+            if (pythonSocket) {
+              pythonSocket.emit("thirdeye_cam", data);
+            }
+          });
+        }
     });
 
-    socket.on("video", (data: any) => {
-      // console.log("Third Eye video received");
-      if (pythonSocket) {
-        pythonSocket.emit("thirdeye_cam", data);
-      }
-    });
 
     socket.on("photo-save", (data) => {
       if (pythonSocket) {
@@ -116,7 +113,7 @@ async function startServer() {
   });
 
   httpsServer.listen(serverPort, () => {
-    console.log(`✅ HTTPS Socket.IO server running at ${serverPort}`);
+    console.log(`✅ HTTP Socket.IO server running at ${serverPort}`);
   });
 }
 

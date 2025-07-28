@@ -22,7 +22,7 @@ async function generateCerts() {
   // Step 2: Create domain certificate
   const cert = await createCert({
     ca: { key: ca.key, cert: ca.cert },
-    domains: ["localhost", "127.0.0.1","192.168.55.44","192.168.55.168","10.72.242.44"],
+    domains: ["localhost", "127.0.0.1","192.168.55.44","192.168.55.168","10.167.56.168"],
     validity: 365,
   });
 

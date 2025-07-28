@@ -10,7 +10,7 @@ from handlers.drag_camera import setup_drag_camera_handler
 #Third Eye
 from handlers.third_eye.thirdeye_cam import setup_thirdeye_cam_handler
 
-sio = socketio.Client(ssl_verify=False)
+sio = socketio.Client()
 
 # Laptop
 register_events(sio)
@@ -22,7 +22,7 @@ setup_drag_camera_handler(sio)
 #Third Eye
 setup_thirdeye_cam_handler(sio)
 
-sio.connect("https://10.72.242.44:3001")
+sio.connect("http://localhost:3001/")
 
 try:
     while True:
