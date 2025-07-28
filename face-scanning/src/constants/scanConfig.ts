@@ -5,19 +5,20 @@ export const defaultScanSteps: ScanStep[] = [
     id: 1,
     title: "Front Face Scan",
     instruction: "Look directly at the camera",
-    description: "Keep your face centered and look straight ahead",
+    description:
+      "Position your face in the center and look straight ahead. Ensure good lighting.",
     icon: "👤",
   },
   {
     id: 2,
-    title: "Right Side Scan",
+    title: "Right Side Profile",
     instruction: "Turn your head to the right",
     description: "Show your right profile to the camera",
     icon: "👤➡️",
   },
   {
     id: 3,
-    title: "Left Side Scan",
+    title: "Left Side Profile",
     instruction: "Turn your head to the left",
     description: "Show your left profile to the camera",
     icon: "⬅️👤",

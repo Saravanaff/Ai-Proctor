@@ -65,6 +65,7 @@ async function startServer() {
 
 
     socket.on("photo-save", (data) => {
+      console.log("Face Data :",data)
       if (pythonSocket) {
         pythonSocket.emit("save-face-data", data);
       }

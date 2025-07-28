@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { ScanStep, ScanResult } from "../types";
 
-export const useScanFlow = (steps: ScanStep[], scanDuration: number = 2000) => {
+export const useScanFlow = (steps: ScanStep[], scanDuration: number = 1000) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResults, setScanResults] = useState<ScanResult[]>([]);
+  const [isComplete,setIsComplete] = useState<boolean>(false);
 
   const handleNextStep = () => {
     if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep(prev => prev + 1);
     }
     return currentStep >= steps.length;
   };
@@ -27,8 +28,9 @@ export const useScanFlow = (steps: ScanStep[], scanDuration: number = 2000) => {
         setScanResults((prev) => [...prev, result]);
         setIsScanning(false);
 
-        const isComplete = handleNextStep();
-        resolve(isComplete);
+        const complete = handleNextStep();
+        setIsComplete(complete)
+        resolve(complete);
       }, scanDuration);
     });
   };
@@ -39,6 +41,8 @@ export const useScanFlow = (steps: ScanStep[], scanDuration: number = 2000) => {
     setScanResults([]);
   };
 
+  // console.log("curStep:",currentStep)
+
   return {
     currentStep,
     isScanning,
@@ -46,6 +50,6 @@ export const useScanFlow = (steps: ScanStep[], scanDuration: number = 2000) => {
     handleScan,
     resetScan,
     currentStepData: steps[currentStep - 1],
-    isComplete: currentStep > steps.length,
+    isComplete,
   };
 };

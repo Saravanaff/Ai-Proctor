@@ -1,6 +1,18 @@
 import React from "react";
 
-const ScanButton: any = ({ call, isScanning }: any) => {
+const ScanButton: any = ({
+  call,
+  isScanning,
+  currentStep,
+  totalSteps,
+}: any) => {
+
+  const getButtonText = () => {
+    if (isScanning) return "Capturing...";
+    if (currentStep === totalSteps) return "Complete Scan";
+    return `Capture Step ${currentStep}`;
+  };
+
   return (
     <div
       style={{
@@ -29,7 +41,7 @@ const ScanButton: any = ({ call, isScanning }: any) => {
           transition: "all 0.3s ease",
         }}
       >
-        Capture
+        {getButtonText()}
       </button>
     </div>
   );

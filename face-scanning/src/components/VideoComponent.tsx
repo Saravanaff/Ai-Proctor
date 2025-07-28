@@ -38,7 +38,9 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
       try {
         setIsLoading(true);
         if (video.srcObject) {
-          (video.srcObject as MediaStream).getTracks().forEach((track) => track.stop());
+          (video.srcObject as MediaStream)
+            .getTracks()
+            .forEach((track) => track.stop());
           video.srcObject = null;
         }
 
@@ -85,20 +87,24 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             boundingSize
           );
 
-          canvas.toBlob((blob) => {
-            if (blob) {
-              blob.arrayBuffer().then((buffer) => {
-                socket.emit("frame", {
-                  buffer,
-                  metadata: {
-                    circle,
-                    width: boundingSize,
-                    height: boundingSize,
-                  },
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                blob.arrayBuffer().then((buffer) => {
+                  socket.emit("frame", {
+                    buffer,
+                    metadata: {
+                      circle,
+                      width: boundingSize,
+                      height: boundingSize,
+                    },
+                  });
                 });
-              });
-            }
-          }, "image/jpeg", 0.7);
+              }
+            },
+            "image/jpeg",
+            0.7
+          );
         }, 1000 / 30);
 
         socket.on("fres", (data: any) => {
@@ -119,9 +125,8 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
     };
   }, []);
 
-  const capturePhoto = (): Promise<Blob | null> => {
+  const capturePhoto = (stepId: number): Promise<Blob | null> => {
     return new Promise((resolve) => {
-      clearInterval(intervalRef.current);
       const video = videoRef.current;
       if (!video || video.readyState < 2) return resolve(null);
 
@@ -136,33 +141,32 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
       ctx.drawImage(video, 0, 0, width, height);
 
-      canvas.toBlob((blob) => {
-        if (blob) {
-          blob.arrayBuffer().then((buffer) => {
-            socket.emit("photo-save", {
-              buffer,
-              name: gname,
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            blob.arrayBuffer().then((buffer) => {
+              socket.emit("photo-save", {
+                buffer,
+                name: `${gname}_step_${stepId}`,
+                stepId: stepId,
+              });
             });
-          });
 
-          const mediaStream = video.srcObject as MediaStream;
-          if (mediaStream) {
-            mediaStream.getTracks().forEach((track) => track.stop());
-            video.srcObject = null;
+            setShowSuccess(true);
+
+            setTimeout(() => {
+              setShowSuccess(false);
+              // setShowOverlay(true);
+            }, 1000);
+
+            resolve(blob);
+          } else {
+            resolve(null);
           }
-
-          setShowSuccess(true);
-
-          setTimeout(() => {
-            setShowSuccess(false);
-            setShowOverlay(true);
-          }, 1000);
-
-          resolve(blob);
-        } else {
-          resolve(null);
-        }
-      }, "image/jpeg", 0.9);
+        },
+        "image/jpeg",
+        0.9
+      );
     });
   };
 
@@ -177,11 +181,29 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   } = useScanFlow(steps, scanDuration);
 
   const onScanClick = async () => {
+    
+    await capturePhoto(currentStep);
+
     const isDone = await handleScan();
-    if (isDone && onScanComplete) {
-      onScanComplete(scanResults);
-    } else if (isDone) {
-      alert("Face scanning completed!");
+
+    if (isDone) {
+      
+      const video = videoRef.current;
+      if (video && video.srcObject) {
+        const mediaStream = video.srcObject as MediaStream;
+        mediaStream.getTracks().forEach((track) => track.stop());
+        video.srcObject = null;
+      }
+
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+
+      setShowOverlay(true);
+
+      if (onScanComplete) {
+        onScanComplete(scanResults);
+      }
     }
   };
 
@@ -223,13 +245,16 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
       <FaceDetectionOverlay faceDetected={circle} showSuccess={showSuccess} />
       <FooterOverlay description={currentStepData.description} />
       <StepCounter currentStep={currentStep} totalSteps={steps.length} />
-      <ScanButton call={capturePhoto} isScanning={false} />
+      <ScanButton
+        call={onScanClick}
+        isScanning={isScanning}
+        currentStep={currentStep}
+        totalSteps={steps.length}
+      />
 
-      {isLoading && (
-        <LoadingIndicator message="Accessing camera..." />
-      )}
+      {isLoading && <LoadingIndicator message="Accessing camera..." />}
 
-      {showOverlay && (
+      {showOverlay && isComplete && (
         <div
           style={{
             position: "absolute",
@@ -240,14 +265,35 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             backgroundColor: "rgba(0,0,0,0.7)",
             zIndex: 100,
             display: "flex",
+            flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
             color: "#fff",
-            fontSize: "40px",
+            fontSize: "24px",
             fontWeight: "bold",
+            textAlign: "center",
           }}
         >
-          <button className="click" onClick={() => router.push("/fullscreen")}>
+          <div style={{ marginBottom: "20px", fontSize: "32px" }}>
+            Face Scanning Complete!
+          </div>
+          <div style={{ marginBottom: "30px", fontSize: "16px", opacity: 0.8 }}>
+            All verification steps completed successfully
+          </div>
+          <button
+            className="click"
+            onClick={() => router.push("/fullscreen")}
+            style={{
+              padding: "15px 30px",
+              fontSize: "18px",
+              backgroundColor: "#4CAF50",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              transition: "background-color 0.3s ease",
+            }}
+          >
             Enter Exam
           </button>
         </div>
