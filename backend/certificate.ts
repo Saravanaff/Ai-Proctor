@@ -1,5 +1,11 @@
 import { createCA, createCert } from "mkcert";
 import fs from "fs";
+import dotenv from 'dotenv';
+dotenv.config();
+
+const serverIpAddress:string = process.env.SERVER_IP_ADDRESS || "172.16.29.187-demo";
+
+console.log(serverIpAddress);
 
 async function generateCerts() {
   const ca = await createCA({
@@ -16,7 +22,7 @@ async function generateCerts() {
   // Step 2: Create domain certificate
   const cert = await createCert({
     ca: { key: ca.key, cert: ca.cert },
-    domains: ["localhost", "127.0.0.1","192.168.55.44","192.168.55.168"],
+    domains: ["localhost", "127.0.0.1","192.168.55.44","192.168.55.168",serverIpAddress],
     validity: 365,
   });
 
