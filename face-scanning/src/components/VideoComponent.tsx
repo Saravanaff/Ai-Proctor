@@ -147,8 +147,8 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             blob.arrayBuffer().then((buffer) => {
               socket.emit("photo-save", {
                 buffer,
-                name: `${gname}_step_${stepId}`,
-                stepId: stepId,
+                name: `${gname}`,
+                angle: stepId,
               });
             });
 
@@ -181,13 +181,13 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   } = useScanFlow(steps, scanDuration);
 
   const onScanClick = async () => {
-    
+
     await capturePhoto(currentStep);
 
     const isDone = await handleScan();
 
     if (isDone) {
-      
+
       const video = videoRef.current;
       if (video && video.srcObject) {
         const mediaStream = video.srcObject as MediaStream;

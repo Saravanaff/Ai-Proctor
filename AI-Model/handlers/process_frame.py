@@ -24,7 +24,7 @@ def setup_process_frame_handler(sio):
             buffer = data["buffer"]
             metadata = data["metadata"]
             width, height = int(metadata["width"]), int(metadata["height"])
-            print("width:", width, "height:", height)
+            # print("width:", width, "height:", height)
 
             image_array = np.frombuffer(buffer, dtype=np.uint8)
             img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
