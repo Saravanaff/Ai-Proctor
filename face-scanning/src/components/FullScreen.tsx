@@ -20,7 +20,7 @@ const ExamPage: React.FC = ({screen}:any) => {
   const [num,setNum]=useState(false);
   const [authFaceMissing, setAuthFaceMissing] = useState(false);
   const {toast}=useToast();
-  let face:any;
+  const [face,setFace]=useState(0);
   const router=useRouter();
 const handleAuthFaceMissing = () => {
   setAuthFaceMissing(true);
@@ -39,9 +39,10 @@ const handleAuthFaceMissing = () => {
   }
 
   const number=(a:number)=>{
-    face=a;
+    setFace(a);
     setNum(true);
-    setTimeout(()=> setNum(false),3000);
+    setTimeout(()=>{
+      setNum(false)},2000);
   }
 
   useEffect(() => {
@@ -84,15 +85,15 @@ const handleAuthFaceMissing = () => {
         }
       };
 
-      window.addEventListener("blur", blurHandler);
-      window.addEventListener("focus", focusHandler);
-      document.addEventListener("fullscreenchange", fullscreenChangeHandler);
-      window.addEventListener("keydown", preventActions);
-      window.addEventListener("contextmenu", preventActions);
-      window.addEventListener("copy", preventActions);
-      window.addEventListener("cut", preventActions);
-      window.addEventListener("paste", preventActions);
-      window.addEventListener("resize", sizeHandler);
+      // window.addEventListener("blur", blurHandler);
+      // window.addEventListener("focus", focusHandler);
+      // document.addEventListener("fullscreenchange", fullscreenChangeHandler);
+      // window.addEventListener("keydown", preventActions);
+      // window.addEventListener("contextmenu", preventActions);
+      // window.addEventListener("copy", preventActions);
+      // window.addEventListener("cut", preventActions);
+      // window.addEventListener("paste", preventActions);
+      // window.addEventListener("resize", sizeHandler);
 
     
       return () => {
@@ -178,7 +179,7 @@ const handleAuthFaceMissing = () => {
 
         {num && (
           <div className={styles.alertBox} style={{ backgroundColor: "#1e88e5" }}>
-            👥 {face} faces detected.
+            {face} faces detected.
           </div>
         )}
 

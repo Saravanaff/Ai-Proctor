@@ -1,5 +1,7 @@
+'use client';
+
 import { useEffect, useRef, useState } from "react";
-import { Eye, Shield, Camera, Wifi, WifiOff,Maximize2 } from "lucide-react";
+import { Eye, Shield, Camera, Wifi, WifiOff, Maximize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { io, Socket } from "socket.io-client";
 import styles from "../styles/ThirdEye.module.css";
@@ -13,17 +15,35 @@ export default function ThirdEye() {
   const [showSurveillanceNotice, setShowSurveillanceNotice] = useState(false);
   const [isStreamingFrames, setIsStreamingFrames] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const { toast } = useToast();
 
   const serverUrl = "https://10.167.56.168:3002/";
   console.log("Server URL:", serverUrl);
 
   useEffect(() => {
+    setHydrated(true); // Flag to prevent hydration errors
+
+    const handleOrientation = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+
+    handleOrientation(); // Initial check
+    window.addEventListener("resize", handleOrientation);
+    window.addEventListener("orientationchange", handleOrientation);
+    return () => {
+      window.removeEventListener("resize", handleOrientation);
+      window.removeEventListener("orientationchange", handleOrientation);
+    };
+  }, []);
+
+  useEffect(() => {
     const newSocket = io(serverUrl);
     setSocket(newSocket);
-    if(newSocket){
-      newSocket.emit('mobile');
-    }
+
+    newSocket.emit('mobile');
+
     newSocket.on("connect", () => {
       setIsConnected(true);
       toast({
@@ -63,44 +83,50 @@ export default function ThirdEye() {
   }, []);
 
   const captureAndSendFrame = () => {
-  if (!videoRef.current || !canvasRef.current || !socket || !isConnected) return;
+    if (!videoRef.current || !canvasRef.current || !socket || !isConnected) return;
 
-  const video = videoRef.current;
-  const canvas = canvasRef.current;
-  const ctx = canvas.getContext("2d");
-  if (!ctx || video.videoWidth === 0 || video.videoHeight === 0) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx || video.videoWidth === 0 || video.videoHeight === 0) return;
 
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  canvas.toBlob((blob) => {
-    if (blob) {
-      blob.arrayBuffer().then((buffer) => {
-        socket.emit("video", buffer);
-      });
-    }
-  }, "image/jpeg", 0.7);
-};
+    canvas.toBlob((blob) => {
+      if (blob) {
+        blob.arrayBuffer().then((buffer) => {
+          socket.emit("video", buffer);
+        });
+      }
+    }, "image/jpeg", 0.7);
+  };
 
   const startStreaming = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: true 
-      });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
+
+        const container = videoRef.current.parentElement?.parentElement;
+        if (container && container.requestFullscreen) {
+          container.requestFullscreen();
+        }
+
         if (screen.orientation && (screen.orientation as any).lock) {
           try {
             await (screen.orientation as any).lock("landscape");
-          } catch (e) {
-          }
+          } catch (e) {}
         }
       }
+
       frameIntervalRef.current = setInterval(() => {
         captureAndSendFrame();
       }, 1000 / 30);
+
       setIsStreamingFrames(true);
       toast({
         title: "Third Eye Activated",
@@ -128,7 +154,6 @@ export default function ThirdEye() {
     toast({ title: "Streaming Stopped", description: "Camera stream ended." });
   };
 
-  
   return (
     <div
       className={styles.container}
@@ -149,46 +174,73 @@ export default function ThirdEye() {
           muted
           className={styles.video}
           style={{
-            transform: `translate(-50%, -50%)`,
+            transform: isLandscape
+              ? "translate(-50%, -50%) rotate(0deg)"
+              : "translate(-50%, -50%) rotate(90deg)",
             objectFit: "contain",
-            width: "100%",
+            width: "95%",
             height: "100vw",
             background: "black",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
           }}
         />
         <canvas ref={canvasRef} style={{ display: "none" }} />
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 40,
-            display: "flex",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-        >
-          <button
-            className={`${styles.button} ${
-              isStreamingFrames ? styles.stopButton : styles.startButton
-            }`}
-            onClick={isStreamingFrames ? stopStreaming : startStreaming}
-            disabled={!isConnected}
-            style={{ pointerEvents: "auto" }}
+
+        {/* Surveillance button or rotate warning */}
+        {hydrated && (
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 120,
+              display: "flex",
+              justifyContent: "center",
+              pointerEvents: "none",
+            }}
           >
-            {isStreamingFrames ? (
-              <>
-                <Eye className="mr-2 inline" size={18} />
-                Stop Surveillance
-              </>
+            {isLandscape ? (
+              <button
+                className={`${styles.button} ${
+                  isStreamingFrames ? styles.stopButton : styles.startButton
+                }`}
+                onClick={isStreamingFrames ? stopStreaming : startStreaming}
+                disabled={!isConnected}
+                style={{ pointerEvents: "auto" }}
+              >
+                {isStreamingFrames ? (
+                  <>
+                    <Eye className="mr-2 inline" size={18} />
+                    Stop Surveillance
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="mr-2 inline" size={18} />
+                    Start Surveillance
+                  </>
+                )}
+              </button>
             ) : (
-              <>
-                <Maximize2 className="mr-2 inline" size={18} />
-                Start Surveillance
-              </>
+              <div
+                style={{
+                  color: "#fff",
+                  background: "#e53935",
+                  padding: "10px 18px",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  fontSize: 16,
+                  pointerEvents: "auto",
+                }}
+              >
+                Please rotate your device to landscape to start surveillance.
+              </div>
             )}
-          </button>
-        </div>
+          </div>
+        )}
+
+        {/* Top status bar */}
         <div
           style={{
             position: "absolute",
@@ -222,6 +274,7 @@ export default function ThirdEye() {
               <WifiOff size={18} className="text-red-400" />
             )}
           </div>
+
           {showInitialNotice && (
             <div
               className={`${styles.notice} ${styles.initialNotice}`}
@@ -237,7 +290,10 @@ export default function ThirdEye() {
           {showSurveillanceNotice && (
             <div
               className={`${styles.notice} ${styles.surveillanceNotice}`}
-              style={{ margin: "8px 0 0 0", background: "rgba(255,0,0,0.12)" }}
+              style={{
+                margin: "8px 0 0 0",
+                background: "rgba(255,0,0,0.12)",
+              }}
             >
               <Shield className="inline mr-2" size={16} />
               <span>Surveillance Engaged</span>

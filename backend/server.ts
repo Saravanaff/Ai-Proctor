@@ -55,7 +55,7 @@ async function startServer() {
       proxy=socket;
       if(proxy){
           proxy.on("videos", (data: any) => {
-            console.log("third");
+            // console.log("third");
             if (pythonSocket) {
               pythonSocket.emit("thirdeye_cam", data);
             }

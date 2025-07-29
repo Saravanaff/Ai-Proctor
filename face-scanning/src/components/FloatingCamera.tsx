@@ -103,7 +103,7 @@ const FloatingCamera = ({
     socket.on("thirdeye_alert",(data:any)=>{
       if(data.person==0){
         np++;
-        if(np%100!==0){
+        if(np%100!=0){
           return;
         }
         np=0;
@@ -115,7 +115,7 @@ const FloatingCamera = ({
       }
       if(data.person>1){
         mp++;
-        if(mp%100!==0){
+        if(mp%100!=0){
           return;
         }
         mp=0;
@@ -125,16 +125,16 @@ const FloatingCamera = ({
           variant:"destructive"
         })
       }
-      if(data.laptop>1){
-        lp++;
-        if(lp%150!==0) return;
-        lp=0;
-        toast({
-          title:"Laptop other than Canditate is present",
-          description:"More number of Laptops are present",
-          variant:"destructive"
-        })
-      }
+      // if(data.laptop>1){
+      //   lp++;
+      //   if(lp%150!==0) return;
+      //   lp=0;
+      //   toast({
+      //     title:"Laptop other than Canditate is present",
+      //     description:"More number of Laptops are present",
+      //     variant:"destructive"
+      //   })
+      // }
 
       if(data.laptop<1){
         mlp++;
@@ -180,9 +180,9 @@ const FloatingCamera = ({
       detect();
       changeColor();
     }
-    if(data.no_of_person !== 1){
+    if(data.no_of_person != 1){
       person++;
-      if(person%120 !== 0) return;
+      if(person%120 != 0) return;
       person=0;
       number(data.no_of_person);
       changeColor();
