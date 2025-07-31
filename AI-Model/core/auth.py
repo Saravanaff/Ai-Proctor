@@ -18,12 +18,18 @@ def authenticate_face(image: np.ndarray, name: str) -> bool:
         print(f"❌ No entry found for name: {name}")
         return False
 
-    known_encoding = np.array(target_entry["encoding"])
+    stored_encodings = [
+        np.array(target_entry["1"]),
+        np.array(target_entry["2"]),
+        np.array(target_entry["3"]),
+    ]
+
     face_locations = face_recognition.face_locations(image)
     face_encodings = face_recognition.face_encodings(image, face_locations)
 
     for face_encoding in face_encodings:
-        if face_recognition.compare_faces([known_encoding], face_encoding)[0]:
+        results = face_recognition.compare_faces(stored_encodings, face_encoding)
+        if any(results):
             return True
-
+    
     return False

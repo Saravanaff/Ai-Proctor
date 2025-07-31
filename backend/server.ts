@@ -32,7 +32,7 @@ async function startServer() {
   );
 
   const io = new Server(httpsServer, {
-    transports: ["websocket","polling"],
+    transports: ["websocket", "polling"],
     cors: {
       origin: "*",
       methods: ["GET", "POST"],
@@ -50,24 +50,24 @@ async function startServer() {
       pythonSocket = socket;
     });
 
-    socket.on('proxy',()=>{
+    socket.on('proxy', () => {
       console.log("proxy connected successfully");
-      proxy=socket;
-      if(proxy){
-          proxy.on("videos", (data: any) => {
-            // console.log("third");
-            if (pythonSocket) {
-              pythonSocket.emit("thirdeye_cam", data);
-            }
-          });
-        }
+      proxy = socket;
+      if (proxy) {
+        proxy.on("videos", (data: any) => {
+          // console.log("third");
+          if (pythonSocket) {
+            pythonSocket.emit("thirdeye_cam", data);
+          }
+        });
+      }
     });
 
 
     socket.on("photo-save", (data) => {
-      console.log("Face Data :",data)
       if (pythonSocket) {
         pythonSocket.emit("save-face-data", data);
+        console.log("Face Data :", data);
       }
     });
 
@@ -93,7 +93,7 @@ async function startServer() {
       });
 
       pythonSocket.on("face_data_saved", (data: any) => {
-        // console.log("Result from Python", data);
+        console.log("Result from Python", data);
       });
 
       pythonSocket.on("drag_camera_result", (data: any) => {
