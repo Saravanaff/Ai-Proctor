@@ -26,7 +26,7 @@ def setup_save_face_data_handler(sio):
 
                 
         h, w = img.shape[:2]
-        crop_w, crop_h = 640, 640
+        crop_w, crop_h = 480, 480
     
         if h >= crop_h and w >= crop_w:
             x_start = (w - crop_w) // 2

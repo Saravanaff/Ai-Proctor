@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
+let iscapture = false;
 const serverPort = 3001;
 
 async function startServer() {
@@ -66,6 +67,7 @@ async function startServer() {
 
     socket.on("photo-save", (data) => {
       if (pythonSocket) {
+        iscapture = true;
         pythonSocket.emit("save-face-data", data);
         console.log("Face Data :", data);
       }
@@ -78,7 +80,7 @@ async function startServer() {
     });
 
     socket.on("frame", (data) => {
-      if (pythonSocket) {
+      if (pythonSocket && !iscapture) {
         pythonSocket.emit("process-frame", data);
       }
     });
@@ -93,6 +95,7 @@ async function startServer() {
       });
 
       pythonSocket.on("face_data_saved", (data: any) => {
+        iscapture = false;
         console.log("Result from Python", data);
       });
 

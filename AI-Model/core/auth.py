@@ -19,9 +19,7 @@ def authenticate_face(image: np.ndarray, name: str) -> bool:
         return False
 
     stored_encodings = [
-        np.array(target_entry["1"]),
-        np.array(target_entry["2"]),
-        np.array(target_entry["3"]),
+        np.array(target_entry["1"]), # straight
     ]
 
     face_locations = face_recognition.face_locations(image)
