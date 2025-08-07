@@ -8,8 +8,11 @@ import dotenv from "dotenv";
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
-let iscapture = false;
+let isCapture = false;
 const serverPort = 3001;
+
+let cnt = 0;
+
 
 async function startServer() {
   // const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
@@ -45,6 +48,8 @@ async function startServer() {
 
   io.on("connection", (socket) => {
     console.log("A client connected");
+    cnt++;
+    console.log("count : ",cnt);
 
     socket.on("register-python", () => {
       console.log("🐍 Python connected");
@@ -67,7 +72,7 @@ async function startServer() {
 
     socket.on("photo-save", (data) => {
       if (pythonSocket) {
-        iscapture = true;
+        isCapture = true;
         pythonSocket.emit("save-face-data", data);
         console.log("Face Data :", data);
       }
@@ -80,14 +85,13 @@ async function startServer() {
     });
 
     socket.on("frame", (data) => {
-      if (pythonSocket && !iscapture) {
+      if (pythonSocket && !isCapture) {
         pythonSocket.emit("process-frame", data);
       }
     });
 
     if (pythonSocket) {
       pythonSocket.on("thirdeye_cam_result", (data: any) => {
-        console.log("hi");
         if (data) {
           console.log("Third Eye Camera Result : ", data);
           socket.emit("thirdeye_alert", data);
@@ -95,7 +99,8 @@ async function startServer() {
       });
 
       pythonSocket.on("face_data_saved", (data: any) => {
-        iscapture = false;
+        isCapture = false;
+        socket.emit("face_save_status",data,)
         console.log("Result from Python", data);
       });
 
@@ -107,12 +112,17 @@ async function startServer() {
       });
 
       pythonSocket.on("result", (data: any) => {
-        socket.emit("fres", data);
+        console.log("data : ",data,isCapture);
+        if(!isCapture){
+          socket.emit("fres", data);
+        }
       });
     }
 
     socket.on("disconnect", () => {
       console.log("A client disconnected");
+      cnt--;
+      console.log("count : ",cnt);
     });
   });
 

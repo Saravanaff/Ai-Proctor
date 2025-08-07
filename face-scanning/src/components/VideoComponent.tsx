@@ -108,6 +108,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         }, 1000 / 30);
 
         socket.on("fres", (data: any) => {
+          console.log("Face Detection Result:", data);
           setCircle(data.face_found);
         });
       } catch (err) {
@@ -115,11 +116,14 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         setError("Unable to access camera");
         setIsLoading(false);
       }
-    };
-
+    }
+    
     setup();
 
     return () => {
+      // socket.off("fres", () => {
+      //   console.log("Face Detection Result listener removed");
+      // })
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (stream) stream.getTracks().forEach((t) => t.stop());
     };
