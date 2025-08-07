@@ -5,6 +5,13 @@ import { createCA, createCert } from "mkcert";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import {
+  initMediasoup,
+  getRtpCapabilities,
+  createTransport,
+  connectTransport,
+  produce,
+} from "./mediasoupServer"; // adjust path as needed
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -12,7 +19,6 @@ let isCapture = false;
 const serverPort = 3001;
 
 let cnt = 0;
-
 
 async function startServer() {
   // const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
@@ -31,9 +37,7 @@ async function startServer() {
     res.download(caPath, "rootCA.pem");
   });
 
-  const httpsServer = createHttpsServer(
-    app
-  );
+  const httpsServer = createHttpsServer(app);
 
   const io = new Server(httpsServer, {
     transports: ["websocket", "polling"],
@@ -48,15 +52,37 @@ async function startServer() {
 
   io.on("connection", (socket) => {
     console.log("A client connected");
-    cnt++;
-    console.log("count : ",cnt);
+    // cnt++;
+    // console.log("count : ", cnt);
+
+    socket.on("getRtpCapabilities", (cb) => {
+      cb({ rtpCapabilities: getRtpCapabilities() });
+    });
+
+    socket.on("createWebRtcTransport", async ({ direction }, cb) => {
+      const transportOptions = await createTransport();
+      cb(transportOptions);
+    });
+
+    socket.on(
+      "connectTransport",
+      async ({ transportId, dtlsParameters }, cb) => {
+        await connectTransport(transportId, dtlsParameters);
+        cb();
+      }
+    );
+
+    socket.on("produce", async ({ transportId, kind, rtpParameters }, cb) => {
+      const id = await produce(transportId, kind, rtpParameters);
+      cb({ id });
+    });
 
     socket.on("register-python", () => {
       console.log("🐍 Python connected");
       pythonSocket = socket;
     });
 
-    socket.on('proxy', () => {
+    socket.on("proxy", () => {
       console.log("proxy connected successfully");
       proxy = socket;
       if (proxy) {
@@ -68,7 +94,6 @@ async function startServer() {
         });
       }
     });
-
 
     socket.on("photo-save", (data) => {
       if (pythonSocket) {
@@ -100,7 +125,7 @@ async function startServer() {
 
       pythonSocket.on("face_data_saved", (data: any) => {
         isCapture = false;
-        socket.emit("face_save_status",data,)
+        socket.emit("face_save_status", data);
         console.log("Result from Python", data);
       });
 
@@ -112,8 +137,8 @@ async function startServer() {
       });
 
       pythonSocket.on("result", (data: any) => {
-        console.log("data : ",data,isCapture);
-        if(!isCapture){
+        console.log("data : ", data, isCapture);
+        if (!isCapture) {
           socket.emit("fres", data);
         }
       });
@@ -122,7 +147,7 @@ async function startServer() {
     socket.on("disconnect", () => {
       console.log("A client disconnected");
       cnt--;
-      console.log("count : ",cnt);
+      console.log("count : ", cnt);
     });
   });
 
@@ -131,4 +156,7 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+(async () => {
+  await initMediasoup();
+  await startServer();
+})().catch(console.error);

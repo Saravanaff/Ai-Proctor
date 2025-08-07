@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import styles from "../styles/FloatingCamera.module.css";
 import { gname } from "./GetName";
 import { useToast } from "@/hooks/use-toast";
+import * as mediasoupClient from "mediasoup-client";
 const FloatingCamera = ({
   socket,
   onLookingAway,
@@ -11,6 +12,7 @@ const FloatingCamera = ({
 }: any) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraRef = useRef<HTMLDivElement>(null);
+  const sendTransportRef = useRef<any>(null);
   const interRef = useRef<any>(null);
   const audRef = useRef<any>(null);
   const [position, setPosition] = useState({ x: 20, y: 20 });
@@ -36,11 +38,18 @@ const FloatingCamera = ({
 
   useEffect(() => {
     let stream: MediaStream;
-    let audioStream: MediaStream;
+    let device: mediasoupClient.Device;
+    let sendTransport: mediasoupClient.types.Transport;
+
+
+    // let audioStream: MediaStream;
+    
     const changeColor = async () => {
       setBorderColor("red");
       setTimeout(() => setBorderColor("white"), 3000);
     };
+
+
 
     const startCamera = async () => {
       try {
@@ -50,13 +59,58 @@ const FloatingCamera = ({
             width: 480,
           },
         });
-        audioStream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
+        // audioStream = await navigator.mediaDevices.getUserMedia({
+        //   audio: true,
+        // });
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
+
+        const { rtpCapabilities } = await socket.emitWithAck("getRtpCapabilities");
+
+        device = new mediasoupClient.Device();
+
+        await device.load({ routerRtpCapabilities: rtpCapabilities });
+
+        let transportOptions = await socket.emitWithAck(
+          "createWebRtcTransport",
+          {
+            direction: "send",
+          }
+        );
+
+        let sendTransport = device.createSendTransport(transportOptions);
+
+        sendTransport.on("connect", ({ dtlsParameters }, callback, errback) => {
+          socket.emit(
+            "connectTransport",
+            {
+              transportId: sendTransport.id,
+              dtlsParameters,
+            },
+            callback
+          );
+        });
+
+        sendTransport.on(
+          "produce",
+          async ({ kind, rtpParameters }, callback, errback) => {
+            const { id } = await socket.emitWithAck("produce", {
+              transportId: sendTransport.id,
+              kind,
+              rtpParameters,
+            });
+            callback({ id });
+          }
+        );
+
+
+        const videoTrack = stream.getVideoTracks()[0];
+        await sendTransport.produce({ track: videoTrack });
+
+        sendTransportRef.current = sendTransport;
+
 
         interRef.current = setInterval(async () => {
           const video = videoRef.current;

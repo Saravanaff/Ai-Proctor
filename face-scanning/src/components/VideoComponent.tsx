@@ -12,8 +12,11 @@ import {
   ScanButton,
   LoadingIndicator,
 } from "./";
+import { Device } from "mediasoup-client";
+
 import { useRouter } from "next/router";
 import socket from "./socket";
+import * as mediasoupClient from "mediasoup-client";
 
 const VideoComponent: React.FC<VideoComponentProps> = ({
   onScanComplete,
@@ -22,6 +25,8 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const intervalRef = useRef<any>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const sendTransportRef = useRef<any>(null);
   const [circle, setCircle] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
@@ -32,23 +37,77 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   useEffect(() => {
     let stream: MediaStream;
     const video = videoRef.current;
+
+    
+    let device: mediasoupClient.Device
+    // let sendTransport: mediasoupClient.types.Transport
+
     if (!video) return;
 
-    const setup = async () => {
+    const initiateMediaSoup = async () => {
+
       try {
         setIsLoading(true);
-        if (video.srcObject) {
-          (video.srcObject as MediaStream)
-            .getTracks()
-            .forEach((track) => track.stop());
-          video.srcObject = null;
-        }
 
         stream = await navigator.mediaDevices.getUserMedia({
           video: { width: 1280, height: 720 },
         });
+
         video.srcObject = stream;
+        streamRef.current = stream;
         setIsLoading(false);
+
+        const { rtpCapabilities } = await socket.emitWithAck('getRtpCapabilities')
+
+        console.log("RTP Capabilities:", rtpCapabilities);
+
+        try {
+          device = new Device();
+        }catch (error) {
+          console.error("Failed to create mediasoup client device:", error);
+          setError("Unable to initialize video stream");
+          setIsLoading(false);
+          return;
+        }
+
+        await device.load({ routerRtpCapabilities: rtpCapabilities })
+
+        let transportOptions = await socket.emitWithAck(
+          "createWebRtcTransport",
+          {
+            direction: "send",
+          }
+        );
+
+        let sendTransport = device.createSendTransport(transportOptions);
+
+        sendTransport.on("connect", ({ dtlsParameters }, callback, errback) => {
+          socket.emit(
+            "connectTransport",
+            {
+              transportId: sendTransport.id,
+              dtlsParameters,
+            },
+            callback
+          );
+        });
+
+        sendTransport.on(
+          "produce",
+          async ({ kind, rtpParameters }, callback, errback) => {
+            const { id } = await socket.emitWithAck("produce", {
+              transportId: sendTransport.id,
+              kind,
+              rtpParameters,
+            });
+            callback({ id });
+          }
+        );
+
+        const videoTrack = stream.getVideoTracks()[0];
+        await sendTransport.produce({ track: videoTrack });
+
+        sendTransportRef.current = sendTransport;
 
         intervalRef.current = setInterval(() => {
           if (!video || video.readyState < 2) return;
@@ -116,16 +175,20 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         setError("Unable to access camera");
         setIsLoading(false);
       }
-    }
-    
-    setup();
+    };
+    initiateMediaSoup();
 
     return () => {
       // socket.off("fres", () => {
       //   console.log("Face Detection Result listener removed");
       // })
       if (intervalRef.current) clearInterval(intervalRef.current);
-      if (stream) stream.getTracks().forEach((t) => t.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      if (sendTransportRef.current) {
+        sendTransportRef.current.close();
+      }
     };
   }, []);
 
@@ -185,13 +248,11 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   } = useScanFlow(steps, scanDuration);
 
   const onScanClick = async () => {
-
     await capturePhoto(currentStep);
 
     const isDone = await handleScan();
 
     if (isDone) {
-
       const video = videoRef.current;
       if (video && video.srcObject) {
         const mediaStream = video.srcObject as MediaStream;
