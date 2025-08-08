@@ -215,7 +215,7 @@ const FloatingCamera = ({
       }
       if (data.unauth_device == true) {
         uauth++;
-        if (uauth % 50 !== 0) return;
+        if (uauth % 2 !== 0) return;
         uauth = 0;
         toast({
           title: "Unauthorized Device Detected",

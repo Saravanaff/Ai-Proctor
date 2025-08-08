@@ -1,2 +1,1 @@
-
-export const soundLimit = 15;
+export const soundLimit = 25;

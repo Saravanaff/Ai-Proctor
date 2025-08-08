@@ -19,17 +19,18 @@ export default function ThirdEye() {
   const [hydrated, setHydrated] = useState(false);
   const { toast } = useToast();
 
-  const serverUrl = "https://10.167.56.168:3002/";
+  const serverUrl = "https://172.16.100.184:3002/";
   console.log("Server URL:", serverUrl);
 
   useEffect(() => {
-    setHydrated(true); // Flag to prevent hydration errors
+    setHydrated(true); 
 
     const handleOrientation = () => {
       setIsLandscape(window.innerWidth > window.innerHeight);
     };
 
-    handleOrientation(); // Initial check
+    handleOrientation();
+    
     window.addEventListener("resize", handleOrientation);
     window.addEventListener("orientationchange", handleOrientation);
     return () => {
