@@ -3,6 +3,8 @@ import styles from "../styles/FloatingCamera.module.css";
 import { gname } from "./GetName";
 import { useToast } from "@/hooks/use-toast";
 import * as mediasoupClient from "mediasoup-client";
+import useSoundLevel from "@/hooks/useSoundLevel";
+
 const FloatingCamera = ({
   socket,
   onLookingAway,
@@ -19,17 +21,36 @@ const FloatingCamera = ({
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [borderColor, setBorderColor] = useState("white");
-  const {toast}=useToast();
+  const [prevSoundDetected, setPrevSoundDetected] = useState(false);
+  const { toast } = useToast();
 
-  let look=0;
-  let person=0;
-  let auth=0;
-  let item=0;
-  let np=0;
-  let mp=0;
-  let uauth=0;
-  let lp=0;
-  let mlp=0;
+  let look = 0;
+  let person = 0;
+  let auth = 0;
+  let item = 0;
+  let np = 0;
+  let mp = 0;
+  let uauth = 0;
+  let lp = 0;
+  let mlp = 0;
+  let soundCount = 0;
+
+  const { isSoundDetected, audioLevel } = useSoundLevel();
+
+  useEffect(() => {
+    console.log("Sound Level:", audioLevel, isSoundDetected);
+    if (isSoundDetected && !prevSoundDetected) {
+      toast({
+        title: "Sound Detected",
+        description: "Audio detected during exam",
+        variant: "destructive",
+      });
+      setBorderColor("red");
+    } else if (!isSoundDetected) {
+      setBorderColor("white");
+    }
+    setPrevSoundDetected(isSoundDetected);
+  }, [audioLevel, isSoundDetected, prevSoundDetected, toast]);
 
   // const [look, setLook] = useState(0);
   // const [person, setPerson] = useState(0);
@@ -41,15 +62,10 @@ const FloatingCamera = ({
     let device: mediasoupClient.Device;
     let sendTransport: mediasoupClient.types.Transport;
 
-
-    // let audioStream: MediaStream;
-    
     const changeColor = async () => {
       setBorderColor("red");
       setTimeout(() => setBorderColor("white"), 3000);
     };
-
-
 
     const startCamera = async () => {
       try {
@@ -59,15 +75,14 @@ const FloatingCamera = ({
             width: 480,
           },
         });
-        // audioStream = await navigator.mediaDevices.getUserMedia({
-        //   audio: true,
-        // });
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
 
-        const { rtpCapabilities } = await socket.emitWithAck("getRtpCapabilities");
+        const { rtpCapabilities } = await socket.emitWithAck(
+          "getRtpCapabilities"
+        );
 
         device = new mediasoupClient.Device();
 
@@ -105,12 +120,10 @@ const FloatingCamera = ({
           }
         );
 
-
         const videoTrack = stream.getVideoTracks()[0];
         await sendTransport.produce({ track: videoTrack });
 
         sendTransportRef.current = sendTransport;
-
 
         interRef.current = setInterval(async () => {
           const video = videoRef.current;
@@ -154,30 +167,30 @@ const FloatingCamera = ({
 
     startCamera();
 
-    socket.on("thirdeye_alert",(data:any)=>{
-      if(data.person==0){
+    socket.on("thirdeye_alert", (data: any) => {
+      if (data.person == 0) {
         np++;
-        if(np%100!=0){
+        if (np % 100 != 0) {
           return;
         }
-        np=0;
+        np = 0;
         toast({
-          title:"Canditate is not present",
-          description:"No persons are there",
-          variant:"destructive"
+          title: "Canditate is not present",
+          description: "No persons are there",
+          variant: "destructive",
         });
       }
-      if(data.person>1){
+      if (data.person > 1) {
         mp++;
-        if(mp%100!=0){
+        if (mp % 100 != 0) {
           return;
         }
-        mp=0;
+        mp = 0;
         toast({
-          title:"More number of persons are present",
-          description:"Please ensure candidate is present in isolated area",
-          variant:"destructive"
-        })
+          title: "More number of persons are present",
+          description: "Please ensure candidate is present in isolated area",
+          variant: "destructive",
+        });
       }
       // if(data.laptop>1){
       //   lp++;
@@ -190,67 +203,67 @@ const FloatingCamera = ({
       //   })
       // }
 
-      if(data.laptop<1){
+      if (data.laptop < 1) {
         mlp++;
-        if(mlp%150!=0) return;
-        mlp=0;
-          toast({
-            title:"Candiate Laptop is not present",
-            description:"No laptop is present",
-            variant:"destructive"
-          })
-        
-      }
-      if(data.unauth_device==true){
-        uauth++;
-        if(uauth%50!==0) return;
-        uauth=0;
+        if (mlp % 150 != 0) return;
+        mlp = 0;
         toast({
-          title:"Unauthorized Device Detected",
-          description:"Dont keep Gadgets Nearby",
-          variant:"destructive"
+          title: "Candiate Laptop is not present",
+          description: "No laptop is present",
+          variant: "destructive",
         });
       }
-    })
+      if (data.unauth_device == true) {
+        uauth++;
+        if (uauth % 50 !== 0) return;
+        uauth = 0;
+        toast({
+          title: "Unauthorized Device Detected",
+          description: "Dont keep Gadgets Nearby",
+          variant: "destructive",
+        });
+      }
+    });
     socket.on("alert", (data: any) => {
-      console.log(data);
-    if(data.head_position !=="Forward"){
-      look++;
-      if(look%150 !== 0) return;
-      look=0;
-      onLookingAway(data.head_position);
-    }
-    if(data.head_position=='Forward' && data.eyes[0] !== "Center" && data.eyes[1] !== "Center"){
-      console.log("looking away with eyes");
-      look++;
-      if(look%150 !== 0) return;
-      look=0;
-      onLookingAway(data.head_position);
-    }
-    if(data.object_detected["cell phone"]){
-      item++;
-      if(item%10 !== 0) return;
-      item=0;
-      detect();
-      changeColor();
-    }
-    if(data.no_of_person != 1){
-      person++;
-      if(person%120 != 0) return;
-      person=0;
-      number(data.no_of_person);
-      changeColor();
-    }
-    else if(!data.auth_face){
-      auth++;
-      if(auth%600 !== 0) return;
-      auth=0;
-      changeColor();
-      onAuthFaceMissing();
-    }
-
-
-  });
+      // console.log(data);
+      if (data.head_position !== "Forward") {
+        look++;
+        if (look % 150 !== 0) return;
+        look = 0;
+        onLookingAway(data.head_position);
+      }
+      if (
+        data.head_position == "Forward" &&
+        data.eyes[0] !== "Center" &&
+        data.eyes[1] !== "Center"
+      ) {
+        // console.log("looking away with eyes");
+        look++;
+        if (look % 150 !== 0) return;
+        look = 0;
+        onLookingAway(data.head_position);
+      }
+      if (data.object_detected["cell phone"]) {
+        item++;
+        if (item % 10 !== 0) return;
+        item = 0;
+        detect();
+        changeColor();
+      }
+      if (data.no_of_person != 1) {
+        person++;
+        if (person % 120 != 0) return;
+        person = 0;
+        number(data.no_of_person);
+        changeColor();
+      } else if (!data.auth_face) {
+        auth++;
+        if (auth % 600 !== 0) return;
+        auth = 0;
+        changeColor();
+        onAuthFaceMissing();
+      }
+    });
 
     return () => {
       if (interRef.current) clearInterval(interRef.current);
