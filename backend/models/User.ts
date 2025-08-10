@@ -5,13 +5,14 @@ export enum UserRole {
   ADMIN = "admin",
 }
 
-@Table({ tableName: "users", timestamps: true })
-export class User extends Model<User> {
+@Table({ tableName: "Users", timestamps: true })
+export class User extends Model{
   @Column({
     type: DataType.INTEGER,
-    allowNull: false,
-    primaryKey:true
+    primaryKey:true,
+    autoIncrement:true
   })
+  
   id!: number;
 
   @Column({

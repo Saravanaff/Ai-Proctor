@@ -50,6 +50,7 @@ while not sio.connected:
         time.sleep(2)
 
 # Keep the client alive
+
 try:
     while True:
         time.sleep(1)

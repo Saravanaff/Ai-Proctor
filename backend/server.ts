@@ -1,10 +1,10 @@
+import "reflect-metadata";
 import express from "express";
 import { createServer as createHttpsServer } from "http";
 import { Server } from "socket.io";
-import { createCA, createCert } from "mkcert";
-import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import cors from "cors";
 import {
   initMediasoup,
   getRtpCapabilities,
@@ -12,6 +12,8 @@ import {
   connectTransport,
   produce,
 } from "./mediasoupServer"; // adjust path as needed
+import { sequelize } from "./db";
+import authRoutes from "./routes/authRoutes";
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -21,11 +23,16 @@ const serverPort = 3001;
 let cnt = 0;
 
 async function startServer() {
-  // const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
-  // const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
-  // const ca = fs.readFileSync(path.join(__dirname, "rootCA.pem"));
-
   const app = express();
+
+  // Allow all origins
+  app.use(cors());
+
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  // Mount auth router
+  app.use("/", authRoutes);
 
   app.get("/", (req, res) => {
     res.send("DVD");
@@ -43,7 +50,6 @@ async function startServer() {
     transports: ["websocket", "polling"],
     cors: {
       origin: "*",
-      methods: ["GET", "POST"],
     },
   });
 
@@ -103,6 +109,7 @@ async function startServer() {
       }
     });
 
+
     socket.on("authenticate", (data) => {
       if (pythonSocket) {
         pythonSocket.emit("drag_camera", data);
@@ -158,5 +165,10 @@ async function startServer() {
 
 (async () => {
   await initMediasoup();
+  // Initialize and sync database before starting server
+  await sequelize.authenticate();
+  await sequelize.sync();
   await startServer();
 })().catch(console.error);
+
+
