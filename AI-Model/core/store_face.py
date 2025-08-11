@@ -7,7 +7,7 @@ import os
 
 data_path = "storage/face_data.json"
 
-def store_data(image,angle,name):
+def store_data(image,angle,userId):
     face_locations = face_recognition.face_locations(image)
     print("Face count: ", len(face_locations))
 
@@ -38,15 +38,15 @@ def store_data(image,angle,name):
     
     update = False
     for entry in stored_entry:
-        if entry["name"] == name:
+        if entry["userId"] == userId:
             entry[angle_str] = encoding
             update = True
             break
                     
     if not update:
-        face_data={"name":name,angle_str:encoding}
+        face_data={"userId":userId,angle_str:encoding}
         stored_entry.append(face_data)
-        print("New face data added for:", name)
+        print("New face data added for:", userId)
 
     
     with open(data_path, "w") as f:

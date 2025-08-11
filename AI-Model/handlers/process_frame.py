@@ -2,10 +2,11 @@ import numpy as np
 import cv2
 import face_recognition
 import time
+from core import constants,image_utils,head_pose
 import gc
 
 last_processed_time = 0
-frame_interval = 0.5
+frame_interval = 0.1
 frame_count=0
 def setup_process_frame_handler(sio):
     @sio.on("process-frame")
@@ -13,7 +14,7 @@ def setup_process_frame_handler(sio):
         global last_processed_time
         global frame_count
         frame_count+=1
-        if frame_count%10!=0:
+        if frame_count%2!=0:
             return
         if time.time() - last_processed_time < frame_interval:
             return
@@ -21,6 +22,7 @@ def setup_process_frame_handler(sio):
         try:
             last_processed_time = time.time()
 
+            userId=data["user_id"]
             buffer = data["buffer"]
             metadata = data["metadata"]
             width, height = int(metadata["width"]), int(metadata["height"])
@@ -30,7 +32,7 @@ def setup_process_frame_handler(sio):
             img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
             if img is None:
-                print("⚠️ Failed to decode image")
+                print("⚠ Failed to decode image")
                 return
 
             small_img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
@@ -43,9 +45,17 @@ def setup_process_frame_handler(sio):
                 for top, right, bottom, left in faces_fr
             ]
 
+            if last_processed_time - constants.last_head_process > constants.HEAD_INTERVAL:
+                with constants.head_lock:
+                    if last_processed_time - constants.last_head_process > constants.HEAD_INTERVAL:
+                        constants.head_position, constants.eyes = head_pose.detect_head_direction(rgb_small)
+                        constants.last_head_process = last_processed_time
+
             result_data = {
+                "userId":userId,
                 "fr_faces": [list(map(int, face)) for face in fr_faces_scaled],
                 "face_found": len(fr_faces_scaled) > 0,
+                "head_position": constants.head_position
             }
 
             sio.emit("result", result_data)

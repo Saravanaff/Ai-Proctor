@@ -9,10 +9,11 @@ from core import store_face
 def setup_save_face_data_handler(sio):
     @sio.on("save-face-data")
     def save_face_data(data):
+        print(data)
 
         print("📝 Saving face data...")
         blob = data["buffer"]
-        name = data["name"]
+        userId = data["user_id"]
         angle = data["angle"] #1 front , 2 right, 3 left;
     
         image_array = np.frombuffer(blob, dtype=np.uint8)
@@ -40,7 +41,7 @@ def setup_save_face_data_handler(sio):
         # 👇 Save the decoded image for debugging
         debug_dir = "debug_faces"
         os.makedirs(debug_dir, exist_ok=True)
-        image_path = os.path.join(debug_dir, f"{name}_angle{angle}.jpg")
+        image_path = os.path.join(debug_dir, f"{userId}_angle{angle}.jpg")
         cv2.imwrite(image_path, img)
         print(f"Saved image to {image_path}")
     
@@ -48,7 +49,7 @@ def setup_save_face_data_handler(sio):
         print("Image dtype:", rgb_img.dtype, "Shape:", rgb_img.shape)
     
         print("Processing")
-        result = store_face.store_data(rgb_img,angle,name)
+        result = store_face.store_data(rgb_img,angle,userId)
         print("Processed")
 
         sio.emit("face_data_saved", result)

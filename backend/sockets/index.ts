@@ -19,6 +19,8 @@ export function initSocket(server: HttpServer) {
   // One-to-one mapping between userId and their latest socketId
   const userToSocket = new Map<string, string>();
   const socketToUser = new Map<string, string>();
+  // Per-user capture isolation
+  const isCapture = new Set<string>();
 
   function linkSocketToUser(socketId: string, userId?: string | null) {
     if (!userId) return;
@@ -35,13 +37,15 @@ export function initSocket(server: HttpServer) {
     socketToUser.delete(socketId);
     const active = userToSocket.get(uid);
     if (active === socketId) userToSocket.delete(uid);
+    // Optionally clear capture state for this user
+    isCapture.delete(uid);
   }
 
   function emitToUserById(userId: string | undefined, event: string, payload: any) {
     if (!userId) return;
     const sid = userToSocket.get(String(userId));
     if (!sid) return;
-    console.log(userId,event,payload);
+    console.log(userId, event, payload);
     io.to(sid).emit(event, payload);
   }
 
@@ -116,7 +120,9 @@ export function initSocket(server: HttpServer) {
       });
 
       pythonSocket.on("face_data_saved", (data: any) => {
-        emitToUserById(data?.userId, "face_save_status", data);
+        const uid = String(data?.userId ?? data?.user_id ?? "");
+        if (uid) isCapture.delete(uid);
+        emitToUserById(uid || data?.userId, "face_save_status", data);
       });
 
       pythonSocket.on("drag_camera_result", (data: any) => {
@@ -124,6 +130,7 @@ export function initSocket(server: HttpServer) {
       });
 
       pythonSocket.on("result", (data: any) => {
+        console.log(data);
         emitToUserById(data.userId, "fres", data);
       });
     });
@@ -140,6 +147,8 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("photo-save", (data) => {
+      const uid = String((data as any)?.userId ?? (data as any)?.user_id ?? "");
+      if (uid) isCapture.add(uid);
       if (pythonSocket) {
         pythonSocket.emit("save-face-data", data);
       }
@@ -152,6 +161,8 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("frame", (data) => {
+      const uid = String((data as any)?.userId ?? (data as any)?.user_id ?? "");
+      if (uid && isCapture.has(uid)) return;
       if (pythonSocket) {
         pythonSocket.emit("process-frame", data);
       }
