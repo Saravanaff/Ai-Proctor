@@ -1,26 +1,18 @@
 import "reflect-metadata";
 import express from "express";
 import { createServer as createHttpsServer } from "http";
-import { Server } from "socket.io";
 import path from "path";
 import dotenv from "dotenv";
 import cors from "cors";
-import {
-  initMediasoup,
-  getRtpCapabilities,
-  createTransport,
-  connectTransport,
-  produce,
-} from "./mediasoupServer"; // adjust path as needed
+import { initMediasoup } from "./mediasoupServer"; // adjust path as needed
 import { sequelize } from "./db";
 import authRoutes from "./routes/authRoutes";
+import authMiddleware from "./middleware/authMiddleWare";
+import { initSocket } from "./sockets";
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
-let isCapture = false;
 const serverPort = 3001;
-
-let cnt = 0;
 
 async function startServer() {
   const app = express();
@@ -30,9 +22,6 @@ async function startServer() {
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-
-  // Mount auth router
-  app.use("/", authRoutes);
 
   app.get("/", (req, res) => {
     res.send("DVD");
@@ -44,119 +33,13 @@ async function startServer() {
     res.download(caPath, "rootCA.pem");
   });
 
+  app.use("/", authRoutes);
+  app.use(authMiddleware);
+
   const httpsServer = createHttpsServer(app);
 
-  const io = new Server(httpsServer, {
-    transports: ["websocket", "polling"],
-    cors: {
-      origin: "*",
-    },
-  });
-
-  let pythonSocket: any = null;
-  let proxy: any = null;
-
-  io.on("connection", (socket) => {
-    console.log("A client connected");
-    // cnt++;
-    // console.log("count : ", cnt);
-
-    socket.on("getRtpCapabilities", (cb) => {
-      cb({ rtpCapabilities: getRtpCapabilities() });
-    });
-
-    socket.on("createWebRtcTransport", async ({ direction }, cb) => {
-      const transportOptions = await createTransport();
-      cb(transportOptions);
-    });
-
-    socket.on(
-      "connectTransport",
-      async ({ transportId, dtlsParameters }, cb) => {
-        await connectTransport(transportId, dtlsParameters);
-        cb();
-      }
-    );
-
-    socket.on("produce", async ({ transportId, kind, rtpParameters }, cb) => {
-      const id = await produce(transportId, kind, rtpParameters);
-      cb({ id });
-    });
-
-    socket.on("register-python", () => {
-      console.log("🐍 Python connected");
-      pythonSocket = socket;
-    });
-
-    socket.on("proxy", () => {
-      console.log("proxy connected successfully");
-      proxy = socket;
-      if (proxy) {
-        proxy.on("videos", (data: any) => {
-          // console.log("third");
-          if (pythonSocket) {
-            pythonSocket.emit("thirdeye_cam", data);
-          }
-        });
-      }
-    });
-
-    socket.on("photo-save", (data) => {
-      if (pythonSocket) {
-        isCapture = true;
-        pythonSocket.emit("save-face-data", data);
-        console.log("Face Data :", data);
-      }
-    });
-
-
-    socket.on("authenticate", (data) => {
-      if (pythonSocket) {
-        pythonSocket.emit("drag_camera", data);
-      }
-    });
-
-    socket.on("frame", (data) => {
-      if (pythonSocket && !isCapture) {
-        pythonSocket.emit("process-frame", data);
-      }
-    });
-
-    if (pythonSocket) {
-      pythonSocket.on("thirdeye_cam_result", (data: any) => {
-        if (data) {
-          console.log("Third Eye Camera Result : ", data);
-          socket.emit("thirdeye_alert", data);
-        }
-      });
-
-      pythonSocket.on("face_data_saved", (data: any) => {
-        isCapture = false;
-        socket.emit("face_save_status", data);
-        console.log("Result from Python", data);
-      });
-
-      pythonSocket.on("drag_camera_result", (data: any) => {
-        if (data) {
-          // console.log("Drag camera Result : ", data);
-          socket.emit("alert", data);
-        }
-      });
-
-      pythonSocket.on("result", (data: any) => {
-        console.log("data : ", data, isCapture);
-        if (!isCapture) {
-          socket.emit("fres", data);
-        }
-      });
-    }
-
-    socket.on("disconnect", () => {
-      console.log("A client disconnected");
-      cnt--;
-      console.log("count : ", cnt);
-    });
-  });
+  // Initialize Socket.IO via module
+  initSocket(httpsServer);
 
   httpsServer.listen(serverPort, () => {
     console.log(`✅ HTTP Socket.IO server running at ${serverPort}`);
@@ -165,7 +48,6 @@ async function startServer() {
 
 (async () => {
   await initMediasoup();
-  // Initialize and sync database before starting server
   await sequelize.authenticate();
   await sequelize.sync();
   await startServer();

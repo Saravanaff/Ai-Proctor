@@ -4,6 +4,7 @@ import { gname } from "./GetName";
 import { useToast } from "@/hooks/use-toast";
 import * as mediasoupClient from "mediasoup-client";
 import useSoundLevel from "@/hooks/useSoundLevel";
+import { getUserId } from "./AuthStore";
 
 const FloatingCamera = ({
   socket,
@@ -151,8 +152,9 @@ const FloatingCamera = ({
                       width,
                       height,
                     },
-                    name: gname,
+                    user_id: getUserId(),
                   });
+
                 });
               }
             },

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import styles from "../styles/Auth.module.css";
-import { setIdentity, lockIdentity } from "@/components/AuthStore";
+import { setGlobalIdentity } from "@/components/AuthStore";
 
 export default function AuthPage() {
   const [isRegister, setIsRegister] = useState(false);
@@ -31,8 +31,7 @@ export default function AuthPage() {
         // Set auth cookie only
         document.cookie = `authToken=${token}; Path=/; Max-Age=${60 * 60 * 2}; SameSite=Lax`;
         // Set and lock global identity
-        setIdentity(user.name, user.id, user.email);
-        lockIdentity();
+        setGlobalIdentity(user.name, user.email, user.id);
       }
 
       const dest = (router.query.redirect as string) || "/photo";

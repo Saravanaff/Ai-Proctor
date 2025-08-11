@@ -3,6 +3,7 @@ import { VideoComponentProps } from "../types";
 import { defaultScanSteps } from "../constants/scanConfig";
 import { useScanFlow } from "../hooks/useScanFlow";
 import { gname } from "./GetName";
+import { getUserId } from "./AuthStore";
 import {
   VideoStream,
   FaceDetectionOverlay,
@@ -157,6 +158,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                       width: boundingSize,
                       height: boundingSize,
                     },
+                    user_id:getUserId()
                   });
                 });
               }
@@ -168,6 +170,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
         socket.on("fres", (data: any) => {
           console.log("Face Detection Result:", data);
+          console.log(data);
           setCircle(data.face_found);
         });
       } catch (err) {
@@ -216,6 +219,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                 buffer,
                 name: `${gname}`,
                 angle: stepId,
+                user_id:getUserId()
               });
             });
 
