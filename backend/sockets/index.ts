@@ -1,6 +1,5 @@
 import { Server } from "socket.io";
 import type { Server as HttpServer } from "http";
-import jwt from "jsonwebtoken";
 import {
   getRtpCapabilities,
   createTransport,
@@ -8,18 +7,14 @@ import {
   produce,
 } from "../mediasoupServer";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
-
 export function initSocket(server: HttpServer) {
   const io = new Server(server, {
     transports: ["websocket", "polling"],
     cors: { origin: "*" },
   });
 
-  // One-to-one mapping between userId and their latest socketId
   const userToSocket = new Map<string, string>();
   const socketToUser = new Map<string, string>();
-  // Per-user capture isolation
   const isCapture = new Set<string>();
 
   function linkSocketToUser(socketId: string, userId?: string | null) {
@@ -37,7 +32,6 @@ export function initSocket(server: HttpServer) {
     socketToUser.delete(socketId);
     const active = userToSocket.get(uid);
     if (active === socketId) userToSocket.delete(uid);
-    // Optionally clear capture state for this user
     isCapture.delete(uid);
   }
 
@@ -49,37 +43,9 @@ export function initSocket(server: HttpServer) {
     io.to(sid).emit(event, payload);
   }
 
-  function getTokenFromHandshake(socket: any): string | null {
-    const authTok = socket?.handshake?.auth?.token as string | undefined;
-    if (authTok) return authTok;
-    const headerAuth = (socket.handshake.headers?.authorization || socket.handshake.headers?.Authorization) as
-      | string
-      | undefined;
-    if (typeof headerAuth === "string" && headerAuth.toLowerCase().startsWith("bearer ")) {
-      return headerAuth.slice(7).trim();
-    }
-    const cookieHeader = socket.handshake.headers?.cookie as string | undefined;
-    if (cookieHeader) {
-      for (const part of cookieHeader.split(/;\s*/)) {
-        const [k, v] = part.split("=");
-        if (k === "authToken" && v) return decodeURIComponent(v);
-      }
-    }
-    return null;
-  }
-
   function resolveUserId(socket: any): string | null {
     const fromAuth = socket?.handshake?.auth?.userId;
-    if (fromAuth != null) return String(fromAuth);
-    const token = getTokenFromHandshake(socket);
-    if (token) {
-      try {
-        const payload: any = jwt.verify(token, JWT_SECRET);
-        const id = payload?.id ?? payload?.sub;
-        if (id != null) return String(id);
-      } catch {}
-    }
-    return null;
+    return fromAuth != null ? String(fromAuth) : null;
   }
 
   let pythonSocket: any = null;
@@ -109,11 +75,14 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("register-python", () => {
+      if (pythonSocket) {
+        pythonSocket.removeAllListeners("thirdeye_cam_result");
+        pythonSocket.removeAllListeners("face_data_saved");
+        pythonSocket.removeAllListeners("drag_camera_result");
+        pythonSocket.removeAllListeners("result");
+      }
+      
       pythonSocket = socket;
-      pythonSocket.removeAllListeners("thirdeye_cam_result");
-      pythonSocket.removeAllListeners("face_data_saved");
-      pythonSocket.removeAllListeners("drag_camera_result");
-      pythonSocket.removeAllListeners("result");
 
       pythonSocket.on("thirdeye_cam_result", (data: any) => {
         emitToUserById(data?.userId, "thirdeye_alert", data);

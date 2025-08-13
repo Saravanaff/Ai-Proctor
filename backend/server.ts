@@ -7,7 +7,7 @@ import cors from "cors";
 import { initMediasoup } from "./mediasoupServer"; // adjust path as needed
 import { sequelize } from "./db";
 import authRoutes from "./routes/authRoutes";
-import authMiddleware from "./middleware/authMiddleWare";
+import authMiddleware from "./middleware/authMiddleware";
 import { initSocket } from "./sockets";
 import examRoutes from "./routes/examRoutes";
 
@@ -18,7 +18,6 @@ const serverPort = 3001;
 async function startServer() {
   const app = express();
 
-  // Allow all origins
   app.use(cors());
 
   app.use(express.json());
