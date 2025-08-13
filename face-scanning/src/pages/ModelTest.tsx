@@ -18,7 +18,7 @@ const ModelTest = () => {
         const init = async() => {    
             const videoStream = await navigator.mediaDevices.getUserMedia({
                 video:true,
-                audio:true,
+                audio:false,
             })
             if(videoRef.current){
                 videoRef.current.srcObject = videoStream;
