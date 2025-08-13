@@ -1,4 +1,5 @@
-import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, Unique, AllowNull } from "sequelize-typescript";
+import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, Unique, AllowNull, HasMany } from "sequelize-typescript";
+import { Exam } from "./Exam";
 
 export enum UserRole {
   STUDENT = "student",
@@ -40,6 +41,9 @@ export class User extends Model{
     defaultValue: UserRole.STUDENT,
   })
   role!: UserRole;
+
+  @HasMany(() => Exam)
+  exams!: Exam[];
 }
 
 export default User;
