@@ -35,7 +35,7 @@ def store_data(image,angle,userId):
         print("Invalid angle value: ",angle)
         return {"status":False,"reason":"Invalid angle"}
     
-    
+     
     update = False
     for entry in stored_entry:
         if entry["userId"] == userId:

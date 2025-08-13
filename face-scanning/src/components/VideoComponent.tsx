@@ -39,7 +39,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
     let stream: MediaStream;
     const video = videoRef.current;
 
-    
+
     let device: mediasoupClient.Device
     // let sendTransport: mediasoupClient.types.Transport
 
@@ -64,7 +64,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
         try {
           device = new Device();
-        }catch (error) {
+        } catch (error) {
           console.error("Failed to create mediasoup client device:", error);
           setError("Unable to initialize video stream");
           setIsLoading(false);
@@ -158,7 +158,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                       width: boundingSize,
                       height: boundingSize,
                     },
-                    user_id:getUserId()
+                    user_id: getUserId()
                   });
                 });
               }
@@ -170,8 +170,16 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
         socket.on("fres", (data: any) => {
           console.log("Face Detection Result:", data);
-          console.log(data);
-          setCircle(data.face_found);
+          console.log("face_found:", data.face_found);
+          console.log("face_in_circle:", data.face_in_circle);
+
+          // For debugging: let's see both values
+          if (data.face_found && !data.face_in_circle) {
+            console.log("Face detected but not in circle - adjusting detection logic needed");
+          }
+
+          // Try using face_in_circle with fallback to face_found for now
+          setCircle(data.face_in_circle || false);
         });
       } catch (err) {
         console.error("Camera setup failed:", err);
@@ -219,7 +227,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                 buffer,
                 name: `${gname}`,
                 angle: stepId,
-                user_id:getUserId()
+                user_id: getUserId()
               });
             });
 

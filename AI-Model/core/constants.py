@@ -15,13 +15,18 @@ third_eye_objects = {
     "unauth_device": False,
 }
 
+
+
 person_count = 0
+faces_scaled=[]
 
 eyes = ["center", "center"]
 
 last_yolo_process = 0
 last_head_process = 0
 last_auth_process = 0
+last_processed_time = 0
+frameCount=0
 
 AUTH_INTERVAL = 1.0
 HEAD_INTERVAL = 0.5

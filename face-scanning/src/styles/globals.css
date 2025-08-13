@@ -42,7 +42,6 @@ a {
 }
 
 @keyframes scanLine {
-
   0% {
     transform: translateY(-100%);
   }
@@ -50,7 +49,6 @@ a {
   100% {
     transform: translateY(100%);
   }
-
 }
 
 @keyframes pop {
@@ -67,20 +65,31 @@ a {
   }
 }
 
-
-.click{
-      background-color:rgba(255, 255, 255, 0.9);
-      color: black;
-      border-radius:10px;
-      padding:15px 30px;
-      font-size:16px;
-      font-weight:600px;
-      min-width:200px;
-      min-height: 50px;
-      transition:0.3s ease;
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(50, 205, 50, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(50, 205, 50, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(50, 205, 50, 0);
+  }
 }
 
-.click:hover{
+.click {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: black;
+  border-radius: 10px;
+  padding: 15px 30px;
+  font-size: 16px;
+  font-weight: 600px;
+  min-width: 200px;
+  min-height: 50px;
+  transition: 0.3s ease;
+}
+
+.click:hover {
   background-color: #28a745;
   border: 2px solid white;
 }
