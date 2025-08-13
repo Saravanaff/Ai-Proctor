@@ -9,6 +9,7 @@ import { sequelize } from "./db";
 import authRoutes from "./routes/authRoutes";
 import authMiddleware from "./middleware/authMiddleWare";
 import { initSocket } from "./sockets";
+import examRoutes from "./routes/examRoutes";
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -34,6 +35,7 @@ async function startServer() {
   });
 
   app.use("/", authRoutes);
+  app.use("/",examRoutes);
   app.use(authMiddleware);
 
   const httpsServer = createHttpsServer(app);

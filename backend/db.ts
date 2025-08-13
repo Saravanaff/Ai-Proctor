@@ -1,11 +1,11 @@
 import "reflect-metadata";
 import { Sequelize } from 'sequelize-typescript';
 import {User} from './models/User';
-
+import { Exam } from "../backend/models/Exam";
 export const sequelize = new Sequelize({
   database: 'test',
   dialect: 'mysql',
   username: 'root',
   password: '',
-  models: [User],
+  models: [User,Exam],
 });
