@@ -19,7 +19,8 @@
     "ts-node": "^10.9.2"
   },
   "scripts": {
-    "dev": "npx ts-node server.ts"
+    "dev": "npx ts-node server.ts",
+    "sriram": "npx ts-node ./testserver/sriramServer.ts"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

@@ -22,11 +22,16 @@ function ClientAuth({ children }: { children: React.ReactNode }) {
         setReady(true);
         return;
       }
-      if (!hasAuthClient()) {
-        const redirect = encodeURIComponent(router.asPath || "/");
-        router.replace(`/Login?redirect=${redirect}`);
-        return;
-      }
+
+      /* uncomment this on production */
+      /*
+        if (!hasAuthClient()) {
+          const redirect = encodeURIComponent(router.asPath || "/");
+          router.replace(`/Login?redirect=${redirect}`);
+          return;
+        }
+      */
+
       setReady(true);
     };
 
