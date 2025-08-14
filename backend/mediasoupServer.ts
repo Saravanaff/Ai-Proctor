@@ -21,6 +21,7 @@ export async function initMediasoup() {
   console.log("✅ Mediasoup initialized");
 }
 
+
 export function getRtpCapabilities() {
   return router.rtpCapabilities;
 }
