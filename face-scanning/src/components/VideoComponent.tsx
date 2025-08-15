@@ -131,9 +131,9 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           const ctx = canvas.getContext("2d");
           if (!ctx) return;
 
-          ctx.beginPath();
-          ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
-          ctx.clip();
+          // ctx.beginPath();
+          // ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
+          // ctx.clip();
 
           ctx.drawImage(
             video,

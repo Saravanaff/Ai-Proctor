@@ -2,17 +2,11 @@ import numpy as np
 import cv2
 import face_recognition
 import time
-from core import constants, image_utils, head_pose
+from core import constants,image_utils,head_pose,store_face
 import gc
 
-
-FRAME_INTERVAL = 0.033
-FACE_DETECTION_INTERVAL = 3 
-FACE_SIZE_RATIO_MIN = 0.1
-FACE_SIZE_RATIO_MAX = 1.5
-CIRCLE_CENTER_THRESHOLD = 0.8
-CIRCLE_COVERAGE_THRESHOLD = 0.6
-PI_APPROX = 3.14159
+stage_arr=["Forward","Up","Right","Down","Left"]
+is_store=False
 
 last_processed_time = 0
 frame_count = 0  
@@ -62,6 +56,7 @@ def setup_process_frame_handler(sio):
     @sio.on("process-frame")
     def handle_frame(data):
         global last_processed_time
+        global is_store
         global frame_count
         frame_count += 1
         
@@ -88,18 +83,16 @@ def setup_process_frame_handler(sio):
 
             if img is None:
                 return
+            
+            if is_store==False:
+                cv2.imwrite("test_image.jpg",img)
+                print("Saved test data")
+                is_store=True
 
-            small_img = cv2.resize(img, (240, 240), interpolation=cv2.INTER_LINEAR)
+            small_img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
             rgb_small = cv2.cvtColor(small_img, cv2.COLOR_BGR2RGB)
-
-            faces_fr = face_recognition.face_locations(rgb_small, number_of_times_to_upsample=0, model="hog")
-
-            scale_factor = 2.0  
-            fr_faces_scaled = [
-                [int(top * scale_factor), int(right * scale_factor), 
-                 int(bottom * scale_factor), int(left * scale_factor)]
-                for top, right, bottom, left in faces_fr
-            ]
+            print("rgb_small shape: " ,rgb_small.shape," dtype : ",rgb_small.dtype)
+            faces_fr = face_recognition.face_locations(rgb_small)
 
             
             face_in_circle = False
@@ -112,15 +105,34 @@ def setup_process_frame_handler(sio):
                 with constants.head_lock:
                     if current_time - constants.last_head_process > constants.HEAD_INTERVAL:
                         constants.head_position, constants.eyes = head_pose.detect_head_direction(rgb_small)
-                        constants.last_head_process = current_time
+                        constants.last_head_process = last_processed_time
+
+            if stage_arr[constants.stage] == constants.head_position: 
+                if(len(faces_fr)>0):
+                    constants.counter[constants.stage]+=1
+            else:
+                constants.counter[constants.stage]=0
+
+            if constants.counter[constants.stage]%10==0 and constants.counter[constants.stage]!=0:
+                if constants.head_position == stage_arr[constants.stage] and len(faces_fr) >0 :
+                    print("store called")
+                    if(store_face.store_data(rgb_small,faces_fr,constants.stage,userId)):
+                        constants.success[constants.stage]=True
+                    else: 
+                        print("Failure")
+                    print("store exit")
 
             result_data = {
-                "userId": userId,
-                "fr_faces": fr_faces_scaled,
-                "face_found": bool(fr_faces_scaled),
-                "face_in_circle": face_in_circle,
-                "head_position": constants.head_position
+                "userId":userId,
+                "face_found": len(faces_fr) > 0,
+                "head_position": constants.head_position,
+                "stage":constants.stage,
+                "counter":constants.counter[constants.stage],
+                "success":constants.success[constants.stage],
+
             }
+            if constants.success[constants.stage]:
+                constants.stage+=1
 
             sio.emit("result", result_data)
 

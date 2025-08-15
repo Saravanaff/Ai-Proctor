@@ -7,13 +7,13 @@ import os
 
 data_path = "storage/face_data.json"
 
-def store_data(image,angle,userId):
-    face_locations = face_recognition.face_locations(image)
+def store_data(image,face_locations,angle,userId):
+    
     print("Face count: ", len(face_locations))
 
     if len(face_locations) != 1:
         print("Expect exactly 1 face, found", len(face_locations))
-        return {"status": False, "reason": "Must have exactly one face"}
+        return False
     
     encodings = face_recognition.face_encodings(image, face_locations)
 
@@ -31,9 +31,9 @@ def store_data(image,angle,userId):
         stored_entry = []
 
     angle_str=str(angle)
-    if angle_str not in {"1", "2", "3"}:
+    if angle_str not in {"0","1", "2", "3","4"}:
         print("Invalid angle value: ",angle)
-        return {"status":False,"reason":"Invalid angle"}
+        return False
     
      
     update = False
@@ -52,6 +52,6 @@ def store_data(image,angle,userId):
     with open(data_path, "w") as f:
         json.dump(stored_entry, f, indent=2)
 
-    return {"status": True,"reason":"successful"}
+    return True
 
     
