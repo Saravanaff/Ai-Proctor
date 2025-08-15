@@ -29,7 +29,13 @@ HEAD_INTERVAL = 0.5
 yolo_lock = Lock()
 auth_lock = Lock()
 head_lock = Lock()
+store_lock = Lock()
+deepface_lock = Lock()
 
 processing_yolo = False
 
 face_data_path = "storage/face_data.json"
+
+stage=0
+counter = [0,0,0,0,0]
+success = [False,False,False,False,False]

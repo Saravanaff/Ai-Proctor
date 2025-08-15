@@ -39,7 +39,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
     let stream: MediaStream;
     const video = videoRef.current;
 
-    
+
     let device: mediasoupClient.Device
     // let sendTransport: mediasoupClient.types.Transport
 
@@ -64,7 +64,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
         try {
           device = new Device();
-        }catch (error) {
+        } catch (error) {
           console.error("Failed to create mediasoup client device:", error);
           setError("Unable to initialize video stream");
           setIsLoading(false);
@@ -131,9 +131,9 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           const ctx = canvas.getContext("2d");
           if (!ctx) return;
 
-          ctx.beginPath();
-          ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
-          ctx.clip();
+          // ctx.beginPath();
+          // ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
+          // ctx.clip();
 
           ctx.drawImage(
             video,
@@ -158,7 +158,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                       width: boundingSize,
                       height: boundingSize,
                     },
-                    user_id:getUserId()
+                    user_id: getUserId()
                   });
                 });
               }
@@ -219,7 +219,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                 buffer,
                 name: `${gname}`,
                 angle: stepId,
-                user_id:getUserId()
+                user_id: getUserId()
               });
             });
 
