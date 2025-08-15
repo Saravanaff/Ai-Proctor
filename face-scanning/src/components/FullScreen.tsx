@@ -4,6 +4,7 @@ import FloatingCamera from "./FloatingCamera";
 import socket from "./socket";
 import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
+import { getUserId } from "@/constants/AuthStore";
 const questions = Array.from({ length: 10 }, (_, i) => ({
   id: i + 1,
   question: `Sample Question ${i + 1}?`,
@@ -11,7 +12,7 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
 }));
 
 
-const ExamPage: React.FC = ({screen}:any) => {
+const ExamPage: React.FC = ({ onBeforeSubmit, screen }:any) => {
     
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
@@ -19,13 +20,20 @@ const ExamPage: React.FC = ({screen}:any) => {
   const [object,setObject]=useState(false);
   const [num,setNum]=useState(false);
   const [authFaceMissing, setAuthFaceMissing] = useState(false);
+  const [paused, setPaused] = useState(false);
   const {toast}=useToast();
   const [face,setFace]=useState(0);
+  const [examSubmitted,setExamSubmitted] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder>(null);
   const router=useRouter();
-const handleAuthFaceMissing = () => {
-  setAuthFaceMissing(true);
-  setTimeout(() => setAuthFaceMissing(false), 3000);
-};
+
+
+
+  const handleAuthFaceMissing = () => {
+    console.log("Auth face missing alert triggered");
+    setAuthFaceMissing(true);
+    setTimeout(() => setAuthFaceMissing(false), 3000);
+  };
 
   
 
@@ -34,6 +42,7 @@ const handleAuthFaceMissing = () => {
   };
 
   const detectObject=()=>{
+    console.log("Object detected");
     setObject(true);
     setTimeout(()=>setObject(false),3000);
   }
@@ -69,6 +78,14 @@ const handleAuthFaceMissing = () => {
         setBlocked(true);
       };
 
+      const userId = getUserId();
+
+      socket.emit("start-exam",{
+        user_id: userId,
+        status: "success",
+        message: "Exam Started successfully"
+      });
+
       
 
       const fullscreenChangeHandler = () => {
@@ -84,17 +101,6 @@ const handleAuthFaceMissing = () => {
           setBlocked(true);
         }
       };
-
-      // window.addEventListener("blur", blurHandler);
-      // window.addEventListener("focus", focusHandler);
-      // document.addEventListener("fullscreenchange", fullscreenChangeHandler);
-      // window.addEventListener("keydown", preventActions);
-      // window.addEventListener("contextmenu", preventActions);
-      // window.addEventListener("copy", preventActions);
-      // window.addEventListener("cut", preventActions);
-      // window.addEventListener("paste", preventActions);
-      // window.addEventListener("resize", sizeHandler);
-
     
       return () => {
         window.removeEventListener("blur", blurHandler);
@@ -114,6 +120,7 @@ const handleAuthFaceMissing = () => {
   }, []);
   let s:any;
   const lookingAlert=(side:any)=>{
+    console.log("looking away");
         s=side;
         setlookAlert(true);
         setTimeout(() => setlookAlert(false), 3000);
@@ -132,6 +139,16 @@ const handleAuthFaceMissing = () => {
 
   return (
     <div className={styles.examContainer}>
+      {/* Exam paused overlay */}
+      {paused && (
+        <div className={styles.overlay} style={{ zIndex: 2000, background: 'rgba(0,0,0,0.6)' }}>
+          <div style={{ background: '#fff', color: '#111', padding: 20, borderRadius: 12, boxShadow: '0 10px 30px rgba(0,0,0,.35)' }}>
+            <h3 style={{ marginBottom: 8 }}>Exam Paused</h3>
+            <p>Authenticating your identity… Please look at the camera.</p>
+          </div>
+        </div>
+      )}
+
       <aside className={styles.sidebar}>
         <h3>Sections</h3>
         <ul>
@@ -161,11 +178,32 @@ const handleAuthFaceMissing = () => {
             </div>
           </div>
         ))}
-        <button className={styles.submitButton} onClick={()=>router.push('/end')}>Submit</button>
+        <button
+          className={styles.submitButton}
+          onClick={async () => {
+            try { if (onBeforeSubmit) await onBeforeSubmit(); } catch {}
+            router.push('/end');
+          }}
+        >
+          Submit
+        </button>
       </main>
 
-      <FloatingCamera socket={socket} onLookingAway={lookingAlert} detect={detectObject} number={number} onAuthFaceMissing={handleAuthFaceMissing}/>
-              {lookAlert && (
+      {!examSubmitted && (
+        <FloatingCamera 
+          socket={socket}
+          onLookingAway={lookingAlert} 
+          detect={detectObject} 
+          number={number} 
+          onAuthFaceMissing={handleAuthFaceMissing} 
+          examSubmitted={examSubmitted} 
+          mediaRecorderRef={mediaRecorderRef}
+          onAuthPause={() => setPaused(true)}
+          onAuthResume={() => setPaused(false)}
+        />)
+      }      
+
+        {lookAlert && (
           <div className={styles.alertBox} style={{ backgroundColor: "#fdd835" }}>
             ⚠️ Please stay focused on the screen! You are Turning {s}
           </div>
