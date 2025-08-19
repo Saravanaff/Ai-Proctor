@@ -1,12 +1,8 @@
 import React from "react";
+import CircleWithQuadrants from "./CircleWithQuadrant";
 
 export interface FaceDetectionOverlayProps {
-  faceDetected: boolean;
-  showSuccess: boolean;
-  expectedDirection?: "forward" | "right" | "left";
-  eligible?: boolean;
-  stepLabel?: string;
-  instructionText?: string;
+  storedFaceDirection: string[];
 }
 
 const Arrow: React.FC<{ dir?: "forward" | "right" | "left" }> = ({ dir }) => {
@@ -104,6 +100,8 @@ const Arrow: React.FC<{ dir?: "forward" | "right" | "left" }> = ({ dir }) => {
           50% {
             filter: drop-shadow(0 0 7px #22c55e) drop-shadow(0 0 18px #22c55e);
           }
+        alignItems: "center",
+        justifyContent: "center",
         }
       `}</style>
     </div>
@@ -111,14 +109,28 @@ const Arrow: React.FC<{ dir?: "forward" | "right" | "left" }> = ({ dir }) => {
 };
 
 const FaceDetectionOverlay: React.FC<FaceDetectionOverlayProps> = ({
-  faceDetected,
-  showSuccess,
-  expectedDirection,
-  eligible,
-  stepLabel,
-  instructionText,
+  storedFaceDirection,
 }) => {
-  const borderColor = eligible ? "#22c55e" : "rgba(255,255,255,0.5)";
+  const borderColor = "rgba(255,255,255,0.5)";
+  const expectedDirection = "left";
+  const eligible = true; 
+  const radiusOfCircle = 360;
+  
+  console.log(storedFaceDirection)
+
+  const color = {
+    up: "rgba(255,255,255,0.1)",
+    right: "rgba(255,255,255,0.1)",
+    down: "rgba(255,255,255,0.1)",
+    left: "rgba(255,255,255,0.1)",
+    forward: "rgba(255,255,255,0.1)",
+  };
+  for (const direction of storedFaceDirection) {
+    if (direction in color) {
+      color[direction as keyof typeof color] = "#22c55e"; 
+    }
+  }
+
   return (
     <div
       style={{
@@ -137,37 +149,16 @@ const FaceDetectionOverlay: React.FC<FaceDetectionOverlayProps> = ({
           top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
-          width: 360,
-          height: 360,
+          width: radiusOfCircle,
+          height: radiusOfCircle,
           borderRadius: "50%",
-          // Huge spread to dim outside the circle while keeping the hole bright
           boxShadow: "0 0 0 2000px rgba(0,0,0,0.5)",
           pointerEvents: "none",
         }}
       />
 
-      {/* Step label above circle */}
-      {stepLabel && (
-        <div
-          style={{
-            position: "absolute",
-            top: "14%",
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "rgba(0,0,0,0.5)",
-            color: "#e5e7eb",
-            padding: "6px 12px",
-            borderRadius: 999,
-            fontSize: 14,
-            fontWeight: 600,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-          }}
-        >
-          {stepLabel}
-        </div>
-      )}
 
-      <div
+      {/* <div
         style={{
           width: 360,
           height: 360,
@@ -183,28 +174,12 @@ const FaceDetectionOverlay: React.FC<FaceDetectionOverlayProps> = ({
         }}
       >
         <Arrow dir={expectedDirection} />
-        {showSuccess && (
-          <div
-            style={{
-              position: "absolute",
-              bottom: 16,
-              left: "50%",
-              transform: "translateX(-50%)",
-              background: "rgba(34,197,94,0.9)",
-              color: "#fff",
-              padding: "6px 10px",
-              borderRadius: 999,
-              fontSize: 12,
-              fontWeight: 600,
-            }}
-          >
-            Captured
-          </div>
-        )}
-      </div>
+      </div> */}
+
+      <CircleWithQuadrants size={radiusOfCircle} strokeWidth={10} color={color}/>
 
       {/* Instruction below circle */}
-      {instructionText && (
+      {/* {instructionText && (
         <div
           style={{
             position: "absolute",
@@ -219,7 +194,7 @@ const FaceDetectionOverlay: React.FC<FaceDetectionOverlayProps> = ({
         >
           {instructionText}
         </div>
-      )}
+      )} */}
     </div>
   );
 };

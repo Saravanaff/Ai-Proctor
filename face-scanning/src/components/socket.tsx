@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
-import { getUserId } from "./AuthStore";
+import { getUserId } from "@/constants/AuthStore";
 
 const SERVER_URL = "http://localhost:3001";
 

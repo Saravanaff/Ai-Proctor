@@ -17,7 +17,7 @@ import { Device } from "mediasoup-client";
 import { useRouter } from "next/router";
 import socket from "./socket";
 import * as mediasoupClient from "mediasoup-client";
-import { getUserId } from "../constants/AuthStore";
+import { getUserId } from "@/constants/AuthStore";
 
 
 
@@ -60,6 +60,11 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [detectedDirection, setDetectedDirection] = useState<"forward" | "right" | "left" | null>(null);
   const router = useRouter();
+
+  // const storedFaceDirection = useRef<string[]>([]);
+  const [storedFaceDirection, setStoredFaceDirection] = useState<string[]>([]);
+  const faceDirectionSequence = useRef<any>(["forward","up","right","down","left"]);
+  const currentDirectionIndex = useRef(0);
 
   // Centralized cleanup function
   const cleanupCamera = () => {
@@ -234,7 +239,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         sendTransportRef.current = sendTransport;
 
 
-        const  userId : string | null = getUserId();
+        const userId : string | null = getUserId();
         const onInterval = (video: HTMLVideoElement, userId: string | null, socketName: string): void => {
 
           if (!video || video.readyState < 2) return;
@@ -299,6 +304,13 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
 
         const onFres = (data: any) => {
+          // console.log(data," found :",data.face_found," success :",data.success," con: ",(data.head_position.toLowerCase() === faceDirectionSequence.current[currentDirectionIndex.current]));
+          if(data.face_found && data.success && (data.head_position.toLowerCase() === faceDirectionSequence.current[currentDirectionIndex.current])){
+            setStoredFaceDirection((prev) => [...prev, data.head_position.toLowerCase()]);
+            console.log("Face Saved for ",data.head_position.toLowerCase())
+            currentDirectionIndex.current++;
+          }
+          // console.log(data);
           setCircle(data.face_found);
           // Normalize direction if provided
           const raw = (typeof data?.direction === "string" ? data.direction : (data?.head_position || ""))?.toString().toLowerCase();
@@ -411,38 +423,34 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
   const steps = defaultScanSteps;
   const {
-    currentStep,
-    isScanning,
-    scanResults,
-    handleScan,
-    currentStepData,
+    
     isComplete,
   } = useScanFlow(steps, scanDuration);
 
-  const total = steps.length;
-  const progressPct = Math.min(100, Math.max(0, Math.round(((currentStep - 1) / total) * 100)));
-  const expectedDirection = currentStep === 1 ? "forward" : currentStep === 2 ? "right" : "left";
-  const eligible = circle && detectedDirection === expectedDirection;
+  // const total = steps.length;
+  // const progressPct = Math.min(100, Math.max(0, Math.round(((currentStep - 1) / total) * 100)));
+  // const expectedDirection = currentStep === 1 ? "forward" : currentStep === 2 ? "right" : "left";
+  // const eligible = circle && detectedDirection === expectedDirection;
 
 
-  const onScanClick = async () => {
-    await capturePhoto(currentStep);
+  // const onScanClick = async () => {
+  //   await capturePhoto(currentStep);
 
-    const isDone = await handleScan();
+  //   const isDone = await handleScan();
 
-    if (isDone) {
-      console.log("Scan completed, cleaning up camera");
+  //   if (isDone) {
+  //     console.log("Scan completed, cleaning up camera");
 
-      // Use centralized cleanup
-      cleanupCamera();
+  //     // Use centralized cleanup
+  //     cleanupCamera();
 
-      setShowOverlay(true);
+  //     setShowOverlay(true);
 
-      if (onScanComplete) {
-        onScanComplete(scanResults);
-      }
-    }
-  };
+  //     if (onScanComplete) {
+  //       onScanComplete(scanResults);
+  //     }
+  //   }
+  // };
 
   if (error) {
     return (
@@ -496,7 +504,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
       }}
     >
       {/* Top progress bar */}
-      <div
+      {/* <div
         style={{
           position: "absolute",
           top: 0,
@@ -515,10 +523,10 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             transition: "width .3s ease",
           }}
         />
-      </div>
+      </div> */}
       
       {/* Left stepper */}
-      <div
+      {/* <div
         style={{
           position: "absolute",
           top: 60,
@@ -548,32 +556,27 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             </div>
           );
         })}
-      </div>
+      </div> */}
 
-      <HeaderOverlay
+      {/* <HeaderOverlay
         icon={currentStepData.icon}
         title={currentStepData.title}
         instruction={currentStepData.instruction}
-      />
+      /> */}
 
       <VideoStream videoRef={videoRef} />
 
       <FaceDetectionOverlay
-        faceDetected={circle}
-        showSuccess={showSuccess}
-        expectedDirection={expectedDirection as any}
-        eligible={eligible}
-        stepLabel={`Step ${currentStep} of ${total}`}
-        instructionText={currentStep === 1 ? "Look directly at the camera" : currentStep === 2 ? "Turn your head to the right" : "Turn your head to the left"}
+        storedFaceDirection={storedFaceDirection}
       />
-      <FooterOverlay description={currentStepData.description} />
-      <StepCounter currentStep={currentStep} totalSteps={steps.length} />
-      <ScanButton
+      {/* <FooterOverlay description={currentStepData.description} /> */}
+      {/* <StepCounter currentStep={currentStep} totalSteps={steps.length} /> */}
+      {/* <ScanButton
         call={onScanClick}
         isScanning={isScanning}
         currentStep={currentStep}
         totalSteps={steps.length}
-      />
+      /> */}
 
       {isLoading && <LoadingIndicator message="Accessing camera..." />}
 

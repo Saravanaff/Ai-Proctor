@@ -131,6 +131,7 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("frame", (data) => {
+      console.log("framming...");
       const uid = String((data as any)?.userId ?? (data as any)?.user_id ?? "");
       if (uid && isCapture.has(uid)) return;
       if (pythonSocket) {
