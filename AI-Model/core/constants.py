@@ -15,13 +15,18 @@ third_eye_objects = {
     "unauth_device": False,
 }
 
+
+
 person_count = 0
+faces_scaled=[]
 
 eyes = ["center", "center"]
 
 last_yolo_process = 0
 last_head_process = 0
 last_auth_process = 0
+last_processed_time = 0
+frameCount=0
 
 AUTH_INTERVAL = 1.0
 HEAD_INTERVAL = 0.5
@@ -29,7 +34,13 @@ HEAD_INTERVAL = 0.5
 yolo_lock = Lock()
 auth_lock = Lock()
 head_lock = Lock()
+store_lock = Lock()
+deepface_lock = Lock()
 
 processing_yolo = False
 
 face_data_path = "storage/face_data.json"
+
+stage=0
+counter = [0,0,0,0,0]
+success = [False,False,False,False,False]

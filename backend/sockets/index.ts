@@ -81,7 +81,7 @@ export function initSocket(server: HttpServer) {
         pythonSocket.removeAllListeners("drag_camera_result");
         pythonSocket.removeAllListeners("result");
       }
-      
+
       pythonSocket = socket;
 
       pythonSocket.on("thirdeye_cam_result", (data: any) => {
@@ -100,7 +100,8 @@ export function initSocket(server: HttpServer) {
 
       pythonSocket.on("result", (data: any) => {
         console.log(data);
-        emitToUserById(data.userId, "fres", data);
+        emitToUserById(data?.userId, "fres", data);
+        // socket.emit("fres",data);
       });
     });
 
@@ -130,6 +131,7 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("frame", (data) => {
+      console.log("framming...");
       const uid = String((data as any)?.userId ?? (data as any)?.user_id ?? "");
       if (uid && isCapture.has(uid)) return;
       if (pythonSocket) {

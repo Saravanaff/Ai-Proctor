@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import styles from "../styles/Auth.module.css";
-import { setGlobalIdentity } from "@/components/AuthStore";
+import { setGlobalIdentity } from "@/constants/AuthStore";
 
 export default function AuthPage() {
   const [isRegister, setIsRegister] = useState(false);

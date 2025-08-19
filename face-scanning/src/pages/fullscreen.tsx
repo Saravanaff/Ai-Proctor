@@ -1,5 +1,4 @@
-import React from 'react';
-import { useState } from 'react';
+import React,{ useEffect, useState } from 'react';
 import ExamPage from "@/components/FullScreen";
 import styles from "../styles/ExamPage.module.css";
 import { sleep } from '@/utils/delay';
@@ -18,6 +17,28 @@ const fullscreen = () => {
             alert("You must allow fullscreen to continue the exam.");
         }
     };
+
+
+    useEffect(() => {
+        const onFsChange = () => {
+            const doc: any = document as any;
+            const active = !!(document.fullscreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement);
+            setFullscreenAllowed(active);
+        };
+        document.addEventListener('fullscreenchange', onFsChange);
+        // @ts-ignore vendor prefixes
+        document.addEventListener('webkitfullscreenchange', onFsChange);
+        // @ts-ignore
+        document.addEventListener('msfullscreenchange', onFsChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', onFsChange);
+            // @ts-ignore
+            document.removeEventListener('webkitfullscreenchange', onFsChange);
+            // @ts-ignore
+            document.removeEventListener('msfullscreenchange', onFsChange);
+        };
+    }, []);
+    
 
     if (!fullscreenAllowed) {
 

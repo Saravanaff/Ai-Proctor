@@ -1,16 +1,16 @@
 import { io } from "socket.io-client";
-import { getUserId } from "./AuthStore";
+import { getUserId } from "@/constants/AuthStore";
 
-const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001";
+const SERVER_URL = "http://localhost:3001";
 
 function currentUserId(): string | null {
   try {
     const id = getUserId?.();
     if (id) return id;
-  } catch {}
+  } catch { }
   try {
     if (typeof window !== "undefined") return window.localStorage.getItem("userId");
-  } catch {}
+  } catch { }
   return null;
 }
 

@@ -3,3 +3,6 @@ yolov8m.pt
 yolov8l.pt
 __pycache__/
 /debug_faces/
+*.jpg
+*.jpeg
+*.png

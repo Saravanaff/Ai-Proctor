@@ -33,7 +33,6 @@ const HeaderOverlay: React.FC<HeaderOverlayProps> = ({
         gap: "8px",
       }}
     >
-      <div style={{ fontSize: "24px" }}>{icon}</div>
       <div>{title}</div>
       <div style={{ fontSize: "16px", fontWeight: "400" }}>{instruction}</div>
     </div>
