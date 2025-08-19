@@ -34,8 +34,9 @@ async function startServer() {
   });
 
   app.use("/", authRoutes);
-  app.use("/",examRoutes);
   app.use(authMiddleware);
+
+  app.use("/",examRoutes);
 
   const httpsServer = createHttpsServer(app);
 

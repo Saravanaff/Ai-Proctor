@@ -22,6 +22,7 @@ export default function AuthPage() {
       const { data } = await axios.post(endpoint, payload, { withCredentials: false });
       const token: string | undefined = data?.token;
       const user = data?.user;
+      console.log(data);
       if (!token || !user?.id || !user?.name || !user?.email) {
         throw new Error(data?.message || "Invalid response");
       }

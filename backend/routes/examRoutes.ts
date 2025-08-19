@@ -1,7 +1,8 @@
 import {Router} from 'express';
-import {createExam} from '../controllers/ExamAdminController';
+import {createExam, getExam} from '../controllers/ExamAdminController';
 const router =Router();
 
-router.get('/exam',createExam);
+router.get('/exam',getExam);
+router.post('/examCreate',createExam);
 
 export default router;

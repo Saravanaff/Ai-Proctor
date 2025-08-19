@@ -2,14 +2,18 @@ import { Request,Response } from "express";
 import express from 'express';
 import { Exam } from "../models/Exam";
 import { Attend } from "../models/Attend";
+import {getUserIdFromToken} from '../utils/jwt';
 
 export const createExam=async(req:Request,res:Response)=>{
     try{
-        const {exam_name,user_id}=req.body;
-        if(!exam_name){
-            res.status(400).json({
+        console.log(req.body);
+        const {exam_name}=req.body;
+        const user_id=getUserIdFromToken(req);
+        console.log(user_id);
+        if(!exam_name || !user_id){
+            return res.status(400).json({
                 success:false,
-                message:"Exam name has not been came"
+                message:"Some Parameter is Missing"
             });
         }
         const lastExam=await Exam.findOne({
@@ -44,7 +48,8 @@ export const createExam=async(req:Request,res:Response)=>{
 }
 
 export const getExam = async (req: Request, res: Response) => {
-    const { user_id } = req.body;
+    const user_id=getUserIdFromToken(req);
+    console.log(user_id);
     if (!user_id) {
         return res.status(400).json({
             success: false,
