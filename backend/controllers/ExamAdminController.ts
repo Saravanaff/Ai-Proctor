@@ -59,7 +59,7 @@ export const getExam = async (req: Request, res: Response) => {
     try {
         const exams = await Exam.findAll({
             where: { user_id },
-            attributes: ['exam_name']
+            attributes: ['exam_name','key']
         });
         res.status(200).json({
             success: true,

@@ -39,9 +39,11 @@ const CreateExam = () => {
       setError(null);
       try {
         const base = 'http://localhost:3001';
-        const res = await axios.get(`${base}/exam`,);
-        console.log("re",res);
-        if (!cancelled) setExams(res.data);
+        const res = await axios.get(`${base}/exam`);
+        console.log("re", res);
+        if (!cancelled && res.data?.success && res.data?.exams) {
+          setExams(res.data.exams);
+        }
       } catch (e: any) {
         if (!cancelled) setError(e?.response?.data?.message || e.message || 'Failed to load exams');
       } finally {
@@ -66,6 +68,13 @@ const CreateExam = () => {
       };
       const res = await axios.post<Exam>(`${base}/examCreate`, payload);
       console.log("hi",res);
+      
+      // Refresh exams list after successful creation
+      const refreshRes = await axios.get(`${base}/exam`);
+      if (refreshRes.data?.success && refreshRes.data?.exams) {
+        setExams(refreshRes.data.exams);
+      }
+      
       setExamName('');
       setStartTime('');
       setEndTime('');
@@ -88,7 +97,10 @@ const CreateExam = () => {
 
   // derived
   const filteredExams = useMemo(
-    () => exams.filter(e => e.name.toLowerCase().includes(search.toLowerCase())),
+    () => exams.filter(e => {
+      const examName = (e as any).exam_name || (e as any).name || '';
+      return examName.toLowerCase().includes(search.toLowerCase());
+    }),
     [exams, search]
   );
   const stats = useMemo(() => ({
