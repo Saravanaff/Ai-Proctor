@@ -7,6 +7,8 @@ import {
   produce,
 } from "../mediasoupServer";
 
+import { io as ioClient } from "socket.io-client";
+
 export function initSocket(server: HttpServer) {
   const io = new Server(server, {
     transports: ["websocket", "polling"],
@@ -51,6 +53,7 @@ export function initSocket(server: HttpServer) {
 
   let pythonSocket: any = null;
   let proxy: any = null;
+  let storageSocket: any = ioClient(`http://localhost:${3003}`);
 
   io.on("connection", (socket) => {
     const uid = resolveUserId(socket);
@@ -137,6 +140,31 @@ export function initSocket(server: HttpServer) {
       if (uid && isCapture.has(uid)) return;
       if (pythonSocket) {
         pythonSocket.emit("process-frame", data);
+      }
+    });
+
+    socket.on("recorder-add-video-stream-chunk", (data: any) => {
+      
+      // console.log("chunk ,",data.chunk)
+      if (storageSocket) {
+        storageSocket.emit("add-video-stream-chunk", data);
+      }
+    });
+
+    socket.on("start-exam", (data: any) => {
+      if (storageSocket) {
+        /* For Initializing Video Recording */
+        console.log("Exam started", data);
+        storageSocket.emit("start-stream-recording", data);
+      }
+    });
+    socket.on("end-exam", (data: any) => {
+      if (storageSocket) {
+        /* For Closing Video Recording */
+
+        // const fileName = path.join(__dirname, "logs", "log.csv");
+        // const score = calculateScoreOnUser(fileName);
+        storageSocket.emit("stop-stream-recording", data);
       }
     });
 

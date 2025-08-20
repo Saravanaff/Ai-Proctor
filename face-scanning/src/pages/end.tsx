@@ -1,14 +1,28 @@
 import { useEffect, useRef } from "react";
+import socket from "@/components/socket";
+import { getUserId } from "@/constants/AuthStore";
+
 
 const EndPage = () => {
   const hasReloaded = useRef(false);
 
-  useEffect(() => {
-    if (!hasReloaded.current) {
-      hasReloaded.current = true;
-      window.location.reload();
-    }
-  }, []);
+
+  const userId = getUserId();
+
+  socket.emit("end-exam",{
+    user_id: userId,
+    category: "face_camera",
+    status: "success",
+    message: "Exam Ended successfully"
+  });
+
+
+  // useEffect(() => {
+  //   if (!hasReloaded.current) {
+  //     hasReloaded.current = true;
+  //     window.location.reload();
+  //   }
+  // }, []);
 
   return (
     <div style={{ textAlign: "center", paddingTop: "100px" }}>

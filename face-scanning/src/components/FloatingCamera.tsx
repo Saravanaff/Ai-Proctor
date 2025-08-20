@@ -9,6 +9,7 @@ import { delay } from '@/utils/delay';
 
 interface VideoChunkData {
   user_id: string;
+  category: string;
   chunk: ArrayBuffer;
 }
 
@@ -159,6 +160,7 @@ const FloatingCamera = ({
             e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
               const chunkData: VideoChunkData = {
                 user_id: getUserId() || "unknown",
+                category: "face_camera",
                 chunk: buffer,
               };
               socket.emit("recorder-add-video-stream-chunk", chunkData);
@@ -166,7 +168,7 @@ const FloatingCamera = ({
           }
         };
 
-        mediaRecorderRef.current.start(2000); // send chunks every 500ms
+        mediaRecorderRef.current.start(500); // send chunks every 500ms
 
         // const { rtpCapabilities } = await socket.emitWithAck(
         //   "getRtpCapabilities"

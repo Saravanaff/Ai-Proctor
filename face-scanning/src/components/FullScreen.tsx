@@ -82,6 +82,7 @@ const ExamPage: React.FC = ({ onBeforeSubmit, screen }:any) => {
 
       socket.emit("start-exam",{
         user_id: userId,
+        category: "face_camera",
         status: "success",
         message: "Exam Started successfully"
       });
