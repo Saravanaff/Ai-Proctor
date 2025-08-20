@@ -3,116 +3,16 @@ import CircleWithQuadrants from "./CircleWithQuadrant";
 
 export interface FaceDetectionOverlayProps {
   storedFaceDirection: string[];
+  expectedDirection: string;
 }
 
-const Arrow: React.FC<{ dir?: "forward" | "right" | "left" }> = ({ dir }) => {
-  if (!dir) return null;
-  const base: React.CSSProperties = {
-    width: 0,
-    height: 0,
-    borderLeft: "10px solid transparent",
-    borderRight: "10px solid transparent",
-    borderBottom: "16px solid #22c55e",
-  };
-  let arrowStyle: React.CSSProperties = {
-    ...base,
-    filter: "drop-shadow(0 0 6px #22c55e) drop-shadow(0 0 12px #22c55e)",
-  };
-  if (dir === "right") arrowStyle = { ...arrowStyle, transform: "rotate(90deg)" };
-  if (dir === "left") arrowStyle = { ...arrowStyle, transform: "rotate(-90deg)" };
-
-  const animName =
-    dir === "forward"
-      ? "arrowUpDown"
-      : dir === "left"
-      ? "arrowLeft"
-      : "arrowRight";
-  const wrapperStyle: React.CSSProperties = {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    animation: `${animName} 1.1s ease-in-out infinite`,
-    pointerEvents: "none",
-  };
-
-  // Glowing halo behind the arrow
-  const glowStyle: React.CSSProperties = {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: 44,
-    height: 44,
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(34,197,94,0.85) 0%, rgba(34,197,94,0.35) 45%, rgba(34,197,94,0) 70%)",
-    filter: "blur(6px)",
-    animation: "glow 1.1s ease-in-out infinite",
-  };
-
-  return (
-    <div style={wrapperStyle}>
-      <div style={glowStyle} />
-      <div style={{ ...arrowStyle, animation: "glowPulse 1.1s ease-in-out infinite" }} />
-      <style>{`
-        @keyframes arrowUpDown {
-          0%,
-          100% {
-            transform: translate(-50%, -15%);
-          }
-          50% {
-            transform: translate(-50%, -95%);
-          }
-        }
-        @keyframes arrowLeft {
-          0%,
-          100% {
-            transform: translate(-15%, -50%);
-          }
-          50% {
-            transform: translate(-95%, -50%);
-          }
-        }
-        @keyframes arrowRight {
-          0%,
-          100% {
-            transform: translate(-95%, -50%);
-          }
-          50% {
-            transform: translate(-15%, -50%);
-          }
-        }
-        @keyframes glow {
-          0%,
-          100% {
-            opacity: 0.65;
-          }
-          50% {
-            opacity: 1;
-          }
-        }
-        @keyframes glowPulse {
-          0%,
-          100% {
-            filter: drop-shadow(0 0 4px #22c55e) drop-shadow(0 0 10px #22c55e);
-          }
-          50% {
-            filter: drop-shadow(0 0 7px #22c55e) drop-shadow(0 0 18px #22c55e);
-          }
-        alignItems: "center",
-        justifyContent: "center",
-        }
-      `}</style>
-    </div>
-  );
-};
 
 const FaceDetectionOverlay: React.FC<FaceDetectionOverlayProps> = ({
   storedFaceDirection,
+  expectedDirection
 }) => {
   const borderColor = "rgba(255,255,255,0.5)";
-  const expectedDirection = "left";
+  // const expectedDirection = "left";
   const eligible = true; 
   const radiusOfCircle = 360;
   
@@ -152,7 +52,7 @@ const FaceDetectionOverlay: React.FC<FaceDetectionOverlayProps> = ({
           width: radiusOfCircle,
           height: radiusOfCircle,
           borderRadius: "50%",
-          // boxShadow: "0 0 0 2000px rgba(0,0,0,0.5)",
+          boxShadow: "0 0 0 2000px rgba(0,0,0,0.5)",
           pointerEvents: "none",
         }}
       />
@@ -176,7 +76,7 @@ const FaceDetectionOverlay: React.FC<FaceDetectionOverlayProps> = ({
         <Arrow dir={expectedDirection} />
       </div> */}
 
-      <CircleWithQuadrants size={radiusOfCircle} strokeWidth={10} color={color}/>
+      <CircleWithQuadrants size={radiusOfCircle} strokeWidth={10} color={color} expectedDirection={expectedDirection} />
 
       {/* Instruction below circle */}
       {/* {instructionText && (

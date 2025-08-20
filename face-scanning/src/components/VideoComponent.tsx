@@ -11,13 +11,14 @@ import {
   StepCounter,
   ScanButton,
   LoadingIndicator,
-} from "./";
+} from "@/components";
 import { Device } from "mediasoup-client";
 
 import { useRouter } from "next/router";
 import socket from "./socket";
 import * as mediasoupClient from "mediasoup-client";
 import { getUserId } from "@/constants/AuthStore";
+import LeftStepper from "./LeftStepper";
 
 
 
@@ -55,8 +56,6 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const sendTransportRef = useRef<any>(null);
   const deviceRef = useRef<mediasoupClient.Device | null>(null);
   const isCleaningUpRef = useRef(false);
-  const [circle, setCircle] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -181,69 +180,6 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         streamRef.current = stream;
         setIsLoading(false);
 
-        const { rtpCapabilities } = await socket.emitWithAck(
-          "getRtpCapabilities"
-        );
-
-        console.log("RTP Capabilities:", rtpCapabilities);
-
-        try {
-          device = new Device();
-          deviceRef.current = device;
-        } catch (error) {
-          console.error("Failed to create mediasoup client device:", error);
-          setError("Unable to initialize video stream");
-          setIsLoading(false);
-          return;
-        }
-
-        await device.load({ routerRtpCapabilities: rtpCapabilities });
-
-        let transportOptions = await socket.emitWithAck(
-          "createWebRtcTransport",
-          {
-            direction: "send",
-          }
-        );
-
-        let sendTransport = device.createSendTransport(transportOptions);
-
-        sendTransport.on("connect", ({ dtlsParameters }, callback, errback) => {
-          socket.emit(
-            "connectTransport",
-            {
-              transportId: sendTransport.id,
-              dtlsParameters,
-            },
-            callback
-          );
-        });
-
-        sendTransport.on(
-          "produce",
-          async ({ kind, rtpParameters }, callback, errback) => {
-            try {
-              const { id } = await socket.emitWithAck("produce", {
-                transportId: sendTransport.id,
-                kind,
-                rtpParameters,
-              });
-              callback({ id });
-            } catch (error) {
-              console.error("Produce error:", error);
-              errback(
-                error instanceof Error ? error : new Error(String(error))
-              );
-            }
-          }
-        );
-
-        const videoTrack = stream.getVideoTracks()[0];
-        await sendTransport.produce({ track: videoTrack });
-
-        sendTransportRef.current = sendTransport;
-
-
         const userId : string | null = getUserId();
         const onInterval = (video: HTMLVideoElement, userId: string | null, socketName: string): void => {
 
@@ -267,9 +203,6 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           const ctx: CanvasRenderingContext2D | null = canvas.getContext("2d");
           if (!ctx) return;
 
-          // ctx.beginPath();
-          // ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
-          // ctx.clip();
 
           ctx.drawImage(
             video,
@@ -327,7 +260,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             }
           }
           // console.log(data);
-          setCircle(data.face_found);
+          // setCircle(data.face_found);
           // Normalize direction if provided
           const raw = (typeof data?.direction === "string" ? data.direction : (data?.head_position || ""))?.toString().toLowerCase();
           if (raw) {
@@ -391,82 +324,6 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
     };
   }, [router]);
 
-  const capturePhoto = (stepId: number): Promise<Blob | null> => {
-    return new Promise((resolve) => {
-      const video = videoRef.current;
-      if (!video || video.readyState < 2) return resolve(null);
-
-      const width = video.videoWidth;
-      const height = video.videoHeight;
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return resolve(null);
-
-      ctx.drawImage(video, 0, 0, width, height);
-
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            blob.arrayBuffer().then((buffer) => {
-              socket.emit("photo-save", {
-                buffer,
-                name: `${gname}`,
-                angle: stepId,
-                user_id: getUserId() || "unknown",
-              });
-            });
-
-            setShowSuccess(true);
-
-            setTimeout(() => {
-              setShowSuccess(false);
-              // setShowOverlay(true);
-            }, 1000);
-
-            resolve(blob);
-          } else {
-            resolve(null);
-          }
-        },
-        "image/jpeg",
-        0.9
-      );
-    });
-  };
-
-  const steps = defaultScanSteps;
-  // const {
-    
-  //   isComplete,
-  // } = useScanFlow(steps, scanDuration);
-
-  // const total = steps.length;
-  // const progressPct = Math.min(100, Math.max(0, Math.round(((currentStep - 1) / total) * 100)));
-  // const expectedDirection = currentStep === 1 ? "forward" : currentStep === 2 ? "right" : "left";
-  // const eligible = circle && detectedDirection === expectedDirection;
-
-
-  // const onScanClick = async () => {
-  //   await capturePhoto(currentStep);
-
-  //   const isDone = await handleScan();
-
-  //   if (isDone) {
-  //     console.log("Scan completed, cleaning up camera");
-
-  //     // Use centralized cleanup
-  //     cleanupCamera();
-
-  //     setShowOverlay(true);
-
-  //     if (onScanComplete) {
-  //       onScanComplete(scanResults);
-  //     }
-  //   }
-  // };
 
   if (error) {
     return (
@@ -560,7 +417,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         <div style={{ fontWeight: 700, marginBottom: 8, opacity: 0.9 }}>Verification Steps</div>
         {["Face Forward", "Turn Right", "Turn Left"].map((label, idx) => {
           const stepNo = idx + 1;
-          const state = stepNo < currentStep ? "done" : stepNo === currentStep ? "current" : "pending";
+          const state = faceDirectionSequence.current.length < stage.current ? "done" : stepNo === stage.current ? "current" : "pending";
           const color = state === "done" ? "#22c55e" : state === "current" ? "#0ea5e9" : "#4b5563";
           return (
             <div key={idx} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 8px", borderRadius: 10, background: state === "current" ? "rgba(14,165,233,0.12)" : "transparent" }}>
@@ -573,27 +430,16 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           );
         })}
       </div> */}
+      <LeftStepper faceDirectionSequence={faceDirectionSequence} stage={stage} />
 
-      {/* <HeaderOverlay
-        icon={currentStepData.icon}
-        title={currentStepData.title}
-        instruction={currentStepData.instruction}
-      /> */}
 
       <VideoStream videoRef={videoRef} />
 
       <FaceDetectionOverlay
         storedFaceDirection={storedFaceDirection}
+        expectedDirection={(faceDirectionSequence.current.length > stage.current) ? (faceDirectionSequence.current[stage.current]) : null}
       />
-      {/* <FooterOverlay description={currentStepData.description} /> */}
-      {/* <StepCounter currentStep={currentStep} totalSteps={steps.length} /> */}
-      {/* <ScanButton
-        call={onScanClick}
-        isScanning={isScanning}
-        currentStep={currentStep}
-        totalSteps={steps.length}
-      /> */}
-
+      
       {isLoading && <LoadingIndicator message="Accessing camera..." />}
 
       {showOverlay && isComplete && (
