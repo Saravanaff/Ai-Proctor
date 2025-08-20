@@ -3,7 +3,7 @@ import numpy as np
 import face_recognition
 from .constants import face_data_path
 
-def authenticate_face(image: np.ndarray, name: str) -> bool:
+def authenticate_face(image: np.ndarray, userId: str) -> bool:
     with open(face_data_path, "r") as f:
         try:
             data = json.load(f)
@@ -13,13 +13,13 @@ def authenticate_face(image: np.ndarray, name: str) -> bool:
             print("❌ Corrupted JSON data.")
             return False
 
-    target_entry = next((entry for entry in data if entry["name"] == name), None)
+    target_entry = next((entry for entry in data if entry["userId"] == userId), None)
     if not target_entry:
-        print(f"❌ No entry found for name: {name}")
+        print(f"❌ No entry found for userId: {userId}")
         return False
 
     stored_encodings = [
-        np.array(target_entry["1"]), # straight
+        np.array(target_entry["0"]), 
     ]
 
     face_locations = face_recognition.face_locations(image)

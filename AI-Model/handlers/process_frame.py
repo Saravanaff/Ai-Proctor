@@ -5,11 +5,11 @@ import time
 from core import constants,image_utils,head_pose,store_face
 import gc
 
-stage_arr=["Forward","Up","Right","Down","Left"]
+stage_arr=["Forward","Right","Left"]
 is_store=False
 
 last_processed_time = 0
-frame_interval = 0.0
+frame_interval = 0.1
 frame_count=0
 def setup_process_frame_handler(sio):
     @sio.on("process-frame")
@@ -30,6 +30,9 @@ def setup_process_frame_handler(sio):
             buffer = data["buffer"]
             metadata = data["metadata"]
             width, height = int(metadata["width"]), int(metadata["height"])
+            counter = data["counter"]
+            stage = data["stage"]
+            success = False
             # print("width:", width, "height:", height)
 
             image_array = np.frombuffer(buffer, dtype=np.uint8)
@@ -55,17 +58,17 @@ def setup_process_frame_handler(sio):
                         constants.head_position, constants.eyes = head_pose.detect_head_direction(rgb_small)
                         constants.last_head_process = last_processed_time
 
-            if stage_arr[constants.stage] == constants.head_position: 
+            if stage_arr[stage] == constants.head_position: 
                 if(len(faces_fr)>0):
-                    constants.counter[constants.stage]+=1
+                    counter+=1
             else:
-                constants.counter[constants.stage]=0
+                counter = 0
 
-            if constants.counter[constants.stage]%10==0 and constants.counter[constants.stage]!=0:
-                if constants.head_position == stage_arr[constants.stage] and len(faces_fr) >0 :
+            if counter%1==0 and counter!=0:
+                if constants.head_position == stage_arr[stage] and len(faces_fr) >0 :
                     print("store called")
-                    if(store_face.store_data(rgb_small,faces_fr,constants.stage,userId)):
-                        constants.success[constants.stage]=True
+                    if(store_face.store_data(rgb_small,faces_fr,stage,userId)):
+                        success=True
                     else: 
                         print("Failure")
                     print("store exit")
@@ -74,13 +77,11 @@ def setup_process_frame_handler(sio):
                 "userId":userId,
                 "face_found": len(faces_fr) > 0,
                 "head_position": constants.head_position,
-                "stage":constants.stage,
-                "counter":constants.counter[constants.stage],
-                "success":constants.success[constants.stage],
+                "stage":stage,
+                "counter":counter,
+                "success":success,
 
             }
-            if constants.success[constants.stage]:
-                constants.stage+=1
 
             sio.emit("result", result_data)
 

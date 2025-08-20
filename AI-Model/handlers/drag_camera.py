@@ -6,7 +6,7 @@ def setup_drag_camera_handler(sio):
     @sio.on("drag_camera")
     def handle_drag_camera(data):
         buffer = data["buffer"]
-        name = data["name"]
+        userId = data["user_id"]
         img = image_utils.decode_image(buffer)
         rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -15,7 +15,7 @@ def setup_drag_camera_handler(sio):
         if now - constants.last_auth_process > constants.AUTH_INTERVAL:
             with constants.auth_lock:
                 if now - constants.last_auth_process > constants.AUTH_INTERVAL:
-                    constants.auth_status = auth.authenticate_face(rgb_img, name)
+                    constants.auth_status = auth.authenticate_face(rgb_img, userId)
                     constants.last_auth_process = now
 
         if now - constants.last_head_process > constants.HEAD_INTERVAL:

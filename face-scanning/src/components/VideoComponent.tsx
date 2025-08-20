@@ -37,6 +37,8 @@ interface SocketFrameData {
     buffer: ArrayBuffer;
     metadata: FrameMetadata;
     user_id: string;
+    stage: number;
+    counter: number;
 }
 
 
@@ -59,12 +61,15 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [detectedDirection, setDetectedDirection] = useState<"forward" | "right" | "left" | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
   const router = useRouter();
+
 
   // const storedFaceDirection = useRef<string[]>([]);
   const [storedFaceDirection, setStoredFaceDirection] = useState<string[]>([]);
-  const faceDirectionSequence = useRef<any>(["forward","up","right","down","left"]);
-  const currentDirectionIndex = useRef(0);
+  const faceDirectionSequence = useRef<any>(["forward","right","left"]);
+  const stage = useRef(0);
+  const counter = useRef(1);
 
   // Centralized cleanup function
   const cleanupCamera = () => {
@@ -242,7 +247,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         const userId : string | null = getUserId();
         const onInterval = (video: HTMLVideoElement, userId: string | null, socketName: string): void => {
 
-          if (!video || video.readyState < 2) return;
+          if (!video || video.readyState < 2 || isComplete) return;
 
           const width: number = video.videoWidth;
           const height: number = video.videoHeight;
@@ -283,14 +288,17 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
               if (blob) {
                 blob.arrayBuffer().then((buffer: ArrayBuffer) => {
                     const frameData: SocketFrameData = {
-                    buffer,
-                    metadata: {
-                        circle,
-                        width: boundingSize,
-                        height: boundingSize,
-                    },
-                    user_id: userId || "unknown",
+                      buffer,
+                      metadata: {
+                          circle,
+                          width: boundingSize,
+                          height: boundingSize,
+                      },
+                      user_id: userId || "unknown",
+                      counter: counter.current,
+                      stage: stage.current,
                     };
+                    
                     socket.emit(socketName, frameData);
                 });
               }
@@ -304,11 +312,19 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
 
         const onFres = (data: any) => {
-          // console.log(data," found :",data.face_found," success :",data.success," con: ",(data.head_position.toLowerCase() === faceDirectionSequence.current[currentDirectionIndex.current]));
-          if(data.face_found && data.success && (data.head_position.toLowerCase() === faceDirectionSequence.current[currentDirectionIndex.current])){
+          console.log(data," found :",data.face_found," success :",data.success," con: ",(data.head_position.toLowerCase() === faceDirectionSequence.current[stage.current]));
+          if(!data.success) {
+            counter.current = data.counter;
+          }
+          if(data.face_found && data.success && (data.head_position.toLowerCase() === faceDirectionSequence.current[stage.current])){
             setStoredFaceDirection((prev) => [...prev, data.head_position.toLowerCase()]);
-            console.log("Face Saved for ",data.head_position.toLowerCase())
-            currentDirectionIndex.current++;
+            stage.current++;
+            counter.current = 0;
+            if(stage.current >= faceDirectionSequence.current.length){
+              console.log("Face direction sequence complete");
+              setIsComplete(true);
+              setShowOverlay(true);
+            }
           }
           // console.log(data);
           setCircle(data.face_found);
@@ -422,10 +438,10 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   };
 
   const steps = defaultScanSteps;
-  const {
+  // const {
     
-    isComplete,
-  } = useScanFlow(steps, scanDuration);
+  //   isComplete,
+  // } = useScanFlow(steps, scanDuration);
 
   // const total = steps.length;
   // const progressPct = Math.min(100, Math.max(0, Math.round(((currentStep - 1) / total) * 100)));

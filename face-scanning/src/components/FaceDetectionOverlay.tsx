@@ -152,7 +152,7 @@ const FaceDetectionOverlay: React.FC<FaceDetectionOverlayProps> = ({
           width: radiusOfCircle,
           height: radiusOfCircle,
           borderRadius: "50%",
-          boxShadow: "0 0 0 2000px rgba(0,0,0,0.5)",
+          // boxShadow: "0 0 0 2000px rgba(0,0,0,0.5)",
           pointerEvents: "none",
         }}
       />

@@ -31,7 +31,7 @@ const CircleWithQuadrants = ({
           <path
             d={`M${center},${center - radius} 
                 A${radius},${radius} 0 0,1 ${center + radius},${center}`}
-            stroke={color["up"] || "rgba(255,255,255,0.5)"}
+            stroke={color["forward"] || "rgba(255,255,255,0.5)"}
             strokeWidth={strokeWidth}
             strokeLinecap="butt"
             strokeLinejoin="round"
@@ -51,7 +51,7 @@ const CircleWithQuadrants = ({
           <path
             d={`M${center},${center + radius} 
                 A${radius},${radius} 0 0,1 ${center - radius},${center}`}
-            stroke={color["down"] || "rgba(255,255,255,0.5)"}
+            stroke={color["forward"] || "rgba(255,255,255,0.5)"}
             strokeWidth={strokeWidth}
             strokeLinecap="butt"
             strokeLinejoin="round"

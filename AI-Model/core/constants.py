@@ -41,6 +41,4 @@ processing_yolo = False
 
 face_data_path = "storage/face_data.json"
 
-stage=0
-counter = [0,0,0,0,0]
-success = [False,False,False,False,False]
+

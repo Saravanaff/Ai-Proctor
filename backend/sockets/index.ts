@@ -16,6 +16,7 @@ export function initSocket(server: HttpServer) {
   const userToSocket = new Map<string, string>();
   const socketToUser = new Map<string, string>();
   const isCapture = new Set<string>();
+  
 
   function linkSocketToUser(socketId: string, userId?: string | null) {
     if (!userId) return;
@@ -99,7 +100,7 @@ export function initSocket(server: HttpServer) {
       });
 
       pythonSocket.on("result", (data: any) => {
-        console.log(data);
+        // console.log(data);
         emitToUserById(data?.userId, "fres", data);
         // socket.emit("fres",data);
       });
@@ -131,7 +132,7 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("frame", (data) => {
-      console.log("framming...");
+      // console.log("framming...",data);
       const uid = String((data as any)?.userId ?? (data as any)?.user_id ?? "");
       if (uid && isCapture.has(uid)) return;
       if (pythonSocket) {

@@ -10,7 +10,7 @@ data_path = "storage/face_data.json"
 def store_data(image,face_locations,angle,userId):
     
     print("Face count: ", len(face_locations))
-
+    
     if len(face_locations) != 1:
         print("Expect exactly 1 face, found", len(face_locations))
         return False
