@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
+const JWT_SECRET = "dev_secret_change_me";
 
 function getTokenFromRequest(req: Request): string | null {
   // Prefer Authorization header
