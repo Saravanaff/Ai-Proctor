@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
-import styles from "./AuthForm.module.css";
+import styles from "../../styles/AuthForm.module.css";
 import { setGlobalIdentity } from "@/constants/AuthStore";
 
 interface AuthFormProps {
@@ -13,6 +13,7 @@ const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("student");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -27,7 +28,7 @@ const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
       const endpoint = isRegister ? `${baseURL}/register` : `${baseURL}/login`;
       const payload = isRegister
-        ? { name, email, password }
+        ? { name, email, password, role }
         : { email, password };
 
       const { data } = await axios.post(endpoint, payload, {
@@ -120,6 +121,41 @@ const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
                 required
               />
             </div>
+
+            {isRegister && (
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className={`${styles.input} ${styles.selectInput}`}
+                  required
+                  style={{
+                    color: '#1f2937',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    appearance: 'none',
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: 'right 12px center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '16px',
+                    paddingRight: '40px'
+                  }}
+                >
+                  <option value="student" style={{ color: '#1f2937', backgroundColor: '#ffffff' }}>
+                    👨‍🎓 Student
+                  </option>
+                  <option value="examiner" style={{ color: '#1f2937', backgroundColor: '#ffffff' }}>
+                    👨‍🏫 Examiner
+                  </option>
+                </select>
+              </div>
+            )}
 
             {error && (
               <div className={styles.error}>

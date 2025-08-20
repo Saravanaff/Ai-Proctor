@@ -4,7 +4,7 @@ import { Attend } from "./Attend";
 
 export enum UserRole {
   STUDENT = "student",
-  ADMIN = "admin",
+  ADMIN = "examiner",
 }
 
 @Table({ tableName: "Users", timestamps: true })

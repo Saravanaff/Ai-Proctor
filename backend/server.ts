@@ -40,7 +40,6 @@ async function startServer() {
 
   const httpsServer = createHttpsServer(app);
 
-  // Initialize Socket.IO via module
   initSocket(httpsServer);
 
   httpsServer.listen(serverPort, () => {
@@ -51,7 +50,7 @@ async function startServer() {
 (async () => {
   await initMediasoup();
   await sequelize.authenticate();
-  await sequelize.sync();
+  await sequelize.sync({force:true});
   await startServer();
 })().catch(console.error);
 
