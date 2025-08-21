@@ -12,7 +12,6 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "name, email, password and role are required" });
     }
     
-    console.log("Registration attempt:", { name, email, role });
     
     const existing = await User.findOne({ 
       where: { 
@@ -20,7 +19,6 @@ export const register = async (req: Request, res: Response) => {
       } 
     });
     
-    console.log("Existing user check result:", existing);
     
     if (existing) {
       return res.status(409).json({ message: "Email already registered" });
@@ -35,7 +33,6 @@ export const register = async (req: Request, res: Response) => {
       role: role 
     } as any);
 
-    console.log("User created successfully:", { id: user.id, email: user.email, role: user.role });
 
     const token = jwt.sign({ 
       sub: user.id, 

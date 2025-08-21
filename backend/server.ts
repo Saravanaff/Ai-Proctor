@@ -50,7 +50,7 @@ async function startServer() {
 (async () => {
   await initMediasoup();
   await sequelize.authenticate();
-  await sequelize.sync({force:true});
+  await sequelize.sync();
   await startServer();
 })().catch(console.error);
 
