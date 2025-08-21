@@ -4,6 +4,7 @@ import face_recognition
 from .constants import face_data_path
 
 def authenticate_face(image: np.ndarray, userId: str) -> bool:
+    
     with open(face_data_path, "r") as f:
         try:
             data = json.load(f)
@@ -17,7 +18,6 @@ def authenticate_face(image: np.ndarray, userId: str) -> bool:
     if not target_entry:
         print(f"❌ No entry found for userId: {userId}")
         return False
-
     stored_encodings = [
         np.array(target_entry["0"]), 
     ]

@@ -64,7 +64,7 @@ def setup_process_frame_handler(sio):
             else:
                 counter = 0
 
-            if counter%1==0 and counter!=0:
+            if counter%2==0 and counter!=0:
                 if constants.head_position == stage_arr[stage] and len(faces_fr) >0 :
                     print("store called")
                     if(store_face.store_data(rgb_small,faces_fr,stage,userId)):

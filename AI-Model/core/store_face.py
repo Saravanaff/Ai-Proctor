@@ -31,7 +31,8 @@ def store_data(image,face_locations,angle,userId):
         stored_entry = []
 
     angle_str=str(angle)
-    if angle_str not in {"0","1", "2", "3","4"}:
+    print("Detected stage: ", angle_str)
+    if angle_str not in {"0","1", "2"}:
         print("Invalid angle value: ",angle)
         return False
     
@@ -50,6 +51,7 @@ def store_data(image,face_locations,angle,userId):
 
     
     with open(data_path, "w") as f:
+        print("writing angle:", angle_str)
         json.dump(stored_entry, f, indent=2)
 
     return True
