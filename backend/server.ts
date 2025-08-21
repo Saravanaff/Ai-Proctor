@@ -10,6 +10,7 @@ import authRoutes from "./routes/authRoutes";
 import authMiddleware from "./middleware/authMiddleware";
 import { initSocket } from "./sockets";
 import examRoutes from "./routes/examRoutes";
+import studentRoutes from "./routes/studentRoutes"
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -37,6 +38,7 @@ async function startServer() {
   app.use(authMiddleware);
 
   app.use("/",examRoutes);
+  app.use("/",studentRoutes);
 
   const httpsServer = createHttpsServer(app);
 

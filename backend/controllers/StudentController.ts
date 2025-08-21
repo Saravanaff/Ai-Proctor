@@ -15,7 +15,6 @@ export const joinExam = async (req: Request, res: Response) => {
             });
         }
 
-        // Find exam by key
         const exam = await Exam.findOne({
             where: { key: exam_key }
         });
@@ -27,7 +26,6 @@ export const joinExam = async (req: Request, res: Response) => {
             });
         }
 
-        // Check if student is already registered for this exam
         const existingAttendance = await Attend.findOne({
             where: { 
                 exam_id: exam.id,
@@ -42,11 +40,9 @@ export const joinExam = async (req: Request, res: Response) => {
             });
         }
 
-        // Register student for the exam
         await Attend.create({
             exam_id: exam.id,
             user_id: user_id,
-            // Add any other required fields like user_name if needed
         });
 
         res.status(200).json({
