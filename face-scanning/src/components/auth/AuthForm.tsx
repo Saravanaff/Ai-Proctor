@@ -48,7 +48,19 @@ const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
         setGlobalIdentity(user.name, user.email, user.id);
       }
 
-      const dest = (router.query.redirect as string) || "/photo";
+      // Role-based redirection
+      let dest = router.query.redirect as string;
+      if (!dest) {
+        // If no redirect specified, route based on user role
+        if (user.role === 'examiner') {
+          dest = '/examiner/CreateExamPage';
+        } else if (user.role === 'student') {
+          dest = '/candidate/JoinExam';
+        } else {
+          dest = '/'; // fallback
+        }
+      }
+      
       router.push(dest);
     } catch (err: any) {
       setError(

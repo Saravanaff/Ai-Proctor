@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import styles from '../../styles/CreateExamPage.module.css';
 import axios from 'axios';
 import { getTokenFromCookie } from '@/constants/AuthStore';
+import { useRouter } from 'next/router';
 
 const JoinExam = () => {
   const [examKey, setExamKey] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const router=useRouter();
 
   axios.interceptors.request.use(
     (config) => {
@@ -42,8 +44,7 @@ const JoinExam = () => {
       if (res.data.success) {
         setSuccess('Successfully joined the exam!');
         setExamKey('');
-        // Optionally redirect to exam page
-        // router.push('/exam-waiting-room');
+        router.push('/photo');
       }
     } catch (e: any) {
       setError(e?.response?.data?.message || e.message || 'Failed to join exam');
