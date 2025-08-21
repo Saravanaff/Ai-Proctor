@@ -14,7 +14,6 @@ export const register = async (req: Request, res: Response) => {
     
     console.log("Registration attempt:", { name, email, role });
     
-    // Check if user already exists (case-insensitive email search)
     const existing = await User.findOne({ 
       where: { 
         email: email.toLowerCase() 
@@ -27,10 +26,8 @@ export const register = async (req: Request, res: Response) => {
       return res.status(409).json({ message: "Email already registered" });
     }
 
-    // Hash the password before storing
     const hashed = await bcrypt.hash(password, 10);
     
-    // Create user with lowercase email
     const user = await User.create({ 
       name, 
       email: email.toLowerCase(), 
@@ -77,7 +74,6 @@ export const login = async (req: Request, res: Response) => {
 
     console.log("Login attempt for email:", email);
     
-    // Find user with case-insensitive email search
     const user = await User.findOne({ 
       where: { 
         email: email.toLowerCase() 
