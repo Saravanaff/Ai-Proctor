@@ -15,6 +15,12 @@ const EndPage = () => {
     status: "success",
     message: "Exam Ended successfully"
   });
+  socket.emit("end-exam",{
+      user_id: userId,
+      category: "screen_recording",
+      status: "success",
+      message: "Exam Ended successfully"
+  });
 
 
   // useEffect(() => {

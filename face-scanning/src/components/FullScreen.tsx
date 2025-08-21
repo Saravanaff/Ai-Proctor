@@ -12,7 +12,7 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
 }));
 
 
-const ExamPage: React.FC = ({ onBeforeSubmit, screen }:any) => {
+const ExamPage = ({ screenRecorderMediaRecorderRef,onBeforeSubmit, screen }:any) => {
     
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
@@ -24,7 +24,8 @@ const ExamPage: React.FC = ({ onBeforeSubmit, screen }:any) => {
   const {toast}=useToast();
   const [face,setFace]=useState(0);
   const [examSubmitted,setExamSubmitted] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder>(null);
+  const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
+  
   const router=useRouter();
 
 
@@ -122,11 +123,10 @@ const ExamPage: React.FC = ({ onBeforeSubmit, screen }:any) => {
   let s:any;
   const lookingAlert=(side:any)=>{
     console.log("looking away");
-        s=side;
-        setlookAlert(true);
-        setTimeout(() => setlookAlert(false), 3000);
-
-      }
+    s=side;
+    setlookAlert(true);
+    setTimeout(() => setlookAlert(false), 3000);
+  }
 
 
   if (blocked) {
@@ -198,7 +198,8 @@ const ExamPage: React.FC = ({ onBeforeSubmit, screen }:any) => {
           number={number} 
           onAuthFaceMissing={handleAuthFaceMissing} 
           examSubmitted={examSubmitted} 
-          mediaRecorderRef={mediaRecorderRef}
+          mediaRecorderRef={frontCameraMediaRecorderRef}
+          screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
           onAuthPause={() => setPaused(true)}
           onAuthResume={() => setPaused(false)}
         />)

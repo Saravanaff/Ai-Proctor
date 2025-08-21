@@ -23,6 +23,7 @@ const FloatingCamera = ({
   mediaRecorderRef,
   onAuthPause,
   onAuthResume,
+  screenRecorderMediaRecorderRef
 }: any) => {
   
   const isInitialized = useRef(false);
@@ -58,9 +59,10 @@ const FloatingCamera = ({
     if (examSubmitted) {
       console.log("Exam Submitted");
       if (mediaRecorderRef.current) {
-        console.log(mediaRecorderRef.current.state);
         mediaRecorderRef.current.stop();
-        console.log(mediaRecorderRef.current.state);
+      }
+      if (screenRecorderMediaRecorderRef.current) {
+        screenRecorderMediaRecorderRef.current.stop();
       }
     }
   }, [examSubmitted]);
