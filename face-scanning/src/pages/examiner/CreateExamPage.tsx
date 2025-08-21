@@ -3,7 +3,6 @@ import styles from '../../styles/CreateExamPage.module.css';
 import { Exam } from '../../types/exam';
 import SearchBar from '../../components/exams/SearchBar';
 import ExamStats from '../../components/exams/ExamStats';
-import ExamForm from '../../components/exams/ExamForm';
 import ExamsGrid from '../../components/exams/ExamsGrid';
 import axios from 'axios';
 import { getUserId,getTokenFromCookie } from '@/constants/AuthStore';
@@ -14,10 +13,6 @@ const CreateExam = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [confirmedStart, setConfirmedStart] = useState(false);
-  const [confirmedEnd, setConfirmedEnd] = useState(false);
   const [error,setError]=useState(null);
   axios.interceptors.request.use(
   (config) => {
@@ -56,15 +51,12 @@ const CreateExam = () => {
 
   const handleCreateExam = async () => {
     if (!examName.trim()) return;
-    if (!timeValid) return;
     console.log(getTokenFromCookie());
     setIsCreating(true);
     try {
       const base = 'http://localhost:3001';
       const payload = {
         exam_name: examName.trim(),
-        // startTime: startTime || null,
-        // endTime: endTime || null
       };
       const res = await axios.post<Exam>(`${base}/examCreate`, payload);
       console.log("hi",res);
@@ -76,10 +68,6 @@ const CreateExam = () => {
       }
       
       setExamName('');
-      setStartTime('');
-      setEndTime('');
-      setConfirmedStart(false);
-      setConfirmedEnd(false);
       setShowCreateForm(false);
     } catch (e: any) {
       // Optionally reuse main error
@@ -88,12 +76,6 @@ const CreateExam = () => {
       setIsCreating(false);
     }
   };
-
-  // time helpers
-  const onChangeStart = (v: string) => { setStartTime(v); setConfirmedStart(false); };
-  const onChangeEnd = (v: string) => { setEndTime(v); setConfirmedEnd(false); };
-  const confirmStart = () => { if (startTime) setConfirmedStart(true); };
-  const confirmEnd = () => { if (endTime && timeValid) setConfirmedEnd(true); };
 
   // derived
   const filteredExams = useMemo(
@@ -109,8 +91,6 @@ const CreateExam = () => {
     draft: exams.filter(e => e.status === 'draft').length,
     completed: exams.filter(e => e.status === 'completed').length
   }), [exams]);
-
-  const timeValid = !startTime || !endTime || new Date(startTime) < new Date(endTime);
 
   const formatRange = (s?: string, e?: string) => {
     if (!s || !e) return '—';
@@ -140,26 +120,57 @@ const CreateExam = () => {
       <ExamStats stats={stats} />
 
       {showCreateForm && (
-        <ExamForm
-          examName={examName}
-          setExamName={setExamName}
-          startTime={startTime}
-          endTime={endTime}
-          onStartChange={onChangeStart}
-          onEndChange={onChangeEnd}
-          confirmedStart={confirmedStart}
-          confirmedEnd={confirmedEnd}
-          confirmStart={confirmStart}
-          confirmEnd={confirmEnd}
-          timeValid={timeValid}
-          isCreating={isCreating}
-          onCreate={handleCreateExam}
-          onCancel={() => {
-            setShowCreateForm(false);
-            setExamName(''); setStartTime(''); setEndTime('');
-            setConfirmedStart(false); setConfirmedEnd(false);
-          }}
-        />
+        <div className={`${styles.glassPanel}`} style={{ maxWidth: '600px', margin: '0 auto 2rem', padding: '2rem' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ color: '#e5e7eb', marginBottom: '0.5rem' }}>Create New Exam</h3>
+            <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>Enter a name for your new exam</p>
+          </div>
+          
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#e5e7eb', fontWeight: '500' }}>
+              Exam Name
+            </label>
+            <input
+              type="text"
+              value={examName}
+              onChange={(e) => setExamName(e.target.value)}
+              placeholder="Enter exam name"
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '6px',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#e5e7eb',
+                fontSize: '1rem'
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button
+              onClick={handleCreateExam}
+              disabled={isCreating || !examName.trim()}
+              className={`${styles.btn} ${styles.btnPrimary}`}
+              style={{ 
+                flex: 1,
+                opacity: (isCreating || !examName.trim()) ? 0.6 : 1,
+                cursor: (isCreating || !examName.trim()) ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isCreating ? 'Creating...' : 'Create Exam'}
+            </button>
+            <button
+              onClick={() => {
+                setShowCreateForm(false);
+                setExamName('');
+              }}
+              className={`${styles.btn} ${styles.btnGhost}`}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
 
       <section className={`${styles.examsSection} ${styles.fadeIn}`}>

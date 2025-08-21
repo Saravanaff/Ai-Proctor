@@ -9,7 +9,6 @@ const JoinExam = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Set up axios interceptor for authentication
   axios.interceptors.request.use(
     (config) => {
       const token = getTokenFromCookie();
