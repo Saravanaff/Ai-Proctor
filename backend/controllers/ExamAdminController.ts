@@ -2,6 +2,7 @@ import { Request,Response } from "express";
 import express from 'express';
 import { Exam } from "../models/Exam";
 import { Attend } from "../models/Attend";
+import { User } from "../models/User";
 import {getUserIdFromToken} from '../utils/jwt';
 
 export const createExam=async(req:Request,res:Response)=>{
@@ -59,7 +60,15 @@ export const getExam = async (req: Request, res: Response) => {
     try {
         const exams = await Exam.findAll({
             where: { user_id },
-            attributes: ['exam_name','key']
+            attributes: ['id', 'exam_name', 'key'],
+            include: [{
+                model: Attend,
+                attributes: ['user_id'],
+                include: [{
+                    model: User,
+                    attributes: ['name', 'email']
+                }]
+            }]
         });
         res.status(200).json({
             success: true,
