@@ -42,7 +42,7 @@ const JoinExam = () => {
       const res = await axios.post(`${base}/joinExam`, payload);
       
       if (res.data.success) {
-        setSuccess('Successfully joined the exam!');
+        setSuccess('Successfully joined the exam.');
         setExamKey('');
         router.push('/photo');
       }
@@ -60,35 +60,54 @@ const JoinExam = () => {
   };
 
   return (
-    <div className={`${styles.examinerContainer} ${styles.enterpriseRoot}`}>
-      <div className={styles.pageBackdrop} />
+    <div
+      className={`${styles.examinerContainer} ${styles.enterpriseRoot}`}
+      style={{
+        background: '#0b0b0b',
+        minHeight: '100vh',
+        color: '#e5e7eb'
+      }}
+    >
+      <div className={styles.pageBackdrop} style={{ opacity: 0 }} />
       
-      <header className={`${styles.header} ${styles.fadeIn}`}>
+      <header className={styles.header}>
         <div className={styles.headerContent}>
-          <h1 className={`${styles.title} ${styles.gradientText}`}>Join Exam</h1>
-          <p className={styles.subtitle}>Enter your exam key to join the assessment</p>
+          <h1
+            className={styles.title}
+            style={{ color: '#fafafa', letterSpacing: '-0.02em', fontWeight: 700 }}
+          >
+            Join Exam
+          </h1>
+          <p className={styles.subtitle} style={{ color: '#a3a3a3' }}>
+            Enter your exam key to join the assessment
+          </p>
         </div>
       </header>
 
-      <section className={`${styles.examsSection} ${styles.fadeIn}`}>
-        <div className={`${styles.glassPanel}`} style={{ maxWidth: '600px', margin: '0 auto', padding: '2rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎯</div>
-            <h2 style={{ color: '#e5e7eb', marginBottom: '0.5rem' }}>Ready to Start?</h2>
-            <p style={{ color: '#9ca3af', fontSize: '1rem' }}>
+      <section className={styles.examsSection}>
+        <div
+          className={styles.glassPanel}
+          style={{
+            maxWidth: '560px',
+            margin: '0 auto',
+            padding: '28px',
+            background: '#0f0f0f',
+            border: '1px solid #1f1f1f',
+            borderRadius: 12,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.45)'
+          }}
+        >
+          <div style={{ marginBottom: '22px' }}>
+            <h2 style={{ margin: 0, color: '#ffffff', fontSize: '20px', fontWeight: 600 }}>Ready to start?</h2>
+            <p style={{ color: '#a3a3a3', marginTop: '6px', fontSize: '14px' }}>
               Enter the exam key provided by your examiner
             </p>
           </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ marginBottom: '18px' }}>
             <label 
               htmlFor="examKey" 
-              style={{ 
-                display: 'block', 
-                marginBottom: '0.5rem', 
-                color: '#e5e7eb', 
-                fontWeight: '500' 
-              }}
+              style={{ display: 'block', marginBottom: '8px', color: '#d4d4d4', fontWeight: 500 }}
             >
               Exam Key
             </label>
@@ -98,19 +117,18 @@ const JoinExam = () => {
               value={examKey}
               onChange={(e) => setExamKey(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Enter 6-digit exam key (e.g., 100001)"
+              placeholder="Enter 6-digit exam key"
               disabled={isJoining}
               style={{
                 width: '100%',
-                padding: '1rem',
-                fontSize: '1.1rem',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                background: 'rgba(255,255,255,0.05)',
-                color: '#e5e7eb',
-                textAlign: 'center',
-                letterSpacing: '2px',
-                fontFamily: 'monospace'
+                padding: '14px 14px',
+                fontSize: '15px',
+                border: '1px solid #262626',
+                borderRadius: 10,
+                background: '#0a0a0a',
+                color: '#fafafa',
+                outline: 'none',
+                transition: 'border-color .15s ease',
               }}
               maxLength={6}
             />
@@ -118,13 +136,13 @@ const JoinExam = () => {
 
           {error && (
             <div style={{
-              padding: '0.75rem 1rem',
-              marginBottom: '1rem',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: '6px',
-              color: '#fca5a5',
-              fontSize: '0.9rem'
+              padding: '10px 12px',
+              marginBottom: '14px',
+              background: '#111111',
+              border: '1px solid #303030',
+              borderRadius: 10,
+              color: '#f87171',
+              fontSize: '13px'
             }}>
               {error}
             </div>
@@ -132,13 +150,13 @@ const JoinExam = () => {
 
           {success && (
             <div style={{
-              padding: '0.75rem 1rem',
-              marginBottom: '1rem',
-              background: 'rgba(34, 197, 94, 0.1)',
-              border: '1px solid rgba(34, 197, 94, 0.3)',
-              borderRadius: '6px',
-              color: '#86efac',
-              fontSize: '0.9rem'
+              padding: '10px 12px',
+              marginBottom: '14px',
+              background: '#111111',
+              border: '1px solid #303030',
+              borderRadius: 10,
+              color: '#34d399',
+              fontSize: '13px'
             }}>
               {success}
             </div>
@@ -147,33 +165,45 @@ const JoinExam = () => {
           <button
             onClick={handleJoinExam}
             disabled={isJoining || !examKey.trim()}
-            className={`${styles.btn} ${styles.btnPrimary}`}
+            className={`${styles.btn}`}
             style={{
               width: '100%',
-              padding: '1rem 2rem',
-              fontSize: '1.1rem',
+              padding: '14px 18px',
+              fontSize: '15px',
+              fontWeight: 600,
+              borderRadius: 10,
+              border: '1px solid #ffffff',
+              background: '#ffffff',
+              color: '#0a0a0a',
               opacity: (isJoining || !examKey.trim()) ? 0.6 : 1,
-              cursor: (isJoining || !examKey.trim()) ? 'not-allowed' : 'pointer'
+              cursor: (isJoining || !examKey.trim()) ? 'not-allowed' : 'pointer',
+              transition: 'all .15s ease'
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f5';
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = '#ffffff';
             }}
           >
-            {isJoining ? '🔄 Joining...' : '🚀 Join Exam'}
+            {isJoining ? 'Joining…' : 'Join Exam'}
           </button>
 
           <div style={{ 
-            marginTop: '2rem', 
-            padding: '1rem', 
-            background: 'rgba(59, 130, 246, 0.1)', 
-            border: '1px solid rgba(59, 130, 246, 0.3)', 
-            borderRadius: '6px' 
+            marginTop: '18px', 
+            padding: '14px', 
+            background: '#0a0a0a',
+            border: '1px solid #1f1f1f', 
+            borderRadius: 10 
           }}>
-            <h4 style={{ color: '#93c5fd', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-              📋 Instructions
+            <h4 style={{ color: '#e5e5e5', marginBottom: '8px', fontSize: '13px', fontWeight: 600 }}>
+              Instructions
             </h4>
-            <ul style={{ color: '#9ca3af', fontSize: '0.85rem', lineHeight: '1.5', paddingLeft: '1rem' }}>
+            <ul style={{ color: '#a3a3a3', fontSize: '13px', lineHeight: 1.6, paddingLeft: '18px', margin: 0 }}>
               <li>Enter the 6-digit exam key provided by your examiner</li>
-              <li>Make sure you have a stable internet connection</li>
-              <li>Ensure your camera and microphone are working</li>
-              <li>Close all unnecessary applications before starting</li>
+              <li>Ensure a stable internet connection</li>
+              <li>Verify camera and microphone access</li>
+              <li>Close unnecessary applications before starting</li>
             </ul>
           </div>
         </div>

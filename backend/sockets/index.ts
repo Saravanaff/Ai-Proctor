@@ -90,6 +90,7 @@ export function initSocket(server: HttpServer) {
 
       pythonSocket.on("thirdeye_cam_result", (data: any) => {
         emitToUserById(data?.userId, "thirdeye_alert", data);
+
       });
 
       pythonSocket.on("face_data_saved", (data: any) => {
@@ -129,6 +130,7 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("authenticate", (data) => {
+      console.log(data);
       if (pythonSocket) {
         pythonSocket.emit("drag_camera", data);
       }

@@ -37,7 +37,16 @@ const CreateExam = () => {
         const res = await axios.get(`${base}/exam`);
         console.log("re", res);
         if (!cancelled && res.data?.success && res.data?.exams) {
-          setExams(res.data.exams);
+          // Enhance exam data with participant counts from attendances
+          const examsWithParticipants = res.data.exams.map((exam: any) => ({
+            ...exam,
+            participants: exam.attendances ? exam.attendances.length : 0,
+            status: exam.status || 'draft', // Default status if not provided
+            exam_key: exam.key || exam.exam_key, // Normalize key field
+            startTime: exam.startTime || exam.start_time,
+            endTime: exam.endTime || exam.end_time
+          }));
+          setExams(examsWithParticipants);
         }
       } catch (e: any) {
         if (!cancelled) setError(e?.response?.data?.message || e.message || 'Failed to load exams');
@@ -64,7 +73,15 @@ const CreateExam = () => {
       // Refresh exams list after successful creation
       const refreshRes = await axios.get(`${base}/exam`);
       if (refreshRes.data?.success && refreshRes.data?.exams) {
-        setExams(refreshRes.data.exams);
+        const examsWithParticipants = refreshRes.data.exams.map((exam: any) => ({
+          ...exam,
+          participants: exam.attendances ? exam.attendances.length : 0,
+          status: exam.status || 'draft',
+          exam_key: exam.key || exam.exam_key,
+          startTime: exam.startTime || exam.start_time,
+          endTime: exam.endTime || exam.end_time
+        }));
+        setExams(examsWithParticipants);
       }
       
       setExamName('');
@@ -99,18 +116,29 @@ const CreateExam = () => {
   };
 
   return (
-    <div className={`${styles.examinerContainer} ${styles.enterpriseRoot}`}>
-      <div className={styles.pageBackdrop} />
-      <header className={`${styles.header} ${styles.fadeIn}`}>
+    <div className={`${styles.examinerContainer} ${styles.enterpriseRoot}`} style={{ background: '#0b0b0b', minHeight: '100vh' }}>
+      <div className={styles.pageBackdrop} style={{ display: 'none' }} />
+      <header className={`${styles.header} ${styles.fadeIn}`} style={{ background: 'transparent', borderBottom: '1px solid #1a1a1a', paddingBottom: '20px' }}>
         <div className={styles.headerContent}>
-          <h1 className={`${styles.title} ${styles.gradientText}`}>Exam Management Console</h1>
-          <p className={styles.subtitle}>Create, monitor and manage assessments</p>
+          <h1 className={styles.title} style={{ color: '#ffffff', fontSize: '28px', fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>Exam Management Console</h1>
+          <p className={styles.subtitle} style={{ color: '#a3a3a3', fontSize: '16px', margin: '8px 0 0 0' }}>Create, monitor and manage assessments</p>
         </div>
-        <div className={styles.headerActions}>
+        <div className={styles.headerActions} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <SearchBar value={search} onChange={setSearch} />
           <button
             onClick={() => setShowCreateForm(v => !v)}
-            className={`${styles.btn} ${styles.btnPrimary} ${styles.accentPulse}`}
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            style={{
+              background: '#ffffff',
+              border: '1px solid #ffffff',
+              color: '#0a0a0a',
+              padding: '12px 18px',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
           >
             {showCreateForm ? 'Close' : '➕ New Exam'}
           </button>
@@ -120,14 +148,25 @@ const CreateExam = () => {
       <ExamStats stats={stats} />
 
       {showCreateForm && (
-        <div className={`${styles.glassPanel}`} style={{ maxWidth: '600px', margin: '0 auto 2rem', padding: '2rem' }}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h3 style={{ color: '#e5e7eb', marginBottom: '0.5rem' }}>Create New Exam</h3>
-            <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>Enter a name for your new exam</p>
+        <div 
+          className={`${styles.glassPanel}`} 
+          style={{ 
+            maxWidth: '600px', 
+            margin: '0 auto 2rem', 
+            padding: '24px', 
+            background: '#0f0f0f', 
+            border: '1px solid #1f1f1f', 
+            borderRadius: '12px', 
+            boxShadow: '0 10px 30px rgba(0,0,0,0.45)' 
+          }}
+        >
+          <div style={{ marginBottom: '20px' }}>
+            <h3 style={{ color: '#ffffff', marginBottom: '8px', fontSize: '18px', fontWeight: 600 }}>Create New Exam</h3>
+            <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>Enter a name for your new exam</p>
           </div>
           
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#e5e7eb', fontWeight: '500' }}>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', color: '#d4d4d4', fontWeight: 500, fontSize: '14px' }}>
               Exam Name
             </label>
             <input
@@ -137,25 +176,35 @@ const CreateExam = () => {
               placeholder="Enter exam name"
               style={{
                 width: '100%',
-                padding: '0.75rem',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '6px',
-                background: 'rgba(255,255,255,0.05)',
-                color: '#e5e7eb',
-                fontSize: '1rem'
+                padding: '12px 14px',
+                border: '1px solid #262626',
+                borderRadius: '10px',
+                background: '#0a0a0a',
+                color: '#fafafa',
+                fontSize: '15px',
+                outline: 'none',
+                transition: 'border-color 0.15s ease'
               }}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
             <button
               onClick={handleCreateExam}
               disabled={isCreating || !examName.trim()}
               className={`${styles.btn} ${styles.btnPrimary}`}
               style={{ 
                 flex: 1,
+                background: '#ffffff',
+                border: '1px solid #ffffff',
+                color: '#0a0a0a',
+                padding: '12px 18px',
+                borderRadius: '10px',
+                fontSize: '15px',
+                fontWeight: 600,
                 opacity: (isCreating || !examName.trim()) ? 0.6 : 1,
-                cursor: (isCreating || !examName.trim()) ? 'not-allowed' : 'pointer'
+                cursor: (isCreating || !examName.trim()) ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s ease'
               }}
             >
               {isCreating ? 'Creating...' : 'Create Exam'}
@@ -166,6 +215,17 @@ const CreateExam = () => {
                 setExamName('');
               }}
               className={`${styles.btn} ${styles.btnGhost}`}
+              style={{
+                border: '1px solid #2c2c2c',
+                background: 'transparent',
+                color: '#e5e5e5',
+                padding: '12px 18px',
+                borderRadius: '10px',
+                fontSize: '15px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
             >
               Cancel
             </button>
@@ -174,28 +234,38 @@ const CreateExam = () => {
       )}
 
       <section className={`${styles.examsSection} ${styles.fadeIn}`}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Exams ({filteredExams.length})</h2>
-          {search && <span className={styles.filterInfo}>Filtered by: "{search}"</span>}
+        <div className={styles.sectionHeader} style={{ borderBottom: '1px solid #1f1f1f', paddingBottom: '16px', marginBottom: '24px' }}>
+          <h2 className={styles.sectionTitle} style={{ color: '#ffffff', fontSize: '20px', fontWeight: 600, margin: 0 }}>Exams ({filteredExams.length})</h2>
+          {search && <span className={styles.filterInfo} style={{ color: '#a3a3a3', fontSize: '14px' }}>Filtered by: "{search}"</span>}
         </div>
 
         {loading && (
           <div className={styles.skeletonGrid}>
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className={`${styles.examCard} ${styles.skeletonCard} ${styles.shimmer}`} />
+              <div key={i} className={`${styles.examCard} ${styles.skeletonCard} ${styles.shimmer}`} style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }} />
             ))}
           </div>
         )}
 
         {!loading && filteredExams.length === 0 && (
-          <div className={`${styles.emptyState} ${styles.glassPanel}`}>
+          <div className={`${styles.emptyState} ${styles.glassPanel}`} style={{ background: '#0f0f0f', border: '1px solid #1f1f1f', borderRadius: '12px', padding: '48px 24px', textAlign: 'center' }}>
             <div className={styles.emptyContent}>
-              <div className={styles.emptyIcon}>📁</div>
-              <h3 className={styles.emptyTitle}>No exams match</h3>
-              <p className={styles.emptyDescription}>Try adjusting your search or create a new exam.</p>
+              <div className={styles.emptyIcon} style={{ fontSize: '48px', marginBottom: '16px' }}>📁</div>
+              <h3 className={styles.emptyTitle} style={{ color: '#ffffff', fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>No exams match</h3>
+              <p className={styles.emptyDescription} style={{ color: '#a3a3a3', fontSize: '14px', marginBottom: '24px' }}>Try adjusting your search or create a new exam.</p>
               <button
                 onClick={() => setShowCreateForm(true)}
                 className={`${styles.btn} ${styles.btnPrimary}`}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #ffffff',
+                  color: '#0a0a0a',
+                  padding: '12px 18px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
               >
                 ➕ Create Exam
               </button>

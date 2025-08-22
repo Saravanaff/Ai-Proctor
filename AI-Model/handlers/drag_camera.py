@@ -31,11 +31,13 @@ def setup_drag_camera_handler(sio):
         # ✅ Emit only if socket is connected
         if sio.connected:
             sio.emit("drag_camera_result", {
+
                 "no_of_person": constants.person_count,
                 "auth_face": constants.auth_status,
                 "head_position": constants.head_position,
                 "eyes": constants.eyes,
                 "object_detected": constants.detected_objects,
+                "userId":userId
             })
             print({
                 "no_of_person": constants.person_count,

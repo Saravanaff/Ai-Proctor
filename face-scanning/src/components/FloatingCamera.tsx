@@ -344,8 +344,9 @@ const FloatingCamera = ({
     });
     const handleAlert = (data: any) => {
       const now = Date.now();
-      // Initial authentication gating
-      // console.log(data);
+      console.log("hi");
+      console.log("data",data);
+
       if (!hasEverAuthedRef.current) {
         if (data?.auth_face === true) {
           hasEverAuthedRef.current = true;
@@ -377,7 +378,7 @@ const FloatingCamera = ({
 
       if (data.head_position !== "Forward") {
         look++;
-        if (look % 150 !== 0) return;
+        if (look % 10 !== 0) return;
         look = 0;
         console.log("looking away")
         onLookingAway(data.head_position);
@@ -389,27 +390,27 @@ const FloatingCamera = ({
       ) {
         // console.log("looking away with eyes");
         look++;
-        if (look % 150 !== 0) return;
+        if (look % 10 !== 0) return;
         look = 0;
         onLookingAway(data.head_position);
       }
       if (data.object_detected["cell phone"]) {
         item++;
-        if (item % 10 !== 0) return;
+        if (item % 2 !== 0) return;
         item = 0;
         detect();
         changeColor();
       }
       if (data.no_of_person != 1) {
         person++;
-        if (person % 50 != 0) return;
+        if (person % 10 != 0) return;
         person = 0;
         number(data.no_of_person);
         changeColor();
       } 
        if (!data.auth_face) {
         auth++;
-        if (auth %600 !== 0) return;
+        if (auth % 10 !== 0) return;
         auth = 0;
         changeColor();
         onAuthFaceMissing();

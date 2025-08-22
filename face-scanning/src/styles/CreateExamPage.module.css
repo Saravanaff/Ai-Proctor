@@ -1,8 +1,192 @@
 .examinerContainer {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  background: #0b0b0b;
+  color: #e5e7eb;
+  min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.enterpriseRoot {
+  background: #0b0b0b;
+}
+
+.pageBackdrop {
+  display: none;
+}
+
+.header {
+  background: transparent;
+  border-bottom: 1px solid #1a1a1a;
+  padding: 20px 0;
+  margin-bottom: 24px;
+}
+
+.headerContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.subtitle {
+  color: #a3a3a3;
+  font-size: 16px;
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.btn {
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  outline: none;
+}
+
+.btnPrimary {
+  background: #ffffff;
+  border: 1px solid #ffffff;
+  color: #0a0a0a;
+}
+
+.btnPrimary:hover {
+  background: #f5f5f5;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  border: 1px solid #2c2c2c;
+  background: transparent;
+  color: #e5e5e5;
+}
+
+.btnGhost:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.glassPanel {
+  background: #0f0f0f;
+  border: 1px solid #1f1f1f;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+  padding: 24px;
+}
+
+.fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.examsSection {
+  margin-top: 24px;
+}
+
+.sectionHeader {
+  border-bottom: 1px solid #1f1f1f;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sectionTitle {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.filterInfo {
+  color: #a3a3a3;
+  font-size: 14px;
+}
+
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.examCard {
+  background: #0f0f0f;
+  border: 1px solid #1f1f1f;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.15s ease;
+}
+
+.examCard:hover {
+  border-color: #2a2a2a;
+  transform: translateY(-2px);
+}
+
+.skeletonCard {
+  height: 200px;
+  background: linear-gradient(90deg, #0f0f0f 25%, #1a1a1a 50%, #0f0f0f 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.emptyState {
+  background: #0f0f0f;
+  border: 1px solid #1f1f1f;
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.emptyContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.emptyTitle {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.emptyDescription {
+  color: #a3a3a3;
+  font-size: 14px;
+  margin: 0 0 24px 0;
 }
 
 /* Base layout enhancements */
@@ -402,16 +586,37 @@
 
 /* Empty state */
 .emptyState {
-  text-align:center;
-  padding: 70px 32px 60px;
-  border-radius: 24px;
-  border: 1px dashed rgba(255,255,255,0.16);
-  background: linear-gradient(140deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02));
-  animation: fadeIn .5s ease;
+  background: #0f0f0f;
+  border: 1px solid #1f1f1f;
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
 }
 
-.emptyTitle { margin:16px 0 4px; font-size:20px; font-weight:600; }
-.emptyDescription { color:#94a3b8; font-size:14px; margin:0 0 18px; }
+.emptyContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.emptyTitle {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.emptyDescription {
+  color: #a3a3a3;
+  font-size: 14px;
+  margin: 0 0 24px 0;
+}
 
 /* Skeletons */
 .skeletonGrid {
