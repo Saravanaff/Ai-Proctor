@@ -19,7 +19,7 @@ def authenticate_face(image: np.ndarray, userId: str) -> bool:
         print(f"❌ No entry found for userId: {userId}")
         return False
     stored_encodings = [
-        np.array(target_entry["0"]), 
+        np.array(target_entry["embedding"][0]), 
     ]
 
     face_locations = face_recognition.face_locations(image)
