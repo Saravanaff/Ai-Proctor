@@ -25,7 +25,7 @@ const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
 
     try {
       const baseURL =
-        process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+        process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.98.72:3002";
       const endpoint = isRegister ? `${baseURL}/register` : `${baseURL}/login`;
       const payload = isRegister
         ? { name, email, password, role }
