@@ -33,7 +33,7 @@ const CreateExam = () => {
       setLoading(true);
       setError(null);
       try {
-        const base = 'http://localhost:3001';
+        const base = 'https://localhost:3002';
         const res = await axios.get(`${base}/exam`);
         console.log("re", res);
         if (!cancelled && res.data?.success && res.data?.exams) {
@@ -54,7 +54,7 @@ const CreateExam = () => {
     console.log(getTokenFromCookie());
     setIsCreating(true);
     try {
-      const base = 'http://localhost:3001';
+      const base = 'https://localhost:3002';
       const payload = {
         exam_name: examName.trim(),
       };

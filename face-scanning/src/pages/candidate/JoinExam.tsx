@@ -34,7 +34,7 @@ const JoinExam = () => {
     setSuccess(null);
 
     try {
-      const base = 'http://localhost:3001';
+      const base = 'https://localhost:3002';
       const payload = {
         exam_key: examKey.trim()
       };

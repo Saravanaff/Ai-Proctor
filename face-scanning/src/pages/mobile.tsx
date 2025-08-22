@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { Eye, Shield, Camera, Wifi, WifiOff, Maximize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { io, Socket } from "socket.io-client";
+import { getUserId } from "@/constants/AuthStore";
 import styles from "../styles/ThirdEye.module.css";
+
+const userId = getUserId() || "unknown";
 
 export default function ThirdEye() {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -19,8 +22,11 @@ export default function ThirdEye() {
   const [hydrated, setHydrated] = useState(false);
   const { toast } = useToast();
 
-  const serverUrl = "https://172.16.100.184:3002/";
+  const serverUrl = "https://172.16.98.72:3002/";
   console.log("Server URL:", serverUrl);
+
+  const mediaRecorderRef = useRef<MediaRecorder>(null);  
+  const streamRef = useRef<MediaStream>(null);
 
   useEffect(() => {
     setHydrated(true); 
@@ -106,10 +112,17 @@ export default function ThirdEye() {
 
   const startStreaming = async () => {
     try {
+
+      socket?.emit("start-exam",{
+        user_id: userId,
+        category: "third_eye",
+      })
+
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      streamRef.current = stream;
 
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+        videoRef.current.srcObject = streamRef.current;
         await videoRef.current.play();
 
         const container = videoRef.current.parentElement?.parentElement;
@@ -123,6 +136,35 @@ export default function ThirdEye() {
           } catch (e) {}
         }
       }
+
+
+        if (streamRef.current) {
+          mediaRecorderRef.current = new MediaRecorder(streamRef.current, {
+            mimeType: "video/webm; codecs=vp8",
+            videoBitsPerSecond: 1000000,
+          });
+        }
+
+        if (mediaRecorderRef.current) {
+          mediaRecorderRef.current.ondataavailable = (e: any) => {
+            if (e.data.size > 0) {
+
+              e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
+                const chunkData: any = {
+                  user_id: userId,
+                  category: "third_eye",
+                  chunk: buffer,
+                };
+                if (socket) {
+                  socket.emit("recorder-add-video-stream-chunk", chunkData);
+                }
+              });
+            }
+          };
+
+          mediaRecorderRef.current.start(500); // send chunks every 500ms
+        }
+
 
       frameIntervalRef.current = setInterval(() => {
         captureAndSendFrame();
@@ -144,6 +186,10 @@ export default function ThirdEye() {
   };
 
   const stopStreaming = () => {
+    socket?.emit("start-exam",{
+      user_id: userId,
+      category: "third_eye",
+    });
     if (videoRef.current?.srcObject instanceof MediaStream) {
       videoRef.current.srcObject.getTracks().forEach(track => track.stop());
     }

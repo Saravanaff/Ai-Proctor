@@ -22,13 +22,12 @@ async function generateCerts() {
   // Step 2: Create domain certificate
   const cert = await createCert({
     ca: { key: ca.key, cert: ca.cert },
-    domains: ["localhost", "127.0.0.1","172.16.100.184","10.167.56.168"],
+    domains: ["localhost", "127.0.0.1","172.16.98.72",],
     validity: 365,
   });
 
-  // Save domain key and cert with the exact names your server uses
-  fs.writeFileSync("localhost-key.pem", cert.key);      // ✅ private key
-  fs.writeFileSync("localhost-cert.pem", cert.cert);    // ✅ domain certificate
+  fs.writeFileSync("localhost-key.pem", cert.key); 
+  fs.writeFileSync("localhost-cert.pem", cert.cert);  
 
   console.log("✅ All certificates written:");
   console.log("- rootCA.pem");
