@@ -1,4 +1,3 @@
-
 import express from "express";
 import { createServer as createHttpsServer } from "https";
 import { Server } from "socket.io";
@@ -17,17 +16,18 @@ app.use(cors({
   credentials: true
 }));
 
+// 🔐 Load certificates
 const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
 const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
 const ca = fs.readFileSync(path.join(__dirname, "rootCA.pem"));
 
 const httpsServer = createHttpsServer({ key, cert, ca }, app);
 
-
+// 🔄 Proxy middleware for REST & WebSocket traffic
 const proxy = createProxyMiddleware({
-  target: 'http://localhost:3001',
+  target: "http://localhost:3001",
   changeOrigin: true,
-  ws: false, 
+  ws: true,
   on: {
     proxyReq: (proxyReq, req, res) => {
       console.log(`🔄 Proxying: ${req.method} ${req.url} -> http://localhost:3001${req.url}`);
@@ -37,10 +37,10 @@ const proxy = createProxyMiddleware({
     },
     error: (err, req, res) => {
       console.error(`❌ Proxy Error: ${err.message}`);
-      if (res && 'writeHead' in res && typeof res.writeHead === 'function') {
+      if (res && "writeHead" in res && typeof res.writeHead === "function") {
         try {
           if (!res.headersSent) {
-            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.writeHead(503, { "Content-Type": "application/json" });
             res.end(JSON.stringify({
               success: false,
               message: "Backend service unavailable",
@@ -48,13 +48,14 @@ const proxy = createProxyMiddleware({
             }));
           }
         } catch (writeError) {
-          console.error('Error writing response:', writeError);
+          console.error("Error writing response:", writeError);
         }
       }
     }
   }
 });
 
+// ✅ Routes
 app.get("/", (req, res) => {
   res.send("Proxy HTTPS server running");
 });
@@ -64,14 +65,15 @@ app.get("/ca", (req, res) => {
   res.download(path.join(__dirname, "rootCA.pem"), "rootCA.pem");
 });
 
+// Only proxy unknown routes
 app.use((req, res, next) => {
-  if (req.path === '/' || req.path === '/ca' || req.path.startsWith('/socket.io/')) {
+  if (req.path === "/" || req.path === "/ca" || req.path.startsWith("/socket.io/")) {
     return next();
   }
   return proxy(req, res, next);
 });
 
-
+// ⚡ Socket.IO setup
 const ioServer = new Server(httpsServer, {
   transports: ["websocket", "polling"],
   cors: {
@@ -82,9 +84,7 @@ const ioServer = new Server(httpsServer, {
 
 let backendSocket: ClientSocket;
 
-
-
-
+// 🔗 Connect proxy → backend
 function connectToBackend() {
   backendSocket = clientIo("http://localhost:3001", {
     transports: ["websocket"],
@@ -94,10 +94,7 @@ function connectToBackend() {
 
   backendSocket.on("connect", () => {
     console.log("✅ Connected to backend (http://localhost:3001)");
-    backendSocket.emit('proxy');
-
   });
-
 
   backendSocket.on("disconnect", () => {
     console.log("❌ Backend disconnected");
@@ -110,20 +107,30 @@ function connectToBackend() {
 
 connectToBackend();
 
+// ⚡ Relay ALL events automatically
 ioServer.on("connection", (socket) => {
   console.log("⚡ Frontend client connected");
 
-
-  socket.on("video", (data: any) => {
-    console.log("frame coming");
+  // Forward frontend → backend
+  socket.onAny((event, ...args) => {
     if (backendSocket?.connected) {
-      backendSocket.emit("videos", data);
+      backendSocket.emit(event, ...args);
     } else {
-      console.warn("⚠️ Backend not connected");
+      console.warn(`⚠️ Backend not connected, dropping event: ${event}`);
     }
+  });
+
+  // Forward backend → frontend
+  backendSocket.onAny((event, ...args) => {
+    socket.emit(event, ...args);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("⚡ Frontend client disconnected");
   });
 });
 
+// 🚀 Start server
 httpsServer.listen(3002, () => {
   console.log("🚀 HTTPS Proxy Server running at https://localhost:3002");
 });

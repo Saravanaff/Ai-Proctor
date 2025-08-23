@@ -6,9 +6,10 @@ import { setGlobalIdentity } from "@/constants/AuthStore";
 
 interface AuthFormProps {
   defaultMode?: "login" | "register";
+  redirect: string;
 }
 
-const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
+const AuthForm = ({ defaultMode = "login", redirect }: AuthFormProps) => {
   const [isRegister, setIsRegister] = useState(defaultMode === "register");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,7 +26,7 @@ const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
 
     try {
       const baseURL =
-        process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.98.72:3002";
+        process.env.NEXT_PUBLIC_BACKEND_URL || "https://10.10.37.202:3002";
       const endpoint = isRegister ? `${baseURL}/register` : `${baseURL}/login`;
       const payload = isRegister
         ? { name, email, password, role }
@@ -49,7 +50,7 @@ const AuthForm = ({ defaultMode = "login" }: AuthFormProps) => {
       }
 
       // Role-based redirection
-      let dest = router.query.redirect as string;
+      let dest = redirect as string;
       if (!dest) {
         // If no redirect specified, route based on user role
         if (user.role === 'examiner') {

@@ -118,6 +118,28 @@ export function initSocket(server: HttpServer) {
             pythonSocket.emit("thirdeye_cam", data);
           }
         });
+        proxy.on("recorder-add-video-stream-chunk", (data: any) => {
+          console.log("chunk ,",data.chunk)
+          if (storageSocket) {
+            storageSocket.emit("add-video-stream-chunk", data);
+          }
+        });
+        proxy.on("start-exam", (data: any) => {
+          if (storageSocket) {
+            /* For Initializing Video Recording */
+            console.log("Exam started", data);
+            storageSocket.emit("start-stream-recording", data);
+          }
+        });
+        proxy.on("end-exam", (data: any) => {
+          if (storageSocket) {
+            /* For Closing Video Recording */
+
+            // const fileName = path.join(__dirname, "logs", "log.csv");
+            // const score = calculateScoreOnUser(fileName);
+            storageSocket.emit("stop-stream-recording", data);
+          }
+        });
       }
     });
 

@@ -2,12 +2,12 @@ import { useEffect, useRef } from "react";
 import socket from "@/components/socket";
 import { getUserId } from "@/constants/AuthStore";
 
+const userId = getUserId() || "unknown";
 
 const EndPage = () => {
   const hasReloaded = useRef(false);
 
 
-  const userId = getUserId();
 
   socket.emit("end-exam",{
     user_id: userId,

@@ -18,6 +18,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "http-proxy-middleware": "^3.0.5",
     "install": "^0.13.0",
     "mediasoup": "^3.18.0",
     "mkcert": "^3.2.0",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.17",
+    "@types/http-proxy-middleware": "^0.19.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.0.0",
     "jsonwebtoken": "^9.0.2",

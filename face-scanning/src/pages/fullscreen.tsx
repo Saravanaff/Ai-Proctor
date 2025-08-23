@@ -7,6 +7,8 @@ import socket from "@/components/socket";
 
 
 const userId = getUserId() || "unknown";
+console.log("User ID:", userId);
+
 
 const fullscreen = () => {
     const [fullscreenAllowed, setFullscreenAllowed] = useState(false);

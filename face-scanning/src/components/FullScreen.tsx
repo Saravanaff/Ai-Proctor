@@ -79,7 +79,7 @@ const ExamPage = ({ screenRecorderMediaRecorderRef,onBeforeSubmit, screen }:any)
         setBlocked(true);
       };
 
-      const userId = getUserId();
+      const userId = getUserId() || "unknown";
 
       socket.emit("start-exam",{
         user_id: userId,
