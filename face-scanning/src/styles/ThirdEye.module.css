@@ -2,35 +2,44 @@
   position: fixed;
   top: 0;
   left: 0;
-  background-color: black;
+  background-color: var(--background);
   overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100vw;
   height: 100vh;
+  transition: background-color 0.3s ease;
 }
 
 .header {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
   padding: 15px 25px;
   border-radius: 50px;
   margin: 20px 0;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
   animation: pulse 2s infinite;
+  transition: all 0.3s ease;
 }
 
 .header h1 {
   font-size: 24px;
   font-weight: 600;
-  background: linear-gradient(to right, #00ff88, #00a3ff);
+  background: linear-gradient(
+    to right,
+    var(--success-color),
+    var(--info-color)
+  );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  color: var(
+    --text-primary
+  ); /* Fallback for browsers that don't support background-clip */
 }
 
 .notice {
@@ -45,6 +54,9 @@
   text-align: center;
   font-size: 0.9rem;
   transition: all 0.3s ease;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 .landscapeVideo {
   width: 100vw;
@@ -73,7 +85,6 @@
   transform-origin: center center;
 }
 
-
 .button {
   padding: 12px 30px;
   border-radius: 50px;
@@ -88,13 +99,13 @@
 }
 
 .startButton {
-  background: linear-gradient(45deg, #00ff88, #00a3ff);
-  color: #000;
+  background: var(--success-color);
+  color: white;
 }
 
 .stopButton {
-  background: linear-gradient(45deg, #ff0000, #ff6b6b);
-  color: #fff;
+  background: var(--error-color);
+  color: white;
 }
 
 .button:hover {

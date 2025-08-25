@@ -7,6 +7,8 @@ import { getUserId } from "../constants/AuthStore";
 import { delay } from '@/utils/delay';
 
 
+const userId = getUserId() || "unknown";
+
 interface VideoChunkData {
   user_id: string;
   category: string;
@@ -61,9 +63,24 @@ const FloatingCamera = ({
       if (mediaRecorderRef.current) {
         mediaRecorderRef.current.stop();
       }
-      if (screenRecorderMediaRecorderRef.current) {
+      socket.emit("end-exam",{
+        user_id: userId,
+        category: "face_camera",
+        status: "success",
+        message: "Exam Ended successfully"
+      });
+      socket.emit("end-exam",{
+          user_id: userId,
+          category: "screen_recording",
+          status: "success",
+          message: "Exam Ended successfully"
+      });
+
+      if(screenRecorderMediaRecorderRef.current) {
+        console.log("Stopped screenRecording...")
         screenRecorderMediaRecorderRef.current.stop();
       }
+
     }
   }, [examSubmitted]);
 
@@ -161,7 +178,7 @@ const FloatingCamera = ({
 
             e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
               const chunkData: VideoChunkData = {
-                user_id: getUserId() || "unknown",
+                user_id: userId,
                 category: "face_camera",
                 chunk: buffer,
               };
@@ -238,7 +255,7 @@ const FloatingCamera = ({
                         width,
                         height,
                       },
-                    user_id: getUserId(),
+                    user_id: userId,
                     });
                   })
                   .catch((error) => {
@@ -422,6 +439,9 @@ const FloatingCamera = ({
       console.log("FloatingCamera cleanup - stopping recording");
       isMounted = false;
       isInitialized.current = false; // Reset for potential remount
+
+
+      
 
       if (mediaRecorderRef.current) {
         // Clear event handler first

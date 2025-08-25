@@ -26,7 +26,7 @@ const AuthForm = ({ defaultMode = "login", redirect }: AuthFormProps) => {
 
     try {
       const baseURL =
-        process.env.NEXT_PUBLIC_BACKEND_URL || "https://10.10.37.202:3002";
+        process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.105.211:3002";
       const endpoint = isRegister ? `${baseURL}/register` : `${baseURL}/login`;
       const payload = isRegister
         ? { name, email, password, role }
@@ -53,15 +53,15 @@ const AuthForm = ({ defaultMode = "login", redirect }: AuthFormProps) => {
       let dest = redirect as string;
       if (!dest) {
         // If no redirect specified, route based on user role
-        if (user.role === 'examiner') {
-          dest = '/examiner/CreateExamPage';
-        } else if (user.role === 'student') {
-          dest = '/candidate/JoinExam';
+        if (user.role === "examiner") {
+          dest = "/examiner/CreateExamPage";
+        } else if (user.role === "student") {
+          dest = "/candidate/JoinExam";
         } else {
-          dest = '/'; // fallback
+          dest = "/"; // fallback
         }
       }
-      
+
       router.push(dest);
     } catch (err: any) {
       setError(
@@ -144,26 +144,38 @@ const AuthForm = ({ defaultMode = "login", redirect }: AuthFormProps) => {
                   className={`${styles.input} ${styles.selectInput}`}
                   required
                   style={{
-                    color: '#1f2937',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    padding: '12px 16px',
-                    fontSize: '16px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    appearance: 'none',
+                    color: "var(--text-primary)",
+                    backgroundColor: "var(--input-bg)",
+                    border: "1px solid var(--input-border)",
+                    borderRadius: "8px",
+                    padding: "12px 16px",
+                    fontSize: "16px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    appearance: "none",
                     backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e")`,
-                    backgroundPosition: 'right 12px center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '16px',
-                    paddingRight: '40px'
+                    backgroundPosition: "right 12px center",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "16px",
+                    paddingRight: "40px",
                   }}
                 >
-                  <option value="student" style={{ color: '#1f2937', backgroundColor: '#ffffff' }}>
+                  <option
+                    value="student"
+                    style={{
+                      color: "var(--text-primary)",
+                      backgroundColor: "var(--input-bg)",
+                    }}
+                  >
                     👨‍🎓 Student
                   </option>
-                  <option value="examiner" style={{ color: '#1f2937', backgroundColor: '#ffffff' }}>
+                  <option
+                    value="examiner"
+                    style={{
+                      color: "var(--text-primary)",
+                      backgroundColor: "var(--input-bg)",
+                    }}
+                  >
                     👨‍🏫 Examiner
                   </option>
                 </select>

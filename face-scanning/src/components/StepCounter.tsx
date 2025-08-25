@@ -12,10 +12,11 @@ const StepCounter: React.FC<StepCounterProps> = ({
 }) => {
   return (
     <div
+      className="theme-transition"
       style={{
         position: "absolute",
         top: "20px",
-        right: "20px",
+        right: "80px", // Adjusted to avoid overlapping with theme toggle
         zIndex: 15,
         backgroundColor: overlayStyles.colors.background,
         color: overlayStyles.colors.primary,
@@ -23,6 +24,8 @@ const StepCounter: React.FC<StepCounterProps> = ({
         borderRadius: "20px",
         fontSize: "14px",
         fontWeight: "500",
+        border: "1px solid var(--border-color, rgba(255, 255, 255, 0.2))",
+        backdropFilter: "blur(10px)",
       }}
     >
       Step {currentStep} of {totalSteps}

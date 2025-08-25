@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
 import socket from "@/components/socket";
 import { getUserId } from "@/constants/AuthStore";
+import { delay } from "@/utils/delay";
 
 const userId = getUserId() || "unknown";
 
-const EndPage = () => {
+const EndPage =  () => {
   const hasReloaded = useRef(false);
 
 
@@ -15,6 +16,7 @@ const EndPage = () => {
     status: "success",
     message: "Exam Ended successfully"
   });
+  new Promise((resolve) => setTimeout(resolve, 2000));
   socket.emit("end-exam",{
       user_id: userId,
       category: "screen_recording",

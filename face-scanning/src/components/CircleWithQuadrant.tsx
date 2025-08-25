@@ -1,21 +1,23 @@
 import React from "react";
 
-
-const Arrow: React.FC<{ dir?:string | null }> = ({ dir }) => {
+const Arrow: React.FC<{ dir?: string | null }> = ({ dir }) => {
   if (!dir) return null;
   const base: React.CSSProperties = {
     width: 0,
     height: 0,
     borderLeft: "10px solid transparent",
     borderRight: "10px solid transparent",
-    borderBottom: "16px solid #22c55e",
+    borderBottom: "16px solid var(--success-color, #22c55e)",
   };
   let arrowStyle: React.CSSProperties = {
     ...base,
-    filter: "drop-shadow(0 0 6px #22c55e) drop-shadow(0 0 12px #22c55e)",
+    filter:
+      "drop-shadow(0 0 6px var(--success-color, #22c55e)) drop-shadow(0 0 12px var(--success-color, #22c55e))",
   };
-  if (dir === "right") arrowStyle = { ...arrowStyle, transform: "rotate(90deg)" };
-  if (dir === "left") arrowStyle = { ...arrowStyle, transform: "rotate(-90deg)" };
+  if (dir === "right")
+    arrowStyle = { ...arrowStyle, transform: "rotate(90deg)" };
+  if (dir === "left")
+    arrowStyle = { ...arrowStyle, transform: "rotate(-90deg)" };
 
   const animName =
     dir === "forward"
@@ -32,7 +34,12 @@ const Arrow: React.FC<{ dir?:string | null }> = ({ dir }) => {
     pointerEvents: "none",
   };
 
-  // Glowing halo behind the arrow
+  // Glowing halo behind the arrow - theme aware
+  const successColorRGB =
+    getComputedStyle(document.documentElement)
+      .getPropertyValue("--success-color")
+      .trim() || "#22c55e";
+
   const glowStyle: React.CSSProperties = {
     position: "absolute",
     top: "50%",
@@ -41,8 +48,7 @@ const Arrow: React.FC<{ dir?:string | null }> = ({ dir }) => {
     width: 44,
     height: 44,
     borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(34,197,94,0.85) 0%, rgba(34,197,94,0.35) 45%, rgba(34,197,94,0) 70%)",
+    background: `radial-gradient(circle, ${successColorRGB}85 0%, ${successColorRGB}35 45%, transparent 70%)`,
     filter: "blur(6px)",
     animation: "glow 1.1s ease-in-out infinite",
   };
@@ -50,7 +56,12 @@ const Arrow: React.FC<{ dir?:string | null }> = ({ dir }) => {
   return (
     <div style={wrapperStyle}>
       <div style={glowStyle} />
-      <div style={{ ...arrowStyle, animation: "glowPulse 1.1s ease-in-out infinite" }} />
+      <div
+        style={{
+          ...arrowStyle,
+          animation: "glowPulse 1.1s ease-in-out infinite",
+        }}
+      />
       <style>{`
         @keyframes arrowUpDown {
           0%,
@@ -91,19 +102,16 @@ const Arrow: React.FC<{ dir?:string | null }> = ({ dir }) => {
         @keyframes glowPulse {
           0%,
           100% {
-            filter: drop-shadow(0 0 4px #22c55e) drop-shadow(0 0 10px #22c55e);
+            filter: drop-shadow(0 0 4px var(--success-color, #22c55e)) drop-shadow(0 0 10px var(--success-color, #22c55e));
           }
           50% {
-            filter: drop-shadow(0 0 7px #22c55e) drop-shadow(0 0 18px #22c55e);
+            filter: drop-shadow(0 0 7px var(--success-color, #22c55e)) drop-shadow(0 0 18px var(--success-color, #22c55e));
           }
-        alignItems: "center",
-        justifyContent: "center",
         }
       `}</style>
     </div>
   );
 };
-
 
 const CircleWithQuadrants = ({
   size = 200,
@@ -121,17 +129,17 @@ const CircleWithQuadrants = ({
 
   return (
     <div className="flex justify-center items-center h-screen">
-
-      {true && (<Arrow dir={expectedDirection} />)}
+      {true && <Arrow dir={expectedDirection} />}
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-
         {/* Segments rotated */}
         <g transform={`rotate(-45, ${center}, ${center})`}>
           {/* Top */}
           <path
             d={`M${center},${center - radius} 
                 A${radius},${radius} 0 0,1 ${center + radius},${center}`}
-            stroke={color["forward"] || "rgba(255,255,255,0.5)"}
+            stroke={
+              color["forward"] || "var(--border-color, rgba(255,255,255,0.5))"
+            }
             strokeWidth={strokeWidth}
             strokeLinecap="butt"
             strokeLinejoin="round"
@@ -141,7 +149,9 @@ const CircleWithQuadrants = ({
           <path
             d={`M${center + radius},${center} 
                 A${radius},${radius} 0 0,1 ${center},${center + radius}`}
-            stroke={color["right"] || "rgba(255,255,255,0.5)"}
+            stroke={
+              color["right"] || "var(--border-color, rgba(255,255,255,0.5))"
+            }
             strokeWidth={strokeWidth}
             strokeLinecap="butt"
             strokeLinejoin="round"
@@ -151,7 +161,9 @@ const CircleWithQuadrants = ({
           <path
             d={`M${center},${center + radius} 
                 A${radius},${radius} 0 0,1 ${center - radius},${center}`}
-            stroke={color["forward"] || "rgba(255,255,255,0.5)"}
+            stroke={
+              color["forward"] || "var(--border-color, rgba(255,255,255,0.5))"
+            }
             strokeWidth={strokeWidth}
             strokeLinecap="butt"
             strokeLinejoin="round"
@@ -161,7 +173,9 @@ const CircleWithQuadrants = ({
           <path
             d={`M${center - radius},${center} 
                 A${radius},${radius} 0 0,1 ${center},${center - radius}`}
-            stroke={color["left"] || "rgba(255,255,255,0.5)"}
+            stroke={
+              color["left"] || "var(--border-color, rgba(255,255,255,0.5))"
+            }
             strokeWidth={strokeWidth}
             strokeLinecap="butt"
             strokeLinejoin="round"

@@ -50,7 +50,7 @@ function ToastContainer({ toasts, removeToast }: ToastContainerProps) {
     <div
       style={{
         position: "fixed",
-        top: "16px",
+        top: "80px", // Adjusted to avoid theme toggle
         right: "16px",
         zIndex: 9999,
         display: "flex",
@@ -84,26 +84,29 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
   }, []);
 
   const getVariantStyles = () => {
+    const isLightTheme =
+      document.documentElement.getAttribute("data-theme") !== "dark";
+
     switch (toast.variant) {
       case "destructive":
         return {
-          backgroundColor: "#fef2f2",
-          borderColor: "#fecaca",
-          iconColor: "#dc2626",
+          backgroundColor: isLightTheme ? "#fef2f2" : "rgba(239, 68, 68, 0.1)",
+          borderColor: isLightTheme ? "#fecaca" : "rgba(239, 68, 68, 0.3)",
+          iconColor: "var(--error-color)",
           icon: XCircle,
         };
       case "success":
         return {
-          backgroundColor: "#f0fdf4",
-          borderColor: "#bbf7d0",
-          iconColor: "#16a34a",
+          backgroundColor: isLightTheme ? "#f0fdf4" : "rgba(16, 185, 129, 0.1)",
+          borderColor: isLightTheme ? "#bbf7d0" : "rgba(16, 185, 129, 0.3)",
+          iconColor: "var(--success-color)",
           icon: CheckCircle,
         };
       default:
         return {
-          backgroundColor: "#f8fafc",
-          borderColor: "#e2e8f0",
-          iconColor: "#0ea5e9",
+          backgroundColor: "var(--card-bg)",
+          borderColor: "var(--border-color)",
+          iconColor: "var(--info-color)",
           icon: AlertCircle,
         };
     }
@@ -114,12 +117,13 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
 
   return (
     <div
+      className="theme-transition"
       style={{
         backgroundColor: variantStyles.backgroundColor,
         border: `1px solid ${variantStyles.borderColor}`,
         borderRadius: "8px",
         padding: "16px",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+        boxShadow: "0 4px 12px var(--shadow)",
         transform: isVisible ? "translateX(0)" : "translateX(100%)",
         opacity: isVisible ? 1 : 0,
         transition: "all 0.3s ease-in-out",
@@ -142,7 +146,7 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
               fontSize: "14px",
               fontWeight: "600",
               margin: "0 0 4px 0",
-              color: "#1f2937",
+              color: "var(--text-primary)",
             }}
           >
             {toast.title}
@@ -151,7 +155,7 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
             <p
               style={{
                 fontSize: "14px",
-                color: "#6b7280",
+                color: "var(--text-secondary)",
                 margin: 0,
                 lineHeight: "1.4",
               }}
@@ -162,19 +166,20 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
         </div>
         <button
           onClick={onRemove}
+          className="theme-transition"
           style={{
             background: "none",
             border: "none",
             cursor: "pointer",
             padding: "4px",
-            color: "#9ca3af",
+            color: "var(--text-secondary)",
             borderRadius: "4px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.05)";
+            e.currentTarget.style.backgroundColor = "var(--button-hover)";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = "transparent";

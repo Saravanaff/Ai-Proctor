@@ -6,28 +6,24 @@ export interface FaceDetectionOverlayProps {
   expectedDirection: string;
 }
 
-
 const FaceDetectionOverlay: React.FC<FaceDetectionOverlayProps> = ({
   storedFaceDirection,
-  expectedDirection
+  expectedDirection,
 }) => {
-  const borderColor = "rgba(255,255,255,0.5)";
-  // const expectedDirection = "left";
-  const eligible = true; 
   const radiusOfCircle = 360;
-  
-  console.log(storedFaceDirection)
+
+  console.log(storedFaceDirection);
 
   const color = {
-    up: "rgba(255,255,255,0.1)",
-    right: "rgba(255,255,255,0.1)",
-    down: "rgba(255,255,255,0.1)",
-    left: "rgba(255,255,255,0.1)",
-    forward: "rgba(255,255,255,0.1)",
+    up: "var(--border-color, rgba(255,255,255,0.1))",
+    right: "var(--border-color, rgba(255,255,255,0.1))",
+    down: "var(--border-color, rgba(255,255,255,0.1))",
+    left: "var(--border-color, rgba(255,255,255,0.1))",
+    forward: "var(--border-color, rgba(255,255,255,0.1))",
   };
   for (const direction of storedFaceDirection) {
     if (direction in color) {
-      color[direction as keyof typeof color] = "#22c55e"; 
+      color[direction as keyof typeof color] = "var(--success-color, #22c55e)";
     }
   }
 
@@ -52,11 +48,10 @@ const FaceDetectionOverlay: React.FC<FaceDetectionOverlayProps> = ({
           width: radiusOfCircle,
           height: radiusOfCircle,
           borderRadius: "50%",
-          boxShadow: "0 0 0 2000px rgba(0,0,0,0.5)",
+          boxShadow: "0 0 0 2000px var(--overlay-bg, rgba(0,0,0,0.5))",
           pointerEvents: "none",
         }}
       />
-
 
       {/* <div
         style={{
@@ -76,7 +71,12 @@ const FaceDetectionOverlay: React.FC<FaceDetectionOverlayProps> = ({
         <Arrow dir={expectedDirection} />
       </div> */}
 
-      <CircleWithQuadrants size={radiusOfCircle} strokeWidth={10} color={color} expectedDirection={expectedDirection} />
+      <CircleWithQuadrants
+        size={radiusOfCircle}
+        strokeWidth={10}
+        color={color}
+        expectedDirection={expectedDirection}
+      />
 
       {/* Instruction below circle */}
       {/* {instructionText && (

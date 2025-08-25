@@ -3,7 +3,7 @@ import fs from "fs";
 import dotenv from 'dotenv';
 dotenv.config();
 
-const serverIpAddress:string = process.env.SERVER_IP_ADDRESS || "172.16.29.187-demo";
+const serverIpAddress:string = process.env.SERVER_IP_ADDRESS || "172.16.105.211";
 
 console.log(serverIpAddress);
 

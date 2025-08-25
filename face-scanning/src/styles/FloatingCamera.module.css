@@ -7,9 +7,14 @@
   overflow: hidden;
   z-index: 1000;
   cursor: move;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px var(--shadow);
+  border: 2px solid var(--border-color);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
+.floatingCamera:hover {
+  box-shadow: 0 6px 16px var(--shadow);
+}
 
 .floatingCamera:active {
   cursor: grabbing;
@@ -21,17 +26,24 @@
   object-fit: fill;
 }
 
-.ob{
+.ob {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background-color: #fff3cd;
-  color: #856404;
+  background-color: var(--warning-bg, #fef3c7);
+  color: var(--warning-text, #92400e);
   padding: 16px 24px;
-  border: 2px solid #ffeeba;
+  border: 2px solid var(--warning-border, #fcd34d);
   border-radius: 10px;
   font-size: 16px;
   font-weight: bold;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 10px var(--shadow);
   z-index: 999;
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .ob {
+  --warning-bg: rgba(251, 191, 36, 0.1);
+  --warning-text: #fbbf24;
+  --warning-border: rgba(251, 191, 36, 0.3);
 }

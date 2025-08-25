@@ -1,6 +1,8 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { ToastProvider } from "@/components/Toaster";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 
@@ -24,12 +26,12 @@ function ClientAuth({ children }: { children: React.ReactNode }) {
       }
 
       /* uncomment this on production */
-      
-        if (!hasAuthClient()) {
-          const redirect = encodeURIComponent(router.asPath || "/");
-          router.replace(`/Login?redirect=${redirect}`);
-          return;
-        }
+
+      if (!hasAuthClient()) {
+        const redirect = encodeURIComponent(router.asPath || "/");
+        router.replace(`/Login?redirect=${redirect}`);
+        return;
+      }
 
       setReady(true);
     };
@@ -46,10 +48,13 @@ function ClientAuth({ children }: { children: React.ReactNode }) {
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <ClientAuth>
-      <ToastProvider>
-        <Component {...pageProps} />
-      </ToastProvider>
-    </ClientAuth>
+    <ThemeProvider>
+      <ClientAuth>
+        <ToastProvider>
+          <ThemeToggle />
+          <Component {...pageProps} />
+        </ToastProvider>
+      </ClientAuth>
+    </ThemeProvider>
   );
 }

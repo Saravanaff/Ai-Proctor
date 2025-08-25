@@ -6,6 +6,13 @@ export interface ScanStep {
   icon: string;
 }
 
+export type Theme = "light" | "dark";
+
+export interface ThemeContextType {
+  theme: Theme;
+  toggleTheme: () => void;
+}
+
 export interface VideoComponentProps {
   onScanComplete?: (results: ScanResult[]) => void;
   customSteps?: ScanStep[];
@@ -27,5 +34,5 @@ export interface OverlayProps {
 }
 
 export interface VideoStreamProps {
-  videoRef: React.RefObject<HTMLVideoElement|null>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
 }

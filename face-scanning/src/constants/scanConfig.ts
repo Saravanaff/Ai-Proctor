@@ -27,13 +27,13 @@ export const defaultScanSteps: ScanStep[] = [
 
 export const overlayStyles = {
   gradient: {
-    top: "linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)",
+    top: "linear-gradient(180deg, var(--overlay-bg, rgba(0,0,0,0.8)) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)",
     bottom:
-      "linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)",
+      "linear-gradient(0deg, var(--overlay-bg, rgba(0,0,0,0.8)) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)",
   },
   colors: {
-    primary: "white",
-    secondary: "rgba(255, 255, 255, 0.8)",
-    background: "rgba(0, 0, 0, 0.7)",
+    primary: "var(--text-primary, white)",
+    secondary: "var(--text-secondary, rgba(255, 255, 255, 0.8))",
+    background: "var(--overlay-bg, rgba(0, 0, 0, 0.7))",
   },
 };

@@ -116,29 +116,18 @@ const CreateExam = () => {
   };
 
   return (
-    <div className={`${styles.examinerContainer} ${styles.enterpriseRoot}`} style={{ background: '#0b0b0b', minHeight: '100vh' }}>
+    <div className={`${styles.examinerContainer} ${styles.enterpriseRoot} theme-transition`}>
       <div className={styles.pageBackdrop} style={{ display: 'none' }} />
-      <header className={`${styles.header} ${styles.fadeIn}`} style={{ background: 'transparent', borderBottom: '1px solid #1a1a1a', paddingBottom: '20px' }}>
+      <header className={`${styles.header} ${styles.fadeIn} theme-transition`}>
         <div className={styles.headerContent}>
-          <h1 className={styles.title} style={{ color: '#ffffff', fontSize: '28px', fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>Exam Management Console</h1>
-          <p className={styles.subtitle} style={{ color: '#a3a3a3', fontSize: '16px', margin: '8px 0 0 0' }}>Create, monitor and manage assessments</p>
+          <h1 className={`${styles.title} theme-transition`}>Exam Management Console</h1>
+          <p className={`${styles.subtitle} theme-transition`}>Create, monitor and manage assessments</p>
         </div>
-        <div className={styles.headerActions} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className={styles.headerActions}>
           <SearchBar value={search} onChange={setSearch} />
           <button
             onClick={() => setShowCreateForm(v => !v)}
-            className={`${styles.btn} ${styles.btnPrimary}`}
-            style={{
-              background: '#ffffff',
-              border: '1px solid #ffffff',
-              color: '#0a0a0a',
-              padding: '12px 18px',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
+            className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
           >
             {showCreateForm ? 'Close' : '➕ New Exam'}
           </button>
@@ -148,25 +137,36 @@ const CreateExam = () => {
       <ExamStats stats={stats} />
 
       {showCreateForm && (
-        <div 
-          className={`${styles.glassPanel}`} 
-          style={{ 
-            maxWidth: '600px', 
-            margin: '0 auto 2rem', 
-            padding: '24px', 
-            background: '#0f0f0f', 
-            border: '1px solid #1f1f1f', 
-            borderRadius: '12px', 
-            boxShadow: '0 10px 30px rgba(0,0,0,0.45)' 
-          }}
-        >
+        <div className={`${styles.glassPanel} theme-transition`}>
           <div style={{ marginBottom: '20px' }}>
-            <h3 style={{ color: '#ffffff', marginBottom: '8px', fontSize: '18px', fontWeight: 600 }}>Create New Exam</h3>
-            <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>Enter a name for your new exam</p>
+            <h3 className="theme-transition" style={{ 
+              color: 'var(--text-primary)', 
+              marginBottom: '8px', 
+              fontSize: '18px', 
+              fontWeight: 600,
+              transition: 'color 0.3s ease'
+            }}>
+              Create New Exam
+            </h3>
+            <p className="theme-transition" style={{ 
+              color: 'var(--text-secondary)', 
+              fontSize: '14px', 
+              margin: 0,
+              transition: 'color 0.3s ease'
+            }}>
+              Enter a name for your new exam
+            </p>
           </div>
           
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', color: '#d4d4d4', fontWeight: 500, fontSize: '14px' }}>
+            <label className="theme-transition" style={{ 
+              display: 'block', 
+              marginBottom: '8px', 
+              color: 'var(--text-secondary)', 
+              fontWeight: 500, 
+              fontSize: '14px',
+              transition: 'color 0.3s ease'
+            }}>
               Exam Name
             </label>
             <input
@@ -174,16 +174,13 @@ const CreateExam = () => {
               value={examName}
               onChange={(e) => setExamName(e.target.value)}
               placeholder="Enter exam name"
+              className="input-theme theme-transition"
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #262626',
                 borderRadius: '10px',
-                background: '#0a0a0a',
-                color: '#fafafa',
                 fontSize: '15px',
-                outline: 'none',
-                transition: 'border-color 0.15s ease'
+                outline: 'none'
               }}
             />
           </div>
@@ -192,19 +189,15 @@ const CreateExam = () => {
             <button
               onClick={handleCreateExam}
               disabled={isCreating || !examName.trim()}
-              className={`${styles.btn} ${styles.btnPrimary}`}
+              className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
               style={{ 
                 flex: 1,
-                background: '#ffffff',
-                border: '1px solid #ffffff',
-                color: '#0a0a0a',
                 padding: '12px 18px',
                 borderRadius: '10px',
                 fontSize: '15px',
                 fontWeight: 600,
                 opacity: (isCreating || !examName.trim()) ? 0.6 : 1,
-                cursor: (isCreating || !examName.trim()) ? 'not-allowed' : 'pointer',
-                transition: 'all 0.15s ease'
+                cursor: (isCreating || !examName.trim()) ? 'not-allowed' : 'pointer'
               }}
             >
               {isCreating ? 'Creating...' : 'Create Exam'}
@@ -214,17 +207,13 @@ const CreateExam = () => {
                 setShowCreateForm(false);
                 setExamName('');
               }}
-              className={`${styles.btn} ${styles.btnGhost}`}
+              className={`${styles.btn} ${styles.btnGhost} theme-transition`}
               style={{
-                border: '1px solid #2c2c2c',
-                background: 'transparent',
-                color: '#e5e5e5',
                 padding: '12px 18px',
                 borderRadius: '10px',
                 fontSize: '15px',
                 fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                cursor: 'pointer'
               }}
             >
               Cancel
@@ -233,39 +222,58 @@ const CreateExam = () => {
         </div>
       )}
 
-      <section className={`${styles.examsSection} ${styles.fadeIn}`}>
-        <div className={styles.sectionHeader} style={{ borderBottom: '1px solid #1f1f1f', paddingBottom: '16px', marginBottom: '24px' }}>
-          <h2 className={styles.sectionTitle} style={{ color: '#ffffff', fontSize: '20px', fontWeight: 600, margin: 0 }}>Exams ({filteredExams.length})</h2>
-          {search && <span className={styles.filterInfo} style={{ color: '#a3a3a3', fontSize: '14px' }}>Filtered by: "{search}"</span>}
+      <section className={`${styles.examsSection} ${styles.fadeIn} theme-transition`}>
+        <div className={`${styles.sectionHeader} theme-transition`}>
+          <h2 className={`${styles.sectionTitle} theme-transition`} style={{ 
+            color: 'var(--text-primary)', 
+            fontSize: '20px', 
+            fontWeight: 600, 
+            margin: 0,
+            transition: 'color 0.3s ease'
+          }}>
+            Exams ({filteredExams.length})
+          </h2>
+          {search && <span className={`${styles.filterInfo} theme-transition`} style={{ 
+            color: 'var(--text-secondary)', 
+            fontSize: '14px',
+            transition: 'color 0.3s ease'
+          }}>
+            Filtered by: "{search}"
+          </span>}
         </div>
 
         {loading && (
           <div className={styles.skeletonGrid}>
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className={`${styles.examCard} ${styles.skeletonCard} ${styles.shimmer}`} style={{ background: '#0f0f0f', border: '1px solid #1f1f1f' }} />
+              <div key={i} className={`${styles.examCard} ${styles.skeletonCard} ${styles.shimmer} theme-transition`} />
             ))}
           </div>
         )}
 
         {!loading && filteredExams.length === 0 && (
-          <div className={`${styles.emptyState} ${styles.glassPanel}`} style={{ background: '#0f0f0f', border: '1px solid #1f1f1f', borderRadius: '12px', padding: '48px 24px', textAlign: 'center' }}>
+          <div className={`${styles.emptyState} ${styles.glassPanel} theme-transition`}>
             <div className={styles.emptyContent}>
               <div className={styles.emptyIcon} style={{ fontSize: '48px', marginBottom: '16px' }}>📁</div>
-              <h3 className={styles.emptyTitle} style={{ color: '#ffffff', fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>No exams match</h3>
-              <p className={styles.emptyDescription} style={{ color: '#a3a3a3', fontSize: '14px', marginBottom: '24px' }}>Try adjusting your search or create a new exam.</p>
+              <h3 className={`${styles.emptyTitle} theme-transition`} style={{ 
+                color: 'var(--text-primary)', 
+                fontSize: '18px', 
+                fontWeight: 600, 
+                marginBottom: '8px',
+                transition: 'color 0.3s ease'
+              }}>
+                No exams match
+              </h3>
+              <p className={`${styles.emptyDescription} theme-transition`} style={{ 
+                color: 'var(--text-secondary)', 
+                fontSize: '14px', 
+                marginBottom: '24px',
+                transition: 'color 0.3s ease'
+              }}>
+                Try adjusting your search or create a new exam.
+              </p>
               <button
                 onClick={() => setShowCreateForm(true)}
-                className={`${styles.btn} ${styles.btnPrimary}`}
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #ffffff',
-                  color: '#0a0a0a',
-                  padding: '12px 18px',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
+                className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
               >
                 ➕ Create Exam
               </button>

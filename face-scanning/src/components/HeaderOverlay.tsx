@@ -2,18 +2,17 @@ import React from "react";
 import { overlayStyles } from "../constants/scanConfig";
 
 interface HeaderOverlayProps {
-  icon: string;
   title: string;
   instruction: string;
 }
 
 const HeaderOverlay: React.FC<HeaderOverlayProps> = ({
-  icon,
   title,
   instruction,
 }) => {
   return (
     <div
+      className="theme-transition"
       style={{
         position: "absolute",
         top: 0,
@@ -34,7 +33,15 @@ const HeaderOverlay: React.FC<HeaderOverlayProps> = ({
       }}
     >
       <div>{title}</div>
-      <div style={{ fontSize: "16px", fontWeight: "400" }}>{instruction}</div>
+      <div
+        style={{
+          fontSize: "16px",
+          fontWeight: "400",
+          color: overlayStyles.colors.secondary,
+        }}
+      >
+        {instruction}
+      </div>
     </div>
   );
 };

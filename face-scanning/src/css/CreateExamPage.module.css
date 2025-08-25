@@ -2,7 +2,7 @@
   padding: 24px;
   max-width: 1200px;
   margin: 0 auto;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 /* Header Styles */
@@ -59,13 +59,13 @@
 }
 
 .btnOutline {
-  background-color: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 
 .btnOutline:hover {
-  background-color: #f9fafb;
+  background-color: var(--button-hover);
 }
 
 .btnSmall {
@@ -76,8 +76,8 @@
 
 /* Create Form Styles */
 .createFormCard {
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background-color: var(--secondary-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 24px;
   margin-bottom: 24px;
@@ -164,8 +164,8 @@
 
 /* Empty State */
 .emptyState {
-  background-color: white;
-  border: 1px solid #e5e7eb;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 48px 24px;
   text-align: center;
@@ -201,15 +201,15 @@
 }
 
 .examCard {
-  background-color: white;
-  border: 1px solid #e5e7eb;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 20px;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, background 0.3s ease;
 }
 
 .examCard:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 .examHeader {
@@ -279,21 +279,21 @@
   .examinerContainer {
     padding: 16px;
   }
-  
+
   .header {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
   }
-  
+
   .examsGrid {
     grid-template-columns: 1fr;
   }
-  
+
   .buttonGroup {
     flex-direction: column;
   }
-  
+
   .inputGroup {
     max-width: 100%;
   }

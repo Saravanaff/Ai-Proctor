@@ -9,18 +9,7 @@ import styles from "../styles/ThirdEye.module.css";
 import { delay } from "@/utils/delay";
 
 const userId = getUserId() || "unknown";
-
-function currentUserId(): string | null {
-  try {
-    const id = getUserId?.();
-    if (id) return id;
-  } catch { }
-  try {
-    if (typeof window !== "undefined") return window.localStorage.getItem("userId");
-  } catch { }
-  return null;
-}
-
+console.log("User ID:", userId);
 
 export default function ThirdEye() {
   // const [socket, setSocket] = useState<Socket | null>(null);
@@ -39,22 +28,22 @@ export default function ThirdEye() {
   console.log("Server URL:", serverUrl);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);  
-  const streamRef = useRef<MediaStream>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const newSocket = useRef<Socket | null>(null);
-  // const 
+  const isInitialized = useRef(false);
   
   
 
 
   useEffect(() => {
 
+    if (isInitialized.current) return;
+    isInitialized.current = true;
 
-    newSocket.current = io(serverUrl,{
-      transports: ["websocket", "polling"],
-      auth: { userId: currentUserId() || "" },
-    });
+    newSocket.current = io(serverUrl);
     console.log("newSocket Created...");
     let timer: NodeJS.Timeout;
+    let isMounted = true;
     setHydrated(true); 
     
     const handleOrientation = () => {
@@ -63,73 +52,98 @@ export default function ThirdEye() {
 
     const init = async () => {
 
-
       window.addEventListener("resize", handleOrientation);
       window.addEventListener("orientationchange", handleOrientation);
       
       timer = setTimeout(() => {
-        setShowInitialNotice(false);
-        setShowSurveillanceNotice(true);
+        if (isMounted) {
+          setShowInitialNotice(false);
+          setShowSurveillanceNotice(true);
+        }
       }, 3000);
 
       if(newSocket.current){
 
-        newSocket.current.emit('mobile');
-
         newSocket.current.on("connect", () => {
-          setIsConnected(true);
-          toast({
-            title: "Connected",
-            description: "Connected to Third Eye server.",
-            variant: "success",
-          });
+          console.log("Socket connected");
+          if (isMounted) {
+            setIsConnected(true);
+            toast({
+              title: "Connected",
+              description: "Connected to Third Eye server.",
+              variant: "success",
+            });
+          }
+          // Only emit after connection is established
+          newSocket.current?.emit('mobile');
           newSocket.current?.emit('summa');
         });
 
         newSocket.current.on("disconnect", (reason) => {
           console.warn("Disconnected:", reason);
-          setIsConnected(false);
-          setIsStreamingFrames(false);
+          if (isMounted) {
+            setIsConnected(false);
+            setIsStreamingFrames(false);
+          }
         });
 
         newSocket.current.on("connect_error", (err) => {
-          alert(err)
           console.error("Connection error:", err.message);
-          toast({
-            title: "Connection Error",
-            description: "Could not connect to Third Eye server.",
-            variant: "destructive",
-          });
+          if (isMounted) {
+            toast({
+              title: "Connection Error",
+              description: "Could not connect to Third Eye server.",
+              variant: "destructive",
+            });
+          }
         });
       }
     }
 
-    try {
-      init();
-    }
-    catch(err){
-      alert(err);
-    }
-
-    // init();
+    init();
 
     handleOrientation();
 
 
     return () => {
+      console.log("Mobile component cleanup");
+      isMounted = false;
+      isInitialized.current = false;
 
       if(timer){
         clearTimeout(timer)
       }
 
       if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+        // Clear event handlers first
         mediaRecorderRef.current.ondataavailable = null;
         mediaRecorderRef.current.onstop = null;
 
         if (mediaRecorderRef.current.state !== "inactive") {
           mediaRecorderRef.current.stop();
         }
+      }
+
+      if (frameIntervalRef.current) {
+        clearInterval(frameIntervalRef.current);
+        frameIntervalRef.current = null;
+      }
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
+          console.log(`Stopping mobile track: ${track.kind}, state: ${track.readyState}`);
+          track.stop();
+        });
+        streamRef.current = null;
+      }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+
+      if (newSocket.current) {
+        newSocket.current.disconnect();
+        newSocket.current = null;
       }
 
       window.removeEventListener("resize", handleOrientation);
@@ -148,17 +162,23 @@ export default function ThirdEye() {
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
+    
+    // Check if video is ready
+    if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) return;
+    
     const ctx = canvas.getContext("2d");
-    if (!ctx || video.videoWidth === 0 || video.videoHeight === 0) return;
+    if (!ctx) return;
 
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     canvas.toBlob((blob) => {
-      if (blob) {
+      if (blob && newSocket.current && isConnected) {
         blob.arrayBuffer().then((buffer) => {
           newSocket.current?.emit("video", buffer);
+        }).catch((error) => {
+          console.error("Error processing frame:", error);
         });
       }
     }, "image/jpeg", 0.7);
@@ -167,23 +187,50 @@ export default function ThirdEye() {
   const startStreaming = async () => {
     try {
       console.log("Starting surveillance recording ...");
-      newSocket.current?.emit("start-exam",{
+      
+      // Wait for socket connection before proceeding
+      if (!newSocket.current || !isConnected) {
+        toast({
+          title: "Connection Error",
+          description: "Not connected to server. Please wait for connection.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      newSocket.current.emit("proxy-start-exam",{
         user_id: userId,
         category: "third_eye",
-      })
+      });
 
       await delay(500);
 
-
+      // Stop any existing stream first
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
 
+      // Stop any existing MediaRecorder
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.ondataavailable = null;
+        mediaRecorderRef.current.onstop = null;
+        if (mediaRecorderRef.current.state !== "inactive") {
+          mediaRecorderRef.current.stop();
+        }
+        mediaRecorderRef.current = null;
+      }
+
+      // Stop any existing frame capture
+      if (frameIntervalRef.current) {
+        clearInterval(frameIntervalRef.current);
+        frameIntervalRef.current = null;
+      }
+
       // Add a delay to ensure camera is released
       await delay(500);
 
-      console.log("FloatingCamera: Requesting camera access...");
+      console.log("Mobile: Requesting camera access...");
 
       // Try to get camera with retry logic
       let retries = 3;
@@ -213,9 +260,24 @@ export default function ThirdEye() {
         }
       }
 
+      if (!streamRef.current) {
+        throw new Error("Failed to get camera stream");
+      }
 
-      if (videoRef.current && streamRef.current) {
+      if (videoRef.current) {
         videoRef.current.srcObject = streamRef.current;
+
+        // Wait for video to be ready before proceeding
+        await new Promise<void>((resolve) => {
+          const checkVideoReady = () => {
+            if (videoRef.current && videoRef.current.readyState >= 2) {
+              resolve();
+            } else {
+              setTimeout(checkVideoReady, 100);
+            }
+          };
+          checkVideoReady();
+        });
 
         const container = videoRef.current.parentElement?.parentElement;
         if (container && container.requestFullscreen) {
@@ -229,16 +291,15 @@ export default function ThirdEye() {
         }
       }
 
-
-      if (streamRef.current ) {
+      // Create MediaRecorder only after stream is ready
+      if (streamRef.current) {
         mediaRecorderRef.current = new MediaRecorder(streamRef.current, {
           mimeType: "video/webm; codecs=vp8",
           videoBitsPerSecond: 1000000,
         });
-      }
-      if (mediaRecorderRef.current) {
+
         mediaRecorderRef.current.ondataavailable = (e: any) => {
-          if (e.data.size > 0) {
+          if (e.data.size > 0 && newSocket.current && isConnected) {
             e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
               const chunkData: any = {
                 user_id: userId,
@@ -247,16 +308,25 @@ export default function ThirdEye() {
               };
               if (newSocket.current) {
                 console.log("Recording ...");
-                newSocket.current.emit("recorder-add-video-stream-chunk", chunkData);
+                newSocket.current.emit("proxy-recorder-add-video-stream-chunk", chunkData);
               }
+            }).catch((error: any) => {
+              console.error("Error processing video chunk:", error);
             });
           }
         };
 
+        // Add error handler
+        mediaRecorderRef.current.onerror = (event: any) => {
+          console.error("MediaRecorder error:", event);
+        };
+
+        // Wait a bit before starting recording
+        await delay(200);
         mediaRecorderRef.current.start(500); // send chunks every 500ms
       }
 
-
+      // Start frame capture after everything is set up
       frameIntervalRef.current = setInterval(() => {
         captureAndSendFrame();
       }, 1000 / 30);
@@ -268,12 +338,22 @@ export default function ThirdEye() {
       });
 
     } catch (error) {
-      console.error(error);
+      console.error("Error starting stream:", error);
       toast({
         title: "Camera Error",
         description: "Could not access the camera.",
         variant: "destructive",
       });
+      
+      // Clean up on error
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      if (frameIntervalRef.current) {
+        clearInterval(frameIntervalRef.current);
+        frameIntervalRef.current = null;
+      }
     }
   };
 
@@ -281,7 +361,7 @@ export default function ThirdEye() {
     console.log("Stopping streaming...")
     
     // Emit stop exam event
-    newSocket.current?.emit("end-exam",{
+    newSocket.current?.emit("proxy-end-exam",{
       user_id: userId,
       category: "third_eye",
     });

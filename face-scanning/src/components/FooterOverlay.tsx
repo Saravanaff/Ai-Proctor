@@ -8,6 +8,7 @@ interface FooterOverlayProps {
 const FooterOverlay: React.FC<FooterOverlayProps> = ({ description }) => {
   return (
     <div
+      className="theme-transition"
       style={{
         position: "absolute",
         bottom: 0,
@@ -19,7 +20,7 @@ const FooterOverlay: React.FC<FooterOverlayProps> = ({ description }) => {
         alignItems: "center",
         padding: "30px 20px",
         background: overlayStyles.gradient.bottom,
-        color:overlayStyles.colors.primary,
+        color: overlayStyles.colors.primary,
         fontSize: "16px",
         textAlign: "center",
         flexDirection: "column",
@@ -27,7 +28,15 @@ const FooterOverlay: React.FC<FooterOverlayProps> = ({ description }) => {
       }}
     >
       <div>{"Keep your face centered in the oval"}</div>
-      <div style={{ fontSize: "14px", opacity: 0.8 }}>{description}</div>
+      <div
+        style={{
+          fontSize: "14px",
+          opacity: 0.8,
+          color: overlayStyles.colors.secondary,
+        }}
+      >
+        {description}
+      </div>
     </div>
   );
 };

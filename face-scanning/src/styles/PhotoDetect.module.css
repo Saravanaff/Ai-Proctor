@@ -1,8 +1,8 @@
 /* Container and Layout */
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
-  color: #ffffff;
+  background: var(--background);
+  color: var(--text-primary);
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   display: flex;
   align-items: center;
@@ -10,6 +10,7 @@
   padding: 20px;
   position: relative;
   overflow: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 .container::before {
@@ -19,17 +20,30 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(
+  background: var(
+    --photo-detect-gradient,
+    radial-gradient(
       circle at 20% 80%,
-      rgba(255, 255, 255, 0.03) 0%,
-      transparent 50%
+      rgba(16, 185, 129, 0.05) 0%,
+      transparent 60%
     ),
     radial-gradient(
       circle at 80% 20%,
-      rgba(255, 255, 255, 0.03) 0%,
-      transparent 50%
-    );
+      rgba(59, 130, 246, 0.05) 0%,
+      transparent 60%
+    )
+  );
   pointer-events: none;
+  transition: background 0.3s ease;
+}
+
+[data-theme="light"] .container::before {
+  --photo-detect-gradient: radial-gradient(
+      circle at 20% 80%,
+      rgba(16, 185, 129, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
 }
 
 .content {
@@ -48,33 +62,33 @@
 .title {
   font-size: 32px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0 0 12px 0;
   letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  transition: color 0.3s ease;
 }
 
 .subtitle {
   font-size: 16px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.5;
   max-width: 480px;
   margin-left: auto;
   margin-right: auto;
+  transition: color 0.3s ease;
 }
 
 /* Progress Bar */
 .progressContainer {
   margin-bottom: 32px;
   padding: 20px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px var(--shadow);
+  transition: all 0.3s ease;
 }
 
 .progressHeader {
@@ -87,29 +101,33 @@
 .progressText {
   font-size: 14px;
   font-weight: 500;
-  color: #e0e0e0;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 .progressCount {
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  background: var(--secondary-bg);
   padding: 4px 8px;
   border-radius: 6px;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 .progressBar {
   height: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--secondary-bg);
   border-radius: 4px;
   overflow: hidden;
   position: relative;
+  border: 1px solid var(--border-color);
 }
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, #ffffff 0%, #e0e0e0 100%);
+  background: var(--accent-color);
   border-radius: 4px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -150,14 +168,15 @@
 
 /* Device Cards */
 .deviceCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 24px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 2px 8px var(--shadow);
 }
 
 .deviceCard::before {
@@ -167,32 +186,32 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-color);
   transition: all 0.3s ease;
 }
 
 .deviceCard:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-color: var(--accent-color);
+  box-shadow: 0 8px 24px var(--shadow);
 }
 
 .deviceCard.success {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--success-color);
+  background: var(--success-bg);
 }
 
 .deviceCard.success::before {
-  background: #ffffff;
+  background: var(--success-color);
 }
 
 .deviceCard.denied {
-  border-color: rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--error-color);
+  background: var(--error-bg);
 }
 
 .deviceCard.checking {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--warning-color);
   animation: pulse 2s infinite;
 }
 
@@ -223,20 +242,22 @@
 .deviceIcon {
   width: 48px;
   height: 48px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
 .deviceIcon svg {
   width: 24px;
   height: 24px;
-  stroke: #ffffff;
+  stroke: var(--text-primary);
   stroke-width: 1.5;
+  transition: stroke 0.3s ease;
 }
 
 .deviceDetails {
@@ -246,15 +267,17 @@
 .deviceTitle {
   font-size: 18px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0 0 4px 0;
+  transition: color 0.3s ease;
 }
 
 .deviceDescription {
   font-size: 14px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.4;
+  transition: color 0.3s ease;
 }
 
 .statusContainer {
@@ -267,7 +290,8 @@
 .statusText {
   font-size: 14px;
   font-weight: 500;
-  color: #e0e0e0;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
 }
 
 /* Status Icons */
@@ -282,15 +306,16 @@
 .pendingDot {
   width: 8px;
   height: 8px;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--text-secondary);
   border-radius: 50%;
+  transition: background 0.3s ease;
 }
 
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-top: 2px solid #ffffff;
+  border: 2px solid var(--border-color);
+  border-top: 2px solid var(--accent-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -309,23 +334,25 @@
 }
 
 .successIcon {
-  stroke: #ffffff;
+  stroke: var(--success-color);
 }
 
 .errorIcon {
-  stroke: #ffffff;
+  stroke: var(--error-color);
 }
 
 /* Result Card */
 .resultCard {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
   display: flex;
   align-items: flex-start;
   gap: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px var(--shadow);
   backdrop-filter: blur(10px);
   animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -342,30 +369,34 @@
 }
 
 .resultSuccess {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--success-color);
+  background: var(--success-bg);
 }
 
 .resultError {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--error-color);
+  background: var(--error-bg);
 }
 
 .resultIcon {
   width: 48px;
   height: 48px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
 .resultIcon svg {
   width: 24px;
   height: 24px;
-  stroke: #ffffff;
+  stroke: var(--text-primary);
   stroke-width: 2;
+  transition: stroke 0.3s ease;
 }
 
 .resultContent {
@@ -375,15 +406,17 @@
 .resultTitle {
   font-size: 18px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   margin: 0 0 8px 0;
+  transition: color 0.3s ease;
 }
 
 .resultMessage {
   font-size: 14px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.5;
+  transition: color 0.3s ease;
 }
 
 /* Action Buttons */
@@ -409,25 +442,26 @@
 }
 
 .primaryButton {
-  background: #ffffff;
-  color: #000000;
+  background: var(--accent-color);
+  color: white;
 }
 
 .primaryButton:hover:not(:disabled) {
-  background: #f0f0f0;
+  background: var(--accent-color);
+  filter: brightness(1.1);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px var(--shadow);
 }
 
 .secondaryButton {
   background: transparent;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 
 .secondaryButton:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--button-hover);
+  border-color: var(--accent-color);
 }
 
 .actionButton:disabled {
@@ -437,26 +471,26 @@
 }
 
 .actionButton:focus {
-  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline: 2px solid var(--accent-color);
   outline-offset: 2px;
 }
 
 .refreshButton {
   background: transparent;
-  color: #a0a0a0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
   padding: 12px 20px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .refreshButton:hover:not(:disabled) {
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--button-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-color);
 }
 
 .refreshButton:disabled {
@@ -465,7 +499,7 @@
 }
 
 .refreshButton:focus {
-  outline: 2px solid rgba(255, 255, 255, 0.3);
+  outline: 2px solid var(--accent-color);
   outline-offset: 2px;
 }
 

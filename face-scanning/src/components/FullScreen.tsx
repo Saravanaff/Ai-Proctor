@@ -11,24 +11,24 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
   options: ["Option A", "Option B", "Option C", "Option D"],
 }));
 
-
-const ExamPage = ({ screenRecorderMediaRecorderRef,onBeforeSubmit, screen }:any) => {
-    
+const ExamPage = ({
+  screenRecorderMediaRecorderRef,
+  onBeforeSubmit,
+  screen,
+}: any) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
-  const [lookAlert,setlookAlert]=useState(false);
-  const [object,setObject]=useState(false);
-  const [num,setNum]=useState(false);
+  const [lookAlert, setlookAlert] = useState(false);
+  const [object, setObject] = useState(false);
+  const [num, setNum] = useState(false);
   const [authFaceMissing, setAuthFaceMissing] = useState(false);
   const [paused, setPaused] = useState(false);
-  const {toast}=useToast();
-  const [face,setFace]=useState(0);
-  const [examSubmitted,setExamSubmitted] = useState(false);
+  const { toast } = useToast();
+  const [face, setFace] = useState(0);
+  const [examSubmitted, setExamSubmitted] = useState(false);
   const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
-  
-  const router=useRouter();
 
-
+  const router = useRouter();
 
   const handleAuthFaceMissing = () => {
     console.log("Auth face missing alert triggered");
@@ -36,29 +36,27 @@ const ExamPage = ({ screenRecorderMediaRecorderRef,onBeforeSubmit, screen }:any)
     setTimeout(() => setAuthFaceMissing(false), 3000);
   };
 
-  
-
   const handleChange = (qId: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [qId]: value }));
   };
 
-  const detectObject=()=>{
+  const detectObject = () => {
     console.log("Object detected");
     setObject(true);
-    setTimeout(()=>setObject(false),3000);
-  }
+    setTimeout(() => setObject(false), 3000);
+  };
 
-  const number=(a:number)=>{
+  const number = (a: number) => {
     setFace(a);
     setNum(true);
-    setTimeout(()=>{
-      setNum(false)},2000);
-  }
+    setTimeout(() => {
+      setNum(false);
+    }, 2000);
+  };
 
   useEffect(() => {
     try {
-
-      const preventActions:any = (e: any) => {
+      const preventActions: any = (e: any) => {
         if (
           e instanceof KeyboardEvent &&
           ["F12", "Control", "Meta", "Alt", "Tab"].includes(e.key)
@@ -81,14 +79,12 @@ const ExamPage = ({ screenRecorderMediaRecorderRef,onBeforeSubmit, screen }:any)
 
       const userId = getUserId() || "unknown";
 
-      socket.emit("start-exam",{
+      socket.emit("start-exam", {
         user_id: userId,
         category: "face_camera",
         status: "success",
-        message: "Exam Started successfully"
+        message: "Exam Started successfully",
       });
-
-      
 
       const fullscreenChangeHandler = () => {
         if (!document.fullscreenElement) {
@@ -99,15 +95,18 @@ const ExamPage = ({ screenRecorderMediaRecorderRef,onBeforeSubmit, screen }:any)
       const sizeHandler = () => {
         const widthDiff = Math.abs(window.innerWidth - window.screen.width);
         const heightDiff = Math.abs(window.innerHeight - window.screen.height);
-        if ((widthDiff > 10 || heightDiff > 10)) {
+        if (widthDiff > 10 || heightDiff > 10) {
           setBlocked(true);
         }
       };
-    
+
       return () => {
         window.removeEventListener("blur", blurHandler);
         window.removeEventListener("focus", focusHandler);
-        document.removeEventListener("fullscreenchange", fullscreenChangeHandler);
+        document.removeEventListener(
+          "fullscreenchange",
+          fullscreenChangeHandler
+        );
         window.removeEventListener("keydown", preventActions);
         window.removeEventListener("contextmenu", preventActions);
         window.removeEventListener("copy", preventActions);
@@ -115,24 +114,23 @@ const ExamPage = ({ screenRecorderMediaRecorderRef,onBeforeSubmit, screen }:any)
         window.removeEventListener("paste", preventActions);
         window.removeEventListener("resize", sizeHandler);
       };
-
-    }catch(e){
+    } catch (e) {
       console.log("Error in useEffect");
     }
   }, []);
-  let s:any;
-  const lookingAlert=(side:any)=>{
+  let s: any;
+  const lookingAlert = (side: any) => {
     console.log("looking away");
-    s=side;
+    s = side;
     setlookAlert(true);
     setTimeout(() => setlookAlert(false), 3000);
-  }
-
+  };
 
   if (blocked) {
     return (
       <div className={styles.overlay}>
-        <h1>⚠️ Exam Blocked</h1><br/>
+        <h1>⚠️ Exam Blocked</h1>
+        <br />
         {/* <h2>Tab switch, fullscreen exit, or suspicious resize detected.</h2> */}
       </div>
     );
@@ -142,8 +140,20 @@ const ExamPage = ({ screenRecorderMediaRecorderRef,onBeforeSubmit, screen }:any)
     <div className={styles.examContainer}>
       {/* Exam paused overlay */}
       {paused && (
-        <div className={styles.overlay} style={{ zIndex: 2000, background: 'rgba(0,0,0,0.6)' }}>
-          <div style={{ background: '#fff', color: '#111', padding: 20, borderRadius: 12, boxShadow: '0 10px 30px rgba(0,0,0,.35)' }}>
+        <div
+          className={styles.overlay}
+          style={{ zIndex: 2000, background: "var(--overlay-bg)" }}
+        >
+          <div
+            style={{
+              background: "var(--card-bg)",
+              color: "var(--text-primary)",
+              padding: 20,
+              borderRadius: 12,
+              boxShadow: "0 10px 30px var(--shadow)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
             <h3 style={{ marginBottom: 8 }}>Exam Paused</h3>
             <p>Authenticating your identity… Please look at the camera.</p>
           </div>
@@ -162,7 +172,9 @@ const ExamPage = ({ screenRecorderMediaRecorderRef,onBeforeSubmit, screen }:any)
       <main className={styles.mainContent}>
         {questions.map((q) => (
           <div key={q.id} className={styles.questionBlock}>
-            <h4>{q.id}. {q.question}</h4>
+            <h4>
+              {q.id}. {q.question}
+            </h4>
             <div className={styles.options}>
               {q.options.map((opt, idx) => (
                 <label key={idx} className={styles.optionLabel}>
@@ -182,8 +194,10 @@ const ExamPage = ({ screenRecorderMediaRecorderRef,onBeforeSubmit, screen }:any)
         <button
           className={styles.submitButton}
           onClick={async () => {
-            try { if (onBeforeSubmit) await onBeforeSubmit(); } catch {}
-            router.push('/end');
+            try {
+              if (onBeforeSubmit) await onBeforeSubmit();
+            } catch {}
+            router.push("/end");
           }}
         >
           Submit
@@ -191,46 +205,56 @@ const ExamPage = ({ screenRecorderMediaRecorderRef,onBeforeSubmit, screen }:any)
       </main>
 
       {!examSubmitted && (
-        <FloatingCamera 
+        <FloatingCamera
           socket={socket}
-          onLookingAway={lookingAlert} 
-          detect={detectObject} 
-          number={number} 
-          onAuthFaceMissing={handleAuthFaceMissing} 
-          examSubmitted={examSubmitted} 
+          onLookingAway={lookingAlert}
+          detect={detectObject}
+          number={number}
+          onAuthFaceMissing={handleAuthFaceMissing}
+          examSubmitted={examSubmitted}
           mediaRecorderRef={frontCameraMediaRecorderRef}
           screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
           onAuthPause={() => setPaused(true)}
           onAuthResume={() => setPaused(false)}
-        />)
-      }      
+        />
+      )}
 
-        {lookAlert && (
-          <div className={styles.alertBox} style={{ backgroundColor: "#fdd835" }}>
-            ⚠️ Please stay focused on the screen! You are Turning {s}
-          </div>
-        )}
+      {lookAlert && (
+        <div
+          className={styles.alertBox}
+          style={{ backgroundColor: "var(--warning-color)" }}
+        >
+          ⚠️ Please stay focused on the screen! You are Turning {s}
+        </div>
+      )}
 
-        {object && (
-          <div className={styles.alertBox} style={{ backgroundColor: "#e53935" }}>
-            📵 Unauthorized device detected (e.g., mobile phone)
-          </div>
-        )}
+      {object && (
+        <div
+          className={styles.alertBox}
+          style={{ backgroundColor: "var(--error-color)" }}
+        >
+          📵 Unauthorized device detected (e.g., mobile phone)
+        </div>
+      )}
 
-        {num && (
-          <div className={styles.alertBox} style={{ backgroundColor: "#1e88e5" }}>
-            {face} faces detected.
-          </div>
-        )}
+      {num && (
+        <div
+          className={styles.alertBox}
+          style={{ backgroundColor: "var(--info-color)" }}
+        >
+          {face} faces detected.
+        </div>
+      )}
 
-        {authFaceMissing && (
-          <div className={styles.alertBox} style={{ backgroundColor: "#8e24aa" }}>
-            🧑‍💻 Authenticated face not detected. Please ensure you are in front of the camera.
-          </div>
-        )}
-
-
-
+      {authFaceMissing && (
+        <div
+          className={styles.alertBox}
+          style={{ backgroundColor: "var(--warning-color)" }}
+        >
+          🧑‍💻 Authenticated face not detected. Please ensure you are in front of
+          the camera.
+        </div>
+      )}
     </div>
   );
 };
