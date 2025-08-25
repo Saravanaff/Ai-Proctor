@@ -5,11 +5,14 @@ import socket from "./socket";
 import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
 import { getUserId } from "@/constants/AuthStore";
+
+
 const questions = Array.from({ length: 10 }, (_, i) => ({
   id: i + 1,
   question: `Sample Question ${i + 1}?`,
   options: ["Option A", "Option B", "Option C", "Option D"],
 }));
+
 
 const ExamPage = ({
   screenRecorderMediaRecorderRef,

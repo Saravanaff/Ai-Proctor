@@ -12,7 +12,6 @@ interface DevicePermission {
   description: string;
 }
 
-// Modular Components
 const StatusIcon = ({ status }: { status: Status }) => {
   const iconMap = {
     pending: (
@@ -180,7 +179,6 @@ export default function PhotoDetect() {
       await new Promise(r => setTimeout(r, 1500));
     }
 
-    // Check camera permission
     setPermissions(prev => prev.map(p => 
       p.type === "camera" ? { ...p, status: "checking" } : p
     ));
@@ -207,7 +205,6 @@ export default function PhotoDetect() {
       ));
     }
 
-    // Check microphone permission
     setPermissions(prev => prev.map(p => 
       p.type === "microphone" ? { ...p, status: "checking" } : p
     ));

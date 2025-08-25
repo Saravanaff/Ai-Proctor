@@ -8,6 +8,7 @@ import {
 } from "../mediasoupServer";
 
 import { io as ioClient } from "socket.io-client";
+import {getExamScore} from "../utils/calculate";
 
 export function initSocket(server: HttpServer) {
   const io = new Server(server, {
@@ -157,6 +158,14 @@ export function initSocket(server: HttpServer) {
         pythonSocket.emit("drag_camera", data);
       }
     });
+
+    socket.on("submit",(data)=>{
+
+      console.log("hi");
+      console.log(getExamScore(data.userId,data.examId));
+
+
+    })
 
     socket.on("frame", (data) => {
       // console.log("framming...",data);
