@@ -1,6 +1,7 @@
 import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, Unique, AllowNull, HasMany } from "sequelize-typescript";
 import { Exam } from "./Exam";
 import { Attend } from "./Attend";
+import { Scores } from './Scores';
 
 export enum UserRole {
   STUDENT = "student",
@@ -48,6 +49,9 @@ export class User extends Model{
 
   @HasMany(() => Attend)
   attendances!: Attend[];
+
+  @HasMany(() => Scores, { foreignKey: 'userId' })
+  scores!: Scores[];
 }
 
 export default User;

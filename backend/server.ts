@@ -4,7 +4,7 @@ import { createServer as createHttpsServer } from "http";
 import path from "path";
 import dotenv from "dotenv";
 import cors from "cors";
-import { initMediasoup } from "./mediasoupServer"; // adjust path as needed
+import { initMediasoup } from "./mediasoupServer"; 
 import { sequelize } from "./db";
 import authRoutes from "./routes/authRoutes";
 import authMiddleware from "./middleware/authMiddleware";
