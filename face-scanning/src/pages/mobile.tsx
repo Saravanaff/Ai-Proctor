@@ -92,7 +92,7 @@ export default function ThirdEye() {
         });
 
         newSocket.current.on("connect_error", (err) => {
-          alert(err)
+          alert(`Error: ${err.message}`);
           console.error("Connection error:", err.message);
           toast({
             title: "Connection Error",
@@ -106,7 +106,7 @@ export default function ThirdEye() {
       init();
     }
     catch(err){
-      alert(err);
+      alert(`Error: ${err}`);
     }
     handleOrientation();
     return () => {

@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import QRCode from "qrcode";
 import { getUserId } from "@/constants/AuthStore";
 import io from "socket.io-client";
-import styles from "../../styles/ThirdEyeSetup.module.css";
+import styles from "@/styles/ThirdEyeSetup.module.css";
 
 // Bright theme variables (professional white theme)
 const brightThemeVars: any = {
@@ -46,15 +46,15 @@ const ThirdEyeSetup = () => {
     },
     {
       id: 3,
-      title: "Check Camera View",
-      description: "Make sure the mobile camera has a clear side view of your face and upper body",
+      title: "Connect Mobile Device",
+      description: "Scan QR code with your mobile device and wait for connection",
       icon: "📸"
     },
     {
       id: 4,
-      title: "Test Connection",
-      description: "Verify that the third eye monitoring is working properly",
-      icon: "🔗"
+      title: "Ready to Start",
+      description: "Everything is set up! You can now begin your examination",
+      icon: "�"
     }
   ];
 
@@ -63,7 +63,7 @@ const ThirdEyeSetup = () => {
     setUserId(uid);
 
     const generateQRCode = async () => {
-      const thirdEyeUrl = `https://172.16.101.167:3002/mobile`;
+      const thirdEyeUrl = `https://172.16.105.211:3000/mobile`;
       try {
         const qrUrl = await QRCode.toDataURL(thirdEyeUrl,{
           width: 256,
@@ -82,7 +82,7 @@ const ThirdEyeSetup = () => {
     generateQRCode();
 
     // Initialize WebSocket connection to listen for mobile connection
-    const socketConnection = io(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3002', {
+    const socketConnection = io(process.env.NEXT_PUBLIC_BACKEND_URL || 'https://172.16.105.211:3002', {
       transports: ['websocket'],
     });
 
@@ -110,6 +110,11 @@ const ThirdEyeSetup = () => {
   }, []);
 
   const handleNextStep = () => {
+    // If on step 3, only allow progression if mobile is connected
+    if (currentStep === 3 && !isConnected) {
+      return;
+    }
+    
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
@@ -344,6 +349,56 @@ const ThirdEyeSetup = () => {
                       Open your mobile camera and scan this QR code to connect your device as the third eye monitor
                     </p>
                   </div>
+                  
+                  {/* Connection Status */}
+                  <div
+                    style={{
+                      background: isConnected ? "var(--success-bg)" : "var(--warning-color)",
+                      border: `1px solid ${isConnected ? "var(--success-color)" : "var(--warning-color)"}`,
+                      borderRadius: 8,
+                      padding: 16,
+                      marginTop: 8,
+                      width: "100%",
+                      maxWidth: 320,
+                    }}
+                  >
+                    {isConnected ? (
+                      <>
+                        <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                        <div style={{ color: "var(--success-color)", fontSize: 14, fontWeight: 600 }}>
+                          Mobile Device Connected!
+                        </div>
+                        <div style={{ color: "var(--text-secondary)", fontSize: 12, marginTop: 4 }}>
+                          You can now proceed to the next step
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
+                        <div style={{ color: "white", fontSize: 14, fontWeight: 600 }}>
+                          Waiting for Mobile Connection...
+                        </div>
+                        <div style={{ color: "white", fontSize: 12, marginTop: 4, opacity: 0.9 }}>
+                          Please scan the QR code with your mobile device
+                        </div>
+                        <div
+                          style={{
+                            marginTop: 12,
+                            padding: 8,
+                            background: "rgba(255,255,255,0.1)",
+                            borderRadius: 6,
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                            <span style={{ color: "white" }}>�</span>
+                            <span style={{ color: "white", fontSize: 11 }}>
+                              Device ID: {userId}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div style={{ padding: 20 }}>
@@ -356,70 +411,64 @@ const ThirdEyeSetup = () => {
             </div>
           )}
 
-          {/* Connection Status for Step 4 */}
+          {/* Ready to Start Message for Step 4 */}
           {currentStep === 4 && (
             <div
               style={{
-                background: isConnected ? "var(--success-bg)" : "var(--warning-color)",
-                border: `1px solid ${isConnected ? "var(--success-color)" : "var(--warning-color)"}`,
+                background: "var(--success-bg)",
+                border: "1px solid var(--success-color)",
                 borderRadius: 12,
-                padding: 24,
+                padding: 32,
                 marginBottom: 24,
                 textAlign: "center",
               }}
             >
-              {isConnected ? (
-                <>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-                  <div style={{ color: "var(--success-color)", fontSize: 16, fontWeight: 600 }}>
-                    Third Eye Connected Successfully!
-                  </div>
-                  <div style={{ color: "var(--text-secondary)", fontSize: 14, marginTop: 8 }}>
-                    Your mobile device is ready for exam monitoring
-                  </div>
-                  <div
-                    style={{
-                      marginTop: 16,
-                      padding: 12,
-                      background: "var(--card-bg)",
-                      borderRadius: 8,
-                      border: "1px solid var(--success-color)",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                      <span style={{ color: "var(--success-color)"}}>🔗</span>
-                      <span style={{ color: "var(--text-primary)", fontSize: 12, fontWeight: 500 }}>
-                        Device ID: {userId}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>⏳</div>
-                  <div style={{ color: "white", fontSize: 16, fontWeight: 600 }}>
-                    Waiting for Mobile Connection...
-                  </div>
-                  <div style={{ color: "white", fontSize: 14, marginTop: 8, opacity: 0.9 }}>
-                    Please scan the QR code with your mobile device
-                  </div>
-                  <div
-                    style={{
-                      marginTop: 16,
-                      padding: 12,
-                      background: "rgba(255,255,255,0.1)",
-                      borderRadius: 8,
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                      <span style={{ color: "white" }}>📱</span>
-                      <span style={{ color: "white", fontSize: 12 }}>
-                        Waiting for: {userId}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              )}
+              <div style={{ fontSize: 64, marginBottom: 16 }}>🎯</div>
+              <div style={{ color: "var(--success-color)", fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+                All Set! Ready to Begin
+              </div>
+              <div style={{ color: "var(--text-secondary)", fontSize: 16, marginBottom: 20, lineHeight: 1.5 }}>
+                Your third eye monitoring system is connected and ready. 
+                Click "Start Examination" when you're prepared to begin.
+              </div>
+              
+              <div
+                style={{
+                  background: "var(--card-bg)",
+                  border: "1px solid var(--success-color)",
+                  borderRadius: 8,
+                  padding: 16,
+                  display: "inline-block",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+                  <span style={{ color: "var(--success-color)", fontSize: 18 }}>✅</span>
+                  <span style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 500 }}>
+                    Third Eye Connected
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 8 }}>
+                  <span style={{ color: "var(--success-color)", fontSize: 18 }}>�</span>
+                  <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>
+                    Device ID: {userId}
+                  </span>
+                </div>
+              </div>
+              
+              <div
+                style={{
+                  marginTop: 20,
+                  padding: 12,
+                  background: "var(--info-bg)",
+                  border: "1px solid var(--info-color)",
+                  borderRadius: 8,
+                }}
+              >
+                <p style={{ color: "var(--text-secondary)", fontSize: 12, margin: 0, fontStyle: "italic" }}>
+                  💡 Your mobile device will monitor your activity during the examination. 
+                  Ensure it remains in position throughout the test.
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -458,11 +507,30 @@ const ThirdEyeSetup = () => {
             {currentStep < steps.length ? (
               <button
                 onClick={handleNextStep}
+                disabled={currentStep === 3 && !isConnected}
                 style={{
                   padding: "12px 24px",
                   borderRadius: 8,
                   border: "none",
-                  background: "var(--accent-color)",
+                  background: (currentStep === 3 && !isConnected) ? "var(--border-color)" : "var(--accent-color)",
+                  color: "white",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: (currentStep === 3 && !isConnected) ? "not-allowed" : "pointer",
+                  opacity: (currentStep === 3 && !isConnected) ? 0.6 : 1,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {currentStep === 3 && !isConnected ? "Waiting for Connection..." : "Next Step →"}
+              </button>
+            ) : (
+              <button
+                onClick={handleComplete}
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: "var(--success-color)",
                   color: "white",
                   fontSize: 14,
                   fontWeight: 600,
@@ -470,26 +538,7 @@ const ThirdEyeSetup = () => {
                   transition: "all 0.2s ease",
                 }}
               >
-                Next Step →
-              </button>
-            ) : (
-              <button
-                onClick={handleComplete}
-                disabled={!isConnected}
-                style={{
-                  padding: "12px 24px",
-                  borderRadius: 8,
-                  border: "none",
-                  background: isConnected ? "var(--success-color)" : "var(--border-color)",
-                  color: "white",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: isConnected ? "pointer" : "not-allowed",
-                  opacity: isConnected ? 1 : 0.6,
-                  transition: "all 0.2s ease",
-                }}
-              >
-                🚀 Start Exam
+                🚀 Start Examination
               </button>
             )}
           </div>

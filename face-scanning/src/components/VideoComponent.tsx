@@ -475,7 +475,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                 "Entering exam, cleaning up camera before navigation"
               );
               cleanupCamera();
-              router.push("/fullscreen");
+              router.push("/SetupThirdEye");
             }}
             style={{
               padding: "15px 30px",
@@ -488,7 +488,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
               transition: "background-color 0.3s ease",
             }}
           >
-            Enter Exam
+            Setup Third Eye
           </button>
         </div>
       )}
