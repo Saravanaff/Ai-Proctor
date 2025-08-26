@@ -28,8 +28,8 @@ last_auth_process = 0
 last_processed_time = 0
 frameCount=0
 
-AUTH_INTERVAL = 1.0
-HEAD_INTERVAL = 0.5
+AUTH_INTERVAL = 10.0
+HEAD_INTERVAL = 1.0
 
 yolo_lock = Lock()
 auth_lock = Lock()
