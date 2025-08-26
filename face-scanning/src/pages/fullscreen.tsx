@@ -27,8 +27,7 @@ const fullscreen = () => {
             console.log("screenStream : ",screenStream)
             if (screenStream) {
                 screenRecorderMediaRecorderRef.current = new MediaRecorder(screenStream, {
-                mimeType: "video/webm; codecs=vp8",
-                videoBitsPerSecond: 1000000,
+                    mimeType: "video/webm; codecs=vp8",
                 });
                 // screenRecorderMediaRecorderRef.current.start();
             }
