@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { Eye, Shield, Camera, Wifi, WifiOff, Maximize2 } from "lucide-react";
@@ -14,13 +14,13 @@ function currentUserId(): string | null {
   try {
     const id = getUserId?.();
     if (id) return id;
-  } catch { }
+  } catch {}
   try {
-    if (typeof window !== "undefined") return window.localStorage.getItem("userId");
-  } catch { }
+    if (typeof window !== "undefined")
+      return window.localStorage.getItem("userId");
+  } catch {}
   return null;
 }
-
 
 export default function ThirdEye() {
   // const [socket, setSocket] = useState<Socket | null>(null);
@@ -38,43 +38,45 @@ export default function ThirdEye() {
   const serverUrl = "https://172.16.105.211:3002/";
   console.log("Server URL:", serverUrl);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream>(null);
   const newSocket = useRef<Socket | null>(null);
 
-
-
   useEffect(() => {
-
-
-    newSocket.current = io(serverUrl,{
-      transports: ["websocket", "polling"],
-      auth: { userId: currentUserId() || "" },
-    });
-    console.log("newSocket Created...");
     let timer: NodeJS.Timeout;
-    setHydrated(true); 
-    
+    setHydrated(true);
+
     const handleOrientation = () => {
       setIsLandscape(window.innerWidth > window.innerHeight);
     };
 
-    const init = async () => {
+    const initSocket = () => {
+      // Clean up existing socket first
+      if (newSocket.current) {
+        newSocket.current.removeAllListeners();
+        newSocket.current.disconnect();
+        newSocket.current = null;
+      }
 
+      // Create new socket with better configuration
+      newSocket.current = io(serverUrl, {
+        transports: ["polling", "websocket"], // Try polling first, then websocket
+        auth: { userId: currentUserId() || "" },
+        timeout: 20000,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        forceNew: true,
+      });
 
-      window.addEventListener("resize", handleOrientation);
-      window.addEventListener("orientationchange", handleOrientation);
-      
-      timer = setTimeout(() => {
-        setShowInitialNotice(false);
-        setShowSurveillanceNotice(true);
-      }, 3000);
+      console.log("newSocket Created...");
 
       if(newSocket.current){
 
-        newSocket.current.emit('mobile');
+        newSocket.current.emit("mobile");
 
         newSocket.current.on("connect", () => {
+          console.log("Socket connected successfully");
           setIsConnected(true);
           toast({
             title: "Connected",
@@ -82,7 +84,9 @@ export default function ThirdEye() {
             variant: "success",
           });
           // Emit acknowledgment that mobile is connected
-          newSocket.current?.emit('mobile-acknowledgment');
+          if(newSocket.current){
+              newSocket.current.emit("mobile-acknowledgment");
+          }
         });
 
         newSocket.current.on("disconnect", (reason) => {
@@ -91,53 +95,92 @@ export default function ThirdEye() {
           setIsStreamingFrames(false);
         });
 
+        newSocket.current.on("reconnect", (attemptNumber) => {
+          console.log("Reconnected after", attemptNumber, "attempts");
+          setIsConnected(true);
+        });
+
+        newSocket.current.on("reconnect_error", (error) => {
+          console.error("Reconnection error:", error);
+        });
+
         newSocket.current.on("connect_error", (err) => {
-          alert(`Error: ${err.message}`);
           console.error("Connection error:", err.message);
           toast({
             title: "Connection Error",
-            description: "Could not connect to Third Eye server.",
+            description: "Could not connect to Third Eye server. Retrying...",
             variant: "destructive",
           });
         });
       }
-    }
+    };
+
+    const init = async () => {
+      window.addEventListener("resize", handleOrientation);
+      window.addEventListener("orientationchange", handleOrientation);
+
+      timer = setTimeout(() => {
+        setShowInitialNotice(false);
+        setShowSurveillanceNotice(true);
+      }, 3000);
+
+      // Wait a bit before initializing socket to ensure page is fully loaded
+      setTimeout(initSocket, 100);
+    };
+
     try {
       init();
-    }
-    catch(err){
-      alert(`Error: ${err}`);
+    } catch (err) {
+      console.error("Initialization error:", err);
     }
     handleOrientation();
-    return () => {
 
-      if(timer){
-        clearTimeout(timer)
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+
+      if (frameIntervalRef.current) {
+        clearInterval(frameIntervalRef.current);
+        frameIntervalRef.current = null;
       }
 
       if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
-        mediaRecorderRef.current.ondataavailable = null;
-        mediaRecorderRef.current.onstop = null;
-
-        if (mediaRecorderRef.current.state !== "inactive") {
-          mediaRecorderRef.current.stop();
+        try {
+          if (mediaRecorderRef.current.state !== "inactive") {
+            mediaRecorderRef.current.stop();
+          }
+          mediaRecorderRef.current.ondataavailable = null;
+          mediaRecorderRef.current.onstop = null;
+        } catch (err) {
+          console.error("Error stopping media recorder:", err);
         }
+      }
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+
+      if (newSocket.current) {
+        newSocket.current.removeAllListeners();
+        newSocket.current.disconnect();
+        newSocket.current = null;
       }
 
       window.removeEventListener("resize", handleOrientation);
       window.removeEventListener("orientationchange", handleOrientation);
-    } 
-
-
-    // return () => {
-    //   newSocket.disconnect();
-    // };
+    };
   }, []);
 
-
   const captureAndSendFrame = () => {
-    if (!videoRef.current || !canvasRef.current || !newSocket.current || !isConnected) return;
+    if (
+      !videoRef.current ||
+      !canvasRef.current ||
+      !newSocket.current ||
+      !isConnected
+    )
+      return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -148,25 +191,28 @@ export default function ThirdEye() {
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob((blob) => {
-      if (blob) {
-        blob.arrayBuffer().then((buffer) => {
-          newSocket.current?.emit("video", buffer);
-        });
-      }
-    }, "image/jpeg", 0.7);
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          blob.arrayBuffer().then((buffer) => {
+            newSocket.current?.emit("video", buffer);
+          });
+        }
+      },
+      "image/jpeg",
+      0.7
+    );
   };
 
   const startStreaming = async () => {
     try {
       console.log("Starting surveillance recording ...");
-      newSocket.current?.emit("start-exam",{
+      newSocket.current?.emit("start-exam", {
         user_id: userId,
         category: "third_eye",
-      })
+      });
 
       await delay(500);
-
 
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
@@ -188,10 +234,8 @@ export default function ThirdEye() {
               width: 480,
               frameRate: 30,
             },
-            
           });
           break;
-        
         } catch (err) {
           const error = err as Error;
           if (error.name === "NotReadableError" && retries > 1) {
@@ -201,19 +245,18 @@ export default function ThirdEye() {
             await new Promise((resolve) => setTimeout(resolve, 2000));
             retries--;
           } else {
-            throw err; 
+            throw err;
           }
         }
       }
-
 
       if (videoRef.current && streamRef.current) {
         videoRef.current.srcObject = streamRef.current;
 
         const container = videoRef.current.parentElement?.parentElement;
-        if (container && container.requestFullscreen) {
-          container.requestFullscreen();
-        }
+        // if (container && container.requestFullscreen) {
+        //   container.requestFullscreen();
+        // }
 
         if (screen.orientation && (screen.orientation as any).lock) {
           try {
@@ -222,8 +265,7 @@ export default function ThirdEye() {
         }
       }
 
-
-      if (streamRef.current ) {
+      if (streamRef.current) {
         mediaRecorderRef.current = new MediaRecorder(streamRef.current, {
           mimeType: "video/webm; codecs=vp8",
           videoBitsPerSecond: 1000000,
@@ -240,7 +282,10 @@ export default function ThirdEye() {
               };
               if (newSocket.current) {
                 console.log("Recording ...");
-                newSocket.current.emit("recorder-add-video-stream-chunk", chunkData);
+                newSocket.current.emit(
+                  "recorder-add-video-stream-chunk",
+                  chunkData
+                );
               }
             });
           }
@@ -248,7 +293,6 @@ export default function ThirdEye() {
 
         mediaRecorderRef.current.start(500); // send chunks every 500ms
       }
-
 
       frameIntervalRef.current = setInterval(() => {
         captureAndSendFrame();
@@ -259,7 +303,6 @@ export default function ThirdEye() {
         title: "Third Eye Activated",
         description: "You are under surveillance.",
       });
-
     } catch (error) {
       console.error(error);
       toast({
@@ -271,13 +314,13 @@ export default function ThirdEye() {
   };
 
   const stopStreaming = () => {
-    console.log("Stopping streaming...")
-    
-    newSocket.current?.emit("end-exam",{
+    console.log("Stopping streaming...");
+
+    newSocket.current?.emit("end-exam", {
       user_id: userId,
       category: "third_eye",
     });
-    
+
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.ondataavailable = null;
       mediaRecorderRef.current.onstop = null;
@@ -293,8 +336,10 @@ export default function ThirdEye() {
     }
 
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => {
-        console.log(`Stopping track: ${track.kind}, state: ${track.readyState}`);
+      streamRef.current.getTracks().forEach((track) => {
+        console.log(
+          `Stopping track: ${track.kind}, state: ${track.readyState}`
+        );
         track.stop();
       });
       streamRef.current = null;
@@ -303,7 +348,7 @@ export default function ThirdEye() {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    
+
     setIsStreamingFrames(false);
     toast({ title: "Streaming Stopped", description: "Camera stream ended." });
   };

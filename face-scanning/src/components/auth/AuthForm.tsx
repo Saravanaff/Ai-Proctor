@@ -3,13 +3,17 @@ import { useRouter } from "next/router";
 import axios from "axios";
 import styles from "../../styles/AuthForm.module.css";
 import { setGlobalIdentity } from "@/constants/AuthStore";
+import { setGlobal } from "next/dist/trace";
 
 interface AuthFormProps {
   defaultMode?: "login" | "register";
   redirect: string;
+  userId?: string;
+  userEmail?: string;
+  userName?: string;
 }
 
-const AuthForm = ({ defaultMode = "login", redirect }: AuthFormProps) => {
+const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName }: AuthFormProps) => {
   const [isRegister, setIsRegister] = useState(defaultMode === "register");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,12 +21,16 @@ const AuthForm = ({ defaultMode = "login", redirect }: AuthFormProps) => {
   const [role, setRole] = useState("student");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  // Show requirements only when password input is focused
   const [showPasswordReqs, setShowPasswordReqs] = useState(false);
 
-  // Password requirement checks
+  const router = useRouter();
+
+
+  if(typeof userId === "string" && typeof userName === "string" && typeof userEmail === "string"){
+    setGlobalIdentity(userName, userEmail, userId);
+    router.push(redirect);
+  }
+
   const passwordChecks = {
     length: password.length >= 8,
     upper: /[A-Z]/.test(password),
@@ -60,7 +68,7 @@ const AuthForm = ({ defaultMode = "login", redirect }: AuthFormProps) => {
       }
 
       const baseURL =
-        process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.101.167:3002";
+        process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.105.211:3002";
       const endpoint = isRegister ? `${baseURL}/register` : `${baseURL}/login`;
       const payload = isRegister
         ? { name, email, password, role }

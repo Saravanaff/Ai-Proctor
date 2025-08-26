@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import QRCode from "qrcode";
-import { getUserId } from "@/constants/AuthStore";
+import { getUserEmail, getUserId, getGlobalName } from "@/constants/AuthStore";
 import io from "socket.io-client";
 import styles from "@/styles/ThirdEyeSetup.module.css";
+
+const userId = getUserId() || "unknown";
+const userEmail = getUserEmail() || "unknown";
+const userName = getGlobalName() || "unknown";
 
 // Bright theme variables (professional white theme)
 const brightThemeVars: any = {
@@ -28,7 +32,6 @@ const ThirdEyeSetup = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [socket, setSocket] = useState<any>(null);
-  const [userId, setUserId] = useState("");
   const router = useRouter();
 
   const steps = [
@@ -59,11 +62,14 @@ const ThirdEyeSetup = () => {
   ];
 
   useEffect(() => {
-    const uid = getUserId() || "unknown";
-    setUserId(uid);
+    // const uid = getUserId() || "unknown";
+    // setUserId(uid);
 
     const generateQRCode = async () => {
-      const thirdEyeUrl = `https://172.16.105.211:3000/mobile`;
+      const redirect = encodeURIComponent("/mobile");
+      const name = encodeURIComponent(userName);
+      const email = encodeURIComponent(userEmail);
+      const thirdEyeUrl = `https://172.16.105.211:3000/Login?name=${name}&email=${email}&userId=${userId}&redirect=${redirect}`;
       try {
         const qrUrl = await QRCode.toDataURL(thirdEyeUrl,{
           width: 256,
@@ -88,7 +94,7 @@ const ThirdEyeSetup = () => {
 
     socketConnection.on('connect', () => {
       console.log('Setup page connected to backend');
-      socketConnection.emit('register-third-eye-setup', { userId: uid });
+      socketConnection.emit('register-third-eye-setup', { userId: userId });
     });
 
     // Listen for mobile connection acknowledgment
