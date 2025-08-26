@@ -35,7 +35,7 @@ export default function ThirdEye() {
   const [hydrated, setHydrated] = useState(false);
   const { toast } = useToast();
 
-  const serverUrl = "https://172.16.101.168:3002/";
+  const serverUrl = "https://172.16.101.167:3002/";
   console.log("Server URL:", serverUrl);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -83,9 +83,8 @@ export default function ThirdEye() {
             description: "Connected to Third Eye server.",
             variant: "success",
           });
-          // Emit acknowledgment that mobile is connected
-          if (newSocket.current) {
-            newSocket.current.emit("mobile-acknowledgment");
+                   if(newSocket.current){
+              newSocket.current.emit("mobile-acknowledgment");
           }
         });
 

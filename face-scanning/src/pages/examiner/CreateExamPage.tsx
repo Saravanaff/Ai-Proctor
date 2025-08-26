@@ -22,6 +22,7 @@ const CreateExam = () => {
   const [eyeBall, setEyeBall] = useState(true);
   const [objectDetect, setObjectDetect] = useState(true);
   const [headDirection, setHeadDirection] = useState(true);
+  const [flagNotifications, setFlagNotifications] = useState(true);
 
   axios.interceptors.request.use(
   (config) => {
@@ -46,7 +47,6 @@ const CreateExam = () => {
         const res = await axios.get(`${base}/exam`);
         console.log("re", res);
         if (!cancelled && res.data?.success && res.data?.exams) {
-          // Enhance exam data with participant counts from attendances
           const examsWithParticipants = res.data.exams.map((exam: any) => ({
             ...exam,
             participants: exam.attendances ? exam.attendances.length : 0,
@@ -75,17 +75,16 @@ const CreateExam = () => {
       const base = 'https://localhost:3002';
       const payload = {
         exam_name: examName.trim(),
-        // Attach feature flags
         third_eye_enabled: thirdEye,
         multiple_person_detection_enabled: multiPerson,
         eyeball_detection_enabled: eyeBall,
         object_detection_enabled: objectDetect,
         head_direction_enabled: headDirection,
+        flag_notifications_enabled: flagNotifications,
       };
       const res = await axios.post<Exam>(`${base}/examCreate`, payload);
       console.log("hi",res);
       
-      // Refresh exams list after successful creation
       const refreshRes = await axios.get(`${base}/exam`);
       if (refreshRes.data?.success && refreshRes.data?.exams) {
         const examsWithParticipants = refreshRes.data.exams.map((exam: any) => ({
@@ -101,17 +100,13 @@ const CreateExam = () => {
       
       setExamName('');
       setShowCreateForm(false);
-      // Optionally reset toggles or keep user’s last preference:
-      // setThirdEye(true); setMultiPerson(true); setEyeBall(true); setObjectDetect(true);
     } catch (e: any) {
-      // Optionally reuse main error
       setError(e?.response?.data?.message || e.message || 'Failed to create exam');
     } finally {
       setIsCreating(false);
     }
   };
 
-  // Small inline toggle component for clean UI
   const Toggle = ({
     label,
     enabled,
@@ -171,7 +166,6 @@ const CreateExam = () => {
     </div>
   );
 
-  // derived
   const filteredExams = useMemo(
     () => exams.filter(e => {
       const examName = (e as any).exam_name || (e as any).name || '';
@@ -294,6 +288,7 @@ const CreateExam = () => {
               <Toggle label="EyeBall Detection" enabled={eyeBall} onToggle={() => setEyeBall(v => !v)} />
               <Toggle label="Object Detection" enabled={objectDetect} onToggle={() => setObjectDetect(v => !v)} />
               <Toggle label="Head Direction" enabled={headDirection} onToggle={() => setHeadDirection(v => !v)} />
+              <Toggle label="Flag Notifications" enabled={flagNotifications} onToggle={() => setFlagNotifications(v => !v)} />
             </div>
           </div>
 

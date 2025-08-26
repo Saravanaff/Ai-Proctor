@@ -69,6 +69,7 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
 
       const baseURL =
         process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.101.168:3002";
+      
       const endpoint = isRegister ? `${baseURL}/register` : `${baseURL}/login`;
       const payload = isRegister
         ? { name, email, password, role }

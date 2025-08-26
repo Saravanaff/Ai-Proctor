@@ -66,7 +66,7 @@ const ThirdEyeSetup = () => {
       const redirect = encodeURIComponent("/mobile");
       const name = encodeURIComponent(userName);
       const email = encodeURIComponent(userEmail);
-      const thirdEyeUrl = `https://172.16.101.168:3000/Login?name=${name}&email=${email}&userId=${userId}&redirect=${redirect}`;
+      const thirdEyeUrl = `https://172.16.101.167:3000/`;
       try {
         const qrUrl = await QRCode.toDataURL(thirdEyeUrl, {
           width: 256,
@@ -85,7 +85,7 @@ const ThirdEyeSetup = () => {
     generateQRCode();
 
     // Initialize WebSocket connection to listen for mobile connection
-    const socketConnection = io(process.env.NEXT_PUBLIC_BACKEND_URL || 'https://172.16.105.211:3002', {
+    const socketConnection = io(process.env.NEXT_PUBLIC_BACKEND_URL || 'https://172.16.101.167:3002', {
       transports: ['websocket'],
     });
 
@@ -97,7 +97,7 @@ const ThirdEyeSetup = () => {
     // Listen for mobile connection acknowledgment
     socketConnection.on('mobile-connected', (data: any) => {
       console.log('Mobile device connected:', data);
-      setIsConnected(true);
+      setIsConnected(data.status);
     });
 
     socketConnection.on('disconnect', () => {
@@ -130,7 +130,7 @@ const ThirdEyeSetup = () => {
   };
 
   const handleComplete = () => {
-    router.push("/exam");
+    router.push("/fullscreen");
   };
 
   return (

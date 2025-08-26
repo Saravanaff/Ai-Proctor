@@ -1,4 +1,4 @@
-yolov8*
+*.pt*
 __pycache__/
 /debug_faces/
 *.jpg
