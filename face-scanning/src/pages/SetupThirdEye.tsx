@@ -133,7 +133,7 @@ const ThirdEyeSetup = () => {
   };
 
   const handleComplete = () => {
-    router.push("/exam");
+    router.push("/fullscreen");
   };
 
   return (

@@ -18,7 +18,7 @@ const ExamPage = ({
   screenRecorderMediaRecorderRef,
   onBeforeSubmit,
   screen,
-  examSettings, // Add examSettings prop to receive feature flags
+  examSettings,
 }: any) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
@@ -37,8 +37,7 @@ const ExamPage = ({
 
   const detectObject = () => {
     console.log("Object detected");
-    // Only show alert if object detection is enabled for this exam
-    if (examSettings?.object_detection_enabled !== false) {
+    if (examSettings?.flag_notifications_enabled!==true &&examSettings?.object_detection_enabled !== false) {
       setObject(true);
       setTimeout(() => setObject(false), 3000);
     }
@@ -48,7 +47,6 @@ const ExamPage = ({
 
   const number = (a: number) => {
     setFace(a);
-    // Only show alert if multiple person detection is enabled for this exam
     if (examSettings?.multiple_person_detection_enabled !== false) {
       setNum(true);
       setTimeout(() => {
@@ -125,7 +123,7 @@ const ExamPage = ({
   const lookingAlert = (side: any) => {
     console.log("looking away");
     s = side;
-    if (examSettings?.head_direction_enabled!== false && examSettings?.eyeball_detection_enabled!==false) {
+    if (examSettings?.flag_notifications_enabled!==true && examSettings?.head_direction_enabled!== false && examSettings?.eyeball_detection_enabled!==false) {
       setlookAlert(true);
       setTimeout(() => setlookAlert(false), 3000);
     }
@@ -139,8 +137,7 @@ const ExamPage = ({
 
   const handleHeadDirection = (direction: string) => {
     console.log("Head direction changed:", direction);
-    // Only show alert if head direction detection is enabled for this exam
-    if (examSettings?.head_direction_enabled !== false) {
+    if (examSettings?.flag_notifications_enabled!==true && examSettings?.head_direction_enabled !== false) {
       setHeadDirection(true);
       setTimeout(() => setHeadDirection(false), 3000);
     }
@@ -211,7 +208,6 @@ const ExamPage = ({
 
   return (
     <div className={`${styles.examContainer} theme-transition`}>
-      {/* Exam paused overlay */}
       {paused && (
         <div
           className={`${styles.overlay} theme-transition`}
@@ -643,7 +639,7 @@ const ExamPage = ({
       )}
 
       {/* Conditionally render alerts based on exam settings */}
-      {lookAlert && examSettings?.third_eye_enabled !== false && (
+      {lookAlert && examSettings?.flag_notifications_enabled!== true && (
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{
