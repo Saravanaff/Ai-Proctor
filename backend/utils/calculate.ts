@@ -35,10 +35,11 @@ export function addScore(data:any) {
     const anyOffCenter = eyes.some((e) => String(e ?? "").toLowerCase() !== "center");
     if (anyOffCenter) examData.eyesFlagged += 1;
   } 
+
   else if (typeof eyes === "string") {
     if (eyes.toLowerCase() !== "center") examData.eyesFlagged += 1;
   }
-
+  
   if (data?.object_detected === true) {
     examData.objectDetectedFlagged += 1;
   }

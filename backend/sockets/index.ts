@@ -210,7 +210,7 @@ export function initSocket(server: HttpServer) {
     socket.on("mobile-acknowledgment", () => {
       console.log("Mobile device connected - sending acknowledgment");
       // Broadcast to all connected clients that mobile is connected
-      socket.broadcast.emit("mobile-connected", { status: "connected", timestamp: new Date() });
+      socket.emit("mobile-connected", { status: true, timestamp: new Date() });
     });
 
     socket.on("disconnect", () => {

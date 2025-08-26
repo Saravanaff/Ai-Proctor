@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import numpy as np
 from . import constants
 
-yolo_model = YOLO("final.pt")
+yolo_model = YOLO("yolov8m.pt")
 
 def detect_person_and_objects(image: np.ndarray) -> tuple[int, dict]:
     with constants.yolo_lock:
@@ -15,10 +15,10 @@ def detect_person_and_objects(image: np.ndarray) -> tuple[int, dict]:
 
     for box in result.boxes:
         label = yolo_model.names[int(box.cls[0])]
-        if label == "Person":
+        if label == "person":
             constants.detected_objects["person"] = True
             constants.person_count += 1
-        elif label == "Mobile-phone":
+        elif label == "cell phone":
             constants.detected_objects["cell phone"] = True
 
     return constants.person_count, constants.detected_objects
@@ -64,12 +64,12 @@ def thirdeye_object_detect(image: np.ndarray) -> dict:
         label = yolo_model.names[int(box.cls[0])]
         x1, y1, x2, y2 = map(int, box.xyxy[0])
 
-        if label == "Person":
+        if label == "person":
             constants.third_eye_objects["person"] += 1
-        elif label == "Laptop":
+        elif label == "laptop":
             constants.third_eye_objects["laptop"] += 1
             laptops.append((x1, y1, x2, y2))
-        elif label in ["Mobile-phone", "mobile phone"]:
+        elif label in ["cell phone", "mobile phone"]:
             constants.third_eye_objects["unauth_device"] = True
             mobiles.append((x1, y1, x2, y2))
 

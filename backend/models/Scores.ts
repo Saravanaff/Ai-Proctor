@@ -15,7 +15,7 @@ export class Scores extends Model<Scores> {
   @AllowNull(false)
   @ForeignKey(() => User)
   @Column(DataType.INTEGER)
-  userId!: number;
+  user_id!: number;
 
   @AllowNull(false)
   @ForeignKey(()=>Exam)
@@ -24,38 +24,30 @@ export class Scores extends Model<Scores> {
 
   @AllowNull(false)
   @Column({ type: DataType.INTEGER, defaultValue: 0 })
-  noOfPersonFlagged!: number;
+  no_of_person_flagged!: number;
 
   @AllowNull(false)
   @Column({
     type:DataType.INTEGER,
     defaultValue:0
   })
-  noPersonFlagged!:number
+  no_person_flagged!:number
 
   @AllowNull(false)
   @Column({ type: DataType.INTEGER, defaultValue: 0 })
-  authFaceFlagged!: number;
+  auth_face_flagged!: number;
 
   @AllowNull(false)
   @Column({ type: DataType.INTEGER, defaultValue: 0 })
-  headPositionFlagged!: number;
+  head_position_flagged!: number;
 
   @AllowNull(false)
   @Column({ type: DataType.INTEGER, defaultValue: 0 })
-  eyesFlagged!: number;
+  eyes_flagged!: number;
 
   @AllowNull(false)
   @Column({ type: DataType.INTEGER, defaultValue: 0 })
-  objectDetectedFlagged!: number;
-
-  @CreatedAt
-  @Column({ field: 'created_at' })
-  createdAt!: Date;
-
-  @UpdatedAt
-  @Column({ field: 'updated_at' })
-  updatedAt!: Date;
+  object_detected_flagged!: number;
 }
 
 export default Scores;
