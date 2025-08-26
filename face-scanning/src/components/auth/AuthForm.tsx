@@ -26,7 +26,7 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
   const router = useRouter();
 
 
-  if(typeof userId === "string" && typeof userName === "string" && typeof userEmail === "string"){
+  if (typeof userId === "string" && typeof userName === "string" && typeof userEmail === "string") {
     setGlobalIdentity(userName, userEmail, userId);
     router.push(redirect);
   }
@@ -68,7 +68,7 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
       }
 
       const baseURL =
-        process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.105.211:3002";
+        process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.101.168:3002";
       const endpoint = isRegister ? `${baseURL}/register` : `${baseURL}/login`;
       const payload = isRegister
         ? { name, email, password, role }
@@ -94,7 +94,7 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
             undefined,
             { shallow: true }
           );
-        } catch {}
+        } catch { }
         setLoading(false);
         return;
       }
@@ -193,12 +193,12 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
                 onChange={(e) => setPassword(e.target.value)}
                 className={styles.input}
                 required
-                onFocus={() => setShowPasswordReqs(true)}
+                onFocus={() => setShowPasswordReqs(isRegister)}
                 onBlur={() => setShowPasswordReqs(false)}
               />
-              {/* Animated, professional password checklist (always mounted, transitions on visibility) */}
+              {/* Animated, professional password checklist (only show during registration) */}
               {(() => {
-                const visible = showPasswordReqs; // show only while password box is focused
+                const visible = showPasswordReqs && isRegister; // show only while password box is focused AND during registration
                 return (
                   <div
                     aria-live="polite"
@@ -270,9 +270,8 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
                             fontSize: 12,
                             fontWeight: 700,
                             background: req.passed ? "var(--success-color)" : "transparent",
-                            border: `2px solid ${
-                              req.passed ? "var(--success-color)" : "var(--border-color)"
-                            }`,
+                            border: `2px solid ${req.passed ? "var(--success-color)" : "var(--border-color)"
+                              }`,
                             color: req.passed ? "#fff" : "var(--text-secondary)",
                             transition: "all 180ms ease",
                           }}

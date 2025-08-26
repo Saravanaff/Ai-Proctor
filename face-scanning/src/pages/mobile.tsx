@@ -14,11 +14,11 @@ function currentUserId(): string | null {
   try {
     const id = getUserId?.();
     if (id) return id;
-  } catch {}
+  } catch { }
   try {
     if (typeof window !== "undefined")
       return window.localStorage.getItem("userId");
-  } catch {}
+  } catch { }
   return null;
 }
 
@@ -35,7 +35,7 @@ export default function ThirdEye() {
   const [hydrated, setHydrated] = useState(false);
   const { toast } = useToast();
 
-  const serverUrl = "https://172.16.105.211:3002/";
+  const serverUrl = "https://172.16.101.168:3002/";
   console.log("Server URL:", serverUrl);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -71,7 +71,7 @@ export default function ThirdEye() {
 
       console.log("newSocket Created...");
 
-      if(newSocket.current){
+      if (newSocket.current) {
 
         newSocket.current.emit("mobile");
 
@@ -84,8 +84,8 @@ export default function ThirdEye() {
             variant: "success",
           });
           // Emit acknowledgment that mobile is connected
-          if(newSocket.current){
-              newSocket.current.emit("mobile-acknowledgment");
+          if (newSocket.current) {
+            newSocket.current.emit("mobile-acknowledgment");
           }
         });
 
@@ -261,7 +261,7 @@ export default function ThirdEye() {
         if (screen.orientation && (screen.orientation as any).lock) {
           try {
             await (screen.orientation as any).lock("landscape");
-          } catch (e) {}
+          } catch (e) { }
         }
       }
 
@@ -401,9 +401,8 @@ export default function ThirdEye() {
           >
             {isLandscape ? (
               <button
-                className={`${styles.button} ${
-                  isStreamingFrames ? styles.stopButton : styles.startButton
-                }`}
+                className={`${styles.button} ${isStreamingFrames ? styles.stopButton : styles.startButton
+                  }`}
                 onClick={isStreamingFrames ? stopStreaming : startStreaming}
                 disabled={!isConnected}
                 style={{ pointerEvents: "auto" }}

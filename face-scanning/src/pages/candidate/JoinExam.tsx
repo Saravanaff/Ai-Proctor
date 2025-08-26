@@ -9,7 +9,7 @@ const JoinExam = () => {
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const router=useRouter();
+  const router = useRouter();
 
   axios.interceptors.request.use(
     (config) => {
@@ -34,13 +34,13 @@ const JoinExam = () => {
     setSuccess(null);
 
     try {
-      const base = 'https://localhost:3002';
+      const base = 'https://172.16.101.168:3002';
       const payload = {
         exam_key: examKey.trim()
       };
-      
+
       const res = await axios.post(`${base}/joinExam`, payload);
-      
+
       if (res.data.success) {
         setSuccess('Successfully joined the exam.');
         setExamKey('');
@@ -60,15 +60,15 @@ const JoinExam = () => {
   };
 
   return (
-    <div className={`${styles.examinerContainer} ${styles.enterpriseRoot}`}>
+    <div className={`${styles.examinerContainer} ${styles.enterpriseRoot}`} style={{ background: 'var(--background)' }}>
       <div className={styles.pageBackdrop} style={{ opacity: 0 }} />
-      
+
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <h1 className={styles.title}>
+          <h1 className={styles.title} style={{ color: 'var(--text-primary)' }}>
             Join Exam
           </h1>
-          <p className={styles.subtitle}>
+          <p className={styles.subtitle} style={{ color: 'var(--text-secondary)' }}>
             Enter your exam key to join the assessment
           </p>
         </div>
@@ -77,18 +77,18 @@ const JoinExam = () => {
       <section className={styles.examsSection}>
         <div className={`${styles.glassPanel} theme-transition`} style={{ maxWidth: '560px', margin: '0 auto' }}>
           <div style={{ marginBottom: '22px' }}>
-            <h2 style={{ 
-              margin: 0, 
-              color: 'var(--text-primary)', 
-              fontSize: '20px', 
+            <h2 style={{
+              margin: 0,
+              color: 'var(--text-primary)',
+              fontSize: '20px',
               fontWeight: 600,
-              transition: 'color 0.3s ease' 
+              transition: 'color 0.3s ease'
             }}>
               Ready to start?
             </h2>
-            <p style={{ 
-              color: 'var(--text-secondary)', 
-              marginTop: '6px', 
+            <p style={{
+              color: 'var(--text-secondary)',
+              marginTop: '6px',
               fontSize: '14px',
               transition: 'color 0.3s ease'
             }}>
@@ -97,13 +97,13 @@ const JoinExam = () => {
           </div>
 
           <div style={{ marginBottom: '18px' }}>
-            <label 
-              htmlFor="examKey" 
+            <label
+              htmlFor="examKey"
               className="theme-transition"
-              style={{ 
-                display: 'block', 
-                marginBottom: '8px', 
-                color: 'var(--text-secondary)', 
+              style={{
+                display: 'block',
+                marginBottom: '8px',
+                color: 'var(--text-secondary)',
                 fontWeight: 500,
                 transition: 'color 0.3s ease'
               }}
@@ -162,6 +162,9 @@ const JoinExam = () => {
               width: '100%',
               padding: '14px 18px',
               fontSize: '15px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              display: 'flex',
               fontWeight: 600,
               borderRadius: 10,
               opacity: (isJoining || !examKey.trim()) ? 0.6 : 1,
@@ -171,25 +174,25 @@ const JoinExam = () => {
             {isJoining ? 'Joining…' : 'Join Exam'}
           </button>
 
-          <div className="card-theme theme-transition" style={{ 
-            marginTop: '18px', 
-            padding: '14px', 
-            borderRadius: 10 
+          <div className="card-theme theme-transition" style={{
+            marginTop: '18px',
+            padding: '14px',
+            borderRadius: 10
           }}>
-            <h4 style={{ 
-              color: 'var(--text-primary)', 
-              marginBottom: '8px', 
-              fontSize: '13px', 
+            <h4 style={{
+              color: 'var(--text-primary)',
+              marginBottom: '8px',
+              fontSize: '13px',
               fontWeight: 600,
               transition: 'color 0.3s ease'
             }}>
               Instructions
             </h4>
-            <ul style={{ 
-              color: 'var(--text-secondary)', 
-              fontSize: '13px', 
-              lineHeight: 1.6, 
-              paddingLeft: '18px', 
+            <ul style={{
+              color: 'var(--text-secondary)',
+              fontSize: '13px',
+              lineHeight: 1.6,
+              paddingLeft: '18px',
               margin: 0,
               transition: 'color 0.3s ease'
             }}>
