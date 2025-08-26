@@ -4,6 +4,7 @@ import { Exam } from '../../types/exam';
 import SearchBar from '../../components/exams/SearchBar';
 import ExamStats from '../../components/exams/ExamStats';
 import ExamsGrid from '../../components/exams/ExamsGrid';
+import { ThemeToggle } from '../../components/ThemeToggle';
 import axios from 'axios';
 import { getUserId,getTokenFromCookie } from '@/constants/AuthStore';
 const CreateExam = () => {

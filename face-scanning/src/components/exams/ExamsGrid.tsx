@@ -33,27 +33,27 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
           key={exam.id}
           className={`${styles.examCard} theme-transition`}
           style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
             borderRadius: '16px',
             padding: '24px',
-            transition: 'all 0.15s ease',
+            transition: 'all 0.3s ease',
             cursor: 'pointer',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 4px 16px var(--shadow)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 12px 32px var(--shadow)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+            e.currentTarget.style.boxShadow = '0 4px 16px var(--shadow)';
           }}
         >
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
             <h3 style={{
-              color: '#1f2937',
+              color: 'var(--text-primary)',
               fontSize: '18px',
               fontWeight: '600',
               margin: 0,
@@ -69,29 +69,32 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
               fontSize: '12px',
               fontWeight: '600',
               textTransform: 'uppercase',
-              color: exam.status === 'draft' ? '#d97706' : exam.status === 'active' ? '#059669' : '#6b7280',
-              background: exam.status === 'draft' ? '#fffbeb' : exam.status === 'active' ? '#ecfdf5' : '#f9fafb',
-              border: `1px solid ${exam.status === 'draft' ? '#fed7aa' : exam.status === 'active' ? '#a7f3d0' : '#e5e7eb'}`,
+              color: exam.status === 'draft' ? 'var(--warning-color)' : exam.status === 'active' ? 'var(--success-color)' : 'var(--text-secondary)',
+              background: exam.status === 'draft' ? 'var(--warning-bg)' : exam.status === 'active' ? 'var(--success-bg)' : 'var(--card-bg)',
+              border: `1px solid ${exam.status === 'draft' ? 'var(--warning-color)' : exam.status === 'active' ? 'var(--success-color)' : 'var(--border-color)'}`,
               whiteSpace: 'nowrap'
             }}>
               {exam.status}
             </span>
           </div>
 
-          {/* Exam Key */}
           <div style={{ marginBottom: '12px' }}>
             <span style={{ 
-              color: '#6b7280', 
+              color: 'var(--text-secondary)', 
               fontSize: '14px', 
               fontWeight: '500'
             }}>
               Exam Key: 
             </span>
             <span style={{ 
-              color: '#1f2937', 
+              color: 'var(--text-primary)', 
               fontSize: '14px', 
               fontFamily: 'monospace',
-              fontWeight: '600'
+              fontWeight: '600',
+              background: 'var(--secondary-bg)',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              marginLeft: '4px'
             }}>
               {(exam as any).exam_key || (exam as any).key || 'N/A'}
             </span>
@@ -99,19 +102,19 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
 
           {/* Participants */}
           <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
             <span style={{ 
-              color: '#6b7280', 
+              color: 'var(--text-secondary)', 
               fontSize: '14px', 
               fontWeight: '500'
             }}>
               Participants: 
             </span>
             <span style={{ 
-              color: '#1f2937', 
+              color: 'var(--text-primary)', 
               fontSize: '14px', 
               fontWeight: '600'
             }}>
@@ -123,7 +126,7 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
           {/* Exam ID */}
           <div style={{ marginBottom: '20px' }}>
             <span style={{ 
-              color: '#6b7280', 
+              color: 'var(--text-secondary)', 
               fontSize: '12px', 
               fontWeight: '500'
             }}>
@@ -140,7 +143,7 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
               }}
               style={{
                 flex: 1,
-                background: '#8b5cf6',
+                background: 'var(--accent-color)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
@@ -155,10 +158,10 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
                 gap: '6px'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#7c3aed';
+                e.currentTarget.style.background = 'var(--success-color)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#8b5cf6';
+                e.currentTarget.style.background = 'var(--accent-color)';
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -174,8 +177,8 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
               }}
               style={{
                 background: 'transparent',
-                color: '#6b7280',
-                border: '1px solid #e2e8f0',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border-color)',
                 borderRadius: '8px',
                 padding: '10px 16px',
                 fontSize: '14px',
@@ -188,12 +191,12 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
                 gap: '6px'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#f8fafc';
-                e.currentTarget.style.color = '#374151';
+                e.currentTarget.style.background = 'var(--button-hover)';
+                e.currentTarget.style.color = 'var(--text-primary)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = '#6b7280';
+                e.currentTarget.style.color = 'var(--text-secondary)';
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -226,36 +229,63 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
         >
           <div 
             style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '24px',
+              background: 'var(--modal-bg)',
+              borderRadius: '20px',
+              padding: '32px',
               maxWidth: '500px',
               width: '90%',
               maxHeight: '80vh',
-              overflow: 'auto'
+              overflow: 'auto',
+              border: '1px solid var(--border-color)',
+              boxShadow: '0 20px 40px var(--shadow)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0, color: '#1f2937', fontSize: '20px', fontWeight: '600' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ 
+                margin: 0, 
+                color: 'var(--text-primary)', 
+                fontSize: '24px', 
+                fontWeight: '700'
+              }}>
                 Exam Details
               </h2>
               <button
                 onClick={closeModal}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '24px',
+                  background: 'var(--button-bg)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '10px',
+                  width: '40px',
+                  height: '40px',
+                  fontSize: '20px',
                   cursor: 'pointer',
-                  color: '#6b7280'
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--button-hover)';
+                  e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--button-bg)';
+                  e.currentTarget.style.transform = 'scale(1)';
                 }}
               >
                 ×
               </button>
             </div>
             
-            <div style={{ color: '#374151' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>
+            <div style={{ color: 'var(--text-primary)' }}>
+              <h3 style={{ 
+                margin: '0 0 20px 0', 
+                fontSize: '20px', 
+                fontWeight: '600',
+                color: 'var(--text-primary)'
+              }}>
                 {(selectedExam as any).exam_name || selectedExam.name || 'Untitled Exam'}
               </h3>
               

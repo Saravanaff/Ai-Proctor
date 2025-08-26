@@ -13,7 +13,7 @@ const SearchBar: React.FC<Props> = ({ value, onChange }) => (
         left: "12px",
         width: "16px",
         height: "16px",
-        color: "var(--text-secondary)",
+        color: 'var(--text-secondary)',
         pointerEvents: "none",
         transition: "color 0.3s ease",
       }}
@@ -34,21 +34,22 @@ const SearchBar: React.FC<Props> = ({ value, onChange }) => (
       style={{
         width: "240px",
         padding: "10px 12px 10px 40px",
-        border: "1px solid var(--input-border)",
-        borderRadius: "8px",
-        background: "var(--input-bg)",
-        color: "var(--text-primary)",
+        border: '1px solid var(--border-color)',
+        borderRadius: "12px",
+        background: 'var(--input-bg)',
+        color: 'var(--text-primary)',
         fontSize: "14px",
         outline: "none",
-        transition: "all 0.15s ease",
+        transition: "all 0.3s ease",
+        boxShadow: '0 2px 8px var(--shadow)'
       }}
       onFocus={(e) => {
         e.target.style.borderColor = "var(--accent-color)";
-        e.target.style.boxShadow = "0 0 0 2px var(--accent-color)20";
+        e.target.style.boxShadow = "0 0 0 2px rgba(139, 92, 246, 0.2)";
       }}
       onBlur={(e) => {
-        e.target.style.borderColor = "var(--input-border)";
-        e.target.style.boxShadow = "none";
+        e.target.style.borderColor = 'var(--border-color)';
+        e.target.style.boxShadow = '0 2px 8px var(--shadow)';
       }}
     />
   </div>

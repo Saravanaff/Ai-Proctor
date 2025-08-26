@@ -14,26 +14,22 @@ const ExamStats: React.FC<ExamStatsProps> = ({ stats }) => {
     { 
       label: 'TOTAL', 
       value: stats.total, 
-      color: '#1f2937',
-      bgColor: '#f8fafc'
+      colorClass: 'total'
     },
     { 
       label: 'ACTIVE', 
       value: stats.active, 
-      color: '#059669',
-      bgColor: '#ecfdf5'
+      colorClass: 'active'
     },
     { 
       label: 'DRAFT', 
       value: stats.draft, 
-      color: '#d97706',
-      bgColor: '#fffbeb'
+      colorClass: 'draft'
     },
     { 
       label: 'COMPLETED', 
       value: stats.completed, 
-      color: '#6b7280',
-      bgColor: '#f9fafb'
+      colorClass: 'completed'
     }
   ];
 
@@ -48,28 +44,32 @@ const ExamStats: React.FC<ExamStatsProps> = ({ stats }) => {
       {statItems.map((item, index) => (
         <div 
           key={index}
-          className="theme-transition"
+          className={`theme-transition stat-card stat-card--${item.colorClass}`}
           style={{
-            background: item.bgColor,
-            borderRadius: '12px',
+            borderRadius: '16px',
             padding: '24px',
             textAlign: 'center',
-            transition: 'all 0.15s ease',
-            border: '1px solid rgba(226, 232, 240, 0.5)'
+            transition: 'all 0.3s ease',
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
+            boxShadow: '0 4px 16px var(--shadow)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.08)';
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 12px 32px var(--shadow)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.boxShadow = '0 4px 16px var(--shadow)';
           }}
         >
           <div style={{
             fontSize: '36px',
             fontWeight: '700',
-            color: item.color,
+            color: item.colorClass === 'total' ? 'var(--text-primary)' : 
+                   item.colorClass === 'active' ? 'var(--success-color)' :
+                   item.colorClass === 'draft' ? 'var(--warning-color)' :
+                   'var(--text-secondary)',
             marginBottom: '8px',
             lineHeight: 1
           }}>
@@ -78,7 +78,10 @@ const ExamStats: React.FC<ExamStatsProps> = ({ stats }) => {
           <div style={{
             fontSize: '14px',
             fontWeight: '600',
-            color: item.color,
+            color: item.colorClass === 'total' ? 'var(--text-primary)' : 
+                   item.colorClass === 'active' ? 'var(--success-color)' :
+                   item.colorClass === 'draft' ? 'var(--warning-color)' :
+                   'var(--text-secondary)',
             textTransform: 'uppercase',
             letterSpacing: '0.5px'
           }}>
