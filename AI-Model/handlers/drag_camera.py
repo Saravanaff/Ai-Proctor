@@ -28,7 +28,6 @@ def setup_drag_camera_handler(sio):
             constants.person_count, constants.detected_objects = yolo_detect.detect_person_and_objects(rgb_img)
             constants.last_yolo_process = now
 
-        # ✅ Emit only if socket is connected
         if sio.connected:
             sio.emit("drag_camera_result", {
 
@@ -46,5 +45,6 @@ def setup_drag_camera_handler(sio):
                 "eyes": constants.eyes,
                 "object_detected": constants.detected_objects,
             })
+            
         else:
             print("[drag_camera] Socket not connected. Skipping emit.")

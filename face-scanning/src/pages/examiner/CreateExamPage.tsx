@@ -14,6 +14,14 @@ const CreateExam = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [error,setError]=useState(null);
+
+  // Proctoring feature toggles (defaults ON)
+  const [thirdEye, setThirdEye] = useState(true);
+  const [multiPerson, setMultiPerson] = useState(true);
+  const [eyeBall, setEyeBall] = useState(true);
+  const [objectDetect, setObjectDetect] = useState(true);
+  const [headDirection, setHeadDirection] = useState(true);
+
   axios.interceptors.request.use(
   (config) => {
     const token = getTokenFromCookie();
@@ -66,6 +74,12 @@ const CreateExam = () => {
       const base = 'https://localhost:3002';
       const payload = {
         exam_name: examName.trim(),
+        // Attach feature flags
+        third_eye_enabled: thirdEye,
+        multiple_person_detection_enabled: multiPerson,
+        eyeball_detection_enabled: eyeBall,
+        object_detection_enabled: objectDetect,
+        head_direction_enabled: headDirection,
       };
       const res = await axios.post<Exam>(`${base}/examCreate`, payload);
       console.log("hi",res);
@@ -86,6 +100,8 @@ const CreateExam = () => {
       
       setExamName('');
       setShowCreateForm(false);
+      // Optionally reset toggles or keep user’s last preference:
+      // setThirdEye(true); setMultiPerson(true); setEyeBall(true); setObjectDetect(true);
     } catch (e: any) {
       // Optionally reuse main error
       setError(e?.response?.data?.message || e.message || 'Failed to create exam');
@@ -93,6 +109,66 @@ const CreateExam = () => {
       setIsCreating(false);
     }
   };
+
+  // Small inline toggle component for clean UI
+  const Toggle = ({
+    label,
+    enabled,
+    onToggle,
+  }: { label: string; enabled: boolean; onToggle: () => void }) => (
+    <div
+      className="theme-transition"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: '10px 12px',
+        border: '1px solid var(--border-color)',
+        borderRadius: 12,
+        background: 'var(--card-bg)',
+      }}
+    >
+      <span
+        className="theme-transition"
+        style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 600 }}
+      >
+        {label}
+      </span>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={enabled}
+        className="theme-transition"
+        style={{
+          position: 'relative',
+          width: 48,
+          height: 28,
+          borderRadius: 999,
+          border: '1px solid var(--border-color)',
+          background: enabled ? 'var(--accent-color)' : 'var(--secondary-bg)',
+          boxShadow: enabled ? 'inset 0 0 0 1px rgba(255,255,255,0.2)' : 'none',
+          cursor: 'pointer',
+          transition: 'background 0.2s ease, box-shadow 0.2s ease',
+        }}
+      >
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: 3,
+            left: enabled ? 24 : 3,
+            width: 22,
+            height: 22,
+            borderRadius: '50%',
+            background: '#fff',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+            transition: 'left 0.2s ease',
+          }}
+        />
+      </button>
+    </div>
+  );
 
   // derived
   const filteredExams = useMemo(
@@ -183,6 +259,35 @@ const CreateExam = () => {
                 outline: 'none'
               }}
             />
+          </div>
+
+          {/* Proctoring Features */}
+          <div style={{ marginBottom: 16 }}>
+            <h4
+              className="theme-transition"
+              style={{ margin: '0 0 8px', color: 'var(--text-primary)', fontSize: 14, fontWeight: 700 }}
+            >
+              Proctoring Features
+            </h4>
+            <p
+              className="theme-transition"
+              style={{ margin: '0 0 12px', color: 'var(--text-secondary)', fontSize: 12 }}
+            >
+              Choose which monitoring features to enable for this exam.
+            </p>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap: 12,
+              }}
+            >
+              <Toggle label="Third Eye" enabled={thirdEye} onToggle={() => setThirdEye(v => !v)} />
+              <Toggle label="Multiple Person Detection" enabled={multiPerson} onToggle={() => setMultiPerson(v => !v)} />
+              <Toggle label="EyeBall Detection" enabled={eyeBall} onToggle={() => setEyeBall(v => !v)} />
+              <Toggle label="Object Detection" enabled={objectDetect} onToggle={() => setObjectDetect(v => !v)} />
+              <Toggle label="Head Direction" enabled={headDirection} onToggle={() => setHeadDirection(v => !v)} />
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '12px' }}>

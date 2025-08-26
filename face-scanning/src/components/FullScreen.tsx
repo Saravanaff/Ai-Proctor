@@ -18,6 +18,7 @@ const ExamPage = ({
   screenRecorderMediaRecorderRef,
   onBeforeSubmit,
   screen,
+  examSettings, // Add examSettings prop to receive feature flags
 }: any) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
@@ -29,32 +30,31 @@ const ExamPage = ({
   const { toast } = useToast();
   const [face, setFace] = useState(0);
   const [examSubmitted, setExamSubmitted] = useState(false);
+  const [headDirection, setHeadDirection] = useState(false);
   const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
 
   const router = useRouter();
 
-  const handleAuthFaceMissing = () => {
-    console.log("Auth face missing alert triggered");
-    setAuthFaceMissing(true);
-    setTimeout(() => setAuthFaceMissing(false), 3000);
-  };
-
-  const handleChange = (qId: number, value: string) => {
-    setAnswers((prev) => ({ ...prev, [qId]: value }));
-  };
-
   const detectObject = () => {
     console.log("Object detected");
-    setObject(true);
-    setTimeout(() => setObject(false), 3000);
+    // Only show alert if object detection is enabled for this exam
+    if (examSettings?.object_detection_enabled !== false) {
+      setObject(true);
+      setTimeout(() => setObject(false), 3000);
+    }
   };
+
+
 
   const number = (a: number) => {
     setFace(a);
-    setNum(true);
-    setTimeout(() => {
-      setNum(false);
-    }, 2000);
+    // Only show alert if multiple person detection is enabled for this exam
+    if (examSettings?.multiple_person_detection_enabled !== false) {
+      setNum(true);
+      setTimeout(() => {
+        setNum(false);
+      }, 2000);
+    }
   };
 
   useEffect(() => {
@@ -125,9 +125,32 @@ const ExamPage = ({
   const lookingAlert = (side: any) => {
     console.log("looking away");
     s = side;
-    setlookAlert(true);
-    setTimeout(() => setlookAlert(false), 3000);
+    if (examSettings?.head_direction_enabled!== false && examSettings?.eyeball_detection_enabled!==false) {
+      setlookAlert(true);
+      setTimeout(() => setlookAlert(false), 3000);
+    }
   };
+
+  const handleAuthFaceMissing = () => {
+    console.log("Auth face missing alert triggered");
+      setAuthFaceMissing(true);
+      setTimeout(() => setAuthFaceMissing(false), 3000);
+  };
+
+  const handleHeadDirection = (direction: string) => {
+    console.log("Head direction changed:", direction);
+    // Only show alert if head direction detection is enabled for this exam
+    if (examSettings?.head_direction_enabled !== false) {
+      setHeadDirection(true);
+      setTimeout(() => setHeadDirection(false), 3000);
+    }
+  };
+
+  const handleChange = (qId: number, value: string) => {
+    setAnswers((prev) => ({ ...prev, [qId]: value }));
+  };
+
+
 
   if (blocked) {
     return (
@@ -557,6 +580,7 @@ const ExamPage = ({
 
         <div
           className="theme-transition"
+          
           style={{
             display: "flex",
             justifyContent: "center",
@@ -609,6 +633,7 @@ const ExamPage = ({
           detect={detectObject}
           number={number}
           onAuthFaceMissing={handleAuthFaceMissing}
+          onHeadDirection={handleHeadDirection}
           examSubmitted={examSubmitted}
           mediaRecorderRef={frontCameraMediaRecorderRef}
           screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
@@ -617,7 +642,8 @@ const ExamPage = ({
         />
       )}
 
-      {lookAlert && (
+      {/* Conditionally render alerts based on exam settings */}
+      {lookAlert && examSettings?.third_eye_enabled !== false && (
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{
@@ -637,7 +663,7 @@ const ExamPage = ({
         </div>
       )}
 
-      {object && (
+      {object && examSettings?.object_detection_enabled !== false && (
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{
@@ -649,7 +675,7 @@ const ExamPage = ({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "20px" }}>�</span>
+            <span style={{ fontSize: "20px" }}>📱</span>
             <span style={{ fontWeight: 600 }}>
               Unauthorized device detected (e.g., mobile phone)
             </span>
@@ -657,7 +683,7 @@ const ExamPage = ({
         </div>
       )}
 
-      {num && (
+      {num && examSettings?.multiple_person_detection_enabled !== false && (
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{
@@ -675,7 +701,7 @@ const ExamPage = ({
         </div>
       )}
 
-      {authFaceMissing && (
+      {authFaceMissing && examSettings?.eyeball_detection_enabled !== false && (
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{
@@ -687,10 +713,30 @@ const ExamPage = ({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "20px" }}>�</span>
+            <span style={{ fontSize: "20px" }}>⚠️</span>
             <span style={{ fontWeight: 600 }}>
               Authenticated face not detected. Please ensure you are in front of
               the camera.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {headDirection && examSettings?.head_direction_enabled !== false && (
+        <div
+          className={`${styles.alertBox} theme-transition`}
+          style={{
+            background:
+              "linear-gradient(135deg, var(--warning-color) 0%, #f59e0b 100%)",
+            border: "1px solid var(--warning-color)",
+            boxShadow: "0 8px 25px rgba(245, 158, 11, 0.3)",
+            transition: "all 0.3s ease",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "20px" }}>🧭</span>
+            <span style={{ fontWeight: 600 }}>
+              Please keep your head facing forward
             </span>
           </div>
         </div>
