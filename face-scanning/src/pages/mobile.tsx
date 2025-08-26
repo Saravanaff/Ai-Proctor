@@ -41,9 +41,7 @@ export default function ThirdEye() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);  
   const streamRef = useRef<MediaStream>(null);
   const newSocket = useRef<Socket | null>(null);
-  // const 
-  
-  
+
 
 
   useEffect(() => {
@@ -83,7 +81,8 @@ export default function ThirdEye() {
             description: "Connected to Third Eye server.",
             variant: "success",
           });
-          newSocket.current?.emit('summa');
+          // Emit acknowledgment that mobile is connected
+          newSocket.current?.emit('mobile-acknowledgment');
         });
 
         newSocket.current.on("disconnect", (reason) => {
@@ -103,19 +102,13 @@ export default function ThirdEye() {
         });
       }
     }
-
     try {
       init();
     }
     catch(err){
       alert(err);
     }
-
-    // init();
-
     handleOrientation();
-
-
     return () => {
 
       if(timer){
@@ -280,13 +273,11 @@ export default function ThirdEye() {
   const stopStreaming = () => {
     console.log("Stopping streaming...")
     
-    // Emit stop exam event
     newSocket.current?.emit("end-exam",{
       user_id: userId,
       category: "third_eye",
     });
     
-    // Stop MediaRecorder first
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.ondataavailable = null;
       mediaRecorderRef.current.onstop = null;
@@ -296,13 +287,11 @@ export default function ThirdEye() {
       mediaRecorderRef.current = null;
     }
 
-    // Stop frame capture
     if (frameIntervalRef.current) {
       clearInterval(frameIntervalRef.current);
       frameIntervalRef.current = null;
     }
 
-    // Stop video stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => {
         console.log(`Stopping track: ${track.kind}, state: ${track.readyState}`);
@@ -311,7 +300,6 @@ export default function ThirdEye() {
       streamRef.current = null;
     }
 
-    // Clear video element
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
@@ -354,7 +342,6 @@ export default function ThirdEye() {
         />
         <canvas ref={canvasRef} style={{ display: "none" }} />
 
-        {/* Surveillance button or rotate warning */}
         {hydrated && (
           <div
             style={{
@@ -406,7 +393,6 @@ export default function ThirdEye() {
           </div>
         )}
 
-        {/* Top status bar */}
         <div
           style={{
             position: "absolute",

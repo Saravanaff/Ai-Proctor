@@ -1,0 +1,56 @@
+.container {
+  min-height: 100vh;
+  background: var(--page-bg, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.setupCard {
+  max-width: 800px;
+  width: 100%;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px var(--shadow, rgba(15, 23, 42, 0.08));
+  overflow: hidden;
+}
+
+.header {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  background: var(--secondary-bg, #f8fafc);
+}
+
+.progressSection {
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.mainContent {
+  padding: 32px;
+}
+
+.footer {
+  padding: 20px 32px;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  background: var(--secondary-bg, #f8fafc);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .header,
+  .progressSection,
+  .mainContent,
+  .footer {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}

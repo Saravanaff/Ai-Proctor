@@ -201,6 +201,18 @@ export function initSocket(server: HttpServer) {
       }
     });
 
+    socket.on("register-third-eye-setup", (data: any) => {
+      const { userId } = data;
+      console.log(`Third eye setup registered for user: ${userId}`);
+      linkSocketToUser(socket.id, userId);
+    });
+
+    socket.on("mobile-acknowledgment", () => {
+      console.log("Mobile device connected - sending acknowledgment");
+      // Broadcast to all connected clients that mobile is connected
+      socket.broadcast.emit("mobile-connected", { status: "connected", timestamp: new Date() });
+    });
+
     socket.on("disconnect", () => {
       unlinkSocket(socket.id);
     });
