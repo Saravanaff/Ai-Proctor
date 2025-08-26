@@ -11,22 +11,38 @@ interface ExamStatsProps {
 
 const ExamStats: React.FC<ExamStatsProps> = ({ stats }) => {
   const statItems = [
-    { label: 'Total', value: stats.total, color: 'var(--text-primary)' },
-    { label: 'Active', value: stats.active, color: 'var(--success-color)' },
-    { label: 'Draft', value: stats.draft, color: 'var(--warning-color)' },
-    { label: 'Completed', value: stats.completed, color: 'var(--text-secondary)' }
+    { 
+      label: 'TOTAL', 
+      value: stats.total, 
+      color: '#1f2937',
+      bgColor: '#f8fafc'
+    },
+    { 
+      label: 'ACTIVE', 
+      value: stats.active, 
+      color: '#059669',
+      bgColor: '#ecfdf5'
+    },
+    { 
+      label: 'DRAFT', 
+      value: stats.draft, 
+      color: '#d97706',
+      bgColor: '#fffbeb'
+    },
+    { 
+      label: 'COMPLETED', 
+      value: stats.completed, 
+      color: '#6b7280',
+      bgColor: '#f9fafb'
+    }
   ];
 
   return (
     <div className="theme-transition" style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-      gap: '16px',
-      marginBottom: '24px',
-      padding: '20px',
-      background: 'var(--card-bg)',
-      border: '1px solid var(--border-color)',
-      borderRadius: '12px',
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gap: '24px',
+      marginBottom: '32px',
       transition: 'all 0.3s ease'
     }}>
       {statItems.map((item, index) => (
@@ -34,16 +50,16 @@ const ExamStats: React.FC<ExamStatsProps> = ({ stats }) => {
           key={index}
           className="theme-transition"
           style={{
-            background: 'var(--secondary-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '8px',
-            padding: '16px',
+            background: item.bgColor,
+            borderRadius: '12px',
+            padding: '24px',
             textAlign: 'center',
-            transition: 'all 0.15s ease'
+            transition: 'all 0.15s ease',
+            border: '1px solid rgba(226, 232, 240, 0.5)'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 4px 12px var(--shadow)';
+            e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.08)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
@@ -51,22 +67,20 @@ const ExamStats: React.FC<ExamStatsProps> = ({ stats }) => {
           }}
         >
           <div style={{
-            fontSize: '28px',
-            fontWeight: 700,
+            fontSize: '36px',
+            fontWeight: '700',
             color: item.color,
             marginBottom: '8px',
-            lineHeight: 1,
-            transition: 'color 0.3s ease'
+            lineHeight: 1
           }}>
             {item.value}
           </div>
           <div style={{
-            fontSize: '12px',
-            color: 'var(--text-secondary)',
+            fontSize: '14px',
+            fontWeight: '600',
+            color: item.color,
             textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            fontWeight: 500,
-            transition: 'color 0.3s ease'
+            letterSpacing: '0.5px'
           }}>
             {item.label}
           </div>

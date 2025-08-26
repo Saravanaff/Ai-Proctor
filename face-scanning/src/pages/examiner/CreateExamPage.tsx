@@ -205,7 +205,13 @@ const CreateExam = () => {
             onClick={() => setShowCreateForm(v => !v)}
             className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
           >
-            {showCreateForm ? 'Close' : '➕ New Exam'}
+            {showCreateForm ? 'Close' : '+ New Exam'}
+          </button>
+          <button
+            className={`${styles.btn} ${styles.btnSecondary} theme-transition`}
+            style={{ marginLeft: '8px' }}
+          >
+            Join Exam
           </button>
         </div>
       </header>
@@ -327,27 +333,25 @@ const CreateExam = () => {
         </div>
       )}
 
-      <section className={`${styles.examsSection} ${styles.fadeIn} theme-transition`}>
-        <div className={`${styles.sectionHeader} theme-transition`}>
-          <h2 className={`${styles.sectionTitle} theme-transition`} style={{ 
-            color: 'var(--text-primary)', 
-            fontSize: '20px', 
-            fontWeight: 600, 
-            margin: 0,
-            transition: 'color 0.3s ease'
-          }}>
-            Exams ({filteredExams.length})
-          </h2>
-          {search && <span className={`${styles.filterInfo} theme-transition`} style={{ 
-            color: 'var(--text-secondary)', 
-            fontSize: '14px',
-            transition: 'color 0.3s ease'
-          }}>
-            Filtered by: "{search}"
-          </span>}
-        </div>
-
-        {loading && (
+        <section className={`${styles.examsSection} ${styles.fadeIn} theme-transition`}>
+          <div className={`${styles.sectionHeader} theme-transition`}>
+            <h2 className={`${styles.sectionTitle} theme-transition`} style={{ 
+              color: '#1f2937', 
+              fontSize: '20px', 
+              fontWeight: '600', 
+              margin: 0,
+              transition: 'color 0.3s ease'
+            }}>
+              Exams ({filteredExams.length})
+            </h2>
+            {search && <span className={`${styles.filterInfo} theme-transition`} style={{ 
+              color: '#6b7280', 
+              fontSize: '14px',
+              transition: 'color 0.3s ease'
+            }}>
+              Filtered by: "{search}"
+            </span>}
+          </div>        {loading && (
           <div className={styles.skeletonGrid}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className={`${styles.examCard} ${styles.skeletonCard} ${styles.shimmer} theme-transition`} />
