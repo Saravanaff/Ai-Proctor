@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import QRCode from "qrcode";
 import { getUserEmail, getUserId, getGlobalName } from "@/constants/AuthStore";
@@ -13,7 +13,7 @@ const ThirdEyeSetup = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isConnected, setIsConnected] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
-  const [socket, setSocket] = useState<any>(null);
+  const socketRef = useRef<any>(null);
   const router = useRouter();
 
   // Add spinner animation
@@ -62,9 +62,6 @@ const ThirdEyeSetup = () => {
   ];
 
   useEffect(() => {
-    // const uid = getUserId() || "unknown";
-    // setUserId(uid);
-
     const generateQRCode = async () => {
       const redirect = encodeURIComponent("/mobile");
       const name = encodeURIComponent(userName);
@@ -86,12 +83,22 @@ const ThirdEyeSetup = () => {
     };
 
     generateQRCode();
+  }, []);
 
-    // Initialize WebSocket connection to listen for mobile connection
+  useEffect(() => {
+    // Prevent multiple socket connections
+    if (socketRef.current?.connected) {
+      console.log("Socket already connected, skipping initialization");
+      return;
+    }
+
+    // Initialize WebSocket connection only once
     const socketConnection = io(
       process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.105.211:3002",
       {
         transports: ["websocket"],
+        forceNew: false,
+        autoConnect: true,
       }
     );
 
@@ -100,7 +107,6 @@ const ThirdEyeSetup = () => {
       socketConnection.emit("register-third-eye-setup", { userId: userId });
     });
 
-    // Listen for mobile connection acknowledgment
     socketConnection.on("mobile-connected", (data: any) => {
       console.log("Mobile device connected:", data);
       setIsConnected(data.status);
@@ -111,12 +117,21 @@ const ThirdEyeSetup = () => {
       setIsConnected(false);
     });
 
-    setSocket(socketConnection);
+    socketConnection.on("reconnect", () => {
+      console.log("Socket reconnected, re-registering...");
+      socketConnection.emit("register-third-eye-setup", { userId: userId });
+    });
+
+    socketRef.current = socketConnection;
 
     return () => {
-      socketConnection.disconnect();
+      console.log("Cleaning up socket connection");
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
-  }, []);
+  }, []); // Empty dependency array to run only once
 
   const handleNextStep = () => {
     // If on step 3, only allow progression if mobile is connected
