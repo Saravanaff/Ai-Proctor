@@ -34,7 +34,7 @@ const JoinExam = () => {
     setSuccess(null);
 
     try {
-      const base = process.env.NEXT_BACKEND_URL;
+      const base = process.env.NEXT_PUBLIC_BACKEND_URL;
       const payload = {
         exam_key: examKey.trim()
       };
