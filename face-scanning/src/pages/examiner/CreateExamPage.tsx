@@ -15,6 +15,9 @@ const CreateExam = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [error, setError] = useState(null);
+  const [connectionError, setConnectionError] = useState(""); // if you added earlier, else ignore
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [profileInitials, setProfileInitials] = useState<string>("U");
 
   // Proctoring feature toggles (defaults ON)
   const [thirdEye, setThirdEye] = useState(true);
@@ -206,6 +209,48 @@ const CreateExam = () => {
     })} → ${ed.toLocaleString([], { dateStyle: "short", timeStyle: "short" })}`;
   };
 
+  const handleLogout = () => {
+    try {
+      // clear token cookie (adjust cookie name if different)
+      document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      // clear known localStorage keys (if your AuthStore uses others, remove them too)
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("globalName");
+    } finally {
+      // redirect to login page
+      window.location.href = "/";
+    }
+  };
+
+  // Parse JWT payload to get user name (safe decode)
+  useEffect(() => {
+    try {
+      const token = getTokenFromCookie();
+      if (!token) return;
+      const parts = token.split(".");
+      if (parts.length < 2) return;
+      const payload = parts[1];
+      // Add padding if needed for base64
+      const pad = payload.length % 4;
+      const adjusted = payload + (pad ? "=".repeat(4 - pad) : "");
+      const decoded = JSON.parse(window.atob(adjusted));
+      const name =
+        decoded?.name || decoded?.fullname || decoded?.username || decoded?.email || null;
+      if (name) {
+        setProfileName(name);
+        const initials = name
+          .split(" ")
+          .map((p: string) => p.charAt(0).toUpperCase())
+          .slice(0, 2)
+          .join("");
+        setProfileInitials(initials || "U");
+      }
+    } catch (err) {
+      // silent failure, keep defaults
+    }
+  }, []);
+
   return (
     <div
       className={`${styles.examinerContainer} ${styles.enterpriseRoot} theme-transition`}
@@ -234,6 +279,47 @@ const CreateExam = () => {
           >
             Join Exam
           </button>
+
+          {/* Logout button - transparent with accent color */}
+          <button
+            onClick={handleLogout}
+            className={`${styles.btn} theme-transition`}
+            style={{
+              marginLeft: "8px",
+              background: "transparent",
+              border: "none",
+              color: "var(--accent-color)",
+              padding: "8px 12px",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+            title="Log out"
+          >
+            Logout
+          </button>
+
+          {/* Profile avatar (moved to top-right) */}
+          <div
+            title={profileName || "User"}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              background: "var(--accent-color)",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: 14,
+              marginLeft: 12,
+              boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+              cursor: "default",
+            }}
+            className="theme-transition"
+          >
+            {profileInitials}
+          </div>
         </div>
       </header>
 
@@ -484,6 +570,34 @@ const CreateExam = () => {
           <ExamsGrid exams={filteredExams} formatRange={formatRange} />
         )}
       </section>
+
+      {/* Floating controls: Theme toggle in bottom-right (avatar removed) */}
+      <div
+        style={{
+          position: "fixed",
+          right: 20,
+          bottom: 20,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 12,
+          zIndex: 1200,
+        }}
+      >
+        {/* Theme toggle (keeps existing ThemeToggle component) */}
+        <div
+          style={{
+            background: "var(--card-bg)",
+            border: "1px solid var(--border-color)",
+            borderRadius: 12,
+            padding: 8,
+            boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+          }}
+          className="theme-transition"
+        >
+          <ThemeToggle />
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "../../styles/CreateExamPage.module.css";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
@@ -9,6 +9,8 @@ const JoinExam = () => {
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [profileInitials, setProfileInitials] = useState<string>("U");
   const router = useRouter();
 
   axios.interceptors.request.use(
@@ -40,7 +42,7 @@ const JoinExam = () => {
       };
 
       const res = await axios.post(`${base}/joinExam`, payload);
-      
+
       if (res.data.success) {
         setSuccess("Successfully joined the exam.");
         localStorage.setItem("examId", res.data.exam.id);
@@ -62,6 +64,44 @@ const JoinExam = () => {
     }
   };
 
+  const handleLogout = () => {
+    try {
+      document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("globalName");
+    } finally {
+      window.location.href = "/";
+    }
+  };
+
+  // Parse JWT payload to get user name
+  useEffect(() => {
+    try {
+      const token = getTokenFromCookie();
+      if (!token) return;
+      const parts = token.split(".");
+      if (parts.length < 2) return;
+      const payload = parts[1];
+      const pad = payload.length % 4;
+      const adjusted = payload + (pad ? "=".repeat(4 - pad) : "");
+      const decoded = JSON.parse(window.atob(adjusted));
+      const name =
+        decoded?.name || decoded?.fullname || decoded?.username || decoded?.email || null;
+      if (name) {
+        setProfileName(name);
+        const initials = name
+          .split(" ")
+          .map((p: string) => p.charAt(0).toUpperCase())
+          .slice(0, 2)
+          .join("");
+        setProfileInitials(initials || "U");
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, []);
+
   return (
     <div
       className={`${styles.examinerContainer} ${styles.enterpriseRoot}`}
@@ -69,7 +109,7 @@ const JoinExam = () => {
     >
       <div className={styles.pageBackdrop} style={{ opacity: 0 }} />
 
-      <header className={styles.header}>
+      <header className={styles.header} style={{ position: "relative" }}>
         <div className={styles.headerContent}>
           <h1 className={styles.title} style={{ color: "var(--text-primary)" }}>
             Join Exam
@@ -80,6 +120,54 @@ const JoinExam = () => {
           >
             Enter your exam key to join the assessment
           </p>
+        </div>
+
+        {/* top-right profile + logout */}
+        <div
+          style={{
+            position: "absolute",
+            right: 20,
+            top: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            zIndex: 1000,
+          }}
+        >
+          <div
+            title={profileName || "User"}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              background: "var(--accent-color)",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 700,
+              fontSize: 14,
+              boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+            }}
+            className="theme-transition"
+          >
+            {profileInitials}
+          </div>
+          <button
+            onClick={handleLogout}
+            title="Log out"
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "var(--accent-color)",
+              padding: "6px 8px",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+            className="theme-transition"
+          >
+            Logout
+          </button>
         </div>
       </header>
 
