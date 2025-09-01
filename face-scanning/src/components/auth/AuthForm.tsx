@@ -45,7 +45,6 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
     passwordChecks.number &&
     passwordChecks.special;
 
-  // Build a requirements array for clean UI rendering
   const passwordRequirements = [
     { key: "length", label: "At least 8 characters", passed: passwordChecks.length },
     { key: "upper", label: "At least one uppercase letter", passed: passwordChecks.upper },
@@ -60,7 +59,6 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
     setLoading(true);
 
     try {
-      // Block weak passwords on register
       if (isRegister && !isPasswordStrong) {
         throw new Error(
           "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
@@ -68,7 +66,7 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
       }
 
       const baseURL =
-        process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.101.167:3002";
+        process.env.NEXT_PUBLIC_BACKEND_URL;
       const endpoint = isRegister ? `${baseURL}/register` : `${baseURL}/login`;
       const payload = isRegister
         ? { name, email, password, role }
@@ -80,11 +78,9 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
       const token: string | undefined = data?.token;
       const user = data?.user;
 
-      // After register: switch to login view instead of logging in
       if (isRegister) {
         setIsRegister(false);
         setPassword("");
-        // Try to reflect the mode in the URL (best-effort)
         try {
           router.replace(
             {
@@ -108,10 +104,8 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
         setGlobalIdentity(user.name, user.email, user.id);
       }
 
-      // Role-based redirection
       let dest = redirect as string;
       if (!dest) {
-        // If no redirect specified, route based on user role
         if (user.role === "examiner") {
           dest = "/examiner/CreateExamPage";
         } else if (user.role === "student") {
@@ -196,9 +190,8 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
                 onFocus={() => setShowPasswordReqs(true)}
                 onBlur={() => setShowPasswordReqs(false)}
               />
-              {/* Animated, professional password checklist (always mounted, transitions on visibility) */}
               {(() => {
-                const visible = showPasswordReqs; // show only while password box is focused
+                const visible = showPasswordReqs;
                 return (
                   <div
                     aria-live="polite"
@@ -215,12 +208,10 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
                       transition:
                         "max-height 280ms ease, opacity 220ms ease, transform 220ms ease, padding 200ms ease, box-shadow 200ms ease",
                       overflow: "hidden",
-                      // soften when visible
                       padding: visible ? "12px 14px" : "0 14px",
                       boxShadow: visible ? "0 6px 18px rgba(0,0,0,0.06)" : "none",
                     }}
                   >
-                    {/* subtle header */}
                     <div
                       style={{
                         display: "flex",
