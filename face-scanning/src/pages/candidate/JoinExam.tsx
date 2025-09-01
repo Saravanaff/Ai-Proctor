@@ -34,7 +34,7 @@ const JoinExam = () => {
     setSuccess(null);
 
     try {
-      const base = 'https://172.16.101.168:3002';
+      const base = process.env.NEXT_PUBLIC_BACKEND_URL;
       const payload = {
         exam_key: examKey.trim()
       };
