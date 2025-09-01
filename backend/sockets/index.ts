@@ -120,7 +120,7 @@ export function initSocket(server: HttpServer) {
           }
         });
         proxy.on("recorder-add-video-stream-chunk", (data: any) => {
-          console.log("chunk ,",data.chunk)
+          // console.log("chunk ,",data.chunk)
           if (storageSocket) {
             storageSocket.emit("add-video-stream-chunk", data);
           }
@@ -128,7 +128,7 @@ export function initSocket(server: HttpServer) {
         proxy.on("start-exam", (data: any) => {
           if (storageSocket) {
             /* For Initializing Video Recording */
-            console.log("Exam started", data);
+            // console.log("Exam started", data);
             storageSocket.emit("start-stream-recording", data);
           }
         });
@@ -153,7 +153,7 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("authenticate", (data) => {
-      console.log(data);
+      // console.log(data);
       if (pythonSocket) {
         pythonSocket.emit("drag_camera", data);
       }
@@ -161,7 +161,7 @@ export function initSocket(server: HttpServer) {
 
     socket.on("submit",(data)=>{
 
-      console.log("hi");
+      // console.log("hi");
       console.log(getExamScore(data.userId,data.examId));
 
 
@@ -187,7 +187,7 @@ export function initSocket(server: HttpServer) {
     socket.on("start-exam", (data: any) => {
       if (storageSocket) {
         /* For Initializing Video Recording */
-        console.log("Exam started", data);
+        // console.log("Exam started", data);
         storageSocket.emit("start-stream-recording", data);
       }
     });

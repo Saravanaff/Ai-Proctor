@@ -7,7 +7,6 @@ interface Props {
   formatRange: (s?: string, e?: string) => string;
   onViewDetails?: (exam: Exam) => void;
   onEdit?: (exam: Exam) => void;
-  onManage?: (exam: Exam) => void;
 }
 
 const ExamCard: React.FC<Props> = ({
@@ -15,7 +14,6 @@ const ExamCard: React.FC<Props> = ({
   formatRange,
   onViewDetails,
   onEdit,
-  onManage,
 }) => {
   const [copied, setCopied] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
@@ -24,7 +22,7 @@ const ExamCard: React.FC<Props> = ({
   const examName =
     (exam as any).exam_name || (exam as any).name || "Untitled Exam";
   const createdAt =
-    (exam as any).crparticeated_at || (exam as any).createdAt || new Date();
+    (exam as any).created_at || (exam as any).createdAt || new Date();
   const startTime = (exam as any).start_time || (exam as any).startTime;
   const endTime = (exam as any).end_time || (exam as any).endTime;
   const status = (exam as any).status || "draft";
@@ -323,19 +321,17 @@ const ExamCard: React.FC<Props> = ({
               </svg>
               <span
                 className={styles.label}
-                style={{ cursor: onManage ? "pointer" : "default" }}
-                onClick={onManage ? () => onManage(exam) : undefined}
+                style={{ cursor: "pointer" }}
+                onClick={() => setShowStudentsModal(true)}
               >
                 Participants:
               </span>
             </div>
             <span
               className={styles.participantCount}
-              onClick={onManage ? () => onManage(exam) : undefined}
-              style={{ cursor: onManage ? "pointer" : "default" }}
-              title={
-                onManage ? "Click to view participants" : "Participants count"
-              }
+              onClick={() => setShowStudentsModal(true)}
+              style={{ cursor: "pointer" }}
+              title="Click to view participants"
             >
               {participantCount}
             </span>
@@ -419,9 +415,7 @@ const ExamCard: React.FC<Props> = ({
             className={`${styles.button} ${styles.secondaryButton}`}
             onClick={(e) => {
               e.stopPropagation();
-              if (onManage) {
-                onManage(exam);
-              }
+              // Handle manage action
             }}
           >
             <svg

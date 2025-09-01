@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import socket from "@/components/socket";
 import { getUserId } from "@/constants/AuthStore";
 import { delay } from "@/utils/delay";
+import axios from "axios";
 
 const userId = getUserId() || "unknown";
 
@@ -24,6 +25,20 @@ const EndPage =  () => {
       message: "Exam Ended successfully"
   });
 
+  const postData = async () => {
+    const examId = localStorage.getItem("examId");
+    try {
+      await axios.put(`/saveScore`, {
+        status: "completed",
+        userId: userId,
+        examId: examId,
+      });
+    } catch (error) {
+      console.error("Error updating data:", error);
+    }
+  };
+
+  postData();
 
   // useEffect(() => {
   //   if (!hasReloaded.current) {
