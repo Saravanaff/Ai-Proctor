@@ -1,4 +1,4 @@
-import React,{ useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ExamPage from "@/components/FullScreen";
 import styles from "../styles/ExamPage.module.css";
 import { sleep } from '@/utils/delay';
@@ -12,26 +12,27 @@ console.log("User ID:", userId);
 
 const fullscreen = () => {
     const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
-    
+
     // const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
     const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
 
 
-    const startScreenRecording = async (screenStream : any) => {
+    const startScreenRecording = async (screenStream: any) => {
         try {
-            socket.emit("start-exam",{
+            socket.emit("start-exam", {
                 user_id: userId,
                 category: "screen_recording"
             });
             // const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-            console.log("screenStream : ",screenStream)
+            console.log("screenStream : ", screenStream)
             if (screenStream) {
                 screenRecorderMediaRecorderRef.current = new MediaRecorder(screenStream, {
                     mimeType: "video/webm; codecs=vp8",
+                    videoBitsPerSecond: 1000000,
                 });
                 // screenRecorderMediaRecorderRef.current.start();
             }
-            if(screenRecorderMediaRecorderRef.current){
+            if (screenRecorderMediaRecorderRef.current) {
                 console.log("ondataavailable");
                 screenRecorderMediaRecorderRef.current.ondataavailable = (e: any) => {
                     if (e.data.size > 0) {
@@ -47,24 +48,24 @@ const fullscreen = () => {
                     }
                 };
             }
-            if(screenRecorderMediaRecorderRef.current){
+            if (screenRecorderMediaRecorderRef.current) {
                 console.log("Starting screen recorder");
                 screenRecorderMediaRecorderRef.current.start(500);
             }
-
-            requestFullscreen();
+            setFullscreenAllowed(true);
+            // requestFullscreen();
         } catch (error) {
             console.error("Error starting screen recording:", error);
         }
     };
-    
+
     const requestFullscreen = async () => {
         const el = document.documentElement;
         try {
             if (el.requestFullscreen) await el.requestFullscreen();
             else if ((el as any).webkitRequestFullscreen) await (el as any).webkitRequestFullscreen();
             else if ((el as any).msRequestFullscreen) await (el as any).msRequestFullscreen();
-    
+
             setFullscreenAllowed(true);
 
         } catch (err) {
@@ -93,7 +94,7 @@ const fullscreen = () => {
             document.removeEventListener('msfullscreenchange', onFsChange);
         };
     }, []);
-    
+
 
     if (!fullscreenAllowed) {
 
@@ -107,12 +108,12 @@ const fullscreen = () => {
             </div>
         );
     }
-    
+
     return (
-    <>
-        {fullscreenAllowed && <ExamPage screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}/>}
-    </>
-  )
+        <>
+            {fullscreenAllowed && <ExamPage screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef} />}
+        </>
+    )
 }
 
 

@@ -14,11 +14,11 @@ function currentUserId(): string | null {
   try {
     const id = getUserId?.();
     if (id) return id;
-  } catch {}
+  } catch { }
   try {
     if (typeof window !== "undefined")
       return window.localStorage.getItem("userId");
-  } catch {}
+  } catch { }
   return null;
 }
 
@@ -71,7 +71,7 @@ export default function ThirdEye() {
 
       console.log("newSocket Created...");
 
-      if(newSocket.current){
+      if (newSocket.current) {
 
         newSocket.current.emit("mobile");
 
@@ -260,7 +260,7 @@ export default function ThirdEye() {
         if (screen.orientation && (screen.orientation as any).lock) {
           try {
             await (screen.orientation as any).lock("landscape");
-          } catch (e) {}
+          } catch (e) { }
         }
       }
 
@@ -400,9 +400,8 @@ export default function ThirdEye() {
           >
             {isLandscape ? (
               <button
-                className={`${styles.button} ${
-                  isStreamingFrames ? styles.stopButton : styles.startButton
-                }`}
+                className={`${styles.button} ${isStreamingFrames ? styles.stopButton : styles.startButton
+                  }`}
                 onClick={isStreamingFrames ? stopStreaming : startStreaming}
                 disabled={!isConnected}
                 style={{ pointerEvents: "auto" }}

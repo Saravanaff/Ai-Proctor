@@ -24,15 +24,15 @@ export default function ThirdEye() {
   const [hydrated, setHydrated] = useState(false);
   const { toast } = useToast();
 
-  const serverUrl = "https://172.16.105.211:3002/";
+  const serverUrl = "https://172.16.101.168:3002/";
   console.log("Server URL:", serverUrl);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const newSocket = useRef<Socket | null>(null);
   const isInitialized = useRef(false);
-  
-  
+
+
 
 
   useEffect(() => {
@@ -44,8 +44,8 @@ export default function ThirdEye() {
     console.log("newSocket Created...");
     let timer: NodeJS.Timeout;
     let isMounted = true;
-    setHydrated(true); 
-    
+    setHydrated(true);
+
     const handleOrientation = () => {
       setIsLandscape(window.innerWidth > window.innerHeight);
     };
@@ -54,7 +54,7 @@ export default function ThirdEye() {
 
       window.addEventListener("resize", handleOrientation);
       window.addEventListener("orientationchange", handleOrientation);
-      
+
       timer = setTimeout(() => {
         if (isMounted) {
           setShowInitialNotice(false);
@@ -62,7 +62,7 @@ export default function ThirdEye() {
         }
       }, 3000);
 
-      if(newSocket.current){
+      if (newSocket.current) {
 
         newSocket.current.on("connect", () => {
           console.log("Socket connected");
@@ -110,7 +110,7 @@ export default function ThirdEye() {
       isMounted = false;
       isInitialized.current = false;
 
-      if(timer){
+      if (timer) {
         clearTimeout(timer)
       }
 
@@ -148,7 +148,7 @@ export default function ThirdEye() {
 
       window.removeEventListener("resize", handleOrientation);
       window.removeEventListener("orientationchange", handleOrientation);
-    } 
+    }
 
 
     // return () => {
@@ -162,10 +162,10 @@ export default function ThirdEye() {
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    
+
     // Check if video is ready
     if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) return;
-    
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -187,7 +187,7 @@ export default function ThirdEye() {
   const startStreaming = async () => {
     try {
       console.log("Starting surveillance recording ...");
-      
+
       // Wait for socket connection before proceeding
       if (!newSocket.current || !isConnected) {
         toast({
@@ -198,7 +198,7 @@ export default function ThirdEye() {
         return;
       }
 
-      newSocket.current.emit("proxy-start-exam",{
+      newSocket.current.emit("proxy-start-exam", {
         user_id: userId,
         category: "third_eye",
       });
@@ -242,10 +242,10 @@ export default function ThirdEye() {
               width: 480,
               frameRate: 30,
             },
-            
+
           });
           break;
-        
+
         } catch (err) {
           const error = err as Error;
           if (error.name === "NotReadableError" && retries > 1) {
@@ -255,7 +255,7 @@ export default function ThirdEye() {
             await new Promise((resolve) => setTimeout(resolve, 2000));
             retries--;
           } else {
-            throw err; 
+            throw err;
           }
         }
       }
@@ -287,7 +287,7 @@ export default function ThirdEye() {
         if (screen.orientation && (screen.orientation as any).lock) {
           try {
             await (screen.orientation as any).lock("landscape");
-          } catch (e) {}
+          } catch (e) { }
         }
       }
 
@@ -344,7 +344,7 @@ export default function ThirdEye() {
         description: "Could not access the camera.",
         variant: "destructive",
       });
-      
+
       // Clean up on error
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
@@ -359,13 +359,13 @@ export default function ThirdEye() {
 
   const stopStreaming = () => {
     console.log("Stopping streaming...")
-    
+
     // Emit stop exam event
-    newSocket.current?.emit("proxy-end-exam",{
+    newSocket.current?.emit("proxy-end-exam", {
       user_id: userId,
       category: "third_eye",
     });
-    
+
     // Stop MediaRecorder first
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.ondataavailable = null;
@@ -395,7 +395,7 @@ export default function ThirdEye() {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    
+
     setIsStreamingFrames(false);
     toast({ title: "Streaming Stopped", description: "Camera stream ended." });
   };
@@ -449,9 +449,8 @@ export default function ThirdEye() {
           >
             {isLandscape ? (
               <button
-                className={`${styles.button} ${
-                  isStreamingFrames ? styles.stopButton : styles.startButton
-                }`}
+                className={`${styles.button} ${isStreamingFrames ? styles.stopButton : styles.startButton
+                  }`}
                 onClick={isStreamingFrames ? stopStreaming : startStreaming}
                 disabled={!isConnected}
                 style={{ pointerEvents: "auto" }}
