@@ -13,12 +13,15 @@ import { getUserId } from "../constants/AuthStore";
 import { delay } from "@/utils/delay";
 
 const userId = getUserId() || "unknown";
+const examId = localStorage.getItem("examId") || "unknown";
 
 interface VideoChunkData {
   user_id: string;
   category: string;
   chunk: ArrayBuffer;
 }
+
+
 
 const FloatingCamera = ({
   socket,
@@ -385,6 +388,7 @@ const FloatingCamera = ({
                         height,
                       },
                       user_id: userId,
+                      exam_id: examId,
                     });
                   })
                   .catch((error) => {

@@ -62,9 +62,20 @@ export function addScore(data: any) {
 export function getExamScore(userId: any, examId: any) {
   const uid = String(userId ?? "");
   const eid = String(examId ?? "");
-  if (!uid || !eid) return null;
+
+  console.log("User Map:,",user);
+
+
+
+  if (!uid || !eid) {
+    console.log("uid or eid is empty",uid,eid);
+    return null;
+  }
   const exams = user.get(uid);
-  if (!exams) return null;
+  if (!exams) {
+    console.log("Exam is empty",exams);
+    return null;
+  }
   return exams.get(eid) ?? null;
 }
 

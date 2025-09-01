@@ -71,6 +71,9 @@ const ExamDetailsPage: React.FC = () => {
         }catch ( err ) {
             console.log("Error fetching score in exam-details.tsx: ", err);
         }
+        finally {
+          setLoadingExam(false);
+        }
 
         return data;
     }

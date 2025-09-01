@@ -4,7 +4,6 @@ import Scores from "../models/Scores";
 
 export const getScoreInPercent = async (req: Request, res: Response) => {
   const { userId, examId } = req.body;
-  console.log("ususu", userId, examId);
   
   const score = await Scores.findOne({
     where: {
@@ -12,8 +11,6 @@ export const getScoreInPercent = async (req: Request, res: Response) => {
       exam_id: examId,
     },
   });
-
-  console.log("Success");
 
   if (!score) {
     return res.status(404).json({ 
@@ -42,6 +39,9 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
 
   try {
     const flaggedScore = getExamScore(userId, examId);
+
+
+    console.log("Getting Exam Score :",flaggedScore)
 
     if (!flaggedScore) {
       return res.status(404).json({
@@ -74,17 +74,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
     if (existingScore) {
       await existingScore.update(scoreData);
     } else {
-      await Scores.create({
-        user_id: userId,
-        exam_id: examId,
-        no_of_person_flagged: flaggedScore.noOfPersonFlagged || 0,
-        no_person_flagged: flaggedScore.noPersonFlagged || 0,
-        auth_face_flagged: flaggedScore.authFaceFlagged || 0,
-        head_position_flagged: flaggedScore.headPositionFlagged || 0,
-        eyes_flagged: flaggedScore.eyesFlagged || 0,
-        object_detected_flagged: flaggedScore.objectDetectedFlagged || 0,
-        total_score: calculatedScore.cheatingPercentage,
-      } as any);
+      await Scores.create(scoreData as any);
     }
 
     res.status(200).json({

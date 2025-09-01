@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import socket from "@/components/socket";
 import { getUserId } from "@/constants/AuthStore";
-import { delay } from "@/utils/delay";
 import axios from "axios";
 
 const userId = getUserId() || "unknown";
+const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL;
 
 const EndPage =  () => {
   const hasReloaded = useRef(false);
@@ -27,11 +27,18 @@ const EndPage =  () => {
 
   const postData = async () => {
     const examId = localStorage.getItem("examId");
+    const token = localStorage.getItem("token");
+    console.log(`${baseUrl}/saveScore`);
+
     try {
-      await axios.put(`/saveScore`, {
+      await axios.put(`${baseUrl}/saveScore`, {
         status: "completed",
         userId: userId,
         examId: examId,
+      }, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
       });
     } catch (error) {
       console.error("Error updating data:", error);
@@ -39,13 +46,6 @@ const EndPage =  () => {
   };
 
   postData();
-
-  // useEffect(() => {
-  //   if (!hasReloaded.current) {
-  //     hasReloaded.current = true;
-  //     window.location.reload();
-  //   }
-  // }, []);
 
   return (
     <div style={{ textAlign: "center", paddingTop: "100px" }}>

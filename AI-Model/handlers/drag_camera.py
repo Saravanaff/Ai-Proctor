@@ -7,6 +7,7 @@ def setup_drag_camera_handler(sio):
     def handle_drag_camera(data):
         buffer = data["buffer"]
         userId = data["user_id"]
+        examId = data["exam_id"]
         img = image_utils.decode_image(buffer)
         rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -36,7 +37,9 @@ def setup_drag_camera_handler(sio):
                 "head_position": constants.head_position,
                 "eyes": constants.eyes,
                 "object_detected": constants.detected_objects,
-                "userId":userId
+                "userId":userId,
+                "user_id": userId,
+                "exam_id": examId,
             })
             print({
                 "no_of_person": constants.person_count,
@@ -44,6 +47,9 @@ def setup_drag_camera_handler(sio):
                 "head_position": constants.head_position,
                 "eyes": constants.eyes,
                 "object_detected": constants.detected_objects,
+                "userId":userId,
+                "user_id": userId,
+                "exam_id": examId,
             })
             
         else:
