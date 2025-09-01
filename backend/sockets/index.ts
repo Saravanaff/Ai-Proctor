@@ -113,6 +113,7 @@ export function initSocket(server: HttpServer) {
         // socket.emit("fres",data);
       });
     });
+    
 
     socket.on("proxy", () => {
       proxy = socket;

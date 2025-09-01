@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 const baseURL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.105.211:3002";
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.10.185:3002";
 
 export function useFetch<T = any>(url: string) {
   const [data, setData] = useState<T | null>(null);

@@ -68,6 +68,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       head_position_flagged: flaggedScore.headPositionFlagged || 0,
       eyes_flagged: flaggedScore.eyesFlagged || 0,
       object_detected_flagged: flaggedScore.objectDetectedFlagged || 0,
+      total_images_processed: flaggedScore.totalImagesProcessed || 0,
       total_score: calculatedScore.cheatingPercentage,
     };
 

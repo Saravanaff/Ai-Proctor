@@ -16,12 +16,15 @@ export function addScore(data: any) {
       headPositionFlagged: 0,
       eyesFlagged: 0,
       objectDetectedFlagged: 0,
+      totalImagesProcessed: 0,
     });
   }
 
   const examData = exams.get(examId);
 
   const headPos = data?.head_position ?? data?.headPosition;
+
+  examData.totalImagesProcessed += 1;
 
   if (typeof headPos === "string" && headPos.toLowerCase() !== "forward") {
     examData.headPositionFlagged += 1;
@@ -37,14 +40,12 @@ export function addScore(data: any) {
     if (eyes.toLowerCase() !== "center") examData.eyesFlagged += 1;
   }
 
-  if (data?.object_detected === true) {
+  if (data?.object_detected["cell phone"] === true) {
     examData.objectDetectedFlagged += 1;
   }
-  if (
-    Array.isArray(data?.objects_detected) &&
-    data.objects_detected.length > 0
-  ) {
-    examData.objectDetectedFlagged += 1;
+
+  if ( data?.auth_face === false) {
+    examData.authFaceFlagged += 1;
   }
 
   const personsRaw =
@@ -98,61 +99,99 @@ export function deleteExamScore(userId: any, examId: any) {
 
 export const calculateExamScore = async (score: any) => {
   const {
-    no_of_person_flagged,
-    no_person_flagged,
-    auth_face_flagged,
-    head_position_flagged,
-    eyes_flagged,
-    object_detected_flagged,
+    noOfPersonFlagged,
+    noPersonFlagged,
+    authFaceFlagged,
+    headPositionFlagged,
+    eyesFlagged,
+    objectDetectedFlagged,
+    totalImagesProcessed,
   } = score;
 
   // Calculate total flagged incidents
   const totalFlagged =
-    (no_of_person_flagged || 0) +
-    (no_person_flagged || 0) +
-    (auth_face_flagged || 0) +
-    (head_position_flagged || 0) +
-    (eyes_flagged || 0) +
-    (object_detected_flagged || 0);
+    (noOfPersonFlagged || 0) +
+    (noPersonFlagged || 0) +
+    (authFaceFlagged || 0) +
+    (headPositionFlagged || 0) +
+    (eyesFlagged || 0) +
+    (objectDetectedFlagged || 0);
 
-  // Define weights for different types of violations (higher weight = more serious)
-  const weights = {
-    no_of_person_flagged: 20, // Multiple persons detected
-    no_person_flagged: 15, // No person detected
-    auth_face_flagged: 25, // Unauthorized face detected
-    head_position_flagged: 10, // Head not in proper position
-    eyes_flagged: 15, // Eyes not looking at screen
-    object_detected_flagged: 20, // Unauthorized objects detected
+  // Get total processed frames (minimum 1 to avoid division by zero)
+  const totalFrames = Math.max(totalImagesProcessed || 1, 1);
+
+  // Calculate violation rates (percentage of frames with violations)
+  const violationRates = {
+    noOfPersonRate: ((noOfPersonFlagged || 0) / totalFrames) * 100,
+    noPersonRate: ((noPersonFlagged || 0) / totalFrames) * 100,
+    authFaceRate: ((authFaceFlagged || 0) / totalFrames) * 100,
+    headPositionRate: ((headPositionFlagged || 0) / totalFrames) * 100,
+    eyesRate: ((eyesFlagged || 0) / totalFrames) * 100,
+    objectDetectedRate: ((objectDetectedFlagged || 0) / totalFrames) * 100,
   };
 
-  // Calculate weighted cheating score
-  const weightedScore =
-    (no_of_person_flagged || 0) * weights.no_of_person_flagged +
-    (no_person_flagged || 0) * weights.no_person_flagged +
-    (auth_face_flagged || 0) * weights.auth_face_flagged +
-    (head_position_flagged || 0) * weights.head_position_flagged +
-    (eyes_flagged || 0) * weights.eyes_flagged +
-    (object_detected_flagged || 0) * weights.object_detected_flagged;
+  // Define weights for different types of violations (based on severity)
+  const weights = {
+    no_of_person_flagged: 0.8, // Multiple persons detected
+    no_person_flagged: 0.6, // No person detected
+    auth_face_flagged: 1.0, // Unauthorized face detected (most serious)
+    head_position_flagged: 0.2, // Head not in proper position (least serious)
+    eyes_flagged: 0.3, // Eyes not looking at screen
+    object_detected_flagged: 0.7, // Unauthorized objects detected
+  };
 
-  // Calculate cheating percentage (assuming max possible weighted score for normalization)
-  // You can adjust the max_threshold based on your requirements
-  const maxThreshold = 1000; // Maximum weighted score threshold for 100% cheating
-  const cheatingPercentage = Math.min(
-    (weightedScore / maxThreshold) * 100,
-    100
-  );
+  // Calculate weighted score based on violation rates
+  const weightedScore =
+    violationRates.noOfPersonRate * weights.no_of_person_flagged +
+    violationRates.noPersonRate * weights.no_person_flagged +
+    violationRates.authFaceRate * weights.auth_face_flagged +
+    violationRates.headPositionRate * weights.head_position_flagged +
+    violationRates.eyesRate * weights.eyes_flagged +
+    violationRates.objectDetectedRate * weights.object_detected_flagged;
+
+  // Use progressive scaling for cheating percentage
+  let cheatingPercentage;
+  
+  if (weightedScore === 0) {
+    cheatingPercentage = 0;
+  } else if (weightedScore <= 5) {
+    // For very low scores (0-10%)
+    cheatingPercentage = (weightedScore / 5) * 10;
+  } else if (weightedScore <= 15) {
+    // For moderate scores (10-30%)
+    cheatingPercentage = 10 + ((weightedScore - 5) / 10) * 20;
+  } else if (weightedScore <= 35) {
+    // For higher scores (30-60%)
+    cheatingPercentage = 30 + ((weightedScore - 15) / 20) * 30;
+  } else if (weightedScore <= 60) {
+    // For very high scores (60-85%)
+    cheatingPercentage = 60 + ((weightedScore - 35) / 25) * 25;
+  } else {
+    // Cap at 95% for extreme cases
+    cheatingPercentage = Math.min(85 + ((weightedScore - 60) / 40) * 10, 95);
+  }
 
   return {
     totalFlagged,
     weightedScore,
     cheatingPercentage: Math.round(cheatingPercentage * 100) / 100, // Round to 2 decimal places
+    severity: getSeverityLevel(cheatingPercentage),
     breakdown: {
-      no_of_person_flagged: no_of_person_flagged || 0,
-      no_person_flagged: no_person_flagged || 0,
-      auth_face_flagged: auth_face_flagged || 0,
-      head_position_flagged: head_position_flagged || 0,
-      eyes_flagged: eyes_flagged || 0,
-      object_detected_flagged: object_detected_flagged || 0,
+      no_of_person_flagged: noOfPersonFlagged || 0,
+      no_person_flagged: noPersonFlagged || 0,
+      auth_face_flagged: authFaceFlagged || 0,
+      head_position_flagged: headPositionFlagged || 0,
+      eyes_flagged: eyesFlagged || 0,
+      object_detected_flagged: objectDetectedFlagged || 0,
+      total_images_processed: totalImagesProcessed || 0,
     },
   };
 };
+
+
+function getSeverityLevel(percentage: number): string {
+  if (percentage <= 15) return "Low Risk";
+  if (percentage <= 35) return "Moderate Risk";
+  if (percentage <= 60) return "High Risk";
+  return "Critical Risk";
+}

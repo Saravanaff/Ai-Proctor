@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 
 const baseURL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.105.211:3001";
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.10.185:3001";
 
 export function usePost<T = any>(url: string) {
   const [data, setData] = useState<T | null>(null);
