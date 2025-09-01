@@ -63,7 +63,7 @@ export const getExam = async (req: Request, res: Response) => {
             attributes: ['id', 'exam_name', 'key'],
             include: [{
                 model: Attend,
-                attributes: ['user_id'],
+                attributes: ['user_id','exam_id'],
                 include: [{
                     model: User,
                     attributes: ['name', 'email']
@@ -111,3 +111,51 @@ export const getCanditates = async (req: Request, res: Response) => {
     }
 };
 
+export const getSingleExam = async (req: Request, res: Response) => {
+    const { examId } = req.params;
+    const user_id = getUserIdFromToken(req);
+
+    if (!examId || !user_id) {
+        return res.status(400).json({
+            success: false,
+            message: "Exam ID and user authentication required"
+        });
+    }
+
+    try {
+        const exam = await Exam.findOne({
+            where: { 
+                id: examId,
+                user_id: user_id // Ensure user owns this exam
+            },
+            attributes: ['id', 'exam_name', 'key', 'createdAt', 'updatedAt'],
+            include: [{
+                model: Attend,
+                attributes: ['user_id'],
+                include: [{
+                    model: User,
+                    attributes: ['id', 'name', 'email']
+                }]
+            }]
+        });
+
+        if (!exam) {
+            return res.status(404).json({
+                success: false,
+                message: "Exam not found or you don't have permission to view it"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Exam details fetched successfully",
+            exam
+        });
+    } catch (err: any) {
+        res.status(500).json({
+            success: false,
+            message: "Error fetching exam details",
+            error: err.message
+        });
+    }
+};

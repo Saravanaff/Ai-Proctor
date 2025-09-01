@@ -27,11 +27,11 @@ function ClientAuth({ children }: { children: React.ReactNode }) {
 
       /* uncomment this on production */
 
-      if (!hasAuthClient()) {
-        const redirect = encodeURIComponent(router.asPath || "/");
-        router.replace(`/Login?redirect=${redirect}`);
-        return;
-      }
+      // if (!hasAuthClient()) {
+      //   const redirect = encodeURIComponent(router.asPath || "/");
+      //   router.replace(`/Login?redirect=${redirect}`);
+      //   return;
+      // }
 
       setReady(true);
     };
