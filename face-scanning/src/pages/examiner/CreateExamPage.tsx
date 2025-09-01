@@ -50,8 +50,8 @@ const CreateExam = () => {
           const examsWithParticipants = res.data.exams.map((exam: any) => ({
             ...exam,
             participants: exam.attendances ? exam.attendances.length : 0,
-            status: exam.status || 'draft', // Default status if not provided
-            exam_key: exam.key || exam.exam_key, // Normalize key field
+            status: exam.status || 'draft',
+            exam_key: exam.key || exam.exam_key,
             startTime: exam.startTime || exam.start_time,
             endTime: exam.endTime || exam.end_time
           }));
