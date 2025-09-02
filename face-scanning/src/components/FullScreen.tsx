@@ -46,28 +46,34 @@ const ExamPage = ({
   const [face, setFace] = useState(0);
   const [examSubmitted, setExamSubmitted] = useState(false);
   const [headDirection, setHeadDirection] = useState(false);
+  const [examSettings, setExamSettings] = useState<ExamSettings>({});
+
+  
   const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
 
   const router = useRouter();
 
-
-  let examSettings: ExamSettings;
   const fetchExamSettings = async (payload: any) => {
+    try {
+      const token = localStorage.getItem("token");
 
-    const token = localStorage.getItem("token");
-
-    const response = await axios.get(`${baseUrl}/getExamSettings`, {
-        params: payload,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-    });
-    examSettings = response.data;
+      const response = await axios.get(`${baseUrl}/getExamSettings`, {
+          params: payload,
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+      });
+      setExamSettings(response.data);
+    } catch (error) {
+      console.error("Failed to fetch exam settings:", error);
+    }
   }
 
-  const examId = localStorage.getItem("examId");
-  fetchExamSettings({user_id: userId, exam_id: examId});
+  useEffect(() => {
+    const examId = localStorage.getItem("examId");
+    fetchExamSettings({user_id: userId, exam_id: examId});
+  }, []);
 
 
   const detectObject = () => {
