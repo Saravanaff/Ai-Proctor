@@ -206,7 +206,6 @@ export function initSocket(server: HttpServer) {
     socket.on("register-third-eye-setup", (data: any) => {
       const { userId } = data;
       console.log(`Third eye setup registered for user: ${userId}`);
-      linkSocketToUser(socket.id, userId);
     });
 
     socket.on("mobile-acknowledgment", () => {
