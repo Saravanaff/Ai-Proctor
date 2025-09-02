@@ -1,3 +1,4 @@
+
 import { Server } from "socket.io";
 import type { Server as HttpServer } from "http";
 import {
@@ -8,7 +9,7 @@ import {
 } from "../mediasoupServer";
 
 import { io as ioClient } from "socket.io-client";
-import {getExamScore} from "../utils/calculate";
+import { getExamScore, addScore } from "../utils/calculate";
 
 export function initSocket(server: HttpServer) {
   const io = new Server(server, {
@@ -43,7 +44,7 @@ export function initSocket(server: HttpServer) {
     if (!userId) return;
     const sid = userToSocket.get(String(userId));
     if (!sid) return;
-    console.log(userId, event, payload);
+    // console.log(userId, event, payload);
     io.to(sid).emit(event, payload);
   }
 
@@ -90,6 +91,7 @@ export function initSocket(server: HttpServer) {
       pythonSocket = socket;
 
       pythonSocket.on("thirdeye_cam_result", (data: any) => {
+        addScore(data);
         emitToUserById(data?.userId, "thirdeye_alert", data);
 
       });
@@ -101,15 +103,17 @@ export function initSocket(server: HttpServer) {
       });
 
       pythonSocket.on("drag_camera_result", (data: any) => {
+        console.log("drag_camera_result : dat,",data);
+        addScore(data);
         emitToUserById(data?.userId, "alert", data);
       });
 
       pythonSocket.on("result", (data: any) => {
-        // console.log(data);
         emitToUserById(data?.userId, "fres", data);
         // socket.emit("fres",data);
       });
     });
+    
 
     socket.on("proxy", () => {
       proxy = socket;
@@ -120,7 +124,7 @@ export function initSocket(server: HttpServer) {
           }
         });
         proxy.on("recorder-add-video-stream-chunk", (data: any) => {
-          console.log("chunk ,",data.chunk)
+          // console.log("chunk ,",data.chunk)
           if (storageSocket) {
             storageSocket.emit("add-video-stream-chunk", data);
           }
@@ -128,7 +132,7 @@ export function initSocket(server: HttpServer) {
         proxy.on("start-exam", (data: any) => {
           if (storageSocket) {
             /* For Initializing Video Recording */
-            console.log("Exam started", data);
+            // console.log("Exam started", data);
             storageSocket.emit("start-stream-recording", data);
           }
         });
@@ -153,7 +157,7 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("authenticate", (data) => {
-      console.log(data);
+      // console.log(data);
       if (pythonSocket) {
         pythonSocket.emit("drag_camera", data);
       }
@@ -161,7 +165,7 @@ export function initSocket(server: HttpServer) {
 
     socket.on("submit",(data)=>{
 
-      console.log("hi");
+      // console.log("hi");
       console.log(getExamScore(data.userId,data.examId));
 
 
@@ -187,7 +191,7 @@ export function initSocket(server: HttpServer) {
     socket.on("start-exam", (data: any) => {
       if (storageSocket) {
         /* For Initializing Video Recording */
-        console.log("Exam started", data);
+        // console.log("Exam started", data);
         storageSocket.emit("start-stream-recording", data);
       }
     });

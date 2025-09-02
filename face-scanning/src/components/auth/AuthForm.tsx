@@ -13,7 +13,13 @@ interface AuthFormProps {
   userName?: string;
 }
 
-const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName }: AuthFormProps) => {
+const AuthForm = ({
+  defaultMode = "login",
+  redirect,
+  userId,
+  userEmail,
+  userName,
+}: AuthFormProps) => {
   const [isRegister, setIsRegister] = useState(defaultMode === "register");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,8 +31,11 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
 
   const router = useRouter();
 
-
-  if(typeof userId === "string" && typeof userName === "string" && typeof userEmail === "string"){
+  if (
+    typeof userId === "string" &&
+    typeof userName === "string" &&
+    typeof userEmail === "string"
+  ) {
     setGlobalIdentity(userName, userEmail, userId);
     router.push(redirect);
   }
@@ -46,11 +55,31 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
     passwordChecks.special;
 
   const passwordRequirements = [
-    { key: "length", label: "At least 8 characters", passed: passwordChecks.length },
-    { key: "upper", label: "At least one uppercase letter", passed: passwordChecks.upper },
-    { key: "lower", label: "At least one lowercase letter", passed: passwordChecks.lower },
-    { key: "number", label: "At least one number", passed: passwordChecks.number },
-    { key: "special", label: "At least one special character", passed: passwordChecks.special },
+    {
+      key: "length",
+      label: "At least 8 characters",
+      passed: passwordChecks.length,
+    },
+    {
+      key: "upper",
+      label: "At least one uppercase letter",
+      passed: passwordChecks.upper,
+    },
+    {
+      key: "lower",
+      label: "At least one lowercase letter",
+      passed: passwordChecks.lower,
+    },
+    {
+      key: "number",
+      label: "At least one number",
+      passed: passwordChecks.number,
+    },
+    {
+      key: "special",
+      label: "At least one special character",
+      passed: passwordChecks.special,
+    },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,8 +95,8 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
       }
 
       const baseURL =
-        process.env.NEXT_PUBLIC_BACKEND_URL;
-      console.log(baseURL);
+        process.env.NEXT_PUBLIC_BACKEND_URL ;
+      
       const endpoint = isRegister ? `${baseURL}/register` : `${baseURL}/login`;
       const payload = isRegister
         ? { name, email, password, role }
@@ -101,7 +130,9 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
       }
 
       if (typeof window !== "undefined") {
-        document.cookie = `authToken=${token}; Path=/; Max-Age=${60 * 60 * 2}; SameSite=Lax`;
+        document.cookie = `authToken=${token}; Path=/; Max-Age=${
+          60 * 60 * 2
+        }; SameSite=Lax`;
         setGlobalIdentity(user.name, user.email, user.id);
       }
 
@@ -182,7 +213,9 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
               <input
                 type="password"
                 placeholder={
-                  isRegister ? "Create a strong password" : "Enter your password"
+                  isRegister
+                    ? "Create a strong password"
+                    : "Enter your password"
                 }
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -210,7 +243,9 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
                         "max-height 280ms ease, opacity 220ms ease, transform 220ms ease, padding 200ms ease, box-shadow 200ms ease",
                       overflow: "hidden",
                       padding: visible ? "12px 14px" : "0 14px",
-                      boxShadow: visible ? "0 6px 18px rgba(0,0,0,0.06)" : "none",
+                      boxShadow: visible
+                        ? "0 6px 18px rgba(0,0,0,0.06)"
+                        : "none",
                     }}
                   >
                     <div
@@ -247,7 +282,9 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
                           alignItems: "center",
                           gap: 10,
                           padding: "6px 0",
-                          color: req.passed ? "var(--text-primary)" : "var(--text-secondary)",
+                          color: req.passed
+                            ? "var(--text-primary)"
+                            : "var(--text-secondary)",
                         }}
                       >
                         <span
@@ -261,17 +298,25 @@ const AuthForm = ({ defaultMode = "login", redirect, userId, userEmail, userName
                             justifyContent: "center",
                             fontSize: 12,
                             fontWeight: 700,
-                            background: req.passed ? "var(--success-color)" : "transparent",
+                            background: req.passed
+                              ? "var(--success-color)"
+                              : "transparent",
                             border: `2px solid ${
-                              req.passed ? "var(--success-color)" : "var(--border-color)"
+                              req.passed
+                                ? "var(--success-color)"
+                                : "var(--border-color)"
                             }`,
-                            color: req.passed ? "#fff" : "var(--text-secondary)",
+                            color: req.passed
+                              ? "#fff"
+                              : "var(--text-secondary)",
                             transition: "all 180ms ease",
                           }}
                         >
                           {req.passed ? "✓" : "•"}
                         </span>
-                        <span style={{ fontSize: 12, fontWeight: 500 }}>{req.label}</span>
+                        <span style={{ fontSize: 12, fontWeight: 500 }}>
+                          {req.label}
+                        </span>
                       </div>
                     ))}
                   </div>

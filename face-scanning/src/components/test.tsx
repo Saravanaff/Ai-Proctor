@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { Eye, Shield, Camera, Wifi, WifiOff, Maximize2 } from "lucide-react";
@@ -24,7 +24,7 @@ export default function ThirdEye() {
   const [hydrated, setHydrated] = useState(false);
   const { toast } = useToast();
 
-  const serverUrl = "https://172.16.101.168:3002/";
+  const serverUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   console.log("Server URL:", serverUrl);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -32,11 +32,7 @@ export default function ThirdEye() {
   const newSocket = useRef<Socket | null>(null);
   const isInitialized = useRef(false);
 
-
-
-
   useEffect(() => {
-
     if (isInitialized.current) return;
     isInitialized.current = true;
 
@@ -51,7 +47,6 @@ export default function ThirdEye() {
     };
 
     const init = async () => {
-
       window.addEventListener("resize", handleOrientation);
       window.addEventListener("orientationchange", handleOrientation);
 
@@ -63,7 +58,6 @@ export default function ThirdEye() {
       }, 3000);
 
       if (newSocket.current) {
-
         newSocket.current.on("connect", () => {
           console.log("Socket connected");
           if (isMounted) {
@@ -75,8 +69,8 @@ export default function ThirdEye() {
             });
           }
           // Only emit after connection is established
-          newSocket.current?.emit('mobile');
-          newSocket.current?.emit('summa');
+          newSocket.current?.emit("mobile");
+          newSocket.current?.emit("summa");
         });
 
         newSocket.current.on("disconnect", (reason) => {
@@ -98,12 +92,11 @@ export default function ThirdEye() {
           }
         });
       }
-    }
+    };
 
     init();
 
     handleOrientation();
-
 
     return () => {
       console.log("Mobile component cleanup");
@@ -111,7 +104,7 @@ export default function ThirdEye() {
       isInitialized.current = false;
 
       if (timer) {
-        clearTimeout(timer)
+        clearTimeout(timer);
       }
 
       if (mediaRecorderRef.current) {
@@ -131,7 +124,9 @@ export default function ThirdEye() {
 
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => {
-          console.log(`Stopping mobile track: ${track.kind}, state: ${track.readyState}`);
+          console.log(
+            `Stopping mobile track: ${track.kind}, state: ${track.readyState}`
+          );
           track.stop();
         });
         streamRef.current = null;
@@ -148,23 +143,32 @@ export default function ThirdEye() {
 
       window.removeEventListener("resize", handleOrientation);
       window.removeEventListener("orientationchange", handleOrientation);
-    }
-
+    };
 
     // return () => {
     //   newSocket.disconnect();
     // };
   }, []);
 
-
   const captureAndSendFrame = () => {
-    if (!videoRef.current || !canvasRef.current || !newSocket.current || !isConnected) return;
+    if (
+      !videoRef.current ||
+      !canvasRef.current ||
+      !newSocket.current ||
+      !isConnected
+    )
+      return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
     // Check if video is ready
-    if (video.readyState < 2 || video.videoWidth === 0 || video.videoHeight === 0) return;
+    if (
+      video.readyState < 2 ||
+      video.videoWidth === 0 ||
+      video.videoHeight === 0
+    )
+      return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -173,15 +177,22 @@ export default function ThirdEye() {
     canvas.height = video.videoHeight;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob((blob) => {
-      if (blob && newSocket.current && isConnected) {
-        blob.arrayBuffer().then((buffer) => {
-          newSocket.current?.emit("video", buffer);
-        }).catch((error) => {
-          console.error("Error processing frame:", error);
-        });
-      }
-    }, "image/jpeg", 0.7);
+    canvas.toBlob(
+      (blob) => {
+        if (blob && newSocket.current && isConnected) {
+          blob
+            .arrayBuffer()
+            .then((buffer) => {
+              newSocket.current?.emit("video", buffer);
+            })
+            .catch((error) => {
+              console.error("Error processing frame:", error);
+            });
+        }
+      },
+      "image/jpeg",
+      0.7
+    );
   };
 
   const startStreaming = async () => {
@@ -242,10 +253,8 @@ export default function ThirdEye() {
               width: 480,
               frameRate: 30,
             },
-
           });
           break;
-
         } catch (err) {
           const error = err as Error;
           if (error.name === "NotReadableError" && retries > 1) {
@@ -287,7 +296,7 @@ export default function ThirdEye() {
         if (screen.orientation && (screen.orientation as any).lock) {
           try {
             await (screen.orientation as any).lock("landscape");
-          } catch (e) { }
+          } catch (e) {}
         }
       }
 
@@ -300,19 +309,25 @@ export default function ThirdEye() {
 
         mediaRecorderRef.current.ondataavailable = (e: any) => {
           if (e.data.size > 0 && newSocket.current && isConnected) {
-            e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
-              const chunkData: any = {
-                user_id: userId,
-                category: "third_eye",
-                chunk: buffer,
-              };
-              if (newSocket.current) {
-                console.log("Recording ...");
-                newSocket.current.emit("proxy-recorder-add-video-stream-chunk", chunkData);
-              }
-            }).catch((error: any) => {
-              console.error("Error processing video chunk:", error);
-            });
+            e.data
+              .arrayBuffer()
+              .then((buffer: ArrayBuffer) => {
+                const chunkData: any = {
+                  user_id: userId,
+                  category: "third_eye",
+                  chunk: buffer,
+                };
+                if (newSocket.current) {
+                  console.log("Recording ...");
+                  newSocket.current.emit(
+                    "proxy-recorder-add-video-stream-chunk",
+                    chunkData
+                  );
+                }
+              })
+              .catch((error: any) => {
+                console.error("Error processing video chunk:", error);
+              });
           }
         };
 
@@ -336,7 +351,6 @@ export default function ThirdEye() {
         title: "Third Eye Activated",
         description: "You are under surveillance.",
       });
-
     } catch (error) {
       console.error("Error starting stream:", error);
       toast({
@@ -358,7 +372,7 @@ export default function ThirdEye() {
   };
 
   const stopStreaming = () => {
-    console.log("Stopping streaming...")
+    console.log("Stopping streaming...");
 
     // Emit stop exam event
     newSocket.current?.emit("proxy-end-exam", {
@@ -384,8 +398,10 @@ export default function ThirdEye() {
 
     // Stop video stream
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => {
-        console.log(`Stopping track: ${track.kind}, state: ${track.readyState}`);
+      streamRef.current.getTracks().forEach((track) => {
+        console.log(
+          `Stopping track: ${track.kind}, state: ${track.readyState}`
+        );
         track.stop();
       });
       streamRef.current = null;
@@ -449,8 +465,9 @@ export default function ThirdEye() {
           >
             {isLandscape ? (
               <button
-                className={`${styles.button} ${isStreamingFrames ? styles.stopButton : styles.startButton
-                  }`}
+                className={`${styles.button} ${
+                  isStreamingFrames ? styles.stopButton : styles.startButton
+                }`}
                 onClick={isStreamingFrames ? stopStreaming : startStreaming}
                 disabled={!isConnected}
                 style={{ pointerEvents: "auto" }}

@@ -24,12 +24,12 @@ export const validateExam = async (req: Request, res: Response) => {
         await Attend.create({
             user_id,
             exam_id: exam.id,
-            user_name
         });
 
         res.status(200).json({
             success: true,
-            message: "Exam validated and attendance recorded"
+            message: "Exam validated and attendance recorded",
+            exam_id:exam.id
         });
     } catch (err: any) {
         res.status(500).json({

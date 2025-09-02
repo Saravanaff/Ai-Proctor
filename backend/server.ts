@@ -4,14 +4,14 @@ import { createServer as createHttpsServer } from "http";
 import path from "path";
 import dotenv from "dotenv";
 import cors from "cors";
-import { initMediasoup } from "./mediasoupServer"; 
+import { initMediasoup } from "./mediasoupServer";
 import { sequelize } from "./db";
 import authRoutes from "./routes/authRoutes";
 import authMiddleware from "./middleware/authMiddleware";
 import { initSocket } from "./sockets";
 import examRoutes from "./routes/examRoutes";
-import studentRoutes from "./routes/studentRoutes"
-
+import studentRoutes from "./routes/studentRoutes";
+import scoreRoutes from './routes/scoreRoutes';
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 const serverPort = 3001;
@@ -37,8 +37,9 @@ async function startServer() {
   app.use("/", authRoutes);
   app.use(authMiddleware);
 
-  app.use("/",examRoutes);
-  app.use("/",studentRoutes);
+  app.use("/", examRoutes);
+  app.use("/", studentRoutes);
+  app.use("/", scoreRoutes);
 
   const httpsServer = createHttpsServer(app);
 
@@ -55,5 +56,3 @@ async function startServer() {
   await sequelize.sync();
   await startServer();
 })().catch(console.error);
-
-
