@@ -5,7 +5,7 @@ import { getUserIdFromToken } from "../utils/jwt";
 
 export const getScoreInPercent = async (req: Request, res: Response) => {
   try {
-    console.log(req.query);
+
     const { userId, examId } = req.query;
 
     if (!userId || !examId) {
@@ -29,7 +29,7 @@ export const getScoreInPercent = async (req: Request, res: Response) => {
       });
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       data: score.total_score,
       scoreBreakdown: {
@@ -39,15 +39,16 @@ export const getScoreInPercent = async (req: Request, res: Response) => {
         head_position_flagged: score.head_position_flagged,
         eyes_flagged: score.eyes_flagged,
         object_detected_flagged: score.object_detected_flagged,
+        sound_flagged: score.sound_flagged,
         total_score: score.total_score,
-      },
+      }
     });
-  } catch (err) {
-    console.error("Error in getScoreInPercent:", err);
+  } catch ( err ) {
+    console.log("Error While getScoreInPercent: ",err);
     return res.status(500).json({
       success: false,
-      error: "Internal server error",
-    });
+      error: "Error while getting score in percentage",
+    })
   }
 };
 
@@ -78,13 +79,6 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       });
     }
 
-    const existingScore = await Scores.findOne({
-      where: {
-        user_id: userId,
-        exam_id: examId,
-      },
-    });
-
     const scoreData = {
       user_id: userId,
       exam_id: examId,
@@ -95,8 +89,16 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       eyes_flagged: flaggedScore.eyesFlagged || 0,
       object_detected_flagged: flaggedScore.objectDetectedFlagged || 0,
       total_images_processed: flaggedScore.totalImagesProcessed || 0,
+      sound_flagged: flaggedScore.soundFlagged || 0,
       total_score: calculatedScore.cheatingPercentage,
     };
+
+    const existingScore = await Scores.findOne({
+      where: {
+        user_id: userId,
+        exam_id: examId,
+      },
+    });
 
     if (existingScore) {
       await existingScore.update(scoreData);
@@ -119,7 +121,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
     console.error("Error saving score:", error);
     res.status(500).json({
       success: false,
-      error: "Failed to save score",
+      error: "Failed to save score Error Occured",
     });
   }
 };

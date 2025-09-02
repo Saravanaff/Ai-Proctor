@@ -5,6 +5,7 @@ import socket from "./socket";
 import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
 import { getUserId } from "@/constants/AuthStore";
+import axios from 'axios';
 
 
 const questions = Array.from({ length: 10 }, (_, i) => ({
@@ -14,11 +15,25 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
 }));
 
 
+const baseUrl =
+  process.env.NEXT_PUBLIC_SERVER_URL;
+const userId = getUserId() || "unknown";
+
+
+
+type ExamSettings = {
+  third_eye_enabled?: boolean;
+  multiple_person_detection_enabled?: boolean;
+  eyeball_detection_enabled?: boolean;
+  object_detection_enabled?: boolean;
+  head_direction_enabled?: boolean;
+  flag_notifications_enabled?: boolean;
+};
+
+
 const ExamPage = ({
   screenRecorderMediaRecorderRef,
   onBeforeSubmit,
-  screen,
-  examSettings,
 }: any) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
@@ -35,9 +50,29 @@ const ExamPage = ({
 
   const router = useRouter();
 
+
+  let examSettings: ExamSettings;
+  const fetchExamSettings = async (payload: any) => {
+
+    const token = localStorage.getItem("token");
+
+    const response = await axios.get(`${baseUrl}/getExamSettings`, {
+        params: payload,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+    });
+    examSettings = response.data;
+  }
+
+  const examId = localStorage.getItem("examId");
+  fetchExamSettings({user_id: userId, exam_id: examId});
+
+
   const detectObject = () => {
     console.log("Object detected");
-    if (examSettings?.flag_notifications_enabled!==true &&examSettings?.object_detection_enabled !== false) {
+    if (examSettings?.flag_notifications_enabled!==true && examSettings?.object_detection_enabled !== false) {
       setObject(true);
       setTimeout(() => setObject(false), 3000);
     }
