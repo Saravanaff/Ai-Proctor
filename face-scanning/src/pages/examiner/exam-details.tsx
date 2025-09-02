@@ -54,7 +54,7 @@ const ExamDetailsPage: React.FC = () => {
 
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "http://172.16.10.185:3001";
+    process.env.NEXT_PUBLIC_SERVER_URL;
 
     const fetchScore = async (payload : any) => {
 
