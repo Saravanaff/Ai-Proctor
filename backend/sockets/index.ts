@@ -131,14 +131,12 @@ export function initSocket(server: HttpServer) {
         });
         proxy.on("start-exam", (data: any) => {
           if (storageSocket) {
-            /* For Initializing Video Recording */
             // console.log("Exam started", data);
             storageSocket.emit("start-stream-recording", data);
           }
         });
         proxy.on("end-exam", (data: any) => {
           if (storageSocket) {
-            /* For Closing Video Recording */
 
             // const fileName = path.join(__dirname, "logs", "log.csv");
             // const score = calculateScoreOnUser(fileName);

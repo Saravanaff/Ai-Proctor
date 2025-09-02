@@ -4,11 +4,13 @@ import {
   putScoreInPercent,
 } from "../controllers/ScoresController";
 import authMiddleware from "../middleware/authMiddleware";
+import { requireExaminerRole,requireStudentRole } from "../middleware/roleMiddleware";
+
 
 const router = Router();
 
-router.post("/getScore", getScoreInPercent);
+router.get("/getScore",requireExaminerRole,getScoreInPercent);
 
-router.put("/saveScore", putScoreInPercent);
+router.post("/saveScore",requireStudentRole,putScoreInPercent);
 
 export default router;

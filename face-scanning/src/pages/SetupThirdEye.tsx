@@ -66,7 +66,7 @@ const ThirdEyeSetup = () => {
       const redirect = encodeURIComponent("/mobile");
       const name = encodeURIComponent(userName);
       const email = encodeURIComponent(userEmail);
-      const thirdEyeUrl = `https://172.16.10.185:3000/?userId=${userId}&name=${name}&email=${email}&redirect=${redirect}`;
+      const thirdEyeUrl = `https://172.16.100.249:3000/?userId=${userId}&name=${name}&email=${email}&redirect=${redirect}`;
       try {
         const qrUrl = await QRCode.toDataURL(thirdEyeUrl, {
           width: 256,
@@ -86,13 +86,11 @@ const ThirdEyeSetup = () => {
   }, []);
 
   useEffect(() => {
-    // Prevent multiple socket connections
     if (socketRef.current?.connected) {
       console.log("Socket already connected, skipping initialization");
       return;
     }
 
-    // Initialize WebSocket connection only once
     const socketConnection = io(
       process.env.NEXT_PUBLIC_BACKEND_URL || "https://172.16.10.185:3002",
       {

@@ -35,7 +35,7 @@ export default function ThirdEye() {
   const [hydrated, setHydrated] = useState(false);
   const { toast } = useToast();
 
-  const serverUrl = "https://172.16.10.185:3002/";
+  const serverUrl = "https://172.16.100.249:3002/";
   console.log("Server URL:", serverUrl);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);

@@ -125,6 +125,7 @@ const FloatingCamera = ({
 
   const handleAlert = useCallback(
     (data: any) => {
+      
       const now = Date.now();
       console.log("hi");
       console.log("data", data);
@@ -157,7 +158,6 @@ const FloatingCamera = ({
           }
         }
       } else {
-        // Post-initial phase: only indicate, never pause/resume
         if (data?.auth_face === false) {
           if (now - lastToastAtRef.current > 4000) {
             toast({
@@ -172,9 +172,9 @@ const FloatingCamera = ({
       }
 
       if (data.head_position !== "Forward") {
-        countersRef.current.look++;
-        if (countersRef.current.look % 10 !== 0) return;
-        countersRef.current.look = 0;
+        // countersRef.current.look++;
+        // if (countersRef.current.look % 10 !== 0) return;
+        // countersRef.current.look = 0;
         console.log("looking away");
         onLookingAway(data.head_position);
       }
@@ -184,29 +184,29 @@ const FloatingCamera = ({
         data.eyes[1] !== "Center"
       ) {
         // console.log("looking away with eyes");
-        countersRef.current.look++;
-        if (countersRef.current.look % 10 !== 0) return;
-        countersRef.current.look = 0;
+        // countersRef.current.look++;
+        // if (countersRef.current.look % 10 !== 0) return;
+        // countersRef.current.look = 0;
         onLookingAway(data.head_position);
       }
       if (data.object_detected["cell phone"]) {
-        countersRef.current.item++;
-        if (countersRef.current.item % 2 !== 0) return;
-        countersRef.current.item = 0;
+        // countersRef.current.item++;
+        // if (countersRef.current.item % 2 !== 0) return;
+        // countersRef.current.item = 0;
         detect();
         changeColor();
       }
       if (data.no_of_person != 1) {
-        countersRef.current.person++;
-        if (countersRef.current.person % 10 != 0) return;
-        countersRef.current.person = 0;
+        // countersRef.current.person++;
+        // if (countersRef.current.person % 10 != 0) return;
+        // countersRef.current.person = 0;
         number(data.no_of_person);
         changeColor();
       }
       if (!data.auth_face) {
-        countersRef.current.auth++;
-        if (countersRef.current.auth % 10 !== 0) return;
-        countersRef.current.auth = 0;
+        // countersRef.current.auth++;
+        // if (countersRef.current.auth % 10 !== 0) return;
+        // countersRef.current.auth = 0;
         changeColor();
         onAuthFaceMissing();
       }
@@ -249,7 +249,6 @@ const FloatingCamera = ({
     }
   }, [examSubmitted]);
 
-  /* Sound Level Detection */
   const { isSoundDetected, audioLevel } = useSoundLevel();
 
   const handleSoundDetection = useCallback(() => {
@@ -270,7 +269,6 @@ const FloatingCamera = ({
     handleSoundDetection();
   }, [handleSoundDetection]);
 
-  /* Front Camera Streaming And Detection */
   useEffect(() => {
     if (isInitialized.current) return;
 
@@ -279,18 +277,15 @@ const FloatingCamera = ({
 
     const startCamera = async () => {
       try {
-        // Stop any existing stream first
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
           streamRef.current = null;
         }
 
-        // Add a delay to ensure camera is released
         await delay(500);
 
         console.log("FloatingCamera: Requesting camera access...");
 
-        // Try to get camera with retry logic
         let retries = 3;
         while (retries > 0) {
           try {
@@ -402,7 +397,7 @@ const FloatingCamera = ({
             "image/jpeg",
             0.5 
           );
-        }, 1000); 
+        }, 1000/10); 
 
 
       } catch (error) {
@@ -443,10 +438,9 @@ const FloatingCamera = ({
     return () => {
       console.log("FloatingCamera cleanup - stopping recording");
       isMounted = false;
-      isInitialized.current = false; // Reset for potential remount
+      isInitialized.current = false;
 
       if (mediaRecorderRef.current) {
-        // Clear event handler first
         mediaRecorderRef.current.ondataavailable = null;
         mediaRecorderRef.current.onstop = null;
 
@@ -470,18 +464,15 @@ const FloatingCamera = ({
         streamRef.current = null;
       }
 
-      // Clear video element
       if (videoRef.current) {
         videoRef.current.srcObject = null;
       }
 
-      // Clean up reused canvas
       const canvas = document.getElementById("auth-canvas");
       if (canvas) {
         canvas.remove();
       }
 
-      // Remove socket listeners
       socket.off("thirdeye_alert");
       socket.off("alert");
     };

@@ -4,7 +4,7 @@ import axios from "axios";
 import { usePost } from "../../hooks/usePost";
 import LoadingIndicator from "../../components/LoadingIndicator";
 import styles from "../../styles/ExamDetailsPage.module.css";
-
+import { getTokenFromCookie } from "@/constants/AuthStore";
 interface User {
   id: number;
   name: string;
@@ -52,9 +52,21 @@ const ExamDetailsPage: React.FC = () => {
 
 //   const { execute: fetchScore } = usePost("/getScore");
 
+  axios.interceptors.request.use(
+    (config) => {
+      const token = getTokenFromCookie();
+      if (token) {
+        config.headers = config.headers || {};
+        config.headers["Authorization"] = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "http://172.16.10.185:3001";
+    process.env.NEXT_PUBLIC_BACKEND_URL || "https://localhost:3002";
 
     const fetchScore = async (payload : any) => {
 
@@ -62,10 +74,8 @@ const ExamDetailsPage: React.FC = () => {
         const token = localStorage.getItem("token");
         let data;
         try {
-            const response = await axios.post(`${baseUrl}/getScore`, payload , {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+            const response = await axios.get(`${baseUrl}/getScore`, {
+                params: payload,
             });
             data = response.data;
         }catch ( err ) {
@@ -79,7 +89,6 @@ const ExamDetailsPage: React.FC = () => {
     }
 
 
-  // Fetch exam details
   useEffect(() => {
     const fetchExamDetails = async () => {
       if (!examId) return;
@@ -89,9 +98,6 @@ const ExamDetailsPage: React.FC = () => {
         const token = localStorage.getItem("token");
 
         const response = await axios.get(`${baseUrl}/exam/${examId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
         });
 
         console.log("Exam details response:", response.data);
@@ -99,10 +105,8 @@ const ExamDetailsPage: React.FC = () => {
         setExamDetails(response.data.exam);
       } catch (error) {
         console.error("Error fetching exam details:", error);
-        // Handle different error types
         if (axios.isAxiosError(error)) {
           if (error.response?.status === 401) {
-            // Redirect to login if unauthorized
             localStorage.removeItem("token");
             router.push("/Login");
           } else if (error.response?.status === 404) {
@@ -117,7 +121,7 @@ const ExamDetailsPage: React.FC = () => {
     fetchExamDetails();
   }, [examId, router]);
 
-  // Fetch user score
+  
   const handleUserClick = async (user: User) => {
     setSelectedUser(user);
     setLoadingScore(true);

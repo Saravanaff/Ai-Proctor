@@ -126,7 +126,7 @@ export const getSingleExam = async (req: Request, res: Response) => {
         const exam = await Exam.findOne({
             where: { 
                 id: examId,
-                user_id: user_id // Ensure user owns this exam
+                user_id: user_id
             },
             attributes: ['id', 'exam_name', 'key', 'createdAt', 'updatedAt'],
             include: [{

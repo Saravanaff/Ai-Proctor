@@ -2,13 +2,24 @@ import { useRef } from "react";
 import socket from "@/components/socket";
 import { getUserId } from "@/constants/AuthStore";
 import axios from "axios";
-
+import { getTokenFromCookie } from "@/constants/AuthStore";
 const userId = getUserId() || "unknown";
-const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL;
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const EndPage =  () => {
   const hasReloaded = useRef(false);
 
+  axios.interceptors.request.use(
+    (config) => {
+      const token = getTokenFromCookie();
+      if (token) {
+        config.headers = config.headers || {};
+        config.headers["Authorization"] = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
 
 
   socket.emit("end-exam",{
@@ -31,15 +42,11 @@ const EndPage =  () => {
     console.log(`${baseUrl}/saveScore`);
 
     try {
-      await axios.put(`${baseUrl}/saveScore`, {
+      await axios.post(`${baseUrl}/saveScore`, {
         status: "completed",
-        userId: userId,
         examId: examId,
-      }, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
+      }
+      );
     } catch (error) {
       console.error("Error updating data:", error);
     }
