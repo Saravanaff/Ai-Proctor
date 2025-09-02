@@ -45,7 +45,7 @@ const CreateExam = () => {
       setLoading(true);
       setError(null);
       try {
-        const base =process.env.NEXT_PUBLIC_BACKEND_URL;
+        const base = process.env.NEXT_PUBLIC_BACKEND_URL;
         const res = await axios.get(`${base}/exam`);
         console.log("re", res);
         if (!cancelled && res.data?.success && res.data?.exams) {
