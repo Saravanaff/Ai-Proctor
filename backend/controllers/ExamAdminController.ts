@@ -170,17 +170,18 @@ export const getSingleExam = async (req: Request, res: Response) => {
 
 export const getExamSettings = async (req : Request, res : Response) => {
     try {
-        const { examId } = req.params;
+        const { examId, userId } = req.query;
 
-        if ( !examId ) {
+        if ( !examId || !userId) {
             return res.status(400).json({
                 success: false,
-                message: "examId are Not Found",
+                message: "examId or userId are Not Found",
             });
         }
 
         const exam = await Exam.findOne({
             where: {
+                user_id: userId,
                 exam_id: examId,
             }
         });
@@ -188,7 +189,7 @@ export const getExamSettings = async (req : Request, res : Response) => {
         if ( !exam ) {
             return res.status(404).json({
                 success: false,
-                message: "Exam not found for specific examId",
+                message: "Exam not found for specific examId and userId",
             })
         }
 

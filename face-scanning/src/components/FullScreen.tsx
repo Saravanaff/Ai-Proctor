@@ -53,24 +53,27 @@ const ExamPage = ({
 
   const router = useRouter();
 
-  const fetchExamSettings = async (payload: any) => {
-    try {
-      const token = localStorage.getItem("token");
 
-      const response = await axios.get(`${baseUrl}/getExamSettings`, {
-          params: payload,
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-      });
-      setExamSettings(response.data);
-    } catch (error) {
-      console.error("Failed to fetch exam settings:", error);
-    }
-  }
 
   useEffect(() => {
+      const fetchExamSettings = async (payload: any) => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const response = await axios.get(`${baseUrl}/getExamSettings`, {
+            params: payload,
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+        });
+        console.log("Exam settings fetched:", response.data);
+        setExamSettings(response.data);
+      } catch (error) {
+        console.error("Failed to fetch exam settings:", error);
+      }
+    }
+
     const examId = localStorage.getItem("examId");
     fetchExamSettings({user_id: userId, exam_id: examId});
   }, []);
