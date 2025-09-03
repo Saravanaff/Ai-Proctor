@@ -18,16 +18,22 @@ def authenticate_face(image: np.ndarray, userId: str) -> bool:
     if not target_entry:
         print(f"❌ No entry found for userId: {userId}")
         return False
-    stored_encodings = [
+    stored_encoding = [
         np.array(target_entry["embedding"][0]), 
     ]
 
     face_locations = face_recognition.face_locations(image)
-    face_encodings = face_recognition.face_encodings(image, face_locations)
+    if not face_locations:
+        print("❌ No faces detected in the image.")
+        return False
+    
+    face_encoding = face_recognition.face_encodings(image, face_locations)[0]
 
-    for face_encoding in face_encodings:
-        results = face_recognition.compare_faces(stored_encodings, face_encoding)
-        if any(results):
-            return True
+    distance = np.linalg.norm(stored_encoding - face_encoding)
+    threshold = 0.6
+
+    if distance < threshold:
+        print("✅ Face authenticated successfully.")
+        return True
     
     return False

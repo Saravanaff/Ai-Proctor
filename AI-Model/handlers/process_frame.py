@@ -49,7 +49,7 @@ def setup_process_frame_handler(sio):
 
             small_img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
             rgb_small = cv2.cvtColor(small_img, cv2.COLOR_BGR2RGB)
-            print("rgb_small shape: " ,rgb_small.shape," dtype : ",rgb_small.dtype)
+            # print("rgb_small shape: " ,rgb_small.shape," dtype : ",rgb_small.dtype)
             faces_fr = face_recognition.face_locations(rgb_small)
 
             if last_processed_time - constants.last_head_process > constants.HEAD_INTERVAL:
@@ -82,6 +82,7 @@ def setup_process_frame_handler(sio):
                 "success":success,
 
             }
+            print(result_data)
 
             sio.emit("result", result_data)
 

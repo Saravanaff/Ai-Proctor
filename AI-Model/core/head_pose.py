@@ -40,15 +40,15 @@ def detect_head_direction(img: np.ndarray) -> tuple[str, list[str]]:
     rmat, _ = cv2.Rodrigues(rot_vec)
     angles, *_ = cv2.RQDecomp3x3(rmat)
 
-    x_angle, y_angle = angles[0] * 360, angles[1] * 360
-
-    if y_angle < -20:
+    x_angle, y_angle = angles[0]*360, angles[1]*360
+    print(f"x_angle: {x_angle}, y_angle: {y_angle}")
+    if y_angle < -10:
         head_result = "Right"
-    elif y_angle > 20:
+    elif y_angle > 10:
         head_result = "Left"
-    elif x_angle < -15:
+    elif x_angle < -10:
         head_result = "Down"
-    elif x_angle > 20:
+    elif x_angle > 10:
         head_result = "Up"
     else:
         head_result = "Forward"

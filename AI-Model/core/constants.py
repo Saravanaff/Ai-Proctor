@@ -17,7 +17,7 @@ third_eye_objects = {
 
 
 
-person_count = 0
+person_count = 1
 faces_scaled=[]
 
 eyes = ["center", "center"]
