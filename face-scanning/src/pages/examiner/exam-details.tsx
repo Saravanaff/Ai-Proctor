@@ -35,6 +35,7 @@ interface ScoreDetails {
     head_position_flagged: number;
     eyes_flagged: number;
     object_detected_flagged: number;
+    sound_flagged: number;
     total_score: number;
   };
 }
@@ -350,7 +351,7 @@ const ExamDetailsPage: React.FC = () => {
                         </div>
                         <div className={styles.breakdownItem}>
                           <span className={styles.breakdownLabel}>
-                            No Person Detected
+                            Zero Person Detected
                           </span>
                           <span className={styles.breakdownValue}>
                             {scoreDetails.scoreBreakdown.no_person_flagged}
@@ -374,7 +375,7 @@ const ExamDetailsPage: React.FC = () => {
                         </div>
                         <div className={styles.breakdownItem}>
                           <span className={styles.breakdownLabel}>
-                            Eye Movement Issues
+                            Eye Movement Violations
                           </span>
                           <span className={styles.breakdownValue}>
                             {scoreDetails.scoreBreakdown.eyes_flagged}
@@ -382,7 +383,15 @@ const ExamDetailsPage: React.FC = () => {
                         </div>
                         <div className={styles.breakdownItem}>
                           <span className={styles.breakdownLabel}>
-                            Objects Detected
+                            Sound Violations
+                          </span>
+                          <span className={styles.breakdownValue}>
+                            {scoreDetails.scoreBreakdown.sound_flagged}
+                          </span>
+                        </div>
+                        <div className={styles.breakdownItem}>
+                          <span className={styles.breakdownLabel}>
+                            Unauthorized Devices Detected
                           </span>
                           <span className={styles.breakdownValue}>
                             {

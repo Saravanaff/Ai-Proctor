@@ -6,7 +6,11 @@ export function addScore(data: any) {
   if (!userId || !examId) return null;
 
   if (!user.has(userId)) user.set(userId, new Map());
+
+
   const exams = user.get(userId);
+
+
 
   if (!exams.has(examId)) {
     exams.set(examId, {
@@ -17,6 +21,7 @@ export function addScore(data: any) {
       eyesFlagged: 0,
       objectDetectedFlagged: 0,
       totalImagesProcessed: 0,
+      soundFlagged: 0,
     });
   }
 
@@ -24,9 +29,17 @@ export function addScore(data: any) {
 
   const headPos = data?.head_position ?? data?.headPosition;
 
+
+  if(data.soundDetected && data.soundDetected === true){
+    examData.soundFlagged += 1;
+    exams.set(examId, examData);
+    user.set(userId, exams);
+    return ;
+  }
+
   examData.totalImagesProcessed += 1;
 
-  if (typeof headPos === "string" && headPos.toLowerCase() !== "forward") {
+  if (typeof headPos === "string" && (headPos.toLowerCase() !== "forward" && headPos.toLowerCase() !== "down")) {
     examData.headPositionFlagged += 1;
   }
 
@@ -37,7 +50,7 @@ export function addScore(data: any) {
     );
     if (anyOffCenter) examData.eyesFlagged += 1;
   } else if (typeof eyes === "string") {
-    if (eyes.toLowerCase() !== "center") examData.eyesFlagged += 1;
+    if (eyes.toLowerCase() !== "center" && eyes.toLowerCase() !== "down") examData.eyesFlagged += 1;
   }
 
   if (data?.object_detected["cell phone"] === true) {
@@ -48,8 +61,7 @@ export function addScore(data: any) {
     examData.authFaceFlagged += 1;
   }
 
-  const personsRaw =
-    data?.no_of_person ?? data?.person_count ?? data?.persons_count;
+  const personsRaw = data?.no_of_person;
   const persons = Number(personsRaw);
   if (Number.isFinite(persons)) {
     if (persons < 1) examData.noPersonFlagged += 1;
@@ -106,6 +118,7 @@ export const calculateExamScore = async (score: any) => {
     eyesFlagged,
     objectDetectedFlagged,
     totalImagesProcessed,
+    soundFlagged,
   } = score;
 
   // Calculate total flagged incidents
@@ -136,7 +149,7 @@ export const calculateExamScore = async (score: any) => {
     no_person_flagged: 0.6, // No person detected
     auth_face_flagged: 1.0, // Unauthorized face detected (most serious)
     head_position_flagged: 0.2, // Head not in proper position (least serious)
-    eyes_flagged: 0.3, // Eyes not looking at screen
+    eyes_flagged: 0.1, // Eyes not looking at screen
     object_detected_flagged: 0.7, // Unauthorized objects detected
   };
 

@@ -35,6 +35,28 @@ export class Exam extends Model{
     })
     key!:number
 
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    third_eye_enabled!:boolean
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    multiple_person_detection_enabled!:boolean
+
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    eyeball_detection_enabled!:boolean
+
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    object_detection_enabled!:boolean
+
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    head_direction_enabled!:boolean
+
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    flag_notifications_enabled!:boolean
+    
     @BelongsTo(() => User)
     user!: User;
 

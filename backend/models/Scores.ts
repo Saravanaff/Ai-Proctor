@@ -49,10 +49,13 @@ export class Scores extends Model<Scores> {
   @Column({ type: DataType.INTEGER, defaultValue: 0 })
   object_detected_flagged!: number;
 
-
   @AllowNull(false)
   @Column({ type: DataType.INTEGER, defaultValue: 0 })
   total_images_processed!: number;
+
+  @AllowNull(false)
+  @Column({ type: DataType.INTEGER, defaultValue: 0 })
+  sound_flagged!: number;
 
   @AllowNull(false)
   @Column({ type: DataType.INTEGER, defaultValue: 0 })

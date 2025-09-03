@@ -8,7 +8,8 @@ import {getUserIdFromToken} from '../utils/jwt';
 export const createExam=async(req:Request,res:Response)=>{
     try{
         console.log(req.body);
-        const {exam_name}=req.body;
+        const { exam_name, third_eye_enabled, multiple_person_detection_enabled, eyeball_detection_enabled, object_detection_enabled, head_direction_enabled,flag_notifications_enabled }=req.body;
+
         const user_id=getUserIdFromToken(req);
         console.log(user_id);
         if(!exam_name || !user_id){
@@ -26,11 +27,17 @@ export const createExam=async(req:Request,res:Response)=>{
             if(nextKey>999999)nextKey=100000;
         }
 
-        const newExam=await Exam.create({
+        const newExam = await Exam.create({
             user_id,
             exam_name,
+            third_eye_enabled, 
+            multiple_person_detection_enabled,
+            eyeball_detection_enabled, 
+            object_detection_enabled, 
+            head_direction_enabled,
+            flag_notifications_enabled, 
             key:nextKey
-        })
+        });
 
         res.status(201).json({
             success:true,
@@ -159,3 +166,55 @@ export const getSingleExam = async (req: Request, res: Response) => {
         });
     }
 };
+
+
+export const getExamSettings = async (req : Request, res : Response) => {
+    try {
+        const { examId, userId } = req.query;
+
+        if ( !examId || !userId) {
+            return res.status(400).json({
+                success: false,
+                message: "examId or userId are Not Found",
+            });
+        }
+
+        const exam = await Exam.findOne({
+            where: {
+                user_id: userId,
+                exam_id: examId,
+            }
+        });
+
+        if ( !exam ) {
+            return res.status(404).json({
+                success: false,
+                message: "Exam not found for specific examId and userId",
+            })
+        }
+
+        const {
+            third_eye_enabled, 
+            multiple_person_detection_enabled,
+            eyeball_detection_enabled, 
+            object_detection_enabled, 
+            head_direction_enabled,
+            flag_notifications_enabled, 
+        } = exam;
+
+        return res.status(200).json({
+            third_eye_enabled, 
+            multiple_person_detection_enabled,
+            eyeball_detection_enabled, 
+            object_detection_enabled, 
+            head_direction_enabled,
+            flag_notifications_enabled, 
+        });
+    } catch ( err ) {
+        console.log("Error while getExamSettings : ",err);
+        return res.status(500).json({
+            success:false,
+            message:"Error while getExamSettings",
+        })
+    }
+}

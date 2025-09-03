@@ -29,31 +29,6 @@ class VideoStreamRecorder {
   }
   
   startRecording() {
-    // this.ffmpegProcess = ffmpeg()
-    //   .input(this.inputStream)
-    //   .inputFormat('webm')
-    //   .inputOptions([
-    //     '-c:v libvpx', // VP8 decoder for input
-    //     '-avoid_negative_ts make_zero'
-    //   ])
-    //   .videoCodec('libx264')
-    //   .outputOptions([
-    //     '-preset ultrafast',
-    //     '-crf 23', // quality setting
-    //     '-pix_fmt yuv420p', // ensures compatibility
-    //     '-movflags +faststart', // enables streaming
-    //     '-avoid_negative_ts make_zero', // handle timestamp issues
-    //     '-fflags +genpts', // generate presentation timestamps
-    //     '-f mp4' // explicit format
-    //   ])
-    //   .noAudio() // remove audio codec since WebM might not have audio
-    //   .format('mp4')
-    //   .save(this.outputPath)
-    //   .on('start', cmd => console.log('Recording started:', cmd))
-    //   .on('end', () => console.log('Recording finished'))
-    //   .on('error', err => console.error('Recording error:', err));
-  
-
     this.ffmpegProcess = ffmpeg()
     .input(this.inputStream)
     .inputFormat('webm')
