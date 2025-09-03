@@ -35,7 +35,7 @@ async function startServer() {
   });
 
   app.use("/", authRoutes);
-  app.use(authMiddleware);
+  // app.use(authMiddleware);
 
   app.use("/", examRoutes);
   app.use("/", studentRoutes);

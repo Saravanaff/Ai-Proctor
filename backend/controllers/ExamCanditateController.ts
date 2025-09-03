@@ -39,3 +39,55 @@ export const validateExam = async (req: Request, res: Response) => {
         });
     }
 };
+
+
+export const getExamSettings = async (req : Request, res : Response) => {
+    try {
+        console.log(req.query);
+        const { examId, userId } = req.query;
+
+        if ( !examId || !userId) {
+            return res.status(400).json({
+                success: false,
+                message: "examId or userId are Not Found",
+            });
+        }
+
+        const exam = await Exam.findOne({
+            where: {
+                id: Number(examId),
+            }
+        });
+
+        if ( !exam ) {
+            return res.status(404).json({
+                success: false,
+                message: "Exam not found for specific examId and userId",
+            })
+        }
+
+        const {
+            third_eye_enabled, 
+            multiple_person_detection_enabled,
+            eyeball_detection_enabled, 
+            object_detection_enabled, 
+            head_direction_enabled,
+            flag_notifications_enabled, 
+        } = exam;
+
+        return res.status(200).json({
+            third_eye_enabled, 
+            multiple_person_detection_enabled,
+            eyeball_detection_enabled, 
+            object_detection_enabled, 
+            head_direction_enabled,
+            flag_notifications_enabled, 
+        });
+    } catch ( err ) {
+        console.log("Error while getExamSettings : ",err);
+        return res.status(500).json({
+            success:false,
+            message:"Error while getExamSettings",
+        })
+    }
+}

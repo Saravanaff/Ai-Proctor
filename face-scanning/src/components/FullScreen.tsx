@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
 import { getUserId } from "@/constants/AuthStore";
 import axios from 'axios';
+import { getTokenFromCookie } from "@/constants/AuthStore";
 
 
 const questions = Array.from({ length: 10 }, (_, i) => ({
@@ -53,6 +54,18 @@ const ExamPage = ({
 
   const router = useRouter();
 
+  axios.interceptors.request.use(
+    (config) => {
+      const token = getTokenFromCookie();
+      if (token) {
+        config.headers = config.headers || {};
+        config.headers["Authorization"] = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
 
 
   useEffect(() => {
@@ -62,10 +75,6 @@ const ExamPage = ({
 
         const response = await axios.get(`${baseUrl}/getExamSettings`, {
             params: payload,
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
         });
         console.log("Exam settings fetched:", response.data);
         setExamSettings(response.data);
