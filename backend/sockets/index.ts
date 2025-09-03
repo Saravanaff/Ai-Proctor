@@ -92,7 +92,10 @@ export function initSocket(server: HttpServer) {
 
       pythonSocket.on("thirdeye_cam_result", (data: any) => {
         addScore(data);
-        emitToUserById(data?.userId, "thirdeye_alert", data);
+        // emitToUserById(data?.userId, "thirdeye_alert", data);
+        if(proxy){
+          proxy.emit("thirdeye_alert",data);
+        }
 
       });
 
@@ -143,6 +146,10 @@ export function initSocket(server: HttpServer) {
             storageSocket.emit("stop-stream-recording", data);
           }
         });
+
+        
+        
+
       }
     });
 
@@ -207,12 +214,12 @@ export function initSocket(server: HttpServer) {
       const { userId } = data;
       console.log(`Third eye setup registered for user: ${userId}`);
     });
-
     socket.on("mobile-acknowledgment", () => {
-      console.log("Mobile device connected - sending acknowledgment");
-      // Broadcast to all connected clients that mobile is connected
-      socket.emit("mobile-connected", { status: true, timestamp: new Date() });
+          console.log("Mobile device connected - sending acknowledgment");
+          // Broadcast to all connected clients that mobile is connected
+          socket.broadcast.emit("mobile-connected", { status: true, timestamp: new Date() });
     });
+
 
     socket.on("disconnect", () => {
       unlinkSocket(socket.id);

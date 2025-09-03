@@ -122,7 +122,6 @@ export default function ThirdEye() {
         setShowSurveillanceNotice(true);
       }, 3000);
 
-      // Wait a bit before initializing socket to ensure page is fully loaded
       setTimeout(initSocket, 100);
     };
 
@@ -193,7 +192,7 @@ export default function ThirdEye() {
       (blob) => {
         if (blob) {
           blob.arrayBuffer().then((buffer) => {
-            newSocket.current?.emit("video", buffer);
+            newSocket.current?.emit("videos", buffer);
           });
         }
       },

@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import QRCode from "qrcode";
 import { getUserEmail, getUserId, getGlobalName } from "@/constants/AuthStore";
-import io from "socket.io-client";
 import styles from "@/styles/ThirdEyeSetup.module.css";
+// Use the shared socket connection (adjust the import path/name if different)
+import socket from "@/components/socket";
 
 const userId = getUserId() || "unknown";
 const userEmail = getUserEmail() || "unknown";
@@ -13,7 +14,6 @@ const ThirdEyeSetup = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isConnected, setIsConnected] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
-  const socketRef = useRef<any>(null);
   const router = useRouter();
 
   // Add spinner animation
@@ -57,7 +57,7 @@ const ThirdEyeSetup = () => {
       id: 4,
       title: "Ready to Start",
       description: "Everything is set up! You can now begin your examination",
-      icon: "�",
+      icon: "✅",
     },
   ];
 
@@ -72,8 +72,8 @@ const ThirdEyeSetup = () => {
           width: 256,
           margin: 2,
           color: {
-            dark: "#000000", // Standard black for QR code
-            light: "#ffffff", // Standard white background
+            dark: "#000000",
+            light: "#ffffff",
           },
         });
         setQrCodeUrl(qrUrl);
@@ -85,67 +85,53 @@ const ThirdEyeSetup = () => {
     generateQRCode();
   }, []);
 
+  // Subscribe to events on the shared socket (do not create a new connection)
   useEffect(() => {
-    if (socketRef.current?.connected) {
-      console.log("Socket already connected, skipping initialization");
-      return;
-    }
+    if (!socket) return;
 
-    const socketConnection = io(
-      process.env.NEXT_PUBLIC_BACKEND_URL,
-      {
-        transports: ["websocket"],
-        forceNew: false,
-        autoConnect: true,
-      }
-    );
-
-    socketConnection.on("connect", () => {
+    const onConnect = () => {
       console.log("Setup page connected to backend");
-      socketConnection.emit("register-third-eye-setup", { userId: userId });
-    });
+      socket.emit("register-third-eye-setup", { userId });
+    };
 
-    socketConnection.on("mobile-connected", (data: any) => {
+    const onMobileConnected = (data: any) => {
       console.log("Mobile device connected:", data);
-      setIsConnected(data.status);
-    });
+      setIsConnected(!!data?.status);
+    };
 
-    socketConnection.on("disconnect", () => {
+    const onDisconnect = () => {
       console.log("Setup page disconnected from backend");
       setIsConnected(false);
-    });
+    };
 
-    socketConnection.on("reconnect", () => {
+    const onReconnect = () => {
       console.log("Socket reconnected, re-registering...");
-      socketConnection.emit("register-third-eye-setup", { userId: userId });
-    });
+      socket.emit("register-third-eye-setup", { userId });
+    };
 
-    socketRef.current = socketConnection;
+    socket.on("connect", onConnect);
+    socket.on("mobile-connected", onMobileConnected);
+    socket.on("disconnect", onDisconnect);
+    socket.on("reconnect", onReconnect);
+
+    // Handle already-connected state
+    if (socket.connected) onConnect();
 
     return () => {
-      console.log("Cleaning up socket connection");
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
+      socket.off("connect", onConnect);
+      socket.off("mobile-connected", onMobileConnected);
+      socket.off("disconnect", onDisconnect);
+      socket.off("reconnect", onReconnect);
     };
-  }, []); // Empty dependency array to run only once
+  }, []);
 
   const handleNextStep = () => {
-    // If on step 3, only allow progression if mobile is connected
-    if (currentStep === 3 && !isConnected) {
-      return;
-    }
-
-    if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1);
-    }
+    if (currentStep === 3 && !isConnected) return;
+    if (currentStep < steps.length) setCurrentStep(currentStep + 1);
   };
 
   const handlePreviousStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
   const handleComplete = () => {
@@ -392,10 +378,6 @@ const ThirdEyeSetup = () => {
                 textAlign: "center",
               }}
             >
-              {/* <h4 style={{ color: "var(--text-primary)", fontSize: 16, marginBottom: 16 }}>
-                📱 Scan QR Code with Your Mobile Device
-              </h4> */}
-
               {qrCodeUrl ? (
                 <div
                   style={{
@@ -414,21 +396,7 @@ const ThirdEyeSetup = () => {
                       boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
                     }}
                   />
-                  {/* <div
-                    style={{
-                      background: "var(--info-bg)",
-                      border: "1px solid var(--info-color)",
-                      borderRadius: 8,
-                      padding: 12,
-                      maxWidth: 300,
-                    }}
-                  >
-                    <p style={{ color: "var(--text-secondary)", fontSize: 12, margin: 0 }}>
-                      Open your mobile camera and scan this QR code to connect your device as the third eye monitor
-                    </p>
-                  </div> */}
 
-                  {/* Connection Status */}
                   <div
                     style={{
                       background: isConnected
@@ -558,7 +526,6 @@ const ThirdEyeSetup = () => {
             </div>
           )}
 
-          {/* Ready to Start Message for Step 4 */}
           {currentStep === 4 && (
             <div
               style={{
@@ -633,11 +600,9 @@ const ThirdEyeSetup = () => {
                   }}
                 >
                   <span style={{ color: "var(--success-color)", fontSize: 18 }}>
-                    �
+                    📱
                   </span>
-                  <span
-                    style={{ color: "var(--text-secondary)", fontSize: 12 }}
-                  >
+                  <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>
                     Device ID: {userId}
                   </span>
                 </div>
@@ -669,7 +634,6 @@ const ThirdEyeSetup = () => {
           )}
         </div>
 
-        {/* Footer Actions */}
         <div
           style={{
             padding: "20px 32px",

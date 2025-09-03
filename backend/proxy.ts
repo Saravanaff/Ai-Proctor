@@ -27,7 +27,7 @@ const httpsServer = createHttpsServer({ key, cert, ca }, app);
 const proxy = createProxyMiddleware({
   target: "http://localhost:3001",
   changeOrigin: true,
-  ws: true,
+  ws: false,
   on: {
     proxyReq: (proxyReq, req, res) => {
       console.log(`🔄 Proxying: ${req.method} ${req.url} -> http://localhost:3001${req.url}`);

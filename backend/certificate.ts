@@ -3,8 +3,8 @@ import fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
 
-const serverIpAddress: string =
-  process.env.SERVER_IP_ADDRESS || "172.16.105.211";
+const serverIpAddress: any =
+  process.env.SERVER_IP_ADDRESS;
 
 console.log(serverIpAddress);
 
@@ -23,7 +23,7 @@ async function generateCerts() {
   // Step 2: Create domain certificate
   const cert = await createCert({
     ca: { key: ca.key, cert: ca.cert },
-    domains: ["localhost", "127.0.0.1", serverIpAddress],
+    domains: ["localhost", "127.0.0.1","172.16.100.249"],
     validity: 365,
   });
 
