@@ -17,10 +17,8 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
 
 
 const baseUrl =
-  process.env.NEXT_PUBLIC_SERVER_URL;
-const userId = getUserId() || "unknown";
-
-
+  process.env.NEXT_PUBLIC_BACKEND_URL;
+  const userId = getUserId() || "unknown";
 
 type ExamSettings = {
   third_eye_enabled?: boolean;
@@ -71,7 +69,6 @@ const ExamPage = ({
   useEffect(() => {
       const fetchExamSettings = async (payload: any) => {
       try {
-        const token = localStorage.getItem("token");
 
         const response = await axios.get(`${baseUrl}/getExamSettings`, {
             params: payload,
@@ -84,7 +81,7 @@ const ExamPage = ({
     }
 
     const examId = localStorage.getItem("examId");
-    fetchExamSettings({user_id: userId, exam_id: examId});
+    fetchExamSettings({userId: Number(userId), examId: Number(examId)});
   }, []);
 
 

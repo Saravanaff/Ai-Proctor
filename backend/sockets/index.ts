@@ -106,7 +106,7 @@ export function initSocket(server: HttpServer) {
       });
 
       pythonSocket.on("drag_camera_result", (data: any) => {
-        console.log("drag_camera_result : dat,",data);
+        // console.log("drag_camera_result : dat,",data);
         addScore(data);
         emitToUserById(data?.userId, "alert", data);
       });
