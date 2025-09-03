@@ -121,6 +121,8 @@ ioServer.on("connection", (socket) => {
     }
   });
 
+  // backendSocket.emit("proxy")
+
   // Forward backend → frontend
   backendSocket.onAny((event, ...args) => {
     socket.emit(event, ...args);

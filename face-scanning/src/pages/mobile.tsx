@@ -60,7 +60,7 @@ export default function ThirdEye() {
 
       // Create new socket with better configuration
       newSocket.current = io(serverUrl, {
-        transports: ["polling", "websocket"], // Try polling first, then websocket
+        transports: ["polling", "websocket"], 
         auth: { userId: currentUserId() || "" },
         timeout: 20000,
         reconnection: true,
@@ -73,6 +73,7 @@ export default function ThirdEye() {
 
       if (newSocket.current) {
         newSocket.current.emit("mobile");
+        newSocket.current.emit("proxy");
 
         newSocket.current.on("connect", () => {
           console.log("Socket connected successfully");

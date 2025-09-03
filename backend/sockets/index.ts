@@ -94,6 +94,7 @@ export function initSocket(server: HttpServer) {
         addScore(data);
         // emitToUserById(data?.userId, "thirdeye_alert", data);
         if(proxy){
+          console.log("Getting Thrideye result",data);
           proxy.emit("thirdeye_alert",data);
         }
 
@@ -120,9 +121,13 @@ export function initSocket(server: HttpServer) {
 
     socket.on("proxy", () => {
       proxy = socket;
+      console.log("Proxy is connected...")
+
       if (proxy) {
         proxy.on("videos", (data: any) => {
+            // console.log("Third eye video recieving...")
           if (pythonSocket) {
+            // console.log("Third eye video recieving... py")
             pythonSocket.emit("thirdeye_cam", data);
           }
         });
@@ -140,16 +145,9 @@ export function initSocket(server: HttpServer) {
         });
         proxy.on("end-exam", (data: any) => {
           if (storageSocket) {
-
-            // const fileName = path.join(__dirname, "logs", "log.csv");
-            // const score = calculateScoreOnUser(fileName);
             storageSocket.emit("stop-stream-recording", data);
           }
         });
-
-        
-        
-
       }
     });
 
