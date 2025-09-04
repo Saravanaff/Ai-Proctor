@@ -22,18 +22,21 @@ This project contains a collection of computer vision modules for an AI-based pr
 ## Installation
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/Saravanaff/Ai-Proctor.git
    cd Ai-Proctor/AI-Model
    ```
 
 2. **Create a virtual environment** (recommended):
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install dependencies**:
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -46,65 +49,81 @@ This project contains a collection of computer vision modules for an AI-based pr
 ### Individual Modules
 
 #### 1. Eye Movement Tracking
+
 ```bash
 python eye_movement.py
 ```
+
 - Tracks iris movement in real-time
 - Displays direction of gaze (left, right, up, down, center)
 - Press 'q' to quit
 
 #### 2. Face Mesh Detection
+
 ```bash
 python face_mesh.py
 ```
+
 - Shows detailed facial landmarks and mesh
 - Tracks up to 5 faces simultaneously
 - Real-time face contour visualization
 
 #### 3. Head Pose Estimation
+
 ```bash
 python head_movement.py
 ```
+
 - Estimates 3D head orientation
 - Shows direction text (Looking Left/Right/Up/Down/Forward)
 - Displays rotation angles (x, y, z)
 
 #### 4. Hand Tracking
+
 ```bash
 python hand_tracking.py
 ```
+
 - Basic hand tracking with landmarks
 - Highlights fingertip (landmark ID 8)
 - Shows FPS counter
 
 #### 5. Advanced Hand Tracking (Modular)
+
 ```bash
 python HandTracker.py
 ```
+
 - Uses the HandTrackingModule class
 - More configurable parameters
 - Better for integration into larger systems
 
 #### 6. Object Detection
+
 ```bash
 python object_detection.py
 ```
+
 - Detects prohibited items: phones, headphones, additional persons
 - Optimized for real-time performance
 - Configurable detection intervals
 
 #### 7. Combined Face and Object Detection
+
 ```bash
 python face_object.py
 ```
+
 - Combines face mesh and object detection
 - Optimized performance with frame skipping
 - Most comprehensive monitoring solution
 
 #### 8. Pose Tracking
+
 ```bash
 python pose_tracking.py
 ```
+
 - Basic pose tracking setup
 - Currently configured for video file input
 
@@ -123,11 +142,11 @@ while True:
     success, img = cap.read()
     img = detector.findHands(img)
     lmList = detector.findPosition(img)
-    
+
     if len(lmList) != 0:
         # Access landmark positions
         print(f"Thumb tip: {lmList[4]}")
-    
+
     cv2.imshow("Hand Tracking", img)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
@@ -139,17 +158,22 @@ cv2.destroyAllWindows()
 ## Configuration
 
 ### Camera Settings
+
 Most scripts use camera index 0 by default. To change the camera:
+
 ```python
 cap = cv2.VideoCapture(1)  # Change to your camera index
 ```
 
 ### Detection Sensitivity
+
 Adjust confidence thresholds in the respective files:
+
 - **MediaPipe**: `min_detection_confidence`, `min_tracking_confidence`
 - **YOLO**: `conf` parameter in predict() method
 
 ### Performance Optimization
+
 - Reduce frame size: `cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)`
 - Increase detection intervals in `face_object.py`
 - Disable refinement: `refine_landmarks=False`
@@ -171,16 +195,19 @@ Adjust confidence thresholds in the respective files:
 ### Common Issues
 
 1. **Camera not found**:
+
    - Check camera index (try 0, 1, 2...)
    - Ensure camera permissions are granted
    - Close other applications using the camera
 
 2. **Low FPS**:
+
    - Reduce frame resolution
    - Increase detection intervals
    - Use CPU optimization flags
 
 3. **Missing models**:
+
    - YOLOv8 models download automatically
    - Ensure internet connection for first run
 
@@ -210,6 +237,7 @@ This project is part of the AI-Proctor system. Please refer to the main project 
 ## Support
 
 For issues and questions:
+
 1. Check the troubleshooting section
 2. Review the code comments
 3. Create an issue in the repository
