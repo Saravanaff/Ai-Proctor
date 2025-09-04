@@ -21,8 +21,6 @@ interface VideoChunkData {
   chunk: ArrayBuffer;
 }
 
-
-
 const FloatingCamera = ({
   socket,
   onLookingAway,
@@ -44,6 +42,7 @@ const FloatingCamera = ({
   const hasEverAuthedRef = useRef(false);
   const hasPausedOnceRef = useRef(false);
   const lastToastAtRef = useRef<number>(0);
+  const pausedRef = useRef(false);
 
   // Move counters to refs to avoid recreation on each render
   const countersRef = useRef({
@@ -62,6 +61,11 @@ const FloatingCamera = ({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [borderColor, setBorderColor] = useState("white");
   const [prevSoundDetected, setPrevSoundDetected] = useState(false);
+
+  // Fire overlay state for 30s unauthenticated detection
+  const FIRE_THRESHOLD_MS = 30000;
+  const unauthStartAtRef = useRef<number | null>(null);
+  const unauthTriggeredRef = useRef(false);
 
   const scanning = true;
 
@@ -125,28 +129,64 @@ const FloatingCamera = ({
 
   const handleAlert = useCallback(
     (data: any) => {
-      
       const now = Date.now();
       console.log("hi");
       console.log("data", data);
 
-      if (!hasEverAuthedRef.current) {
-        if (data?.auth_face === true) {
-          hasEverAuthedRef.current = true;
-          if (hasPausedOnceRef.current && typeof onAuthResume === "function")
-            onAuthResume();
-          if (now - lastToastAtRef.current > 2500) {
+      // 30s unauthenticated -> pause
+      if (data?.auth_face === false) {
+        if (!unauthStartAtRef.current) {
+          unauthStartAtRef.current = now;
+          unauthTriggeredRef.current = false;
+        }
+        const elapsed = now - unauthStartAtRef.current;
+        if (elapsed >= FIRE_THRESHOLD_MS && !unauthTriggeredRef.current) {
+          unauthTriggeredRef.current = true;
+          if (typeof onAuthPause === "function") onAuthPause();
+          pausedRef.current = true;
+          toast({
+            title: "Exam Paused",
+            description: "Hold still for a quick scan",
+            variant: "destructive",
+          });
+        }
+      } else if (data?.auth_face === true) {
+        // Reset unauth timer
+        unauthStartAtRef.current = null;
+        unauthTriggeredRef.current = false;
+
+        // If we were paused, resume now
+        if (pausedRef.current && typeof onAuthResume === "function") {
+          onAuthResume();
+          pausedRef.current = false;
+          if (now - lastToastAtRef.current > 1500) {
             toast({
-              title: "Identity Verified",
-              description: "Face authenticated",
+              title: "Resumed",
+              description: "Identity verified. Continuing exam.",
               variant: "default",
             });
             lastToastAtRef.current = now;
           }
+        }
+      }
+
+      if (!hasEverAuthedRef.current) {
+        if (data?.auth_face === true) {
+          hasEverAuthedRef.current = true;
+          // Avoid double resume here; pausedRef branch above already resumes after 30s
+          if (hasPausedOnceRef.current && typeof onAuthResume === "function" && !pausedRef.current) {
+            onAuthResume();
+          }
+          // Suppress "Identity Verified" toast before 30s (and in general, rely on "Resumed" after pause)
+          // if (now - lastToastAtRef.current > 2500 && pausedRef.current) {
+          //   toast({ title: "Identity Verified", description: "Face authenticated", variant: "default" });
+          //   lastToastAtRef.current = now;
+          // }
         } else if (data?.auth_face === false) {
           if (!hasPausedOnceRef.current && typeof onAuthPause === "function") {
             onAuthPause();
             hasPausedOnceRef.current = true;
+            pausedRef.current = true;
           }
           if (now - lastToastAtRef.current > 2500) {
             toast({
@@ -158,17 +198,16 @@ const FloatingCamera = ({
           }
         }
       } else {
-        if (data?.auth_face === false) {
-          if (now - lastToastAtRef.current > 4000) {
-            toast({
-              title: "Authentication Lost",
-              description: "Face not recognized",
-              variant: "destructive",
-            });
-            lastToastAtRef.current = now;
-          }
-          onAuthFaceMissing();
-        }
+        // if (data?.auth_face === false) {
+        //   if (now - lastToastAtRef.current > 4000) {
+        //     toast({
+        //       title: "Authentication Lost",
+        //       description: "Face not recognized",
+        //       variant: "destructive",
+        //     });
+        //     lastToastAtRef.current = now;
+        //   }
+        // }
       }
 
       if (data.head_position !== "Forward") {
@@ -177,23 +216,23 @@ const FloatingCamera = ({
         countersRef.current.look = 0;
         console.log("looking away");
         onLookingAway(data.head_position);
-      }
-      else{
-        countersRef.current.look=0;
+      } else {
+        countersRef.current.look = 0;
       }
       if (
         data.head_position == "Forward" &&
         data.eyes[0] !== "Center" &&
-        data.eyes[1] !== "Center"&& data.eyes[0]!=="Left" && data.eyes[1]!=="Left"
+        data.eyes[1] !== "Center" &&
+        data.eyes[0] !== "Left" &&
+        data.eyes[1] !== "Left"
       ) {
         console.log("looking away with eyes");
         countersRef.current.look++;
         if (countersRef.current.look % 10 !== 0) return;
         countersRef.current.look = 0;
         onLookingAway(data.head_position);
-      }
-      else{
-        countersRef.current.look=0;
+      } else {
+        countersRef.current.look = 0;
       }
       if (data.object_detected["cell phone"]) {
         // countersRef.current.item++;
@@ -208,20 +247,19 @@ const FloatingCamera = ({
         countersRef.current.person = 0;
         number(data.no_of_person);
         changeColor();
+      } else {
+        countersRef.current.person = 0;
       }
-      else{
-        countersRef.current.person=0;
-      }
-      if (!data.auth_face && data.head_position=="Forward") {
-        countersRef.current.auth++;
-        if (countersRef.current.auth % 10!== 0) return;
-        countersRef.current.auth = 0;
-        changeColor();
-        onAuthFaceMissing();
-      }
-      else{
-        countersRef.current.auth=0;
-      }
+      // if (!data.auth_face && data.head_position=="Forward") {
+      //   countersRef.current.auth++;
+      //   if (countersRef.current.auth % 10!== 0) return;
+      //   countersRef.current.auth = 0;
+      //   changeColor();
+      //   onAuthFaceMissing();
+      // }
+      // else{
+      //   countersRef.current.auth=0;
+      // }
     },
     [
       toast,
@@ -234,6 +272,8 @@ const FloatingCamera = ({
       changeColor,
     ]
   );
+
+  // remove: useEffect that synced border with showFire
 
   useEffect(() => {
     if (examSubmitted) {
@@ -354,7 +394,7 @@ const FloatingCamera = ({
           }
         };
 
-        mediaRecorderRef.current.start(1000); 
+        mediaRecorderRef.current.start(1000);
 
         interRef.current = setInterval(async () => {
           if (!isMounted) return;
@@ -407,11 +447,9 @@ const FloatingCamera = ({
               }
             },
             "image/jpeg",
-            0.5 
+            0.5
           );
-        }, 1000/10); 
-
-
+        }, 1000 / 10);
       } catch (error) {
         console.error("Camera access failed:", error);
 

@@ -173,7 +173,7 @@ const ExamPage = ({
   const lookingAlert = (side: any) => {
     console.log("looking away");
     s = side;
-    if (examSettings?.flag_notifications_enabled!==true && examSettings?.head_direction_enabled!== false && examSettings?.eyeball_detection_enabled!==false) {
+    if (examSettings?.flag_notifications_enabled!=false && examSettings?.head_direction_enabled!=false && examSettings?.eyeball_detection_enabled!=false) {
       setlookAlert(true);
       setTimeout(() => setlookAlert(false), 3000);
     }
@@ -187,7 +187,7 @@ const ExamPage = ({
 
   const handleHeadDirection = (direction: string) => {
     console.log("Head direction changed:", direction);
-    if (examSettings?.flag_notifications_enabled!==true && examSettings?.head_direction_enabled !== false) {
+    if (examSettings?.flag_notifications_enabled!==true && examSettings?.head_direction_enabled !=false) {
       setHeadDirection(true);
       setTimeout(() => setHeadDirection(false), 3000);
     }
