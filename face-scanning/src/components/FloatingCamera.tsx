@@ -172,22 +172,28 @@ const FloatingCamera = ({
       }
 
       if (data.head_position !== "Forward") {
-        // countersRef.current.look++;
-        // if (countersRef.current.look % 10 !== 0) return;
-        // countersRef.current.look = 0;
+        countersRef.current.look++;
+        if (countersRef.current.look % 10 !== 0) return;
+        countersRef.current.look = 0;
         console.log("looking away");
         onLookingAway(data.head_position);
+      }
+      else{
+        countersRef.current.look=0;
       }
       if (
         data.head_position == "Forward" &&
         data.eyes[0] !== "Center" &&
-        data.eyes[1] !== "Center"
+        data.eyes[1] !== "Center"&& data.eyes[0]!=="Left" && data.eyes[1]!=="Left"
       ) {
-        // console.log("looking away with eyes");
-        // countersRef.current.look++;
-        // if (countersRef.current.look % 10 !== 0) return;
-        // countersRef.current.look = 0;
+        console.log("looking away with eyes");
+        countersRef.current.look++;
+        if (countersRef.current.look % 10 !== 0) return;
+        countersRef.current.look = 0;
         onLookingAway(data.head_position);
+      }
+      else{
+        countersRef.current.look=0;
       }
       if (data.object_detected["cell phone"]) {
         // countersRef.current.item++;
@@ -197,18 +203,24 @@ const FloatingCamera = ({
         changeColor();
       }
       if (data.no_of_person != 1) {
-        // countersRef.current.person++;
-        // if (countersRef.current.person % 10 != 0) return;
-        // countersRef.current.person = 0;
+        countersRef.current.person++;
+        if (countersRef.current.person % 10 != 0) return;
+        countersRef.current.person = 0;
         number(data.no_of_person);
         changeColor();
       }
-      if (!data.auth_face) {
-        // countersRef.current.auth++;
-        // if (countersRef.current.auth % 10 !== 0) return;
-        // countersRef.current.auth = 0;
+      else{
+        countersRef.current.person=0;
+      }
+      if (!data.auth_face && data.head_position=="Forward") {
+        countersRef.current.auth++;
+        if (countersRef.current.auth % 10!== 0) return;
+        countersRef.current.auth = 0;
         changeColor();
         onAuthFaceMissing();
+      }
+      else{
+        countersRef.current.auth=0;
       }
     },
     [

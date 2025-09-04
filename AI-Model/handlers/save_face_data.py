@@ -14,7 +14,7 @@ def setup_save_face_data_handler(sio):
         print("📝 Saving face data...")
         blob = data["buffer"]
         userId = data["user_id"]
-        angle = data["angle"] #1 front , 2 right, 3 left;
+        angle = data["angle"]
     
         image_array = np.frombuffer(blob, dtype=np.uint8)
         img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
@@ -38,7 +38,6 @@ def setup_save_face_data_handler(sio):
             sio.emit("face_data_saved", {"status": False, "reason": "Image too small for cropping"})
             return
                 
-        # 👇 Save the decoded image for debugging
         debug_dir = "debug_faces"
         os.makedirs(debug_dir, exist_ok=True)
         image_path = os.path.join(debug_dir, f"{userId}_angle{angle}.jpg")

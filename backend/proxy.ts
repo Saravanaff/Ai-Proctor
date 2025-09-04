@@ -65,7 +65,6 @@ app.get("/ca", (req, res) => {
   res.download(path.join(__dirname, "rootCA.pem"), "rootCA.pem");
 });
 
-// Only proxy unknown routes
 app.use((req, res, next) => {
   if (req.path === "/" || req.path === "/ca" || req.path.startsWith("/socket.io/")) {
     return next();
@@ -73,7 +72,6 @@ app.use((req, res, next) => {
   return proxy(req, res, next);
 });
 
-// ⚡ Socket.IO setup
 const ioServer = new Server(httpsServer, {
   transports: ["websocket", "polling"],
   cors: {
@@ -84,7 +82,6 @@ const ioServer = new Server(httpsServer, {
 
 let backendSocket: ClientSocket;
 
-// 🔗 Connect proxy → backend
 function connectToBackend() {
   backendSocket = clientIo("http://localhost:3001", {
     transports: ["websocket"],
@@ -107,14 +104,13 @@ function connectToBackend() {
 
 connectToBackend();
 
-// ⚡ Relay ALL events automatically
 ioServer.on("connection", (socket) => {
   console.log("⚡ Frontend client connected");
 
-  // Forward frontend → backend
   socket.onAny((event, ...args) => {
     
     if (backendSocket?.connected) {
+      console.log("proxy third eye",event,args);
       backendSocket.emit(event, ...args);
     } else {
       console.warn(`⚠️ Backend not connected, dropping event: ${event}`);
@@ -133,7 +129,6 @@ ioServer.on("connection", (socket) => {
   });
 });
 
-// 🚀 Start server
 httpsServer.listen(3002, () => {
   console.log("🚀 HTTPS Proxy Server running at https://localhost:3002");
 });

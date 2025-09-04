@@ -22,6 +22,12 @@ export function addScore(data: any) {
       objectDetectedFlagged: 0,
       totalImagesProcessed: 0,
       soundFlagged: 0,
+      authFrames:0,
+      headFrames:0,
+      eyeFrames:0,
+      objectFrames:0,
+      zeroPersonFrames:0,
+      morePersonFrames:0
     });
   }
 
@@ -40,7 +46,15 @@ export function addScore(data: any) {
   examData.totalImagesProcessed += 1;
 
   if (typeof headPos === "string" && (headPos.toLowerCase() !== "forward" && headPos.toLowerCase() !== "down")) {
-    examData.headPositionFlagged += 1;
+    examData.headFrames+=1;
+    if(examData.headFrames%10==0){
+      examData.headPositionFlagged+=1;
+      examData.headFrames=0;
+    }
+
+  }
+  else{
+    examData.headFrames=0;
   }
 
   const eyes = data?.eyes;
@@ -50,7 +64,16 @@ export function addScore(data: any) {
     );
     if (anyOffCenter) examData.eyesFlagged += 1;
   } else if (typeof eyes === "string") {
-    if (eyes.toLowerCase() !== "center" && eyes.toLowerCase() !== "down") examData.eyesFlagged += 1;
+    if (eyes.toLowerCase() !== "center" && eyes.toLowerCase() !== "down"){
+      examData.eyeFrames+=1;
+      if(examData.eyeFrames%10==0){
+        examData.eyesFlagged+=1;
+        examData.eyeFrames=0;
+      }
+    }
+    else{
+      examData.eyeFrames=0;
+    }
   }
 
   if (data?.object_detected["cell phone"] === true) {
@@ -58,14 +81,39 @@ export function addScore(data: any) {
   }
 
   if ( data?.auth_face === false) {
-    examData.authFaceFlagged += 1;
+    examData.authFrames += 1;
+    if(examData.authFrames%10==0){
+      examData.authFaceFlagged+=1;
+      examData.authFrames=0;
+    }
+  }
+  else{
+    examData.authFrames=0;
   }
 
   const personsRaw = data?.no_of_person;
   const persons = Number(personsRaw);
   if (Number.isFinite(persons)) {
-    if (persons < 1) examData.noPersonFlagged += 1;
-    if (persons > 1) examData.noOfPersonFlagged += 1;
+    if (persons < 1){
+      examData.zeroPersonFrames += 1;
+      if(examData.zeroPersonFrames%10==0){
+        examData.noPersonFlagged+=1;
+        examData.zeroPersonFrames=0;
+      }
+    }
+    else if(persons==1){
+      examData.zeroPersonFrames=0;
+    }
+    if (persons > 1){
+      examData.morePersonFrames+=1;
+      if(examData.morePersonFrames%10==0){
+        examData.noOfPersonFlagged+=1;
+        examData.morePersonFrames=0;
+      }
+    }
+    else if(persons==1){
+      examData.morePersonFrames=0;
+    }
   }
 
   exams.set(examId, examData);
@@ -121,7 +169,6 @@ export const calculateExamScore = async (score: any) => {
     soundFlagged,
   } = score;
 
-  // Calculate total flagged incidents
   const totalFlagged =
     (noOfPersonFlagged || 0) +
     (noPersonFlagged || 0) +
@@ -130,10 +177,8 @@ export const calculateExamScore = async (score: any) => {
     (eyesFlagged || 0) +
     (objectDetectedFlagged || 0);
 
-  // Get total processed frames (minimum 1 to avoid division by zero)
   const totalFrames = Math.max(totalImagesProcessed || 1, 1);
 
-  // Calculate violation rates (percentage of frames with violations)
   const violationRates = {
     noOfPersonRate: ((noOfPersonFlagged || 0) / totalFrames) * 100,
     noPersonRate: ((noPersonFlagged || 0) / totalFrames) * 100,
@@ -143,17 +188,15 @@ export const calculateExamScore = async (score: any) => {
     objectDetectedRate: ((objectDetectedFlagged || 0) / totalFrames) * 100,
   };
 
-  // Define weights for different types of violations (based on severity)
   const weights = {
-    no_of_person_flagged: 0.8, // Multiple persons detected
-    no_person_flagged: 0.6, // No person detected
-    auth_face_flagged: 1.0, // Unauthorized face detected (most serious)
-    head_position_flagged: 0.2, // Head not in proper position (least serious)
-    eyes_flagged: 0.1, // Eyes not looking at screen
-    object_detected_flagged: 0.7, // Unauthorized objects detected
+    no_of_person_flagged: 0.5,
+    no_person_flagged: 0.7,
+    auth_face_flagged: 1.0,
+    head_position_flagged: 0.2,
+    eyes_flagged: 0.1,
+    object_detected_flagged: 0.7, 
   };
 
-  // Calculate weighted score based on violation rates
   const weightedScore =
     violationRates.noOfPersonRate * weights.no_of_person_flagged +
     violationRates.noPersonRate * weights.no_person_flagged +
@@ -162,18 +205,17 @@ export const calculateExamScore = async (score: any) => {
     violationRates.eyesRate * weights.eyes_flagged +
     violationRates.objectDetectedRate * weights.object_detected_flagged;
 
-  // Use progressive scaling for cheating percentage
   let cheatingPercentage;
   
   if (weightedScore === 0) {
     cheatingPercentage = 0;
-  } else if (weightedScore <= 5) {
+  } else if (weightedScore <= 10) {
     // For very low scores (0-10%)
     cheatingPercentage = (weightedScore / 5) * 10;
-  } else if (weightedScore <= 15) {
+  } else if (weightedScore <= 20) {
     // For moderate scores (10-30%)
     cheatingPercentage = 10 + ((weightedScore - 5) / 10) * 20;
-  } else if (weightedScore <= 35) {
+  } else if (weightedScore <= 40) {
     // For higher scores (30-60%)
     cheatingPercentage = 30 + ((weightedScore - 15) / 20) * 30;
   } else if (weightedScore <= 60) {

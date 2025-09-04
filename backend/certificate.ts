@@ -17,13 +17,12 @@ async function generateCerts() {
     validity: 365,
   });
 
-  fs.writeFileSync("rootCA.pem", ca.cert); // ✅ required
-  fs.writeFileSync("rootCA-key.pem", ca.key); // optional
+  fs.writeFileSync("rootCA.pem", ca.cert);
+  fs.writeFileSync("rootCA-key.pem", ca.key);
 
-  // Step 2: Create domain certificate
   const cert = await createCert({
     ca: { key: ca.key, cert: ca.cert },
-    domains: ["localhost", "127.0.0.1","172.16.100.249"],
+    domains: ["localhost", "127.0.0.1","10.157.138.203"],
     validity: 365,
   });
 
