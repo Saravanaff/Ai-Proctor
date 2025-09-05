@@ -1,7 +1,7 @@
 import socketio
 import time
 
-from functionality.eye_detect import eye_functionality
+from functionality.eye_position import eye_functionality
 
 sio = socketio.Client(
     reconnection=True,
@@ -13,6 +13,7 @@ sio = socketio.Client(
 @sio.event
 def connect():
     print("[Eye service] Connected to the server")
+    sio.emit("register-python", {"service": "eye_position"})
 
 @sio.event
 def disconnect():

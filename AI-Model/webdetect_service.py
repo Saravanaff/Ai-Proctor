@@ -13,6 +13,7 @@ sio = socketio.Client(
 @sio.event
 def connect():
     print("[WebDetect service] Connected to the server")
+    sio.emit("register-python", {"service": "web_detect"})
 
 @sio.event
 def disconnect():

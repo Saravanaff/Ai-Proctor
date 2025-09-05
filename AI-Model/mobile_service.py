@@ -12,6 +12,7 @@ sio = socketio.Client(
 @sio.event
 def connect():
     print("[Mobile service] Connected to the server")
+    sio.emit("register-python", {"service": "thirdeye_detect"})
 
 mobile_detect(sio)
 

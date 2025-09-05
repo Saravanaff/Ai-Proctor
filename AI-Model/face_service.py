@@ -14,6 +14,7 @@ sio = socketio.Client(
 @sio.event
 def connect():
     print("[Face service] Connected to the server")
+    sio.emit("register-python", {"service": "face_service"})
 
 face_store(sio)
 face_auth(sio)

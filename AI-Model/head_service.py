@@ -13,6 +13,7 @@ sio = socketio.Client(
 @sio.event
 def connect():
     print("[Head service] Connected to the server")
+    sio.emit("register-python", {"service": "head_service"})
 
 @sio.event
 def disconnect():
