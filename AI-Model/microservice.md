@@ -30,4 +30,31 @@
 
 ---
 
+## Face Service
 
+**Incoming socket (Store)** => faceStore
+**Outgoing socket (Store)** => faceStoreRes
+**Input usage** => ( data["buffer"], data["user_id"], data["exam_id"], data["angle"])
+**Output format**
+{
+"userId": userId,
+"examId": examId,
+"code": (0 || -1),
+"angle": (0 || 1 || 2),
+"stored": (True, False)
+}
+
+**Incoming socket (Auth)** => faceAuth
+**Outgoing socket (Auth)** => faceAuthRes
+**Input usage** => ( data["buffer"], data["user_id"], data["exam_id"])
+**Output format**
+{
+"userId": userId,
+"examId": examId,
+"code": (0 || -1),
+"auth": (True, False)
+}
+
+---
+## Web_Detct Service
+**Incoming socket** 

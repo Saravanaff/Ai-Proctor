@@ -23,7 +23,7 @@ def face_auth(sio):
                     data = [data]
             except json.JSONDecodeError:
                 print("[face service] Corrupted JSON data.")
-                sio.emit("faceRecognizeRes", {
+                sio.emit("faceAuthRes", {
                     "userId": userId,
                     "examId": examId,
                     "code": -1,
@@ -34,7 +34,7 @@ def face_auth(sio):
         target_entry = next((entry for entry in data if entry["userId"] == userId), None)
         if not target_entry:
             print(f"[face service] No entry found for userId: {userId}")
-            sio.emit("faceRecognizeRes", {
+            sio.emit("faceAuthRes", {
                 "userId": userId,
                 "examId": examId,
                 "code": -1,
@@ -46,7 +46,7 @@ def face_auth(sio):
         face_locations = face_recognition.face_locations(rgb_img)
         if not face_locations:
             print("[face service] No faces detected in the image.")
-            sio.emit("faceRecognizeRes", {
+            sio.emit("faceAuthRes", {
                 "userId": userId,
                 "examId": examId,
                 "code": -1,
@@ -61,7 +61,7 @@ def face_auth(sio):
             distance = np.linalg.norm(stored_encoding - face_encoding)
             if distance < threshold:
                 print("[face service] Face authenticated successfully.")
-                sio.emit("faceRecognizeRes", {
+                sio.emit("faceAuthRes", {
                     "userId": userId,
                     "examId": examId,
                     "code": 0,
@@ -69,7 +69,7 @@ def face_auth(sio):
                 })
                 return
         
-        sio.emit("faceRecognizeRes", {
+        sio.emit("faceAuthRes", {
             "userId": userId,
             "examId": examId,
             "code": 0,

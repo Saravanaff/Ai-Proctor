@@ -1,7 +1,7 @@
 import socketio
 import time
 
-from functionality.face_store import face_store
+from functionality.process_frame import setup_process_frame_handler
 from functionality.face_auth import face_auth
 
 sio = socketio.Client(
@@ -16,7 +16,7 @@ def connect():
     print("[Face service] Connected to the server")
     sio.emit("register-python", {"service": "face_service"})
 
-face_store(sio)
+setup_process_frame_handler(sio)
 face_auth(sio)
 
 
