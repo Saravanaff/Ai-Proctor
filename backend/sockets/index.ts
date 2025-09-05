@@ -1,4 +1,3 @@
-
 import { Server } from "socket.io";
 import type { Server as HttpServer } from "http";
 import {
@@ -20,7 +19,10 @@ export function initSocket(server: HttpServer) {
   const userToSocket = new Map<string, string>();
   const socketToUser = new Map<string, string>();
   const isCapture = new Set<string>();
-  
+  const modelSocket = new Map<string, string>(); // modelId -> socketId
+  const socketToModel = new Map<string, string>(); // socketId -> modelId
+  const authCounter = new Map<string, number>(); // per user authenticate counter
+  const frameCounter = new Map<string, number>(); // per user/frame source counter
 
   function linkSocketToUser(socketId: string, userId?: string | null) {
     if (!userId) return;
@@ -38,13 +40,14 @@ export function initSocket(server: HttpServer) {
     const active = userToSocket.get(uid);
     if (active === socketId) userToSocket.delete(uid);
     isCapture.delete(uid);
+    authCounter.delete(uid); // cleanup counter on disconnect
+    frameCounter.delete(uid); // cleanup counter on disconnect
   }
 
   function emitToUserById(userId: string | undefined, event: string, payload: any) {
     if (!userId) return;
     const sid = userToSocket.get(String(userId));
     if (!sid) return;
-    // console.log(userId, event, payload);
     io.to(sid).emit(event, payload);
   }
 
@@ -53,7 +56,19 @@ export function initSocket(server: HttpServer) {
     return fromAuth != null ? String(fromAuth) : null;
   }
 
-  let pythonSocket: any = null;
+  function emitToModel(modelId: string | undefined, event: string, payload: any) {
+    if (!modelId) return;
+    const sid = modelSocket.get(String(modelId));
+    if (!sid) return;
+    io.to(sid).emit(event, payload);
+  }
+
+  function emitToAllModels(event: string, payload: any) {
+    for (const sid of modelSocket.values()) {
+      io.to(sid).emit(event, payload);
+    }
+  }
+
   let proxy: any = null;
   let storageSocket: any = ioClient(`http://localhost:${3003}`);
 
@@ -80,59 +95,75 @@ export function initSocket(server: HttpServer) {
       cb({ id });
     });
 
-    socket.on("register-python", () => {
-      if (pythonSocket) {
-        pythonSocket.removeAllListeners("thirdeye_cam_result");
-        pythonSocket.removeAllListeners("face_data_saved");
-        pythonSocket.removeAllListeners("drag_camera_result");
-        pythonSocket.removeAllListeners("result");
-      }
+    socket.on("register-python", (payload: any) => {
+      const modelId = String(payload?.service ?? "");
+      if (!modelId) return;
 
-      pythonSocket = socket;
+      modelSocket.set(modelId, socket.id);
+      socketToModel.set(socket.id, modelId);
+      console.log(modelId,socket.id);
 
-      pythonSocket.on("thirdeye_cam_result", (data: any) => {
+      socket.removeAllListeners("thirdeye_cam_result");
+      socket.removeAllListeners("face_data_saved");
+      socket.removeAllListeners("drag_camera_result");
+      socket.removeAllListeners("result");
+
+      socket.on("thirdeye_cam_result", (data: any) => {
         addScore(data);
-        // emitToUserById(data?.userId, "thirdeye_alert", data);
-        if(proxy){
-          console.log("Getting Thrideye result",data);
-          proxy.emit("thirdeye_alert",data);
+        if (proxy) {
+          proxy.emit("thirdeye_alert", data);
         }
-
       });
 
-      pythonSocket.on("face_data_saved", (data: any) => {
+      socket.on("face_data_saved", (data: any) => {
         const uid = String(data?.userId ?? data?.user_id ?? "");
         if (uid) isCapture.delete(uid);
         emitToUserById(uid || data?.userId, "face_save_status", data);
       });
-
-      pythonSocket.on("drag_camera_result", (data: any) => {
-        // console.log("drag_camera_result : dat,",data);
+ 
+      socket.on("mobileDetectRes", (data: any) => {
         addScore(data);
         emitToUserById(data?.userId, "alert", data);
       });
 
-      pythonSocket.on("result", (data: any) => {
+      socket.on("result", (data: any) => {
+        console.log("result");
         emitToUserById(data?.userId, "fres", data);
-        // socket.emit("fres",data);
       });
     });
+
+    socket.on("faceAuthRes",(data)=>{
+      console.log(data);
+      emitToUserById(data?.userId,"listener elutha da sunni",data);
+    });
+
+    socket.on("headPositionRes",(data)=>{
+      console.log(data);
+      emitToUserById(data?.userId,"listener elutha da sunni part 2",data);
+    });
+
+    socket.on("eyePositionRes",(data)=>{
+      console.log(data);
+      emitToUserById(data?.userId,"listener elutha da sunni part 3",data);
+    });
+
+    socket.on("webDetectRes",(data)=>{
+      console.log(data);
+      emitToUserById(data?.userId,"listener elutha da sunni part 4",data);
+    })
     
+    //listener eluthu da part 5 coming soon .................................
 
     socket.on("proxy", () => {
       proxy = socket;
-      console.log("Proxy is connected...")
+      console.log("Proxy is connected...");
 
       if (proxy) {
         proxy.on("videos", (data: any) => {
-            // console.log("Third eye video recieving...")
-          if (pythonSocket) {
-            // console.log("Third eye video recieving... py")
-            pythonSocket.emit("thirdeye_cam", data);
-          }
+          emitToModel("thirdeye_detect", "mobileDetect", data);
         });
         proxy.on("recorder-add-video-stream-chunk", (data: any) => {
-          // console.log("chunk ,",data.chunk)
+          // console.log("chunk ,",data.chunk);
           if (storageSocket) {
             storageSocket.emit("add-video-stream-chunk", data);
           }
@@ -152,40 +183,40 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("photo-save", (data) => {
-      const uid = String((data as any)?.userId ?? (data as any)?.user_id ?? "");
-      if (uid) isCapture.add(uid);
-      if (pythonSocket) {
-        pythonSocket.emit("save-face-data", data);
-      }
+      emitToModel("face_service","faceStore",data);
     });
 
     socket.on("authenticate", (data) => {
-      // console.log(data);
-      if (pythonSocket) {
-        pythonSocket.emit("drag_camera", data);
+      const uidKey = String((data as any)?.userId);
+      const count = (authCounter.get(uidKey) ?? 0) + 1;
+
+      if (count % 50 === 0) {
+        emitToModel("face_service", "faceAuth", data);
+        authCounter.set(uidKey, 0);
+      } else {
+        authCounter.set(uidKey, count);
+      }
+      emitToModel("web_detect", "webDetect", data);
+      const settings = (data as any)?.examSettings ?? (data as any)?.settings;
+      if (settings) {
+        if (settings.eyeball_detection_enabled){
+          emitToModel("eye_position", "eyePosition", data);
+        }
+        if (settings.head_direction_enabled) emitToModel("head_service", "headPosition", data);
+        return;
       }
     });
 
     socket.on("submit",(data)=>{
-
-      // console.log("hi");
       console.log(getExamScore(data.userId,data.examId));
-
-
     })
 
     socket.on("frame", (data) => {
-      // console.log("framming...",data);
-      const uid = String((data as any)?.userId ?? (data as any)?.user_id ?? "");
-      if (uid && isCapture.has(uid)) return;
-      if (pythonSocket) {
-        pythonSocket.emit("process-frame", data);
-      }
+      emitToModel("face_service","process-frame",data);
     });
 
     socket.on("recorder-add-video-stream-chunk", (data: any) => {
       
-      // console.log("chunk ,",data.chunk)
       if (storageSocket) {
         storageSocket.emit("add-video-stream-chunk", data);
       }
@@ -193,7 +224,6 @@ export function initSocket(server: HttpServer) {
 
     socket.on("start-exam", (data: any) => {
       if (storageSocket) {
-        /* For Initializing Video Recording */
         // console.log("Exam started", data);
         storageSocket.emit("start-stream-recording", data);
       }
@@ -221,6 +251,9 @@ export function initSocket(server: HttpServer) {
 
     socket.on("disconnect", () => {
       unlinkSocket(socket.id);
+      const modelId = socketToModel.get(socket.id);
+      if (modelId) modelSocket.delete(modelId);
+      socketToModel.delete(socket.id);
     });
   });
 

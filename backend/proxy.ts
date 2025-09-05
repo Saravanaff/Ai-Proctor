@@ -110,7 +110,6 @@ ioServer.on("connection", (socket) => {
   socket.onAny((event, ...args) => {
     
     if (backendSocket?.connected) {
-      console.log("proxy third eye",event,args);
       backendSocket.emit(event, ...args);
     } else {
       console.warn(`⚠️ Backend not connected, dropping event: ${event}`);
@@ -119,7 +118,6 @@ ioServer.on("connection", (socket) => {
 
   // backendSocket.emit("proxy")
 
-  // Forward backend → frontend
   backendSocket.onAny((event, ...args) => {
     socket.emit(event, ...args);
   });

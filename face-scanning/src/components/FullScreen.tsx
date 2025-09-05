@@ -26,7 +26,7 @@ type ExamSettings = {
   eyeball_detection_enabled?: boolean;
   object_detection_enabled?: boolean;
   head_direction_enabled?: boolean;
-  flag_notifications_enabled?: boolean;
+  flag_notifications_enabled?: boolean
 };
 
 
