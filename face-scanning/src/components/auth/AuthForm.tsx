@@ -11,6 +11,7 @@ interface AuthFormProps {
   userId?: string;
   userEmail?: string;
   userName?: string;
+  examId?: string;
 }
 
 const AuthForm = ({
@@ -19,6 +20,7 @@ const AuthForm = ({
   userId,
   userEmail,
   userName,
+  examId,
 }: AuthFormProps) => {
   const [isRegister, setIsRegister] = useState(defaultMode === "register");
   const [name, setName] = useState("");
@@ -37,6 +39,7 @@ const AuthForm = ({
     typeof userEmail === "string"
   ) {
     setGlobalIdentity(userName, userEmail, userId);
+    localStorage.setItem("examId", examId || "unknown");
     router.push(redirect);
   }
 

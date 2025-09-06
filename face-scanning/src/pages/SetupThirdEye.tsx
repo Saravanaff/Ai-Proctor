@@ -66,8 +66,9 @@ const ThirdEyeSetup = () => {
       const redirect = encodeURIComponent("/mobile");
       const name = encodeURIComponent(userName);
       const email = encodeURIComponent(userEmail);
+      const examId = encodeURIComponent(localStorage.getItem("examId") || "unknown");;
       const clientUrl = process.env.NEXT_PUBLIC_CLIENT_URL;
-      const thirdEyeUrl = `${clientUrl}?userId=${userId}&name=${name}&email=${email}&redirect=${redirect}`;
+      const thirdEyeUrl = `${clientUrl}?userId=${userId}&name=${name}&email=${email}&redirect=${redirect}&examId=${examId}`;
       try {
         const qrUrl = await QRCode.toDataURL(thirdEyeUrl, {
           width: 256,

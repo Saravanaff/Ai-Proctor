@@ -9,6 +9,7 @@ import styles from "../styles/ThirdEye.module.css";
 import { delay } from "@/utils/delay";
 
 const userId = getUserId() || "unknown";
+const examId = localStorage.getItem("examId") || "unknown";
 
 function currentUserId(): string | null {
   try {
@@ -193,7 +194,11 @@ export default function ThirdEye() {
       (blob) => {
         if (blob) {
           blob.arrayBuffer().then((buffer) => {
-            newSocket.current?.emit("videos", buffer);
+            newSocket.current?.emit("videos", {
+              buffer,
+              userId: userId,
+              examId: examId,
+            });
           });
         }
       },

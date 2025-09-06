@@ -322,6 +322,8 @@ const FloatingCamera = ({
                       },
                       user_id: userId,
                       exam_id: examId,
+                      userId: userId,
+                      examId: examId,
                     });
                   })
                   .catch((error) => {
