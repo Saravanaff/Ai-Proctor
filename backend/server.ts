@@ -12,6 +12,7 @@ import { initSocket } from "./sockets";
 import examRoutes from "./routes/examRoutes";
 import studentRoutes from "./routes/studentRoutes";
 import scoreRoutes from './routes/scoreRoutes';
+
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 const serverPort = 3001;

@@ -76,202 +76,88 @@ const FloatingCamera = ({
     setTimeout(() => setBorderColor("white"), 3000);
   }, []);
 
-  const handleThirdEyeAlert = useCallback(
-    (data: any) => {
-      if (data.person == 0) {
-        countersRef.current.np++;
-        if (countersRef.current.np % 100 != 0) {
-          return;
-        }
-        countersRef.current.np = 0;
-        toast({
-          title: "Canditate is not present",
-          description: "No persons are there",
-          variant: "destructive",
-        });
-      }
-      if (data.person > 1) {
-        countersRef.current.mp++;
-        if (countersRef.current.mp % 100 != 0) {
-          return;
-        }
-        countersRef.current.mp = 0;
-        toast({
-          title: "More number of persons are present",
-          description: "Please ensure candidate is present in isolated area",
-          variant: "destructive",
-        });
-      }
 
-      if (data.laptop < 1) {
-        countersRef.current.mlp++;
-        if (countersRef.current.mlp % 150 != 0) return;
-        countersRef.current.mlp = 0;
+
+  const handleUserAlert = useCallback((data : any,socketName: string) => {
+    
+    if(socketName === "faceAuthRes-client") {
+      if(data.auth === false) {
         toast({
-          title: "Candiate Laptop is not present",
-          description: "No laptop is present",
+          title: "Examinee Face Not Found",
           variant: "destructive",
         });
       }
-      if (data.unauth_device == true) {
-        countersRef.current.uauth++;
-        if (countersRef.current.uauth % 50 !== 0) return;
-        countersRef.current.uauth = 0;
+    }
+
+    if(socketName === "headPositionRes-client"){
+      if(data.data.headPosition !== "Forward" && data.data.headPosition !== "Down"){
+        onLookingAway(data.data.headPosition);
+      }
+    }
+    
+    if(socketName === "eyePositionRes-client"){
+      if(
+        data.data.head_position == "Forward" &&
+        data.data.leftEye !== "Center" &&
+        data.data.rightEye !== "Center" &&
+        data.data.leftEye !== "Left" &&
+        data.data.rightEye !== "Left"
+      ) {
+        onLookingAway(data.data.headPosition);
+      }
+    }
+    
+    if(socketName === "webDetectRes-client"){
+      if( data.data["Mobile-phone"] !== 0 || data.data["Laptop"] !== 0) {
+        detect();
+        changeColor();
+      }
+      if(data.data.Person > 1){
+        number(data.data.Person);
+        changeColor();
+      }
+    }
+
+    if(socketName === "mobileDetectRes-client"){
+      if ( data.data["Mobile-phone"] !== 0 || data.data.Laptop > 1 ) {
         toast({
           title: "Unauthorized Device Detected",
           description: "Dont keep Gadgets Nearby",
           variant: "destructive",
         });
       }
-    },
-    [toast]
-  );
 
-  const handleAlert = useCallback(
-    (data: any) => {
-      const now = Date.now();
-      console.log("hi");
-      console.log("data", data);
-
-      // 30s unauthenticated -> pause
-      if (data?.auth_face === false) {
-        if (!unauthStartAtRef.current) {
-          unauthStartAtRef.current = now;
-          unauthTriggeredRef.current = false;
-        }
-        const elapsed = now - unauthStartAtRef.current;
-        if (elapsed >= FIRE_THRESHOLD_MS && !unauthTriggeredRef.current) {
-          unauthTriggeredRef.current = true;
-          if (typeof onAuthPause === "function") onAuthPause();
-          pausedRef.current = true;
-          toast({
-            title: "Exam Paused",
-            description: "Hold still for a quick scan",
-            variant: "destructive",
-          });
-        }
-      } else if (data?.auth_face === true) {
-        // Reset unauth timer
-        unauthStartAtRef.current = null;
-        unauthTriggeredRef.current = false;
-
-        // If we were paused, resume now
-        if (pausedRef.current && typeof onAuthResume === "function") {
-          onAuthResume();
-          pausedRef.current = false;
-          if (now - lastToastAtRef.current > 1500) {
-            toast({
-              title: "Resumed",
-              description: "Identity verified. Continuing exam.",
-              variant: "default",
-            });
-            lastToastAtRef.current = now;
-          }
-        }
+      if ( data.data.Laptop === 0 ) {
+        toast({
+          title: "Candiate Laptop is not present",
+          description: "No laptop is present",
+          variant: "destructive",
+        });
       }
 
-      if (!hasEverAuthedRef.current) {
-        if (data?.auth_face === true) {
-          hasEverAuthedRef.current = true;
-          // Avoid double resume here; pausedRef branch above already resumes after 30s
-          if (hasPausedOnceRef.current && typeof onAuthResume === "function" && !pausedRef.current) {
-            onAuthResume();
-          }
-          // Suppress "Identity Verified" toast before 30s (and in general, rely on "Resumed" after pause)
-          // if (now - lastToastAtRef.current > 2500 && pausedRef.current) {
-          //   toast({ title: "Identity Verified", description: "Face authenticated", variant: "default" });
-          //   lastToastAtRef.current = now;
-          // }
-        } else if (data?.auth_face === false) {
-          if (!hasPausedOnceRef.current && typeof onAuthPause === "function") {
-            onAuthPause();
-            hasPausedOnceRef.current = true;
-            pausedRef.current = true;
-          }
-          if (now - lastToastAtRef.current > 2500) {
-            toast({
-              title: "Face Not Authenticated",
-              description: "Hold still for a quick rescan",
-              variant: "destructive",
-            });
-            lastToastAtRef.current = now;
-          }
-        }
-      } else {
-        // if (data?.auth_face === false) {
-        //   if (now - lastToastAtRef.current > 4000) {
-        //     toast({
-        //       title: "Authentication Lost",
-        //       description: "Face not recognized",
-        //       variant: "destructive",
-        //     });
-        //     lastToastAtRef.current = now;
-        //   }
-        // }
+      if ( data.data.Person === 0 ) {
+        toast({
+          title: "Canditate is not present",
+          description: "No persons are there",
+          variant: "destructive",
+        });
       }
-
-      if (data.head_position !== "Forward") {
-        countersRef.current.look++;
-        if (countersRef.current.look % 10 !== 0) return;
-        countersRef.current.look = 0;
-        console.log("looking away");
-        onLookingAway(data.head_position);
-      } else {
-        countersRef.current.look = 0;
+      else if ( data.data.Person > 1 ) {
+        toast({
+          title: "More number of persons are present",
+          description: "Please ensure candidate is present in isolated area",
+          variant: "destructive",
+        });
       }
-      if (
-        data.head_position == "Forward" &&
-        data.eyes[0] !== "Center" &&
-        data.eyes[1] !== "Center" &&
-        data.eyes[0] !== "Left" &&
-        data.eyes[1] !== "Left"
-      ) {
-        console.log("looking away with eyes");
-        countersRef.current.look++;
-        if (countersRef.current.look % 10 !== 0) return;
-        countersRef.current.look = 0;
-        onLookingAway(data.head_position);
-      } else {
-        countersRef.current.look = 0;
-      }
-      if (data.object_detected["cell phone"]) {
-        // countersRef.current.item++;
-        // if (countersRef.current.item % 2 !== 0) return;
-        // countersRef.current.item = 0;
-        detect();
-        changeColor();
-      }
-      if (data.no_of_person != 1) {
-        countersRef.current.person++;
-        if (countersRef.current.person % 10 != 0) return;
-        countersRef.current.person = 0;
-        number(data.no_of_person);
-        changeColor();
-      } else {
-        countersRef.current.person = 0;
-      }
-      // if (!data.auth_face && data.head_position=="Forward") {
-      //   countersRef.current.auth++;
-      //   if (countersRef.current.auth % 10!== 0) return;
-      //   countersRef.current.auth = 0;
-      //   changeColor();
-      //   onAuthFaceMissing();
-      // }
-      // else{
-      //   countersRef.current.auth=0;
-      // }
-    },
-    [
-      toast,
-      onAuthResume,
-      onAuthPause,
-      onAuthFaceMissing,
-      onLookingAway,
-      detect,
-      number,
-      changeColor,
-    ]
-  );
+    }
+    
+  },[
+    toast, 
+    onLookingAway,
+    changeColor, 
+    detect, 
+    number
+  ]);
 
   // remove: useEffect that synced border with showFire
 
@@ -482,8 +368,28 @@ const FloatingCamera = ({
 
     startCamera();
 
-    socket.on("thirdeye_alert", handleThirdEyeAlert);
-    socket.on("alert", handleAlert);
+    // socket.on("thirdeye_alert", handleThirdEyeAlert);
+    // socket.on("alert", handleAlert);
+
+    socket.on("faceAuthRes-client",(data : any)=>{
+      handleUserAlert(data,"faceAuthRes-client");
+    });
+    
+    socket.on("headPositionRes-client",(data : any)=>{
+      handleUserAlert(data,"headPositionRes-client");
+    });
+
+    socket.on("eyePositionRes-client",(data : any)=>{
+      handleUserAlert(data,"eyePositionRes-client");
+    });
+    
+    socket.on("webDetectRes-client",(data : any)=>{
+      handleUserAlert(data,"webDetectRes-client");
+    });
+
+    socket.on("mobileDetectRes-client",(data : any)=>{
+      handleUserAlert(data,"mobileDetectRes-client");
+    });
 
     return () => {
       console.log("FloatingCamera cleanup - stopping recording");

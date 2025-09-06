@@ -6,9 +6,14 @@ import {
   connectTransport,
   produce,
 } from "../mediasoupServer";
-
+import dotenv from 'dotenv';
+import path from 'path';
 import { io as ioClient } from "socket.io-client";
 import { getExamScore, addScore } from "../utils/calculate";
+
+dotenv.config({ path: path.join(__dirname, ".env") });
+
+const storageServerUrl = process.env.STORAGE_SERVER_URL;
 
 export function initSocket(server: HttpServer) {
   const io = new Server(server, {
@@ -118,12 +123,13 @@ export function initSocket(server: HttpServer) {
       socket.on("face_data_saved", (data: any) => {
         const uid = String(data?.userId ?? data?.user_id ?? "");
         if (uid) isCapture.delete(uid);
+        console.log("face_data_saved");
         emitToUserById(uid || data?.userId, "face_save_status", data);
       });
  
       socket.on("mobileDetectRes", (data: any) => {
         addScore(data);
-        emitToUserById(data?.userId, "alert", data);
+        emitToUserById(data?.userId, "mobileDetectRes-client", data);
       });
 
       socket.on("result", (data: any) => {
@@ -134,22 +140,23 @@ export function initSocket(server: HttpServer) {
 
     socket.on("faceAuthRes",(data)=>{
       console.log(data);
-      emitToUserById(data?.userId,"listener elutha da sunni",data);
+      emitToUserById(data?.userId,"faceAuthRes-client",data);
     });
 
     socket.on("headPositionRes",(data)=>{
       console.log(data);
-      emitToUserById(data?.userId,"listener elutha da sunni part 2",data);
+      emitToUserById(data?.userId,"headPositionRes-client",data);
     });
 
     socket.on("eyePositionRes",(data)=>{
       console.log(data);
-      emitToUserById(data?.userId,"listener elutha da sunni part 3",data);
+      emitToUserById(data?.userId,"eyePositionRes-client",data);
     });
 
+    
     socket.on("webDetectRes",(data)=>{
       console.log(data);
-      emitToUserById(data?.userId,"listener elutha da sunni part 4",data);
+      emitToUserById(data?.userId,"webDetectRes-client",data);
     })
     
     //listener eluthu da part 5 coming soon .................................
@@ -183,6 +190,7 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("photo-save", (data) => {
+      console.log("sending data",data);
       emitToModel("face_service","faceStore",data);
     });
 
@@ -212,6 +220,7 @@ export function initSocket(server: HttpServer) {
     })
 
     socket.on("frame", (data) => {
+      // console.log("framing");
       emitToModel("face_service","process-frame",data);
     });
 
