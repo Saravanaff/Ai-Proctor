@@ -30,6 +30,7 @@ const AuthForm = ({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPasswordReqs, setShowPasswordReqs] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
 
@@ -43,58 +44,32 @@ const AuthForm = ({
     router.push(redirect);
   }
 
-  const passwordChecks = {
-    length: password.length >= 8,
-    upper: /[A-Z]/.test(password),
-    lower: /[a-z]/.test(password),
-    number: /\d/.test(password),
-    special: /[^A-Za-z0-9]/.test(password),
-  };
-  const isPasswordStrong =
-    passwordChecks.length &&
-    passwordChecks.upper &&
-    passwordChecks.lower &&
-    passwordChecks.number &&
-    passwordChecks.special;
-
-  const passwordRequirements = [
-    {
-      key: "length",
-      label: "At least 8 characters",
-      passed: passwordChecks.length,
-    },
-    {
-      key: "upper",
-      label: "At least one uppercase letter",
-      passed: passwordChecks.upper,
-    },
-    {
-      key: "lower",
-      label: "At least one lowercase letter",
-      passed: passwordChecks.lower,
-    },
-    {
-      key: "number",
-      label: "At least one number",
-      passed: passwordChecks.number,
-    },
-    {
-      key: "special",
-      label: "At least one special character",
-      passed: passwordChecks.special,
-    },
-  ];
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      if (isRegister && !isPasswordStrong) {
-        throw new Error(
-          "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
-        );
+      if (isRegister) {
+        const passwordChecks = {
+          length: password.length >= 8,
+          upper: /[A-Z]/.test(password),
+          lower: /[a-z]/.test(password),
+          number: /\d/.test(password),
+          special: /[^A-Za-z0-9]/.test(password),
+        };
+        const isPasswordStrong =
+          passwordChecks.length &&
+          passwordChecks.upper &&
+          passwordChecks.lower &&
+          passwordChecks.number &&
+          passwordChecks.special;
+
+        if (!isPasswordStrong) {
+          throw new Error(
+            "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
+          );
+        }
       }
 
       const baseURL =
@@ -114,16 +89,9 @@ const AuthForm = ({
       if (isRegister) {
         setIsRegister(false);
         setPassword("");
-        try {
-          router.replace(
-            {
-              pathname: router.pathname,
-              query: { ...router.query, mode: "login" },
-            },
-            undefined,
-            { shallow: true }
-          );
-        } catch {}
+        setEmail("");
+        setName("");
+        setShowPassword(false);
         setLoading(false);
         return;
       }
@@ -161,8 +129,12 @@ const AuthForm = ({
   };
 
   const toggleMode = () => {
-    setIsRegister(!isRegister);
+    setIsRegister(v => !v);
     setError("");
+    setName("");
+    setEmail("");
+    setPassword("");
+    setShowPassword(false);
   };
 
   return (
@@ -213,118 +185,93 @@ const AuthForm = ({
 
             <div className={styles.inputGroup}>
               <label className={styles.label}>Password</label>
-              <input
-                type="password"
-                placeholder={
-                  isRegister
-                    ? "Create a strong password"
-                    : "Enter your password"
-                }
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={styles.input}
-                required
-                onFocus={() => setShowPasswordReqs(true)}
-                onBlur={() => setShowPasswordReqs(false)}
-              />
-              {(() => {
-                const visible = showPasswordReqs;
-                return (
-                  <div
-                    aria-live="polite"
-                    aria-hidden={!visible}
-                    style={{
-                      marginTop: 10,
-                      border: "1px dashed var(--border-color)",
-                      borderRadius: 10,
-                      background: "var(--secondary-bg)",
-                      // animation
-                      maxHeight: visible ? 220 : 0,
-                      opacity: visible ? 1 : 0,
-                      transform: visible ? "translateY(0)" : "translateY(-6px)",
-                      transition:
-                        "max-height 280ms ease, opacity 220ms ease, transform 220ms ease, padding 200ms ease, box-shadow 200ms ease",
-                      overflow: "hidden",
-                      padding: visible ? "12px 14px" : "0 14px",
-                      boxShadow: visible
-                        ? "0 6px 18px rgba(0,0,0,0.06)"
-                        : "none",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        marginBottom: 6,
-                        color: "var(--text-secondary)",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        letterSpacing: "-0.01em",
-                      }}
-                    >
-                      <span
-                        aria-hidden
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          background: "var(--accent-color)",
-                          boxShadow: "0 0 0 3px rgba(2,132,199,0.15)",
-                        }}
-                      />
-                      Password requirements
-                    </div>
-
-                    {passwordRequirements.map((req) => (
-                      <div
-                        key={req.key}
-                        role="listitem"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          padding: "6px 0",
-                          color: req.passed
-                            ? "var(--text-primary)"
-                            : "var(--text-secondary)",
-                        }}
-                      >
-                        <span
-                          aria-hidden
-                          style={{
-                            width: 18,
-                            height: 18,
-                            borderRadius: "50%",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            background: req.passed
-                              ? "var(--success-color)"
-                              : "transparent",
-                            border: `2px solid ${
-                              req.passed
-                                ? "var(--success-color)"
-                                : "var(--border-color)"
-                            }`,
-                            color: req.passed
-                              ? "#fff"
-                              : "var(--text-secondary)",
-                            transition: "all 180ms ease",
-                          }}
-                        >
-                          {req.passed ? "✓" : "•"}
-                        </span>
-                        <span style={{ fontSize: 12, fontWeight: 500 }}>
-                          {req.label}
-                        </span>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={styles.input}
+                  placeholder={isRegister ? 'Create password' : 'Password'}
+                  onFocus={() => isRegister && setShowPasswordReqs(true)}
+                  onBlur={() => setShowPasswordReqs(false)}
+                  required
+                  style={{ paddingRight: 60 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(p=>!p)}
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'var(--secondary-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 6,
+                    fontSize: 11,
+                    padding: '6px 8px',
+                    cursor: 'pointer',
+                    lineHeight: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    /* Eye off icon */
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19" />
+                      <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    /* Eye icon */
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {isRegister && showPasswordReqs && (
+                <div style={{ marginTop: 10, fontSize: 12 }}>
+                  {(() => {
+                    const passwordChecks = {
+                      length: password.length >= 8,
+                      upper: /[A-Z]/.test(password),
+                      lower: /[a-z]/.test(password),
+                      number: /\d/.test(password),
+                      special: /[^A-Za-z0-9]/.test(password),
+                    };
+                    const passwordRequirements = [
+                      { key: 'length', label: 'At least 8 characters', passed: passwordChecks.length },
+                      { key: 'upper', label: 'One uppercase letter', passed: passwordChecks.upper },
+                      { key: 'lower', label: 'One lowercase letter', passed: passwordChecks.lower },
+                      { key: 'number', label: 'One number', passed: passwordChecks.number },
+                      { key: 'special', label: 'One special character', passed: passwordChecks.special },
+                    ];
+                    return passwordRequirements.map(req => (
+                      <div key={req.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0' }}>
+                        <span style={{
+                          width: 16,
+                          height: 16,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '50%',
+                          background: req.passed ? 'var(--success-color)' : 'transparent',
+                          border: `2px solid ${req.passed ? 'var(--success-color)' : 'var(--border-color)'}`,
+                          color: req.passed ? '#fff' : 'var(--text-secondary)',
+                          fontSize: 10,
+                          fontWeight: 600
+                        }}>{req.passed ? '✓' : '•'}</span>
+                        <span style={{ color: req.passed ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{req.label}</span>
                       </div>
-                    ))}
-                  </div>
-                );
-              })()}
+                    ));
+                  })()}
+                </div>
+              )}
             </div>
 
             {isRegister && (
@@ -384,7 +331,7 @@ const AuthForm = ({
             <button
               type="submit"
               className={styles.submitButton}
-              disabled={loading || (isRegister && !isPasswordStrong)}
+              disabled={loading}
             >
               {loading ? (
                 <div className={styles.spinner}></div>
