@@ -28,6 +28,7 @@ export function initSocket(server: HttpServer) {
   const socketToModel = new Map<string, string>(); // socketId -> modelId
   const authCounter = new Map<string, number>(); // per user authenticate counter
   const frameCounter = new Map<string, number>(); // per user/frame source counter
+  const authVerified = new Map<string, boolean>(); // track if user already authenticated successfully
 
   function linkSocketToUser(socketId: string, userId?: string | null) {
     if (!userId) return;
@@ -47,6 +48,7 @@ export function initSocket(server: HttpServer) {
     isCapture.delete(uid);
     authCounter.delete(uid); // cleanup counter on disconnect
     frameCounter.delete(uid); // cleanup counter on disconnect
+    authVerified.delete(uid); // NEW: prevent authVerified map from growing
   }
 
   function emitToUserById(userId: string | undefined, event: string, payload: any) {
@@ -140,6 +142,12 @@ export function initSocket(server: HttpServer) {
 
     socket.on("faceAuthRes",(data)=>{
       console.log(data);
+      const uid = String(data?.userId);
+      if (data?.auth === true || data?.data?.auth === true) {
+        authVerified.set(uid, true);
+      } else {
+        authVerified.set(uid, false); 
+      }
       emitToUserById(data?.userId,"faceAuthRes-client",data);
     });
 
@@ -196,14 +204,9 @@ export function initSocket(server: HttpServer) {
 
     socket.on("authenticate", (data) => {
       const uidKey = String((data as any)?.userId);
-      const count = (authCounter.get(uidKey) ?? 0) + 1;
+      const verified = authVerified.get(uidKey) === true;
 
-      if (count % 50 === 0) {
-        emitToModel("face_service", "faceAuth", data);
-        authCounter.set(uidKey, 0);
-      } else {
-        authCounter.set(uidKey, count);
-      }
+      // Always run web/object/other detectors
       emitToModel("web_detect", "webDetect", data);
       const settings = (data as any)?.examSettings ?? (data as any)?.settings;
       if (settings) {
@@ -211,7 +214,20 @@ export function initSocket(server: HttpServer) {
           emitToModel("eye_position", "eyePosition", data);
         }
         if (settings.head_direction_enabled) emitToModel("head_service", "headPosition", data);
+      }
+
+      if (!verified) {
+        emitToModel("face_service", "faceAuth", data);
+        authCounter.set(uidKey, 0); 
         return;
+      }
+
+      const count = (authCounter.get(uidKey) ?? 0) + 1;
+      if (count % 50 === 0) {
+        emitToModel("face_service", "faceAuth", data);
+        authCounter.set(uidKey, 0);
+      } else {
+        authCounter.set(uidKey, count);
       }
     });
 
