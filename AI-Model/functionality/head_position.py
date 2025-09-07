@@ -44,6 +44,7 @@ def direction(facelm, w, h):
 def head_functionality(sio):
     @sio.on("headPosition")
     def handle_head_position(data):
+        print("head")
         buffer = data["buffer"]
         userId = data["user_id"]
         examId = data["exam_id"]

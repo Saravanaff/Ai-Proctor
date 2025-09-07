@@ -98,7 +98,7 @@ const ExamPage = ({
   const number = (a: number) => {
     setFace(a);
     if (examSettings?.multiple_person_detection_enabled !== false) {
-      setNum(true);
+      setNum(true)
       setTimeout(() => {
         setNum(false);
       }, 2000);

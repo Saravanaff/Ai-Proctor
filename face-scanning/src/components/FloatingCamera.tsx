@@ -11,6 +11,7 @@ import * as mediasoupClient from "mediasoup-client";
 import useSoundLevel from "@/hooks/useSoundLevel";
 import { getUserId } from "../constants/AuthStore";
 import { delay } from "@/utils/delay";
+import axios from 'axios'
 
 const userId = getUserId() || "unknown";
 const examId = localStorage.getItem("examId") || "unknown";
@@ -22,7 +23,6 @@ interface VideoChunkData {
 }
 
 const FloatingCamera = ({
-  settings,
   socket,
   onLookingAway,
   detect,
@@ -33,13 +33,13 @@ const FloatingCamera = ({
   onAuthPause,
   onAuthResume,
   screenRecorderMediaRecorderRef,
+  settings = {},
 }: any) => {
   const isInitialized = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const cameraRef = useRef<HTMLDivElement>(null);
   const interRef = useRef<any>(null);
   const streamRef = useRef<MediaStream>(null);
-
   const hasEverAuthedRef = useRef(false);
   const hasPausedOnceRef = useRef(false);
   const lastToastAtRef = useRef<number>(0);
@@ -55,6 +55,12 @@ const FloatingCamera = ({
     uauth: 0,
     mlp: 0,
   });
+
+  // Ref to always hold latest settings passed from parent
+  const settingsRef = useRef<any>({});
+  useEffect(() => {
+    settingsRef.current = (settings && typeof settings === 'object') ? settings : {};
+  }, [settings]);
 
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [dragging, setDragging] = useState(false);
@@ -74,7 +80,9 @@ const FloatingCamera = ({
     setBorderColor("red");
     setTimeout(() => setBorderColor("white"), 3000);
   }, []);
-
+  const baseUrl =
+  process.env.NEXT_PUBLIC_BACKEND_URL;
+  const userId = getUserId() || "unknown";
 
 
   const handleUserAlert = useCallback((data : any,socketName: string) => {
@@ -158,7 +166,6 @@ const FloatingCamera = ({
     number
   ]);
 
-  // remove: useEffect that synced border with showFire
 
   useEffect(() => {
     if (examSubmitted) {
@@ -285,7 +292,6 @@ const FloatingCamera = ({
           if (!isMounted) return;
           const video = videoRef.current;
           if (!video || video.readyState < 2) return;
-
           const width = video.videoWidth;
           const height = video.videoHeight;
 
@@ -315,15 +321,13 @@ const FloatingCamera = ({
                   .then((buffer) => {
                     socket.emit("authenticate", {
                       buffer,
-                      metadata: {
-                        width,
-                        height,
-                      },
+                      metadata: { width, height },
                       user_id: userId,
                       exam_id: examId,
                       userId: userId,
                       examId: examId,
-                      settings:settings
+                      settings: settingsRef.current, // ensure latest settings
+                      examSettings: settingsRef.current, // duplicate key for backend compatibility
                     });
                   })
                   .catch((error) => {

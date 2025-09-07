@@ -206,7 +206,6 @@ export function initSocket(server: HttpServer) {
       }
       emitToModel("web_detect", "webDetect", data);
       const settings = (data as any)?.examSettings ?? (data as any)?.settings;
-      console.log(settings);
       if (settings) {
         if (settings.eyeball_detection_enabled){
           emitToModel("eye_position", "eyePosition", data);
