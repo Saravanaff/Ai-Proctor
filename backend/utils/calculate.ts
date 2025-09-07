@@ -76,6 +76,7 @@ export function addScore(data: any) {
     }
   }
 
+
   if (data?.object_detected["cell phone"] === true) {
     examData.objectDetectedFlagged += 1;
   }
@@ -88,7 +89,7 @@ export function addScore(data: any) {
     }
   }
   else{
-    examData.authFrames=0;
+    examData.authFrames=0; 
   }
 
   const personsRaw = data?.no_of_person;

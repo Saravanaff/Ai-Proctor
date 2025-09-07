@@ -19,8 +19,7 @@ import socket from "./socket";
 import * as mediasoupClient from "mediasoup-client";
 import { getUserId } from "@/constants/AuthStore";
 import LeftStepper from "./LeftStepper";
-
-
+import axios from 'axios';
 
 interface CircleMetadata {
     x: number;
@@ -61,6 +60,8 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [detectedDirection, setDetectedDirection] = useState<"forward" | "right" | "left" | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [examSettings, setExamSettings] = useState<any>({});
+  
   const router = useRouter();
 
 
@@ -69,6 +70,10 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const faceDirectionSequence = useRef<any>(["forward","right","left"]);
   const stage = useRef(0);
   const counter = useRef(1);
+  const baseUrl =
+  process.env.NEXT_PUBLIC_BACKEND_URL;
+  const userId = getUserId() || "unknown";
+  const examId=localStorage.getItem("examId")
 
   // Centralized cleanup function
   const cleanupCamera = () => {
@@ -470,13 +475,25 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           </div>
           <button
             className="click"
-            onClick={() => {
-              console.log(
-                "Entering exam, cleaning up camera before navigation"
-              );
-              cleanupCamera();
-              router.push("/SetupThirdEye");
-            }}
+            onClick={async () => {
+    try {
+      console.log("Entering exam, cleaning up camera before navigation");
+      cleanupCamera();
+
+      const response = await axios.get(`${baseUrl}/getExamSettings`, {
+        params: { userId: Number(userId), examId: Number(examId) },
+      });
+
+      if(!response.data.third_eye_enabled){
+        router.push('/fullscreen');
+      }
+      else{
+        router.push('/SetupThirdEye');
+      }
+    } catch (error) {
+      console.error("Error fetching exam settings:", error);
+    }
+  }}
             style={{
               padding: "15px 30px",
               fontSize: "18px",

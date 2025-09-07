@@ -22,6 +22,7 @@ interface VideoChunkData {
 }
 
 const FloatingCamera = ({
+  settings,
   socket,
   onLookingAway,
   detect,
@@ -44,7 +45,6 @@ const FloatingCamera = ({
   const lastToastAtRef = useRef<number>(0);
   const pausedRef = useRef(false);
 
-  // Move counters to refs to avoid recreation on each render
   const countersRef = useRef({
     look: 0,
     person: 0,
@@ -62,7 +62,6 @@ const FloatingCamera = ({
   const [borderColor, setBorderColor] = useState("white");
   const [prevSoundDetected, setPrevSoundDetected] = useState(false);
 
-  // Fire overlay state for 30s unauthenticated detection
   const FIRE_THRESHOLD_MS = 30000;
   const unauthStartAtRef = useRef<number | null>(null);
   const unauthTriggeredRef = useRef(false);
@@ -79,7 +78,7 @@ const FloatingCamera = ({
 
 
   const handleUserAlert = useCallback((data : any,socketName: string) => {
-    
+    console.log("Alert Data:", data, "from", socketName)
     if(socketName === "faceAuthRes-client") {
       if(data.auth === false) {
         toast({
@@ -324,6 +323,7 @@ const FloatingCamera = ({
                       exam_id: examId,
                       userId: userId,
                       examId: examId,
+                      settings:settings
                     });
                   })
                   .catch((error) => {
@@ -341,7 +341,6 @@ const FloatingCamera = ({
       } catch (error) {
         console.error("Camera access failed:", error);
 
-        // Handle specific camera errors
         const err = error as Error;
         if (err.name === "NotReadableError") {
           console.log("Camera is busy, likely being used by another component");

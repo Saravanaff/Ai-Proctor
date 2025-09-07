@@ -674,6 +674,7 @@ const ExamPage = ({
 
       {!examSubmitted && (
         <FloatingCamera
+          settings={examSettings}
           socket={socket}
           onLookingAway={lookingAlert}
           detect={detectObject}
