@@ -9,7 +9,7 @@ import {
 import dotenv from 'dotenv';
 import path from 'path';
 import { io as ioClient } from "socket.io-client";
-import { getExamScore, addScore } from "../utils/calculate";
+import { getExamScore, addScore, calculateExamScore } from "../utils/calculate";
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -24,12 +24,11 @@ export function initSocket(server: HttpServer) {
   const userToSocket = new Map<string, string>();
   const socketToUser = new Map<string, string>();
   const isCapture = new Set<string>();
-  const modelSocket = new Map<string, string>(); // modelId -> socketId
-  const socketToModel = new Map<string, string>(); // socketId -> modelId
-  const authCounter = new Map<string, number>(); // per user authenticate counter
-  const frameCounter = new Map<string, number>(); // per user/frame source counter
-  const authVerified = new Map<string, boolean>(); // track if user already authenticated successfully
-
+  const modelSocket = new Map<string, string>(); 
+  const socketToModel = new Map<string, string>();
+  const authCounter = new Map<string, number>(); 
+  const frameCounter = new Map<string, number>(); 
+  const authVerified = new Map<string, boolean>();
   function linkSocketToUser(socketId: string, userId?: string | null) {
     if (!userId) return;
     const uid = String(userId);
@@ -46,9 +45,9 @@ export function initSocket(server: HttpServer) {
     const active = userToSocket.get(uid);
     if (active === socketId) userToSocket.delete(uid);
     isCapture.delete(uid);
-    authCounter.delete(uid); // cleanup counter on disconnect
-    frameCounter.delete(uid); // cleanup counter on disconnect
-    authVerified.delete(uid); // NEW: prevent authVerified map from growing
+    authCounter.delete(uid);
+    frameCounter.delete(uid);
+    authVerified.delete(uid);
   }
 
   function emitToUserById(userId: string | undefined, event: string, payload: any) {
@@ -143,31 +142,57 @@ export function initSocket(server: HttpServer) {
     socket.on("faceAuthRes",(data)=>{
       console.log(data);
       const uid = String(data?.userId);
-      if (data?.auth === true || data?.data?.auth === true) {
+      if (data?.auth === true) {
         authVerified.set(uid, true);
       } else {
         authVerified.set(uid, false); 
       }
+        addScore({
+          userId: data?.userId,
+          examId: data?.examId,
+          auth_face: data?.auth
+        });
+      console.log("auth");
+
       emitToUserById(data?.userId,"faceAuthRes-client",data);
     });
 
     socket.on("headPositionRes",(data)=>{
       console.log(data);
+        addScore({
+          userId: data?.UserId,
+          examId: data?.examId,
+          head_position: data?.data?.headPosition
+        });
       emitToUserById(data?.userId,"headPositionRes-client",data);
     });
 
     socket.on("eyePositionRes",(data)=>{
-      console.log(data);
+        const left = data?.data?.leftEye;
+        const right = data?.data?.rightEye;
+        console.log(left,right,"hi");
+        console.log(data);
+        addScore({
+          userId: data?.UserId,
+          examId: data?.examId,
+          eyes: [left, right].filter(Boolean)
+        });
       emitToUserById(data?.userId,"eyePositionRes-client",data);
     });
 
-    
     socket.on("webDetectRes",(data)=>{
       console.log(data);
+      try {
+        addScore({
+          userId: data?.userId,
+          examId: data?.examId,
+          object_detected: { "cell phone": (data?.data?.["Mobile-phone"]||0) > 0 },
+          no_of_person: data?.data?.Person
+        });
+      } catch {}
       emitToUserById(data?.userId,"webDetectRes-client",data);
     })
     
-    //listener eluthu da part 5 coming soon .................................
 
     socket.on("proxy", () => {
       proxy = socket;
@@ -206,7 +231,6 @@ export function initSocket(server: HttpServer) {
       const uidKey = String((data as any)?.userId);
       const verified = authVerified.get(uidKey) === true;
 
-      // Always run web/object/other detectors
       emitToModel("web_detect", "webDetect", data);
       const settings = (data as any)?.examSettings ?? (data as any)?.settings;
       if (settings) {
@@ -231,9 +255,26 @@ export function initSocket(server: HttpServer) {
       }
     });
 
-    socket.on("submit",(data)=>{
-      console.log(getExamScore(data.userId,data.examId));
-    })
+    socket.on("submit", async (data, cb) => {
+      try {
+        const { userId, examId } = data || {};
+        const raw = getExamScore(userId, examId);
+        if (!raw) {
+          const failPayload = { success: false, message: "No score data found" };
+          emitToUserById(userId, "exam_score", failPayload);
+          if (typeof cb === 'function') cb(failPayload);
+          return;
+        }
+        const computed = await calculateExamScore(raw);
+        const payload = { success: true, score: computed };
+        emitToUserById(userId, "exam_score", payload);
+        if (typeof cb === 'function') cb(payload);
+      } catch (err:any) {
+        const errorPayload = { success: false, message: err?.message || 'Score calculation failed' };
+        if (data?.userId) emitToUserById(data.userId, "exam_score", errorPayload);
+        if (typeof cb === 'function') cb(errorPayload);
+      }
+    });
 
     socket.on("frame", (data) => {
       // console.log("framing");
@@ -269,7 +310,6 @@ export function initSocket(server: HttpServer) {
     });
     socket.on("mobile-acknowledgment", () => {
           console.log("Mobile device connected - sending acknowledgment");
-          // Broadcast to all connected clients that mobile is connected
           socket.broadcast.emit("mobile-connected", { status: true, timestamp: new Date() });
     });
 

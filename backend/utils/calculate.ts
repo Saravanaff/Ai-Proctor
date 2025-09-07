@@ -4,12 +4,11 @@ export function addScore(data: any) {
   const userId = String(data?.userId ?? data?.user_id ?? "");
   const examId = String(data?.examId ?? data?.exam_id ?? "");
   if (!userId || !examId) return null;
-
+  console.log("add");
   if (!user.has(userId)) user.set(userId, new Map());
 
-
   const exams = user.get(userId);
-
+  console.log(data);
 
 
   if (!exams.has(examId)) {
@@ -47,6 +46,7 @@ export function addScore(data: any) {
 
   if (typeof headPos === "string" && (headPos.toLowerCase() !== "forward" && headPos.toLowerCase() !== "down")) {
     examData.headFrames+=1;
+    console.log(examData.headFrames);
     if(examData.headFrames%10==0){
       examData.headPositionFlagged+=1;
       examData.headFrames=0;
@@ -59,15 +59,12 @@ export function addScore(data: any) {
 
   const eyes = data?.eyes;
   if (Array.isArray(eyes) && eyes.length) {
-    const anyOffCenter = eyes.some(
-      (e) => String(e ?? "").toLowerCase() !== "center"
-    );
-    if (anyOffCenter) examData.eyesFlagged += 1;
-  } else if (typeof eyes === "string") {
-    if (eyes.toLowerCase() !== "center" && eyes.toLowerCase() !== "down"){
+    if (eyes[0].toLowerCase() !== "center" && eyes[1].toLowerCase() !== "center"){
       examData.eyeFrames+=1;
+      console.log(examData.eyeFrames);
       if(examData.eyeFrames%10==0){
         examData.eyesFlagged+=1;
+
         examData.eyeFrames=0;
       }
     }
@@ -76,20 +73,24 @@ export function addScore(data: any) {
     }
   }
 
-
-  if (data?.object_detected["cell phone"] === true) {
+  if (data.object_detected && data.object_detected["cell phone"] === true) {
     examData.objectDetectedFlagged += 1;
+    console.log("object flag");
+  }
+  else if(data.object_detected && data?.object_detected["cell phone"]===false){
+    examData.objectDetectedFlagged=0;
   }
 
-  if ( data?.auth_face === false) {
+  if ( data?.auth_face == false) {
     examData.authFrames += 1;
-    if(examData.authFrames%10==0){
+    console.log("hi",examData.authFrames);
+    if(examData.authFrames%50==0){
       examData.authFaceFlagged+=1;
       examData.authFrames=0;
     }
   }
-  else{
-    examData.authFrames=0; 
+  else if(data.auth_face && data?.auth_face===true){
+    examData.authFrames=0;
   }
 
   const personsRaw = data?.no_of_person;
