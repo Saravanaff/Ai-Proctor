@@ -80,7 +80,7 @@ const ExamPage = ({
       }
     }
 
-    const examId = localStorage.getItem("examId");
+    const examId = localStorage?.getItem("examId");
     fetchExamSettings({userId: Number(userId), examId: Number(examId)});
   }, []);
 
