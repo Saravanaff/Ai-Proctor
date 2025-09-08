@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Eye, Shield, Camera, Wifi, WifiOff, Maximize2 } from "lucide-react";
+import { Eye, Shield, Camera, Wifi, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { io, Socket } from "socket.io-client";
 import { getUserId } from "@/constants/AuthStore";
@@ -9,7 +9,8 @@ import styles from "../styles/ThirdEye.module.css";
 import { delay } from "@/utils/delay";
 
 const userId = getUserId() || "unknown";
-const examId = localStorage.getItem("examId") || "unknown";
+// const examId = localStorage.getItem("examId") || "unknown";
+const examId = "unknown";
 
 function currentUserId(): string | null {
   try {
@@ -32,7 +33,6 @@ export default function ThirdEye() {
   const [showSurveillanceNotice, setShowSurveillanceNotice] = useState(false);
   const [isStreamingFrames, setIsStreamingFrames] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [isLandscape, setIsLandscape] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const { toast } = useToast();
 
@@ -46,10 +46,6 @@ export default function ThirdEye() {
   useEffect(() => {
     let timer: NodeJS.Timeout;
     setHydrated(true);
-
-    const handleOrientation = () => {
-      setIsLandscape(window.innerWidth > window.innerHeight);
-    };
 
     const initSocket = () => {
       // Clean up existing socket first
@@ -116,9 +112,6 @@ export default function ThirdEye() {
     };
 
     const init = async () => {
-      window.addEventListener("resize", handleOrientation);
-      window.addEventListener("orientationchange", handleOrientation);
-
       timer = setTimeout(() => {
         setShowInitialNotice(false);
         setShowSurveillanceNotice(true);
@@ -132,7 +125,6 @@ export default function ThirdEye() {
     } catch (err) {
       console.error("Initialization error:", err);
     }
-    handleOrientation();
 
     return () => {
       if (timer) {
@@ -166,9 +158,6 @@ export default function ThirdEye() {
         newSocket.current.disconnect();
         newSocket.current = null;
       }
-
-      window.removeEventListener("resize", handleOrientation);
-      window.removeEventListener("orientationchange", handleOrientation);
     };
   }, []);
 
@@ -233,9 +222,10 @@ export default function ThirdEye() {
         try {
           streamRef.current = await navigator.mediaDevices.getUserMedia({
             video: {
-              height: 480,
-              width: 480,
-              frameRate: 30,
+              facingMode: "user",
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              frameRate: { ideal: 30 },
             },
           });
           break;
@@ -255,17 +245,6 @@ export default function ThirdEye() {
 
       if (videoRef.current && streamRef.current) {
         videoRef.current.srcObject = streamRef.current;
-
-        const container = videoRef.current.parentElement?.parentElement;
-        // if (container && container.requestFullscreen) {
-        //   container.requestFullscreen();
-        // }
-
-        if (screen.orientation && (screen.orientation as any).lock) {
-          try {
-            await (screen.orientation as any).lock("landscape");
-          } catch (e) {}
-        }
       }
 
       if (streamRef.current) {
@@ -358,149 +337,193 @@ export default function ThirdEye() {
 
   return (
     <div
-      className={styles.container}
       style={{
         position: "fixed",
         top: 0,
         left: 0,
         width: "100vw",
         height: "100vh",
+        backgroundColor: "#000",
         overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <div style={{ position: "relative", width: "100%", height: "100%" }}>
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className={styles.video}
+      {/* Status Header */}
+      <div
+        style={{
+          position: "absolute",
+          top: 20,
+          left: 20,
+          right: 20,
+          zIndex: 30,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div
           style={{
-            transform: isLandscape
-              ? "translate(-50%, -50%) rotate(0deg)"
-              : "translate(-50%, -50%) rotate(90deg)",
-            objectFit: "contain",
-            width: "95%",
-            height: "100vw",
-            background: "black",
-            position: "absolute",
-            top: "50%",
-            left: "50%",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            background: "rgba(0,0,0,0.7)",
+            padding: "8px 12px",
+            borderRadius: 20,
+            color: "#fff",
+            fontSize: 14,
+            fontWeight: 500,
           }}
-        />
-        <canvas ref={canvasRef} style={{ display: "none" }} />
+        >
+          <Eye size={16} />
+          <span>Third Eye</span>
+        </div>
+        
+        <div
+          style={{
+            background: isConnected ? "rgba(34,197,94,0.8)" : "rgba(239,68,68,0.8)",
+            padding: "8px 12px",
+            borderRadius: 20,
+            color: "#fff",
+            fontSize: 12,
+            fontWeight: 500,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          {isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
+          {isConnected ? "Connected" : "Disconnected"}
+        </div>
+      </div>
 
-        {hydrated && (
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: 120,
-              display: "flex",
-              justifyContent: "center",
-              pointerEvents: "none",
-            }}
-          >
-            {isLandscape ? (
-              <button
-                className={`${styles.button} ${
-                  isStreamingFrames ? styles.stopButton : styles.startButton
-                }`}
-                onClick={isStreamingFrames ? stopStreaming : startStreaming}
-                disabled={!isConnected}
-                style={{ pointerEvents: "auto" }}
-              >
-                {isStreamingFrames ? (
-                  <>
-                    <Eye className="mr-2 inline" size={18} />
-                    Stop Surveillance
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 className="mr-2 inline" size={18} />
-                    Start Surveillance
-                  </>
-                )}
-              </button>
-            ) : (
-              <div
-                style={{
-                  color: "#fff",
-                  background: "#e53935",
-                  padding: "10px 18px",
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  fontSize: 16,
-                  pointerEvents: "auto",
-                }}
-              >
-                Please rotate your device to landscape to start surveillance.
-              </div>
-            )}
-          </div>
-        )}
+      {/* Camera Feed */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          backgroundColor: "#1a1a1a",
+          zIndex: 1,
+        }}
+      />
+      
+      <canvas ref={canvasRef} style={{ display: "none" }} />
 
+      {/* Control Button */}
+      {hydrated && (
         <div
           style={{
             position: "absolute",
-            top: 20,
+            bottom: 40,
             left: 20,
-            minWidth: 220,
-            maxWidth: 320,
-            background: "rgba(0,0,0,0.65)",
-            borderRadius: 12,
-            padding: "14px 18px",
-            zIndex: 10,
-            color: "#fff",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
+            right: 20,
+            display: "flex",
+            justifyContent: "center",
+            zIndex: 20,
           }}
         >
-          <div
-            className={styles.header}
+          <button
+            onClick={isStreamingFrames ? stopStreaming : startStreaming}
+            disabled={!isConnected}
             style={{
-              margin: 0,
-              background: "none",
+              background: isStreamingFrames 
+                ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                : "linear-gradient(135deg, #10b981, #059669)",
+              color: "#fff",
               border: "none",
-              animation: "none",
-              padding: 0,
+              padding: "16px 32px",
+              borderRadius: 50,
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: isConnected ? "pointer" : "not-allowed",
+              opacity: isConnected ? 1 : 0.5,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+              transition: "all 0.2s ease",
+              transform: "translateY(0)",
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.transform = "translateY(2px)";
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
             }}
           >
-            <Eye size={22} className="text-gradient" />
-            <span style={{ fontWeight: 600, fontSize: 18 }}>Third Eye</span>
-            {isConnected ? (
-              <Wifi size={18} className="text-green-400" />
+            {isStreamingFrames ? (
+              <>
+                <Eye size={20} />
+                Stop Surveillance
+              </>
             ) : (
-              <WifiOff size={18} className="text-red-400" />
+              <>
+                <Camera size={20} />
+                Start Surveillance
+              </>
             )}
-          </div>
+          </button>
+        </div>
+      )}
 
+      {/* Status Messages */}
+      {(showInitialNotice || showSurveillanceNotice) && (
+        <div
+          style={{
+            position: "absolute",
+            top: 80,
+            left: 20,
+            right: 20,
+            zIndex: 15,
+          }}
+        >
           {showInitialNotice && (
             <div
-              className={`${styles.notice} ${styles.initialNotice}`}
               style={{
-                margin: "8px 0 0 0",
-                background: "rgba(0,162,255,0.12)",
+                background: "rgba(59,130,246,0.9)",
+                color: "#fff",
+                padding: "12px 16px",
+                borderRadius: 12,
+                fontSize: 14,
+                fontWeight: 500,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 8,
               }}
             >
-              <Camera className="inline mr-2" size={16} />
-              <span>Initializing...</span>
+              <Camera size={16} />
+              Initializing camera...
             </div>
           )}
           {showSurveillanceNotice && (
             <div
-              className={`${styles.notice} ${styles.surveillanceNotice}`}
               style={{
-                margin: "8px 0 0 0",
-                background: "rgba(255,0,0,0.12)",
+                background: "rgba(239,68,68,0.9)",
+                color: "#fff",
+                padding: "12px 16px",
+                borderRadius: 12,
+                fontSize: 14,
+                fontWeight: 500,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
               }}
             >
-              <Shield className="inline mr-2" size={16} />
-              <span>Surveillance Engaged</span>
+              <Shield size={16} />
+              Surveillance Active
             </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
