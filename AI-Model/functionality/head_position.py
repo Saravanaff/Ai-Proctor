@@ -1,9 +1,11 @@
 import numpy as np
 import cv2
 import mediapipe as mp
+from threading import Lock
 
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, refine_landmarks=True)
+head_lock = Lock()
 
 def direction(facelm, w, h):
     face_3d = []
@@ -53,8 +55,8 @@ def head_functionality(sio):
         image_array = np.frombuffer(buffer, dtype=np.uint8)
         img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
         rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-        results = face_mesh.process(rgb_img)
+        with head_lock:
+            results = face_mesh.process(rgb_img)
         h, w, _ = img.shape
 
         if results.multi_face_landmarks:
@@ -65,7 +67,7 @@ def head_functionality(sio):
         if head == "Error":
             code = 1
 
-        data = {"headPosition": head}
+        data = {"headPos": head}
 
         sio.emit("headPositionRes", {
             "UserId": userId,

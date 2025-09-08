@@ -5,14 +5,15 @@ head_position = "Forward"
 frame_count = 0
 
 detected_objects = {
-    "person": False,
-    "cell phone": False,
+    "Person": 0,
+    "Mobile-phone": 0,
+    "Laptop": 0,
 }
 
 third_eye_objects = {
-    "person": 0,
-    "laptop": 0,
-    "unauth_device": False,
+    "Person": 0,
+    "Laptop": 0,
+    "Mobile-phone": 0,
 }
 
 

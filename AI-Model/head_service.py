@@ -1,6 +1,8 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 import socketio
 import time
-
 from functionality.head_position import head_functionality
 
 sio = socketio.Client(
