@@ -28,7 +28,7 @@ web_detect(sio)
 while not sio.connected:
     try:
         print("[WebDetect service] Trying to connect...")
-        sio.connect("http://localhost:3001/")
+        sio.connect("http://172.16.105.211:3001/")
     except Exception as e:
         print(f"[WebDetect service] Connection error: {e}")
         time.sleep(2)

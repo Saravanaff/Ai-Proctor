@@ -15,9 +15,9 @@ def setup_thirdeye_cam_handler(sio2):
         rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         now = time.time()
-        if not constants.processing_yolo and (now - constants.last_yolo_process > 0.2):
+        if not constants.processing_cam and (now - constants.last_cam_process > 0.2):
             constants.third_eye_objects = yolo_detect.thirdeye_object_detect(rgb_img)
-            constants.last_yolo_process = now
+            constants.last_cam_process = now
 
         if sio2.connected:
             sio2.emit("thirdeye_cam_result", constants.third_eye_objects)

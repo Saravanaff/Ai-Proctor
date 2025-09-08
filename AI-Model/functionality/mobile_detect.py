@@ -1,8 +1,6 @@
-from ultralytics import YOLO
-import numpy as np
+import time
 import cv2
-
-yolo_model = YOLO("final.pt")
+from core import constants, third_eye,image_utils
 
 def mobile_detect(sio):
     @sio.on("mobileDetect")
@@ -10,23 +8,23 @@ def mobile_detect(sio):
         buffer = data["buffer"]
         userId = data["userId"]
         examId = data["examId"]
-        img_array = np.frombuffer(buffer, dtype=np.uint8)
-        img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img_array = image_utils.decode_image(buffer)
+        rgb_img = cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB)
 
-        result = yolo_model.predict(rgb_img, verbose=False)[0]
+        now = time.time()
 
-        detected_objects = {"Person": 0, "Mobile-phone": 0, "Laptop": 0}
+        if not constants.processing_cam and (now - constants.last_cam_process > 0.2):
+            constants.third_eye_objects = third_eye.third_eye_detect(rgb_img)
+            constants.last_cam_process = now
 
-        for box in result.boxes:
-            label = yolo_model.names[int(box.cls[0])]
-            if label in detected_objects:
-                detected_objects[label] += 1
+        print(constants.third_eye_objects)
+        
+        if sio.connected:
+            sio.emit("mobileDetectRes", {
+                "userId": userId,
+                "examId": examId,
+                "data": constants.third_eye_objects,
+                "code": 0
+            })
 
-        sio.emit ("mobileDetectRes", {
-            "userId": userId,
-            "examId": examId,
-            "data" : detected_objects,
-            "code": 0
-        })
-        del img, rgb_img, result
+        
