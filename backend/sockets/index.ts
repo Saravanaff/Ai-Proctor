@@ -244,7 +244,7 @@ export function initSocket(server: HttpServer) {
       }
 
       const count = (authCounter.get(uidKey) ?? 0) + 1;
-      if (count % 50 === 0) {
+      if (count % 5 === 0) {
         emitToModel("face_service", "faceAuth", data);
         authCounter.set(uidKey, 0);
       } else {

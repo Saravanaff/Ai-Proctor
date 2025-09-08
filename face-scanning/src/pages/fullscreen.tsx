@@ -220,7 +220,7 @@ const fullscreen = () => {
 
     return (
         <>
-            {fullscreenAllowed && <ExamPage screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef} />}
+            {fullscreenAllowed && <ExamPage screenRecorderMediaRecorderRef={null} />}
         </>
     );
 }

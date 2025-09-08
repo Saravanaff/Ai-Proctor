@@ -121,7 +121,7 @@ const FloatingCamera = ({
     if(socketName === "headPositionRes-client"){
       if(data.data.headPos !== "Forward" && data.data.headPos!== "Down"){
         if (now - lastNotificationRef.current.headDirection >= NOTIFICATION_THROTTLE_MS) {
-          onHeadDirection(data.data.headPosition);
+          onHeadDirection(data.data.headPos);
           lastNotificationRef.current.headDirection = now;
         }
       }
@@ -133,7 +133,7 @@ const FloatingCamera = ({
         data?.data?.rightEye !== "Center"
       ) {
         if (now - lastNotificationRef.current.eyePosition >= NOTIFICATION_THROTTLE_MS) {
-          onLookingAway(data.data.headPosition);
+          onLookingAway(data.data.leftEye);
           lastNotificationRef.current.eyePosition = now;
         }
       }
