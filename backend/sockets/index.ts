@@ -134,7 +134,6 @@ export function initSocket(server: HttpServer) {
       });
 
       socket.on("result", (data: any) => {
-        console.log("result");
         emitToUserById(data?.userId, "fres", data);
       });
     });

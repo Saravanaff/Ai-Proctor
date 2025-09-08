@@ -19,30 +19,28 @@ import socket from "./socket";
 import * as mediasoupClient from "mediasoup-client";
 import { getUserId } from "@/constants/AuthStore";
 import LeftStepper from "./LeftStepper";
-import axios from 'axios';
+import axios from "axios";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface CircleMetadata {
-    x: number;
-    y: number;
-    radius: number;
+  x: number;
+  y: number;
+  radius: number;
 }
 
 interface FrameMetadata {
-    circle: CircleMetadata;
-    width: number;
-    height: number;
+  circle: CircleMetadata;
+  width: number;
+  height: number;
 }
 
 interface SocketFrameData {
-    buffer: ArrayBuffer;
-    metadata: FrameMetadata;
-    user_id: string;
-    stage: number;
-    counter: number;
+  buffer: ArrayBuffer;
+  metadata: FrameMetadata;
+  user_id: string;
+  stage: number;
+  counter: number;
 }
-
-
-
 
 const VideoComponent: React.FC<VideoComponentProps> = ({
   onScanComplete,
@@ -58,22 +56,25 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const [showOverlay, setShowOverlay] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [detectedDirection, setDetectedDirection] = useState<"forward" | "right" | "left" | null>(null);
+  const [detectedDirection, setDetectedDirection] = useState<
+    "forward" | "right" | "left" | null
+  >(null);
   const [isComplete, setIsComplete] = useState(false);
   const [examSettings, setExamSettings] = useState<any>({});
-  
-  const router = useRouter();
+  const [showTips, setShowTips] = useState(true);
+  const [faceVisible, setFaceVisible] = useState<boolean>(false);
 
+  const router = useRouter();
+  const { theme } = useTheme();
 
   // const storedFaceDirection = useRef<string[]>([]);
   const [storedFaceDirection, setStoredFaceDirection] = useState<string[]>([]);
-  const faceDirectionSequence = useRef<any>(["forward","right","left"]);
+  const faceDirectionSequence = useRef<any>(["forward", "right", "left"]);
   const stage = useRef(0);
   const counter = useRef(1);
-  const baseUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const userId = getUserId() || "unknown";
-  const examId=localStorage.getItem("examId")
+  const examId = localStorage.getItem("examId");
 
   // Centralized cleanup function
   const cleanupCamera = () => {
@@ -185,9 +186,12 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         streamRef.current = stream;
         setIsLoading(false);
 
-        const userId : string | null = getUserId();
-        const onInterval = (video: HTMLVideoElement, userId: string | null, socketName: string): void => {
-
+        const userId: string | null = getUserId();
+        const onInterval = (
+          video: HTMLVideoElement,
+          userId: string | null,
+          socketName: string
+        ): void => {
           if (!video || video.readyState < 2 || isComplete) return;
 
           const width: number = video.videoWidth;
@@ -208,7 +212,6 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           const ctx: CanvasRenderingContext2D | null = canvas.getContext("2d");
           if (!ctx) return;
 
-
           ctx.drawImage(
             video,
             circle.x - radius,
@@ -225,40 +228,64 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             (blob: Blob | null) => {
               if (blob) {
                 blob.arrayBuffer().then((buffer: ArrayBuffer) => {
-                    const frameData: SocketFrameData = {
-                      buffer,
-                      metadata: {
-                          circle,
-                          width: boundingSize,
-                          height: boundingSize,
-                      },
-                      user_id: userId || "unknown",
-                      counter: counter.current,
-                      stage: stage.current,
-                    };
-                    
-                    socket.emit(socketName, frameData);
+                  const frameData: SocketFrameData = {
+                    buffer,
+                    metadata: {
+                      circle,
+                      width: boundingSize,
+                      height: boundingSize,
+                    },
+                    user_id: userId || "unknown",
+                    counter: counter.current,
+                    stage: stage.current,
+                  };
+
+                  socket.emit(socketName, frameData);
                 });
               }
             },
             "image/jpeg",
             0.7
           );
-        }
+        };
 
-        intervalRef.current = setInterval(() => onInterval(video,userId,"frame"), 1000 / 30);
-
+        intervalRef.current = setInterval(
+          () => onInterval(video, userId, "frame"),
+          1000 / 30
+        );
 
         const onFres = (data: any) => {
-          console.log(data," found :",data.face_found," success :",data.success," con: ",(data.head_position.toLowerCase() === faceDirectionSequence.current[stage.current]));
-          if(!data.success) {
+          console.log(
+            data,
+            " found :",
+            data.face_found,
+            " success :",
+            data.success,
+            " con: ",
+            data.head_position.toLowerCase() ===
+              faceDirectionSequence.current[stage.current]
+          );
+
+          // Update face visibility
+          setFaceVisible(data.face_found || false);
+
+          if (!data.success) {
             counter.current = data.counter;
           }
-          if(data.face_found && data.success && (data.head_position.toLowerCase() === faceDirectionSequence.current[stage.current])){
-            setStoredFaceDirection((prev) => [...prev, data.head_position.toLowerCase()]);
+          if (
+            data.face_found &&
+            data.success &&
+            data.head_position.toLowerCase() ===
+              faceDirectionSequence.current[stage.current]
+          ) {
+            setStoredFaceDirection((prev) => [
+              ...prev,
+              data.head_position.toLowerCase(),
+            ]);
             stage.current++;
             counter.current = 0;
-            if(stage.current >= faceDirectionSequence.current.length){
+
+            if (stage.current >= faceDirectionSequence.current.length) {
               console.log("Face direction sequence complete");
               setIsComplete(true);
               setShowOverlay(true);
@@ -267,7 +294,13 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           // console.log(data);
           // setCircle(data.face_found);
           // Normalize direction if provided
-          const raw = (typeof data?.direction === "string" ? data.direction : (data?.head_position || ""))?.toString().toLowerCase();
+          const raw = (
+            typeof data?.direction === "string"
+              ? data.direction
+              : data?.head_position || ""
+          )
+            ?.toString()
+            .toLowerCase();
           if (raw) {
             if (raw.includes("left")) setDetectedDirection("left");
             else if (raw.includes("right")) setDetectedDirection("right");
@@ -329,7 +362,6 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
     };
   }, [router]);
 
-
   if (error) {
     return (
       <div
@@ -339,10 +371,11 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          color: "red",
+          color: "var(--error-color)",
           fontSize: "18px",
           padding: "20px",
           textAlign: "center",
+          background: "var(--background)",
         }}
       >
         <div style={{ marginBottom: "20px" }}>{error}</div>
@@ -358,11 +391,12 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           style={{
             padding: "10px 20px",
             fontSize: "16px",
-            backgroundColor: "#4CAF50",
+            background: "var(--success-color)",
             color: "white",
             border: "none",
             borderRadius: "5px",
             cursor: "pointer",
+            transition: "all 0.3s ease",
           }}
         >
           Retry Camera Access
@@ -378,7 +412,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         width: "100vw",
         position: "relative",
         overflow: "hidden",
-        backgroundColor: "#0b0f14",
+        background: "var(--background)",
       }}
     >
       {/* Top progress bar */}
@@ -402,7 +436,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           }}
         />
       </div> */}
-      
+
       {/* Left stepper */}
       {/* <div
         style={{
@@ -435,16 +469,295 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           );
         })}
       </div> */}
-      <LeftStepper faceDirectionSequence={faceDirectionSequence} stage={stage} />
-
+      <LeftStepper
+        faceDirectionSequence={faceDirectionSequence}
+        stage={stage}
+      />
 
       <VideoStream videoRef={videoRef} />
 
       <FaceDetectionOverlay
         storedFaceDirection={storedFaceDirection}
-        expectedDirection={(faceDirectionSequence.current.length > stage.current) ? (faceDirectionSequence.current[stage.current]) : null}
+        expectedDirection={
+          faceDirectionSequence.current.length > stage.current
+            ? faceDirectionSequence.current[stage.current]
+            : null
+        }
       />
-      
+
+      {/* Modern feedback indicator */}
+      {detectedDirection && (
+        <div
+          style={{
+            position: "absolute",
+            top: 70,
+            right: 24,
+            background: "var(--card-bg)",
+            border: "1px solid var(--border-color)",
+            borderRadius: 16,
+            padding: "10px 14px",
+            color: "var(--text-primary)",
+            fontSize: 13,
+            fontWeight: 600,
+            zIndex: 50,
+            backdropFilter: "blur(16px)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            boxShadow: "0 8px 32px var(--shadow)",
+            transition: "all 0.3s ease",
+          }}
+        >
+          <div
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background:
+                detectedDirection ===
+                (faceDirectionSequence.current[stage.current] || "forward")
+                  ? "var(--success-color)"
+                  : "var(--warning-color)",
+              boxShadow:
+                detectedDirection ===
+                (faceDirectionSequence.current[stage.current] || "forward")
+                  ? "0 0 8px var(--success-bg)"
+                  : "0 0 8px var(--warning-bg)",
+              animation: "pulse 2s infinite",
+            }}
+          />
+          <span style={{ opacity: 0.8 }}>
+            {detectedDirection.charAt(0).toUpperCase() +
+              detectedDirection.slice(1)}
+          </span>
+          {detectedDirection ===
+            (faceDirectionSequence.current[stage.current] || "forward") && (
+            <div
+              style={{
+                background: "var(--success-color)",
+                borderRadius: "50%",
+                width: 16,
+                height: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 10,
+                color: "white",
+              }}
+            >
+              ✓
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modern face visibility indicator */}
+      {!showTips && (
+        <div
+          style={{
+            position: "absolute",
+            top: 116,
+            right: 24,
+            background: faceVisible ? "var(--success-bg)" : "var(--error-bg)",
+            border: `1px solid ${
+              faceVisible ? "var(--success-color)" : "var(--error-color)"
+            }`,
+            borderRadius: 12,
+            padding: "6px 10px",
+            color: faceVisible ? "var(--success-color)" : "var(--error-color)",
+            fontSize: 11,
+            fontWeight: 600,
+            zIndex: 50,
+            backdropFilter: "blur(16px)",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            transition: "all 0.3s ease",
+            letterSpacing: "0.3px",
+          }}
+        >
+          <div
+            style={{
+              width: 4,
+              height: 4,
+              borderRadius: "50%",
+              background: faceVisible
+                ? "var(--success-color)"
+                : "var(--error-color)",
+              animation: faceVisible ? "none" : "pulse 1.5s infinite",
+            }}
+          />
+          {faceVisible ? "VISIBLE" : "NOT VISIBLE"}
+        </div>
+      )}
+
+      {/* Minimal progress indicator */}
+      <div
+        style={{
+          position: "absolute",
+          top: 24,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 50,
+        }}
+      >
+        <div
+          style={{
+            width: 180,
+            height: 2,
+            background: "var(--border-color)",
+            borderRadius: 1,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${(stage.current / 3) * 100}%`,
+              height: "100%",
+              background: "var(--accent-color)",
+              borderRadius: 1,
+              transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+              boxShadow: "0 0 8px var(--accent-color)",
+            }}
+          />
+        </div>
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: 8,
+            fontSize: 12,
+            fontWeight: 500,
+            color: "var(--border-color)",
+            letterSpacing: "0.5px",
+          }}
+        >
+          {Math.min(stage.current + 1, 3)} / 3
+        </div>
+      </div>
+
+      {/* Modern tips overlay */}
+      {showTips && !isLoading && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            background: "var(--modal-bg)",
+            border: "1px solid var(--border-color)",
+            borderRadius: 24,
+            padding: "32px",
+            color: "var(--text-primary)",
+            zIndex: 70,
+            backdropFilter: "blur(24px)",
+            maxWidth: "420px",
+            textAlign: "center",
+            boxShadow: "0 25px 50px var(--shadow)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 28,
+              fontWeight: 700,
+              marginBottom: 8,
+              background: "var(--accent-color)",
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              color: "var(--accent-color)",
+              letterSpacing: "-0.5px",
+            }}
+          >
+            Face Verification
+          </div>
+          <div
+            style={{
+              fontSize: 14,
+              color: "var(--text-secondary)",
+              marginBottom: 24,
+              fontWeight: 500,
+            }}
+          >
+            Follow these steps for successful scanning
+          </div>
+
+          <div
+            style={{
+              fontSize: 14,
+              lineHeight: 1.8,
+              marginBottom: 28,
+              textAlign: "left",
+            }}
+          >
+            {[
+              "Keep your face centered within the circle",
+              "Ensure your face remains visible during turns (Check with the indicator)",
+              "Turn your head slowly and smoothly",
+              "Rotate approximately 45° for side angles",
+              "Follow the on-screen arrows and guidance",
+            ].map((tip, index) => (
+              <div
+                key={index}
+                style={{
+                  marginBottom: 16,
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 12,
+                }}
+              >
+                <div
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    background: "var(--accent-color)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 10,
+                    color: "white",
+                    fontWeight: 600,
+                    flexShrink: 0,
+                    marginTop: 2,
+                  }}
+                >
+                  {index + 1}
+                </div>
+                <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>
+                  {tip}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setShowTips(false)}
+            style={{
+              background: "var(--accent-color)",
+              color: "white",
+              border: "none",
+              borderRadius: 16,
+              padding: "14px 28px",
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: "0 8px 25px var(--shadow)",
+              letterSpacing: "0.3px",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.filter = "brightness(1.1)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.filter = "brightness(1)";
+            }}
+          >
+            Start Verification
+          </button>
+        </div>
+      )}
+
       {isLoading && <LoadingIndicator message="Accessing camera..." />}
 
       {showOverlay && isComplete && (
@@ -455,58 +768,120 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             left: 0,
             width: "100vw",
             height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.7)",
+            background: "var(--overlay-bg)",
             zIndex: 100,
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
-            color: "#fff",
-            fontSize: "24px",
-            fontWeight: "bold",
-            textAlign: "center",
+            backdropFilter: "blur(16px)",
           }}
         >
-          <div style={{ marginBottom: 20, fontSize: 32 }}>
-            Face Scanning Complete!
-          </div>
-          <div style={{ marginBottom: 30, fontSize: 16, opacity: 0.8 }}>
-            All verification steps completed successfully.
-          </div>
-          <button
-            className="click"
-            onClick={async () => {
-    try {
-      console.log("Entering exam, cleaning up camera before navigation");
-      cleanupCamera();
-
-      const response = await axios.get(`${baseUrl}/getExamSettings`, {
-        params: { userId: Number(userId), examId: Number(examId) },
-      });
-
-      if(!response.data.third_eye_enabled){
-        router.push('/fullscreen');
-      }
-      else{
-        router.push('/SetupThirdEye');
-      }
-    } catch (error) {
-      console.error("Error fetching exam settings:", error);
-    }
-  }}
+          <div
             style={{
-              padding: "15px 30px",
-              fontSize: "18px",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              transition: "background-color 0.3s ease",
+              background: "var(--modal-bg)",
+              borderRadius: 32,
+              padding: "48px",
+              textAlign: "center",
+              border: "1px solid var(--border-color)",
+              boxShadow: "0 32px 64px var(--shadow)",
             }}
           >
-            Setup Third Eye
-          </button>
+            <div
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: "50%",
+                background: "var(--success-color)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 24px",
+                boxShadow: "0 16px 32px var(--success-bg)",
+              }}
+            >
+              <div style={{ fontSize: 36, color: "white" }}>✓</div>
+            </div>
+
+            <div
+              style={{
+                marginBottom: 16,
+                fontSize: 36,
+                fontWeight: 700,
+                color: "var(--text-primary)",
+                letterSpacing: "-1px",
+              }}
+            >
+              Verification Complete
+            </div>
+
+            <div
+              style={{
+                marginBottom: 32,
+                fontSize: 16,
+                color: "var(--text-secondary)",
+                fontWeight: 500,
+                lineHeight: 1.6,
+              }}
+            >
+              Face scanning completed successfully.
+              <br />
+              All verification steps have been validated.
+            </div>
+
+            <button
+              className="click"
+              onClick={async () => {
+                try {
+                  console.log(
+                    "Entering exam, cleaning up camera before navigation"
+                  );
+                  cleanupCamera();
+
+                  const response = await axios.get(
+                    `${baseUrl}/getExamSettings`,
+                    {
+                      params: {
+                        userId: Number(userId),
+                        examId: Number(examId),
+                      },
+                    }
+                  );
+
+                  if (!response.data.third_eye_enabled) {
+                    router.push("/fullscreen");
+                  } else {
+                    router.push("/SetupThirdEye");
+                  }
+                } catch (error) {
+                  console.error("Error fetching exam settings:", error);
+                }
+              }}
+              style={{
+                background: "var(--accent-color)",
+                color: "white",
+                border: "none",
+                borderRadius: 16,
+                padding: "16px 32px",
+                fontSize: 16,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: "0 12px 24px var(--shadow)",
+                letterSpacing: "0.3px",
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.filter = "brightness(1.1)";
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.filter = "brightness(1)";
+              }}
+            >
+              Continue to Exam Setup
+            </button>
+          </div>
         </div>
       )}
     </div>
