@@ -25,6 +25,7 @@ interface VideoChunkData {
 const FloatingCamera = ({
   socket,
   onLookingAway,
+  onHeadDirection,
   detect,
   number,
   onAuthFaceMissing,
@@ -96,18 +97,15 @@ const FloatingCamera = ({
     }
 
     if(socketName === "headPositionRes-client"){
-      if(data.data.headPosition !== "Forward" && data.data.headPosition !== "Down"){
-        onLookingAway(data.data.headPosition);
+      if(data.data.headPos !== "Forward" && data.data.headPos!== "Down"){
+        onHeadDirection(data.data.headPosition);
       }
     }
     
     if(socketName === "eyePositionRes-client"){
       if(
-        data.data.head_position == "Forward" &&
-        data.data.leftEye !== "Center" &&
-        data.data.rightEye !== "Center" &&
-        data.data.leftEye !== "Left" &&
-        data.data.rightEye !== "Left"
+        data?.data?.leftEye !== "Center" &&
+        data?.data?.rightEye !== "Center"
       ) {
         onLookingAway(data.data.headPosition);
       }

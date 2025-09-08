@@ -87,22 +87,18 @@ const ExamPage = ({
 
   const detectObject = () => {
     console.log("Object detected");
-    if (examSettings?.flag_notifications_enabled!==true && examSettings?.object_detection_enabled !== false) {
       setObject(true);
       setTimeout(() => setObject(false), 3000);
-    }
   };
 
 
 
   const number = (a: number) => {
     setFace(a);
-    if (examSettings?.multiple_person_detection_enabled !== false) {
       setNum(true)
       setTimeout(() => {
         setNum(false);
       }, 2000);
-    }
   };
 
   useEffect(() => {
@@ -173,10 +169,8 @@ const ExamPage = ({
   const lookingAlert = (side: any) => {
     console.log("looking away");
     s = side;
-    if (examSettings?.flag_notifications_enabled!=false && examSettings?.head_direction_enabled!=false && examSettings?.eyeball_detection_enabled!=false) {
       setlookAlert(true);
       setTimeout(() => setlookAlert(false), 3000);
-    }
   };
 
   const handleAuthFaceMissing = () => {
@@ -187,10 +181,8 @@ const ExamPage = ({
 
   const handleHeadDirection = (direction: string) => {
     console.log("Head direction changed:", direction);
-    if (examSettings?.flag_notifications_enabled!==true && examSettings?.head_direction_enabled !=false) {
       setHeadDirection(true);
       setTimeout(() => setHeadDirection(false), 3000);
-    }
   };
 
   const handleChange = (qId: number, value: string) => {
@@ -690,7 +682,7 @@ const ExamPage = ({
       )}
 
       {/* Conditionally render alerts based on exam settings */}
-      {lookAlert && examSettings?.flag_notifications_enabled!== true && (
+      {lookAlert && (
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{
@@ -710,7 +702,7 @@ const ExamPage = ({
         </div>
       )}
 
-      {object && examSettings?.object_detection_enabled !== false && (
+      {object &&(
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{
@@ -730,7 +722,7 @@ const ExamPage = ({
         </div>
       )}
 
-      {num && examSettings?.multiple_person_detection_enabled !== false && (
+      {num && (
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{
@@ -748,7 +740,7 @@ const ExamPage = ({
         </div>
       )}
 
-      {authFaceMissing && examSettings?.eyeball_detection_enabled !== false && (
+      {authFaceMissing &&  (
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{
@@ -769,7 +761,7 @@ const ExamPage = ({
         </div>
       )}
 
-      {headDirection && examSettings?.head_direction_enabled !== false && (
+      {headDirection && (
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{

@@ -112,7 +112,7 @@ def eye_functionality(sio):
             code = -1 
 
         result = {
-            "UserId": userId,
+            "userId": userId,
             "examId": examId,
             "data": data,
             "code": code
