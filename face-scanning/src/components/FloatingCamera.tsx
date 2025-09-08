@@ -60,6 +60,20 @@ const FloatingCamera = ({
     mlp: 0,
   });
 
+  // Track last notification timestamps to prevent repeated alerts
+  const lastNotificationRef = useRef<{[key: string]: number}>({
+    faceAuth: 0,
+    headDirection: 0,
+    eyePosition: 0,
+    deviceDetected: 0,
+    multiplePersons: 0,
+    soundDetected: 0,
+    noLaptop: 0,
+    noCandidate: 0
+  });
+
+  const NOTIFICATION_THROTTLE_MS = 2000; // 2 seconds gap
+
   const settingsRef = useRef<any>({});
   useEffect(() => {
     settingsRef.current = (settings && typeof settings === 'object') ? settings : {};
@@ -90,18 +104,26 @@ const FloatingCamera = ({
 
   const handleUserAlert = useCallback((data : any,socketName: string) => {
     console.log("Alert Data:", data, "from", socketName)
+    const now = Date.now();
+
     if(socketName === "faceAuthRes-client") {
       if(data.auth === false) {
-        toast({
-          title: "Examinee Face Not Found",
-          variant: "destructive",
-        });
+        if (now - lastNotificationRef.current.faceAuth >= NOTIFICATION_THROTTLE_MS) {
+          toast({
+            title: "Examinee Face Not Found",
+            variant: "destructive",
+          });
+          lastNotificationRef.current.faceAuth = now;
+        }
       }
     }
 
     if(socketName === "headPositionRes-client"){
       if(data.data.headPos !== "Forward" && data.data.headPos!== "Down"){
-        onHeadDirection(data.data.headPosition);
+        if (now - lastNotificationRef.current.headDirection >= NOTIFICATION_THROTTLE_MS) {
+          onHeadDirection(data.data.headPosition);
+          lastNotificationRef.current.headDirection = now;
+        }
       }
     }
     
@@ -110,51 +132,72 @@ const FloatingCamera = ({
         data?.data?.leftEye !== "Center" &&
         data?.data?.rightEye !== "Center"
       ) {
-        onLookingAway(data.data.headPosition);
+        if (now - lastNotificationRef.current.eyePosition >= NOTIFICATION_THROTTLE_MS) {
+          onLookingAway(data.data.headPosition);
+          lastNotificationRef.current.eyePosition = now;
+        }
       }
     }
     
     if(socketName === "webDetectRes-client"){
       if( data.data["Mobile-phone"] !== 0 || data.data["Laptop"] !== 0) {
-        detect();
-        changeColor();
+        if (now - lastNotificationRef.current.deviceDetected >= NOTIFICATION_THROTTLE_MS) {
+          detect();
+          changeColor();
+          lastNotificationRef.current.deviceDetected = now;
+        }
       }
       if(data.data.Person > 1){
-        number(data.data.Person);
-        changeColor();
+        if (now - lastNotificationRef.current.multiplePersons >= NOTIFICATION_THROTTLE_MS) {
+          number(data.data.Person);
+          changeColor();
+          lastNotificationRef.current.multiplePersons = now;
+        }
       }
     }
 
     if(socketName === "mobileDetectRes-client"){
       if ( data.data["Mobile-phone"] !== 0 || data.data.Laptop > 1 ) {
-        toast({
-          title: "Unauthorized Device Detected",
-          description: "Dont keep Gadgets Nearby",
-          variant: "destructive",
-        });
+        if (now - lastNotificationRef.current.deviceDetected >= NOTIFICATION_THROTTLE_MS) {
+          toast({
+            title: "Unauthorized Device Detected",
+            description: "Dont keep Gadgets Nearby",
+            variant: "destructive",
+          });
+          lastNotificationRef.current.deviceDetected = now;
+        }
       }
 
       if ( data.data.Laptop === 0 ) {
-        toast({
-          title: "Candiate Laptop is not present",
-          description: "No laptop is present",
-          variant: "destructive",
-        });
+        if (now - lastNotificationRef.current.noLaptop >= NOTIFICATION_THROTTLE_MS) {
+          toast({
+            title: "Candiate Laptop is not present",
+            description: "No laptop is present",
+            variant: "destructive",
+          });
+          lastNotificationRef.current.noLaptop = now;
+        }
       }
 
       if ( data.data.Person === 0 ) {
-        toast({
-          title: "Canditate is not present",
-          description: "No persons are there",
-          variant: "destructive",
-        });
+        if (now - lastNotificationRef.current.noCandidate >= NOTIFICATION_THROTTLE_MS) {
+          toast({
+            title: "Canditate is not present",
+            description: "No persons are there",
+            variant: "destructive",
+          });
+          lastNotificationRef.current.noCandidate = now;
+        }
       }
       else if ( data.data.Person > 1 ) {
-        toast({
-          title: "More number of persons are present",
-          description: "Please ensure candidate is present in isolated area",
-          variant: "destructive",
-        });
+        if (now - lastNotificationRef.current.multiplePersons >= NOTIFICATION_THROTTLE_MS) {
+          toast({
+            title: "More number of persons are present",
+            description: "Please ensure candidate is present in isolated area",
+            variant: "destructive",
+          });
+          lastNotificationRef.current.multiplePersons = now;
+        }
       }
     }
     
@@ -196,12 +239,16 @@ const FloatingCamera = ({
   const { isSoundDetected, audioLevel } = useSoundLevel();
 
   const handleSoundDetection = useCallback(() => {
+    const now = Date.now();
     if (isSoundDetected && !prevSoundDetected) {
-      toast({
-        title: "Sound Detected",
-        description: "Audio detected during exam",
-        variant: "destructive",
-      });
+      if (now - lastNotificationRef.current.soundDetected >= NOTIFICATION_THROTTLE_MS) {
+        toast({
+          title: "Sound Detected",
+          description: "Audio detected during exam",
+          variant: "destructive",
+        });
+        lastNotificationRef.current.soundDetected = now;
+      }
       setBorderColor("red");
     } else if (!isSoundDetected) {
       setBorderColor("white");

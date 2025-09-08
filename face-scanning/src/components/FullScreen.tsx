@@ -47,6 +47,16 @@ const ExamPage = ({
   const [headDirection, setHeadDirection] = useState(false);
   const [examSettings, setExamSettings] = useState<ExamSettings>({});
 
+  // Track last alert timestamps to prevent repeated alerts
+  const lastAlertRef = useRef<{[key: string]: number}>({
+    lookAlert: 0,
+    object: 0,
+    num: 0,
+    authFaceMissing: 0,
+    headDirection: 0
+  });
+
+  const ALERT_THROTTLE_MS = 2000; // 2 seconds gap
   
   const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
 
@@ -86,19 +96,27 @@ const ExamPage = ({
 
 
   const detectObject = () => {
-    console.log("Object detected");
+    const now = Date.now();
+    if (now - lastAlertRef.current.object >= ALERT_THROTTLE_MS) {
+      console.log("Object detected");
       setObject(true);
       setTimeout(() => setObject(false), 3000);
+      lastAlertRef.current.object = now;
+    }
   };
 
 
 
   const number = (a: number) => {
-    setFace(a);
+    const now = Date.now();
+    if (now - lastAlertRef.current.num >= ALERT_THROTTLE_MS) {
+      setFace(a);
       setNum(true)
       setTimeout(() => {
         setNum(false);
       }, 2000);
+      lastAlertRef.current.num = now;
+    }
   };
 
   useEffect(() => {
@@ -167,22 +185,34 @@ const ExamPage = ({
   }, []);
   let s: any;
   const lookingAlert = (side: any) => {
-    console.log("looking away");
-    s = side;
+    const now = Date.now();
+    if (now - lastAlertRef.current.lookAlert >= ALERT_THROTTLE_MS) {
+      console.log("looking away");
+      s = side;
       setlookAlert(true);
       setTimeout(() => setlookAlert(false), 3000);
+      lastAlertRef.current.lookAlert = now;
+    }
   };
 
   const handleAuthFaceMissing = () => {
-    console.log("Auth face missing alert triggered");
+    const now = Date.now();
+    if (now - lastAlertRef.current.authFaceMissing >= ALERT_THROTTLE_MS) {
+      console.log("Auth face missing alert triggered");
       setAuthFaceMissing(true);
       setTimeout(() => setAuthFaceMissing(false), 3000);
+      lastAlertRef.current.authFaceMissing = now;
+    }
   };
 
   const handleHeadDirection = (direction: string) => {
-    console.log("Head direction changed:", direction);
+    const now = Date.now();
+    if (now - lastAlertRef.current.headDirection >= ALERT_THROTTLE_MS) {
+      console.log("Head direction changed:", direction);
       setHeadDirection(true);
       setTimeout(() => setHeadDirection(false), 3000);
+      lastAlertRef.current.headDirection = now;
+    }
   };
 
   const handleChange = (qId: number, value: string) => {
