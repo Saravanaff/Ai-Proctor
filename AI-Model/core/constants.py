@@ -10,6 +10,7 @@ detected_objects = {
     "Laptop": 0,
 }
 
+
 third_eye_objects = {
     "Person": 0,
     "Laptop": 0,
@@ -27,6 +28,7 @@ last_yolo_process = 0
 last_head_process = 0
 last_auth_process = 0
 last_processed_time = 0
+last_cam_process = 0
 frameCount=0
 
 AUTH_INTERVAL = 0.5
@@ -36,9 +38,10 @@ yolo_lock = Lock()
 auth_lock = Lock()
 head_lock = Lock()
 store_lock = Lock()
-deepface_lock = Lock()
+mobile_lock = Lock()
 
 processing_yolo = False
+processing_cam = False
 
 face_data_path = "storage/face_data.json"
 

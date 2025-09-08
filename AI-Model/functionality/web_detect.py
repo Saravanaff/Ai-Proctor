@@ -17,7 +17,7 @@ def web_detect(sio):
             constants.detected_objects = yolo_detect.detect_person_and_objects(rgb_img)
             constants.last_yolo_process = now
         
-        
+        print(constants.detected_objects)
         if sio.connected:
             sio.emit("webDetectRes", {
                 "userId": userId,

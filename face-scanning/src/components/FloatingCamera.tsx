@@ -14,7 +14,10 @@ import { delay } from "@/utils/delay";
 import axios from 'axios'
 
 const userId = getUserId() || "unknown";
-const examId = localStorage.getItem("examId") || "unknown";
+let examId;
+if(localStorage)
+examId = localStorage?.getItem("examId");
+else examId = "unknown";
 
 interface VideoChunkData {
   user_id: string;

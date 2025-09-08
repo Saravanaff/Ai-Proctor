@@ -65,12 +65,12 @@ def thirdeye_object_detect(image: np.ndarray) -> dict:
         label = yolo_model.names[int(box.cls[0])]
         x1, y1, x2, y2 = map(int, box.xyxy[0])
 
-        if label == "person":
+        if label == "Person":
             constants.third_eye_objects["person"] += 1
-        elif label == "laptop":
+        elif label == "Laptop":
             constants.third_eye_objects["laptop"] += 1
             laptops.append((x1, y1, x2, y2))
-        elif label in ["cell phone", "mobile phone"]:
+        elif label in ["Cell phone", "Mobile phone"]:
             constants.third_eye_objects["unauth_device"] = True
             mobiles.append((x1, y1, x2, y2))
 
