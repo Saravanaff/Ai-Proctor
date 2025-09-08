@@ -56,7 +56,6 @@ const FloatingCamera = ({
     mlp: 0,
   });
 
-  // Ref to always hold latest settings passed from parent
   const settingsRef = useRef<any>({});
   useEffect(() => {
     settingsRef.current = (settings && typeof settings === 'object') ? settings : {};

@@ -247,21 +247,26 @@ const CreateExam = () => {
         setProfileInitials(initials || "U");
       }
     } catch (err) {
-      // silent failure, keep defaults
     }
   }, []);
 
   return (
     <div
       className={`${styles.examinerContainer} ${styles.enterpriseRoot} theme-transition`}
+      style={{
+        // Ensure background adapts to dark/light theme
+        background: 'var(--app-bg, var(--background, var(--body-bg, #0f1115)))',
+        minHeight: '100vh',
+        color: 'var(--text-primary)'
+      }}
     >
-      <div className={styles.pageBackdrop} style={{ display: "none" }} />
+      <div className={styles.pageBackdrop} style={{ display: 'none' }} />
       <header className={`${styles.header} ${styles.fadeIn} theme-transition`}>
         <div className={styles.headerContent}>
-          <h1 className={`${styles.title} theme-transition`}>
+          <h1 className={`${styles.title} theme-transition`} style={{ color: 'var(--text-primary)' }}>
             Exam Management Console
           </h1>
-          <p className={`${styles.subtitle} theme-transition`}>
+          <p className={`${styles.subtitle} theme-transition`} style={{ color: 'var(--text-secondary)' }}>
             Create, monitor and manage assessments
           </p>
         </div>
@@ -486,16 +491,17 @@ const CreateExam = () => {
 
       <section
         className={`${styles.examsSection} ${styles.fadeIn} theme-transition`}
+        style={{ background: 'transparent' }}
       >
         <div className={`${styles.sectionHeader} theme-transition`}>
           <h2
             className={`${styles.sectionTitle} theme-transition`}
             style={{
-              color: "#1f2937",
-              fontSize: "20px",
-              fontWeight: "600",
+              color: 'var(--text-primary)',
+              fontSize: '20px',
+              fontWeight: '600',
               margin: 0,
-              transition: "color 0.3s ease",
+              transition: 'color 0.3s ease'
             }}
           >
             Exams ({filteredExams.length})
@@ -504,9 +510,9 @@ const CreateExam = () => {
             <span
               className={`${styles.filterInfo} theme-transition`}
               style={{
-                color: "#6b7280",
-                fontSize: "14px",
-                transition: "color 0.3s ease",
+                color: 'var(--text-secondary)',
+                fontSize: '14px',
+                transition: 'color 0.3s ease'
               }}
             >
               Filtered by: "{search}"
