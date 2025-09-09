@@ -47,7 +47,6 @@ const ExamPage = ({
   const [headDirection, setHeadDirection] = useState(false);
   const [examSettings, setExamSettings] = useState<ExamSettings>({});
 
-  // Track last alert timestamps to prevent repeated alerts
   const lastAlertRef = useRef<{[key: string]: number}>({
     lookAlert: 0,
     object: 0,
@@ -56,7 +55,7 @@ const ExamPage = ({
     headDirection: 0
   });
 
-  const ALERT_THROTTLE_MS = 2000; // 2 seconds gap
+  const ALERT_THROTTLE_MS = 2000; 
   
   const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
 

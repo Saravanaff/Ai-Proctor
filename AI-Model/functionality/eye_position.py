@@ -102,13 +102,12 @@ def eye_functionality(sio):
 
         if results.multi_face_landmarks:
             facelm = results.multi_face_landmarks[0]
-            eyes[0] = direction(390, 384, 474, 476, facelm, w, h) # Left eye
-            eyes[1] = direction(163, 157, 471, 469, facelm, w, h) # Right eye
+            eyes[0] = direction(390, 384, 474, 476, facelm, w, h)
+            eyes[1] = direction(163, 157, 471, 469, facelm, w, h)
 
         data = {"leftEye": eyes[0], "rightEye": eyes[1]}
         print(data)
         code = 0
-
         if eyes[0] =="Error" or eyes[1] == "Error":
             code = -1 
 

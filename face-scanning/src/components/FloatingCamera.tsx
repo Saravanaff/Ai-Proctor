@@ -85,11 +85,15 @@ const FloatingCamera = ({
   const [borderColor, setBorderColor] = useState("white");
   const [prevSoundDetected, setPrevSoundDetected] = useState(false);
 
+  // Initial authentication state
+  const initialAuthDoneRef = useRef(false);
+  const [showInitialScan, setShowInitialScan] = useState(true);
+
   const FIRE_THRESHOLD_MS = 30000;
   const unauthStartAtRef = useRef<number | null>(null);
   const unauthTriggeredRef = useRef(false);
 
-  const scanning = true;
+  const scanning = !initialAuthDoneRef.current; // Only scan when not authenticated
 
   const { toast } = useToast();
 
@@ -101,22 +105,34 @@ const FloatingCamera = ({
   process.env.NEXT_PUBLIC_BACKEND_URL;
   const userId = getUserId() || "unknown";
 
+  useEffect(() => {
+    if (!initialAuthDoneRef.current && onAuthPause) {
+      onAuthPause();
+    }
+  }, [onAuthPause]);
 
   const handleUserAlert = useCallback((data : any,socketName: string) => {
     console.log("Alert Data:", data, "from", socketName)
     const now = Date.now();
 
     if(socketName === "faceAuthRes-client") {
+      if(data.auth === true && !initialAuthDoneRef.current) {
+        initialAuthDoneRef.current = true;
+        setShowInitialScan(false);
+        if (onAuthResume) onAuthResume();
+        return;
+      }
+      if (!initialAuthDoneRef.current) {
+        return;
+      }
       if(data.auth === false) {
-        if (now - lastNotificationRef.current.faceAuth >= NOTIFICATION_THROTTLE_MS) {
-          toast({
-            title: "Examinee Face Not Found",
-            variant: "destructive",
-          });
-          lastNotificationRef.current.faceAuth = now;
+        if (Date.now() - lastNotificationRef.current.faceAuth >= NOTIFICATION_THROTTLE_MS) {
+          onAuthFaceMissing();
+          lastNotificationRef.current.faceAuth = Date.now();
         }
       }
     }
+    if (!initialAuthDoneRef.current) return;
 
     if(socketName === "headPositionRes-client"){
       if(data.data.headPos !== "Forward" && data.data.headPos!== "Down"){
@@ -171,7 +187,7 @@ const FloatingCamera = ({
       if ( data.data.Laptop === 0 ) {
         if (now - lastNotificationRef.current.noLaptop >= NOTIFICATION_THROTTLE_MS) {
           toast({
-            title: "Candiate Laptop is not present",
+            title: "Canditate Laptop is not present",
             description: "No laptop is present",
             variant: "destructive",
           });
@@ -206,7 +222,9 @@ const FloatingCamera = ({
     onLookingAway,
     changeColor, 
     detect, 
-    number
+    number,
+    onAuthResume,
+    onAuthFaceMissing
   ]);
 
 
@@ -373,8 +391,8 @@ const FloatingCamera = ({
                       exam_id: examId,
                       userId: userId,
                       examId: examId,
-                      settings: settingsRef.current, // ensure latest settings
-                      examSettings: settingsRef.current, // duplicate key for backend compatibility
+                      settings: settingsRef.current, 
+                      examSettings: settingsRef.current,
                     });
                   })
                   .catch((error) => {
@@ -532,10 +550,29 @@ const FloatingCamera = ({
       }}
       onMouseDown={handleMouseDown}
     >
-      {/* Scanning overlay */}
-      {scanning && (
+      {/* Initial scanning overlay animation */}
+      {showInitialScan && (
         <div className={styles.scanOverlay}>
           <div className={styles.scanLine} />
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            zIndex: 2,
+            background: 'rgba(0,0,0,0.4)',
+            color: 'white',
+            fontWeight: 600,
+            fontSize: 16
+          }}>
+            <span>Authenticating Face...</span>
+            <span style={{fontSize: 12, marginTop: 4}}>Please look at the camera</span>
+          </div>
         </div>
       )}
       <video
