@@ -246,7 +246,7 @@ export default function PhotoDetect() {
   };
 
   const handleContinue = () => {
-    router.push('/fullscreen');
+    router.push('/video');
   };
 
   const handleKeyPress = (event: React.KeyboardEvent, action: () => void) => {

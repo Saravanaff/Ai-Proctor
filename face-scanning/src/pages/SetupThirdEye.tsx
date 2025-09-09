@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import Head from "next/head";
 import QRCode from "qrcode";
 import { getUserEmail, getUserId, getGlobalName } from "@/constants/AuthStore";
+import { useTheme } from "@/contexts/ThemeContext";
 import styles from "@/styles/ThirdEyeSetup.module.css";
 // Use the shared socket connection (adjust the import path/name if different)
 import socket from "@/components/socket";
@@ -15,22 +17,10 @@ const ThirdEyeSetup = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const router = useRouter();
+  const { theme } = useTheme();
 
-  // Add spinner animation
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = `
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
-
+  // Remove the spinner animation effect since we'll use CSS
+  
   const steps = [
     {
       id: 1,
@@ -60,6 +50,10 @@ const ThirdEyeSetup = () => {
       icon: "✅",
     },
   ];
+
+  // Add SEO metadata
+  const pageTitle = `Third Eye Setup - Step ${currentStep} of ${steps.length}`;
+  const pageDescription = "Set up your mobile device for comprehensive exam monitoring with our Third Eye system.";
 
   useEffect(() => {
     const generateQRCode = async () => {
@@ -141,580 +135,212 @@ const ThirdEyeSetup = () => {
   };
 
   return (
-    <div
-      style={{
-        background: "var(--background)",
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 800,
-          width: "100%",
-          background: "var(--card-bg)",
-          border: "1px solid var(--border-color)",
-          borderRadius: 16,
-          boxShadow: "0 8px 32px var(--shadow)",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            padding: "24px 32px",
-            borderBottom: "1px solid var(--border-color)",
-            background: "var(--secondary-bg)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 8,
-            }}
-          >
-            <h1
-              style={{
-                color: "var(--text-primary)",
-                fontSize: 24,
-                fontWeight: 700,
-                margin: 0,
-              }}
-            >
-              Third Eye Setup
-            </h1>
-          </div>
-          <p
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: 14,
-              margin: 0,
-              lineHeight: 1.5,
-            }}
-          >
-            Set up your mobile device for comprehensive exam monitoring
-          </p>
-        </div>
+    <>
+      <Head>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="/setup-third-eye" />
+      </Head>
+      
+      <main className={`${styles.container} theme-transition`}>
+        <article className={`${styles.setupCard} card-theme`}>
+          <header className={styles.header}>
+            <div className={styles.headerContent}>
+              <h1 className={styles.title}>Third Eye Setup</h1>
+              <p className={styles.subtitle}>
+                Set up your mobile device for comprehensive exam monitoring
+              </p>
+            </div>
+          </header>
 
-        <div
-          style={{
-            padding: "20px 32px",
-            borderBottom: "1px solid var(--border-color)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 12,
-            }}
-          >
-            {steps.map((step, index) => (
-              <div
-                key={step.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  flex: 1,
-                  position: "relative",
-                }}
-              >
+          <section className={styles.progressSection} aria-label="Setup progress">
+            <div className={styles.progressContainer}>
+              {steps.map((step, index) => (
                 <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    background:
-                      currentStep >= step.id
-                        ? "var(--accent-color)"
-                        : "var(--secondary-bg)",
-                    color:
-                      currentStep >= step.id
-                        ? "white"
-                        : "var(--text-secondary)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    transition: "all 0.3s ease",
-                  }}
+                  key={step.id}
+                  className={styles.progressStep}
+                  aria-current={currentStep === step.id ? "step" : undefined}
                 >
-                  {currentStep > step.id ? "✓" : step.id}
-                </div>
-                {index < steps.length - 1 && (
                   <div
-                    style={{
-                      flex: 1,
-                      height: 2,
-                      background:
-                        currentStep > step.id
-                          ? "var(--accent-color)"
-                          : "var(--border-color)",
-                      marginLeft: 8,
-                      transition: "all 0.3s ease",
-                    }}
-                  />
+                    className={`${styles.stepIndicator} ${
+                      currentStep >= step.id ? styles.stepCompleted : ""
+                    }`}
+                    aria-label={`Step ${step.id}: ${step.title}`}
+                  >
+                    {currentStep > step.id ? "✓" : step.id}
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div
+                      className={`${styles.stepConnector} ${
+                        currentStep > step.id ? styles.connectorCompleted : ""
+                      }`}
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className={styles.stepCounter} aria-live="polite">
+              Step {currentStep} of {steps.length}
+            </div>
+          </section>
+
+          <section className={styles.mainContent} aria-label="Setup step content">
+            <div className={styles.stepContent}>
+              <h2 className={styles.stepTitle}>
+                {steps[currentStep - 1]?.title}
+              </h2>
+              <p className={styles.stepDescription}>
+                {steps[currentStep - 1]?.description}
+              </p>
+            </div>
+
+            {currentStep === 1 && (
+              <div className={styles.infoCard}>
+                <div className={styles.setupGuide}>
+                  <div className={styles.deviceFlow}>
+                    <div className={styles.deviceSetup}>
+                      <div className={styles.device}>💻 Laptop</div>
+                      <div className={styles.distance}>2-3 feet</div>
+                    </div>
+                    <div className={styles.connector}></div>
+                    <div className={styles.deviceSetup}>
+                      <div className={styles.device}>📱 Mobile</div>
+                      <div className={styles.position}>Right Side</div>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.setupInstructions}>
+                    <h3 className={styles.instructionsTitle}>Setup Requirements</h3>
+                    <div className={styles.requirementsList}>
+                      <div className={styles.requirement}>
+                        <span className={styles.requirementIcon}>📍</span>
+                        <div className={styles.requirementText}>
+                          <strong>Position:</strong> Place mobile to your right side
+                        </div>
+                      </div>
+                      <div className={styles.requirement}>
+                        <span className={styles.requirementIcon}>📏</span>
+                        <div className={styles.requirementText}>
+                          <strong>Distance:</strong> Maintain 2-3 feet from your seat
+                        </div>
+                      </div>
+                      <div className={styles.requirement}>
+                        <span className={styles.requirementIcon}>📐</span>
+                        <div className={styles.requirementText}>
+                          <strong>Angle:</strong> 45-degree side view of your profile
+                        </div>
+                      </div>
+                      <div className={styles.requirement}>
+                        <span className={styles.requirementIcon}>🔧</span>
+                        <div className={styles.requirementText}>
+                          <strong>Stability:</strong> Use a stand or stable surface
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.importantNote}>
+                    <div className={styles.noteIcon}>⚠️</div>
+                    <div className={styles.noteText}>
+                      <strong>Important:</strong> The mobile camera should capture your side profile and workspace clearly for effective monitoring.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 3 && (
+              <div className={styles.qrSection}>
+                {qrCodeUrl ? (
+                  <div className={styles.qrContainer}>
+                    <div className={styles.qrCode}>
+                      <img
+                        src={qrCodeUrl}
+                        alt="Third Eye QR Code for mobile device connection"
+                        className={styles.qrImage}
+                      />
+                    </div>
+
+                    <div className={styles.connectionStatus} role="status" aria-live="polite">
+                      {isConnected ? (
+                        <div className={styles.statusConnected}>
+                          <div className={styles.statusText}>Connected</div>
+                        </div>
+                      ) : (
+                        <div className={styles.statusWaiting}>
+                          <div className={styles.spinner} aria-hidden="true" />
+                          <div className={styles.statusText}>Connecting...</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.qrLoading}>
+                    <div className={styles.loadingText}>Generating QR code...</div>
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
-          <div
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: 12,
-              textAlign: "center",
-            }}
-          >
-            Step {currentStep} of {steps.length}
-          </div>
-        </div>
+            )}
 
-        <div style={{ padding: 32 }}>
-          <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <div style={{ fontSize: 64, marginBottom: 16 }}>
-              {steps[currentStep - 1]?.icon}
-            </div>
-            <h2
-              style={{
-                color: "var(--text-primary)",
-                fontSize: 20,
-                fontWeight: 600,
-                marginBottom: 8,
-              }}
-            >
-              {steps[currentStep - 1]?.title}
-            </h2>
-            <p
-              style={{
-                color: "var(--text-secondary)",
-                fontSize: 16,
-                lineHeight: 1.5,
-                margin: 0,
-              }}
-            >
-              {steps[currentStep - 1]?.description}
-            </p>
-          </div>
-
-          {currentStep === 1 && (
-            <div
-              style={{
-                background: "var(--info-bg)",
-                border: "1px solid var(--info-color)",
-                borderRadius: 12,
-                padding: 24,
-                marginBottom: 24,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: 32,
-                  alignItems: "center",
-                }}
-              >
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 48, marginBottom: 8 }}>💻</div>
-                  <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                    Your Laptop
-                  </div>
+            {currentStep === 4 && (
+              <div className={styles.completionCard}>
+                <div className={styles.completionTitle}>Ready to Begin</div>
+                <div className={styles.completionDescription}>
+                  Third eye monitoring system is connected and ready.
                 </div>
-                <div style={{ fontSize: 24 }}>➡️</div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 48, marginBottom: 8 }}>📱</div>
-                  <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                    Mobile Device
+                <div className={styles.connectionInfo}>
+                  <div className={styles.connectionItem}>
+                    <span>Connected</span>
+                    <span className={styles.deviceId}>ID: {userId.slice(-6)}</span>
                   </div>
                 </div>
               </div>
-              <div
-                style={{
-                  marginTop: 16,
-                  padding: 16,
-                  background: "var(--card-bg)",
-                  borderRadius: 8,
-                  border: "1px solid var(--border-color)",
-                }}
-              >
-                <h4
-                  style={{
-                    color: "var(--text-primary)",
-                    fontSize: 14,
-                    margin: "0 0 8px 0",
-                  }}
-                >
-                  📍 Positioning Tips:
-                </h4>
-                <ul
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: 13,
-                    margin: 0,
-                    paddingLeft: 20,
-                  }}
-                >
-                  <li>Place mobile on a stable surface or stand</li>
-                  <li>Ensure camera lens is clean and unobstructed</li>
-                  <li>Position at your sitting eye level</li>
-                  <li>Maintain 45-degree angle view of your profile</li>
-                </ul>
-              </div>
-            </div>
-          )}
+            )}
+          </section>
 
-          {currentStep === 3 && (
-            <div
-              style={{
-                background: "var(--secondary-bg)",
-                border: "1px solid var(--border-color)",
-                borderRadius: 12,
-                padding: 24,
-                marginBottom: 24,
-                textAlign: "center",
-              }}
+          <footer className={styles.footer}>
+            <button
+              onClick={handlePreviousStep}
+              disabled={currentStep === 1}
+              className={`${styles.button} ${styles.buttonSecondary}`}
+              aria-label="Go to previous step"
             >
-              {qrCodeUrl ? (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 16,
-                  }}
-                >
-                  <img
-                    src={qrCodeUrl}
-                    alt="Third Eye QR Code"
-                    style={{
-                      border: "4px solid white",
-                      borderRadius: 12,
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    }}
-                  />
+              Back
+            </button>
 
-                  <div
-                    style={{
-                      background: isConnected
-                        ? "var(--success-bg)"
-                        : "var(--secondary-bg)",
-                      border: `1px solid ${
-                        isConnected
-                          ? "var(--success-color)"
-                          : "var(--border-color)"
-                      }`,
-                      borderRadius: 8,
-                      padding: 16,
-                      marginTop: 8,
-                      width: "100%",
-                      maxWidth: 320,
-                    }}
-                  >
-                    {isConnected ? (
-                      <>
-                        <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
-                        <div
-                          style={{
-                            color: "var(--success-color)",
-                            fontSize: 14,
-                            fontWeight: 600,
-                          }}
-                        >
-                          Mobile Device Connected!
-                        </div>
-                        <div
-                          style={{
-                            color: "var(--text-secondary)",
-                            fontSize: 12,
-                            marginTop: 4,
-                          }}
-                        >
-                          You can now proceed to the next step
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            marginBottom: 12,
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "24px",
-                              height: "24px",
-                              border: "3px solid var(--border-color)",
-                              borderTop: "3px solid var(--accent-color)",
-                              borderRadius: "50%",
-                              animation: "spin 1s linear infinite",
-                            }}
-                          />
-                        </div>
-                        <div
-                          style={{
-                            color: "var(--text-primary)",
-                            fontSize: 14,
-                            fontWeight: 600,
-                          }}
-                        >
-                          Waiting for Mobile Connection...
-                        </div>
-                        <div
-                          style={{
-                            color: "var(--text-secondary)",
-                            fontSize: 12,
-                            marginTop: 4,
-                          }}
-                        >
-                          Please scan the QR code with your mobile device
-                        </div>
-                        <div
-                          style={{
-                            marginTop: 12,
-                            padding: 8,
-                            background: "var(--info-bg)",
-                            borderRadius: 6,
-                            border: "1px solid var(--info-color)",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: 8,
-                            }}
-                          >
-                            <span style={{ color: "var(--text-secondary)" }}>
-                              📱
-                            </span>
-                            <span
-                              style={{
-                                color: "var(--text-secondary)",
-                                fontSize: 11,
-                              }}
-                            >
-                              Device ID: {userId}
-                            </span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
+            <div className={styles.actionButtons}>
+              {currentStep < steps.length ? (
+                <button
+                  onClick={handleNextStep}
+                  disabled={currentStep === 3 && !isConnected}
+                  className={`${styles.button} ${styles.buttonPrimary}`}
+                  aria-label={
+                    currentStep === 3 && !isConnected
+                      ? "Waiting for mobile device connection"
+                      : "Proceed to next step"
+                  }
+                >
+                  {currentStep === 3 && !isConnected ? "Waiting..." : "Next"}
+                </button>
               ) : (
-                <div style={{ padding: 20 }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
-                  <p
-                    style={{
-                      color: "var(--text-secondary)",
-                      fontSize: 14,
-                      margin: 0,
-                    }}
-                  >
-                    Generating QR code...
-                  </p>
-                </div>
+                <button
+                  onClick={handleComplete}
+                  className={`${styles.button} ${styles.buttonPrimary}`}
+                  aria-label="Start examination"
+                >
+                  Start Exam
+                </button>
               )}
             </div>
-          )}
-
-          {currentStep === 4 && (
-            <div
-              style={{
-                background: "var(--success-bg)",
-                border: "1px solid var(--success-color)",
-                borderRadius: 12,
-                padding: 32,
-                marginBottom: 24,
-                textAlign: "center",
-              }}
-            >
-              <div style={{ fontSize: 64, marginBottom: 16 }}>🎯</div>
-              <div
-                style={{
-                  color: "var(--success-color)",
-                  fontSize: 20,
-                  fontWeight: 700,
-                  marginBottom: 8,
-                }}
-              >
-                All Set! Ready to Begin
-              </div>
-              <div
-                style={{
-                  color: "var(--text-secondary)",
-                  fontSize: 16,
-                  marginBottom: 20,
-                  lineHeight: 1.5,
-                }}
-              >
-                Your third eye monitoring system is connected and ready. Click
-                "Start Examination" when you're prepared to begin.
-              </div>
-
-              <div
-                style={{
-                  background: "var(--card-bg)",
-                  border: "1px solid var(--success-color)",
-                  borderRadius: 8,
-                  padding: 16,
-                  display: "inline-block",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 12,
-                  }}
-                >
-                  <span style={{ color: "var(--success-color)", fontSize: 18 }}>
-                    ✅
-                  </span>
-                  <span
-                    style={{
-                      color: "var(--text-primary)",
-                      fontSize: 14,
-                      fontWeight: 500,
-                    }}
-                  >
-                    Third Eye Connected
-                  </span>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 12,
-                    marginTop: 8,
-                  }}
-                >
-                  <span style={{ color: "var(--success-color)", fontSize: 18 }}>
-                    📱
-                  </span>
-                  <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>
-                    Device ID: {userId}
-                  </span>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  marginTop: 20,
-                  padding: 12,
-                  background: "var(--info-bg)",
-                  border: "1px solid var(--info-color)",
-                  borderRadius: 8,
-                }}
-              >
-                <p
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: 12,
-                    margin: 0,
-                    fontStyle: "italic",
-                  }}
-                >
-                  💡 Your mobile device will monitor your activity during the
-                  examination. Ensure it remains in position throughout the
-                  test.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div
-          style={{
-            padding: "20px 32px",
-            borderTop: "1px solid var(--border-color)",
-            background: "var(--secondary-bg)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <button
-            onClick={handlePreviousStep}
-            disabled={currentStep === 1}
-            style={{
-              padding: "10px 20px",
-              borderRadius: 8,
-              border: "1px solid var(--border-color)",
-              background: "var(--card-bg)",
-              color: "var(--text-secondary)",
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: currentStep === 1 ? "not-allowed" : "pointer",
-              opacity: currentStep === 1 ? 0.5 : 1,
-              transition: "all 0.2s ease",
-            }}
-          >
-            ← Previous
-          </button>
-
-          <div style={{ display: "flex", gap: 12 }}>
-            {currentStep < steps.length ? (
-              <button
-                onClick={handleNextStep}
-                disabled={currentStep === 3 && !isConnected}
-                style={{
-                  padding: "12px 24px",
-                  borderRadius: 8,
-                  border: "none",
-                  background:
-                    currentStep === 3 && !isConnected
-                      ? "var(--border-color)"
-                      : "var(--accent-color)",
-                  color: "white",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor:
-                    currentStep === 3 && !isConnected
-                      ? "not-allowed"
-                      : "pointer",
-                  opacity: currentStep === 3 && !isConnected ? 0.6 : 1,
-                  transition: "all 0.2s ease",
-                }}
-              >
-                {currentStep === 3 && !isConnected
-                  ? "Waiting for Connection..."
-                  : "Next Step →"}
-              </button>
-            ) : (
-              <button
-                onClick={handleComplete}
-                style={{
-                  padding: "12px 24px",
-                  borderRadius: 8,
-                  border: "none",
-                  background: "var(--success-color)",
-                  color: "white",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                🚀 Start Examination
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+          </footer>
+        </article>
+      </main>
+    </>
   );
 };
 

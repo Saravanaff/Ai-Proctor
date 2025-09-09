@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Eye, Shield, Camera, Wifi, WifiOff, Maximize2 } from "lucide-react";
+// Orientation helper
+function getOrientation() {
+  if (typeof window === "undefined") return "portrait";
+  if (window.matchMedia("(orientation: landscape)").matches) return "landscape";
+  return "portrait";
+}
+import { Eye, Shield, Camera, Wifi, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { io, Socket } from "socket.io-client";
 import { getUserId } from "@/constants/AuthStore";
@@ -9,7 +15,8 @@ import styles from "../styles/ThirdEye.module.css";
 import { delay } from "@/utils/delay";
 
 const userId = getUserId() || "unknown";
-const examId = localStorage.getItem("examId") || "unknown";
+// const examId = localStorage.getItem("examId") || "unknown";
+const examId = "unknown";
 
 function currentUserId(): string | null {
   try {
@@ -24,6 +31,19 @@ function currentUserId(): string | null {
 }
 
 export default function ThirdEye() {
+  const [orientation, setOrientation] = useState(getOrientation());
+  // Listen for orientation changes
+  useEffect(() => {
+    function handleOrientation() {
+      setOrientation(getOrientation());
+    }
+    window.addEventListener("orientationchange", handleOrientation);
+    window.addEventListener("resize", handleOrientation);
+    return () => {
+      window.removeEventListener("orientationchange", handleOrientation);
+      window.removeEventListener("resize", handleOrientation);
+    };
+  }, []);
   // const [socket, setSocket] = useState<Socket | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -32,7 +52,6 @@ export default function ThirdEye() {
   const [showSurveillanceNotice, setShowSurveillanceNotice] = useState(false);
   const [isStreamingFrames, setIsStreamingFrames] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [isLandscape, setIsLandscape] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const { toast } = useToast();
 
@@ -47,10 +66,6 @@ export default function ThirdEye() {
     let timer: NodeJS.Timeout;
     setHydrated(true);
 
-    const handleOrientation = () => {
-      setIsLandscape(window.innerWidth > window.innerHeight);
-    };
-
     const initSocket = () => {
       // Clean up existing socket first
       if (newSocket.current) {
@@ -61,7 +76,7 @@ export default function ThirdEye() {
 
       // Create new socket with better configuration
       newSocket.current = io(serverUrl, {
-        transports: ["polling", "websocket"], 
+        transports: ["polling", "websocket"],
         auth: { userId: currentUserId() || "" },
         timeout: 20000,
         reconnection: true,
@@ -116,9 +131,6 @@ export default function ThirdEye() {
     };
 
     const init = async () => {
-      window.addEventListener("resize", handleOrientation);
-      window.addEventListener("orientationchange", handleOrientation);
-
       timer = setTimeout(() => {
         setShowInitialNotice(false);
         setShowSurveillanceNotice(true);
@@ -132,7 +144,6 @@ export default function ThirdEye() {
     } catch (err) {
       console.error("Initialization error:", err);
     }
-    handleOrientation();
 
     return () => {
       if (timer) {
@@ -166,9 +177,6 @@ export default function ThirdEye() {
         newSocket.current.disconnect();
         newSocket.current = null;
       }
-
-      window.removeEventListener("resize", handleOrientation);
-      window.removeEventListener("orientationchange", handleOrientation);
     };
   }, []);
 
@@ -231,11 +239,21 @@ export default function ThirdEye() {
       let retries = 3;
       while (retries > 0) {
         try {
+          const currentOrientation = getOrientation();
           streamRef.current = await navigator.mediaDevices.getUserMedia({
             video: {
-              height: 480,
-              width: 480,
-              frameRate: 30,
+              facingMode: "user",
+              width: {
+                ideal: currentOrientation === "landscape" ? 1920 : 1280,
+              },
+              height: {
+                ideal: currentOrientation === "landscape" ? 1080 : 720,
+              },
+              frameRate: { ideal: 30 },
+              aspectRatio:
+                currentOrientation === "landscape"
+                  ? { ideal: 16 / 9 }
+                  : { ideal: 4 / 3 },
             },
           });
           break;
@@ -255,17 +273,6 @@ export default function ThirdEye() {
 
       if (videoRef.current && streamRef.current) {
         videoRef.current.srcObject = streamRef.current;
-
-        const container = videoRef.current.parentElement?.parentElement;
-        // if (container && container.requestFullscreen) {
-        //   container.requestFullscreen();
-        // }
-
-        if (screen.orientation && (screen.orientation as any).lock) {
-          try {
-            await (screen.orientation as any).lock("landscape");
-          } catch (e) {}
-        }
       }
 
       if (streamRef.current) {
@@ -358,149 +365,255 @@ export default function ThirdEye() {
 
   return (
     <div
-      className={styles.container}
       style={{
         position: "fixed",
         top: 0,
         left: 0,
         width: "100vw",
         height: "100vh",
+        background: "linear-gradient(120deg, #232526 0%, #414345 100%)",
         overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "Inter, sans-serif",
       }}
     >
-      <div style={{ position: "relative", width: "100%", height: "100%" }}>
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className={styles.video}
+      {/* Orientation Message */}
+      {orientation === "portrait" && (
+        <div
           style={{
-            transform: isLandscape
-              ? "translate(-50%, -50%) rotate(0deg)"
-              : "translate(-50%, -50%) rotate(90deg)",
-            objectFit: "contain",
-            width: "95%",
-            height: "100vw",
-            background: "black",
             position: "absolute",
-            top: "50%",
-            left: "50%",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.85)",
+            zIndex: 100,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            fontSize: 22,
+            fontWeight: 700,
+            letterSpacing: 1,
+            textAlign: "center",
+            backdropFilter: "blur(6px)",
           }}
-        />
-        <canvas ref={canvasRef} style={{ display: "none" }} />
-
-        {hydrated && (
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: 120,
-              display: "flex",
-              justifyContent: "center",
-              pointerEvents: "none",
-            }}
+        >
+          <span style={{ marginBottom: 16 }}>
+            Please rotate your device to{" "}
+            <span style={{ color: "#38bdf8" }}>landscape</span> mode to use
+            Third Eye.
+          </span>
+          <svg
+            width="60"
+            height="60"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#38bdf8"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            {isLandscape ? (
-              <button
-                className={`${styles.button} ${
-                  isStreamingFrames ? styles.stopButton : styles.startButton
-                }`}
-                onClick={isStreamingFrames ? stopStreaming : startStreaming}
-                disabled={!isConnected}
-                style={{ pointerEvents: "auto" }}
-              >
-                {isStreamingFrames ? (
-                  <>
-                    <Eye className="mr-2 inline" size={18} />
-                    Stop Surveillance
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 className="mr-2 inline" size={18} />
-                    Start Surveillance
-                  </>
-                )}
-              </button>
-            ) : (
-              <div
-                style={{
-                  color: "#fff",
-                  background: "#e53935",
-                  padding: "10px 18px",
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  fontSize: 16,
-                  pointerEvents: "auto",
-                }}
-              >
-                Please rotate your device to landscape to start surveillance.
-              </div>
-            )}
-          </div>
-        )}
-
+            <rect x="7" y="2" width="10" height="20" rx="2" />
+            <path d="m3 8 4-4 4 4" />
+            <path d="m13 16 4 4 4-4" />
+          </svg>
+        </div>
+      )}
+      {/* Status Header */}
+      {orientation === "landscape" && (
         <div
           style={{
             position: "absolute",
             top: 20,
             left: 20,
-            minWidth: 220,
-            maxWidth: 320,
-            background: "rgba(0,0,0,0.65)",
-            borderRadius: 12,
-            padding: "14px 18px",
-            zIndex: 10,
-            color: "#fff",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
+            right: 20,
+            zIndex: 30,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
           <div
-            className={styles.header}
             style={{
-              margin: 0,
-              background: "none",
-              border: "none",
-              animation: "none",
-              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: "rgba(0,0,0,0.7)",
+              padding: "8px 12px",
+              borderRadius: 20,
+              color: "#fff",
+              fontSize: 14,
+              fontWeight: 500,
             }}
           >
-            <Eye size={22} className="text-gradient" />
-            <span style={{ fontWeight: 600, fontSize: 18 }}>Third Eye</span>
-            {isConnected ? (
-              <Wifi size={18} className="text-green-400" />
-            ) : (
-              <WifiOff size={18} className="text-red-400" />
-            )}
+            <Eye size={16} />
+            <span>Third Eye</span>
           </div>
 
-          {showInitialNotice && (
-            <div
-              className={`${styles.notice} ${styles.initialNotice}`}
-              style={{
-                margin: "8px 0 0 0",
-                background: "rgba(0,162,255,0.12)",
-              }}
-            >
-              <Camera className="inline mr-2" size={16} />
-              <span>Initializing...</span>
-            </div>
-          )}
-          {showSurveillanceNotice && (
-            <div
-              className={`${styles.notice} ${styles.surveillanceNotice}`}
-              style={{
-                margin: "8px 0 0 0",
-                background: "rgba(255,0,0,0.12)",
-              }}
-            >
-              <Shield className="inline mr-2" size={16} />
-              <span>Surveillance Engaged</span>
-            </div>
-          )}
+          <div
+            style={{
+              background: isConnected
+                ? "rgba(34,197,94,0.8)"
+                : "rgba(239,68,68,0.8)",
+              padding: "8px 12px",
+              borderRadius: 20,
+              color: "#fff",
+              fontSize: 12,
+              fontWeight: 500,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            {isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
+            {isConnected ? "Connected" : "Disconnected"}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Camera Feed */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: orientation === "landscape" ? "100vh" : "100%",
+          height: orientation === "landscape" ? "100vw" : "100%",
+          objectFit: "cover",
+          transform:
+            orientation === "landscape"
+              ? "translate(-50%, -50%) rotate(90deg)"
+              : "translate(-50%, -50%) rotate(0deg)",
+          objectPosition: "center",
+          background: "rgba(30,41,59,0.7)",
+          zIndex: 1,
+          borderRadius: 0,
+          boxShadow: "0 8px 32px 0 rgba(31,38,135,0.37)",
+          filter:
+            orientation === "portrait" ? "blur(8px) grayscale(0.7)" : "none",
+          transition: "all 0.3s ease",
+        }}
+      />
+
+      <canvas ref={canvasRef} style={{ display: "none" }} />
+
+      {/* Control Button */}
+      {hydrated && orientation === "landscape" && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 40,
+            left: 0,
+            width: "100vw",
+            display: "flex",
+            justifyContent: "center",
+            zIndex: 20,
+          }}
+        >
+          <button
+            onClick={isStreamingFrames ? stopStreaming : startStreaming}
+            disabled={!isConnected}
+            style={{
+              background: isStreamingFrames
+                ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                : "linear-gradient(135deg, #10b981, #059669)",
+              color: "#fff",
+              border: "none",
+              padding: "18px 38px",
+              borderRadius: 60,
+              fontSize: 18,
+              fontWeight: 700,
+              cursor: isConnected ? "pointer" : "not-allowed",
+              opacity: isConnected ? 1 : 0.5,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              boxShadow: "0 8px 32px 0 rgba(31,38,135,0.37)",
+              transition: "all 0.2s cubic-bezier(.4,0,.2,1)",
+              transform: "translateY(0)",
+              letterSpacing: 0.5,
+              backdropFilter: "blur(2px)",
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.transform = "translateY(2px)";
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
+            {isStreamingFrames ? (
+              <>
+                <Eye size={22} />
+                Stop Surveillance
+              </>
+            ) : (
+              <>
+                <Camera size={22} />
+                Start Surveillance
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Status Messages */}
+      {(showInitialNotice || showSurveillanceNotice) &&
+        orientation === "landscape" && (
+          <div
+            style={{
+              position: "absolute",
+              top: 80,
+              left: 20,
+              right: 20,
+              zIndex: 15,
+            }}
+          >
+            {showInitialNotice && (
+              <div
+                style={{
+                  background: "rgba(59,130,246,0.9)",
+                  color: "#fff",
+                  padding: "12px 16px",
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 8,
+                }}
+              >
+                <Camera size={16} />
+                Initializing camera...
+              </div>
+            )}
+            {/* {showSurveillanceNotice && (
+              <div
+                style={{
+                  background: "rgba(239,68,68,0.9)",
+                  color: "#fff",
+                  padding: "12px 16px",
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Shield size={16} />
+                Surveillance Active
+              </div>
+            )} */}
+          </div>
+        )}
     </div>
   );
 }

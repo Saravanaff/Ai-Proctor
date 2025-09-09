@@ -58,6 +58,7 @@ export function addScore(data: any) {
   }
 
   const eyes = data?.eyes;
+  console.log(eyes,"eyeeeeeeee");
   if (Array.isArray(eyes) && eyes.length) {
     if (eyes[0].toLowerCase() !== "center" && eyes[1].toLowerCase() !== "center"){
       examData.eyeFrames+=1;

@@ -70,8 +70,8 @@ def head_functionality(sio):
         data = {"headPos": head}
 
         sio.emit("headPositionRes", {
-            "UserId": userId,
-            "ExamId": examId,
+            "userId": userId,
+            "examId": examId,
             "data": data,
             "code": code
         })

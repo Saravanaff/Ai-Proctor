@@ -139,7 +139,6 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("faceAuthRes",(data)=>{
-      console.log(data);
       const uid = String(data?.userId);
       if (data?.auth === true) {
         authVerified.set(uid, true);
@@ -159,9 +158,9 @@ export function initSocket(server: HttpServer) {
     socket.on("headPositionRes",(data)=>{
       console.log(data);
         addScore({
-          userId: data?.UserId,
+          userId: data?.userId,
           examId: data?.examId,
-          head_position: data?.data?.headPosition
+          head_position: data?.data?.headPos
         });
       emitToUserById(data?.userId,"headPositionRes-client",data);
     });
@@ -172,7 +171,7 @@ export function initSocket(server: HttpServer) {
         console.log(left,right,"hi");
         console.log(data);
         addScore({
-          userId: data?.UserId,
+          userId: data?.userId,
           examId: data?.examId,
           eyes: [left, right].filter(Boolean)
         });
@@ -180,7 +179,6 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("webDetectRes",(data)=>{
-      console.log(data);
       try {
         addScore({
           userId: data?.userId,
@@ -246,7 +244,7 @@ export function initSocket(server: HttpServer) {
       }
 
       const count = (authCounter.get(uidKey) ?? 0) + 1;
-      if (count % 50 === 0) {
+      if (count % 5 === 0) {
         emitToModel("face_service", "faceAuth", data);
         authCounter.set(uidKey, 0);
       } else {
