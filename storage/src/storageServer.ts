@@ -52,9 +52,9 @@ const startStorageSocketServer = async () => {
 
     socket.on(
       "start-stream-recording",
-      (data: { user_id: string; category: string }) => {
+      (data: { user_id: string; category: string, exam_id: string }) => {
         console.log("Starting the Stream ", data);
-        const fileName = generateFileName(data.user_id, data.category);
+        const fileName = generateFileName(data.user_id, data.exam_id, data.category);
         const outputPath = path.join(
           __dirname,
           "recordings",
@@ -70,8 +70,8 @@ const startStorageSocketServer = async () => {
 
     socket.on(
       "add-video-stream-chunk",
-      (data: { user_id: string; category: string; chunk: ArrayBuffer }) => {
-        const fileName = generateFileName(data.user_id, data.category);
+      (data: { user_id: string; exam_id: string; category: string; chunk: ArrayBuffer }) => {
+        const fileName = generateFileName(data.user_id, data.exam_id, data.category);
         console.log("Adding chunk to ", data);
         if (recorder[fileName]) {
           const buf = Buffer.isBuffer(data.chunk)
@@ -84,8 +84,8 @@ const startStorageSocketServer = async () => {
 
     socket.on(
       "stop-stream-recording",
-      (data: { user_id: string; category: string }) => {
-        const fileName = generateFileName(data.user_id, data.category);
+      (data: { user_id: string; exam_id: string; category: string }) => {
+        const fileName = generateFileName(data.user_id, data.exam_id, data.category);
         if (recorder && recorder[fileName]) {
           console.log("Video Recording Ended...", data);
           recorder[fileName]?.stopRecording();
