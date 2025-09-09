@@ -20,7 +20,7 @@ const ThirdEyeSetup = () => {
   const { theme } = useTheme();
 
   // Remove the spinner animation effect since we'll use CSS
-  
+
   const steps = [
     {
       id: 1,
@@ -53,14 +53,17 @@ const ThirdEyeSetup = () => {
 
   // Add SEO metadata
   const pageTitle = `Third Eye Setup - Step ${currentStep} of ${steps.length}`;
-  const pageDescription = "Set up your mobile device for comprehensive exam monitoring with our Third Eye system.";
+  const pageDescription =
+    "Set up your mobile device for comprehensive exam monitoring with our Third Eye system.";
 
   useEffect(() => {
     const generateQRCode = async () => {
       const redirect = encodeURIComponent("/mobile");
       const name = encodeURIComponent(userName);
       const email = encodeURIComponent(userEmail);
-      const examId = encodeURIComponent(localStorage.getItem("examId") || "unknown");;
+      const examId = encodeURIComponent(
+        localStorage.getItem("examId") || "unknown"
+      );
       const clientUrl = process.env.NEXT_PUBLIC_CLIENT_URL;
       const thirdEyeUrl = `${clientUrl}?userId=${userId}&name=${name}&email=${email}&redirect=${redirect}&examId=${examId}`;
       try {
@@ -145,7 +148,7 @@ const ThirdEyeSetup = () => {
         <meta property="og:type" content="website" />
         <link rel="canonical" href="/setup-third-eye" />
       </Head>
-      
+
       <main className={`${styles.container} theme-transition`}>
         <article className={`${styles.setupCard} card-theme`}>
           <header className={styles.header}>
@@ -157,7 +160,10 @@ const ThirdEyeSetup = () => {
             </div>
           </header>
 
-          <section className={styles.progressSection} aria-label="Setup progress">
+          <section
+            className={styles.progressSection}
+            aria-label="Setup progress"
+          >
             <div className={styles.progressContainer}>
               {steps.map((step, index) => (
                 <div
@@ -189,7 +195,10 @@ const ThirdEyeSetup = () => {
             </div>
           </section>
 
-          <section className={styles.mainContent} aria-label="Setup step content">
+          <section
+            className={styles.mainContent}
+            aria-label="Setup step content"
+          >
             <div className={styles.stepContent}>
               <h2 className={styles.stepTitle}>
                 {steps[currentStep - 1]?.title}
@@ -213,32 +222,38 @@ const ThirdEyeSetup = () => {
                       <div className={styles.position}>Right Side</div>
                     </div>
                   </div>
-                  
+
                   <div className={styles.setupInstructions}>
-                    <h3 className={styles.instructionsTitle}>Setup Requirements</h3>
+                    <h3 className={styles.instructionsTitle}>
+                      Setup Requirements
+                    </h3>
                     <div className={styles.requirementsList}>
                       <div className={styles.requirement}>
                         <span className={styles.requirementIcon}>📍</span>
                         <div className={styles.requirementText}>
-                          <strong>Position:</strong> Place mobile to your right side
+                          <strong>Position:</strong> Place mobile to your right
+                          side
                         </div>
                       </div>
                       <div className={styles.requirement}>
                         <span className={styles.requirementIcon}>📏</span>
                         <div className={styles.requirementText}>
-                          <strong>Distance:</strong> Maintain 2-3 feet from your seat
+                          <strong>Distance:</strong> Maintain 2-3 feet from your
+                          seat
                         </div>
                       </div>
                       <div className={styles.requirement}>
                         <span className={styles.requirementIcon}>📐</span>
                         <div className={styles.requirementText}>
-                          <strong>Angle:</strong> 45-degree side view of your profile
+                          <strong>Angle:</strong> 45-degree side view of your
+                          profile
                         </div>
                       </div>
                       <div className={styles.requirement}>
                         <span className={styles.requirementIcon}>🔧</span>
                         <div className={styles.requirementText}>
-                          <strong>Stability:</strong> Use a stand or stable surface
+                          <strong>Stability:</strong> Use a stand or stable
+                          surface
                         </div>
                       </div>
                     </div>
@@ -247,7 +262,9 @@ const ThirdEyeSetup = () => {
                   <div className={styles.importantNote}>
                     <div className={styles.noteIcon}>⚠️</div>
                     <div className={styles.noteText}>
-                      <strong>Important:</strong> The mobile camera should capture your side profile and workspace clearly for effective monitoring.
+                      <strong>Important:</strong> The mobile camera should
+                      capture your side profile and workspace clearly for
+                      effective monitoring.
                     </div>
                   </div>
                 </div>
@@ -266,7 +283,11 @@ const ThirdEyeSetup = () => {
                       />
                     </div>
 
-                    <div className={styles.connectionStatus} role="status" aria-live="polite">
+                    <div
+                      className={styles.connectionStatus}
+                      role="status"
+                      aria-live="polite"
+                    >
                       {isConnected ? (
                         <div className={styles.statusConnected}>
                           <div className={styles.statusText}>Connected</div>
@@ -281,7 +302,9 @@ const ThirdEyeSetup = () => {
                   </div>
                 ) : (
                   <div className={styles.qrLoading}>
-                    <div className={styles.loadingText}>Generating QR code...</div>
+                    <div className={styles.loadingText}>
+                      Generating QR code...
+                    </div>
                   </div>
                 )}
               </div>
@@ -296,7 +319,9 @@ const ThirdEyeSetup = () => {
                 <div className={styles.connectionInfo}>
                   <div className={styles.connectionItem}>
                     <span>Connected</span>
-                    <span className={styles.deviceId}>ID: {userId.slice(-6)}</span>
+                    <span className={styles.deviceId}>
+                      ID: {userId.slice(-6)}
+                    </span>
                   </div>
                 </div>
               </div>

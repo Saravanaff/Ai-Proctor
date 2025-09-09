@@ -244,10 +244,10 @@ export default function ThirdEye() {
             video: {
               facingMode: "user",
               width: {
-                ideal: currentOrientation === "landscape" ? 1920 : 1280,
+                ideal: currentOrientation === "landscape" ? 640 : 640,
               },
               height: {
-                ideal: currentOrientation === "landscape" ? 1080 : 720,
+                ideal: currentOrientation === "landscape" ? 480 : 480,
               },
               frameRate: { ideal: 30 },
               aspectRatio:

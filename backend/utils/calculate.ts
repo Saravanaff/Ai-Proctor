@@ -47,7 +47,7 @@ export function addScore(data: any) {
   if (typeof headPos === "string" && (headPos.toLowerCase() !== "forward" && headPos.toLowerCase() !== "down")) {
     examData.headFrames+=1;
     console.log(examData.headFrames);
-    if(examData.headFrames%10==0){
+    if(examData.headFrames%5==0){
       examData.headPositionFlagged+=1;
       examData.headFrames=0;
     }
@@ -63,7 +63,7 @@ export function addScore(data: any) {
     if (eyes[0].toLowerCase() !== "center" && eyes[1].toLowerCase() !== "center"){
       examData.eyeFrames+=1;
       console.log(examData.eyeFrames);
-      if(examData.eyeFrames%10==0){
+      if(examData.eyeFrames%5==0){
         examData.eyesFlagged+=1;
 
         examData.eyeFrames=0;
@@ -85,7 +85,7 @@ export function addScore(data: any) {
   if ( data?.auth_face == false) {
     examData.authFrames += 1;
     console.log("hi",examData.authFrames);
-    if(examData.authFrames%50==0){
+    if(examData.authFrames%30==0){
       examData.authFaceFlagged+=1;
       examData.authFrames=0;
     }
@@ -99,7 +99,7 @@ export function addScore(data: any) {
   if (Number.isFinite(persons)) {
     if (persons < 1){
       examData.zeroPersonFrames += 1;
-      if(examData.zeroPersonFrames%10==0){
+      if(examData.zeroPersonFrames%5==0){
         examData.noPersonFlagged+=1;
         examData.zeroPersonFrames=0;
       }
@@ -109,7 +109,7 @@ export function addScore(data: any) {
     }
     if (persons > 1){
       examData.morePersonFrames+=1;
-      if(examData.morePersonFrames%10==0){
+      if(examData.morePersonFrames%5==0){
         examData.noOfPersonFlagged+=1;
         examData.morePersonFrames=0;
       }
