@@ -1,11 +1,30 @@
 import numpy as np
 import cv2
 import mediapipe as mp
-from threading import Lock
+from concurrent.futures import ThreadPoolExecutor
+from core import constants
+import threading
 
+MAX_WORKERS = 4  # Adjust based on your server capacity
+FACE_MESH_CONFIG = {
+    'static_image_mode': True,
+    'refine_landmarks': True,
+    'max_num_faces': 1,
+    'min_detection_confidence': 0.5,
+    'min_tracking_confidence': 0.5
+}
 mp_face_mesh = mp.solutions.face_mesh
-face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, refine_landmarks=True)
-head_lock = Lock()
+# Thread-local storage for face mesh instances
+thread_local = threading.local()   
+
+# Thread pool for handling multiple users
+executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+
+def get_face_mesh():
+    """Get thread-local face mesh instance"""
+    if not hasattr(thread_local, 'face_mesh'):
+        thread_local.face_mesh = mp_face_mesh.FaceMesh(**FACE_MESH_CONFIG)
+    return thread_local.face_mesh
 
 def direction(facelm, w, h):
     face_3d = []
@@ -32,49 +51,88 @@ def direction(facelm, w, h):
     angles, *_ = cv2.RQDecomp3x3(rmat)
 
     x_angle, y_angle = angles[0]*360, angles[1]*360
-    if y_angle < -25:
+    if y_angle < -15:
         return "Right"
-    elif y_angle > 25:
+    elif y_angle > 15:
         return "Left"
-    elif x_angle < -25:
+    elif x_angle < -15:
         return "Down"
-    elif x_angle > 25:
+    elif x_angle > 15:
         return "Up"
     
     return "Forward"
 
-def head_functionality(sio):
-    @sio.on("headPosition")
-    def handle_head_position(data):
-        buffer = data["buffer"]
-        userId = data["user_id"]
-        examId = data["exam_id"]
-        head = "Error"
-        
-        image_array = np.frombuffer(buffer, dtype=np.uint8)
-        img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
-        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        with head_lock:
-            results = face_mesh.process(rgb_img)
+def process_head_position_data(buffer, userId, examId):
+
+    head = "Error"
+
+    image_array = np.frombuffer(buffer, dtype=np.uint8)
+    img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    try:
+        face_mesh = get_face_mesh()
+        results = face_mesh.process(rgb_img)
         h, w, _ = img.shape
 
         if results.multi_face_landmarks:
             facelm = results.multi_face_landmarks[0]
             head  =  direction(facelm, w, h)
+    except Exception as e:
+        print(f"Error in head position detection: {e}")
+        head = "Error"
 
-        code =0
-        if head == "Error":
-            code = 1
+    print(f"Head position for user {userId}: {head}")
 
-        data = {"headPos": head}
-        print(data);
+    code = 0
+    if head == "Error":
+        code = -1
+    
+    data = {"headPos": head}
+    result = {
+        "userId": userId,
+        "examId": examId,
+        "data": data,
+        "code": code
+    }
+    return result
 
-        sio.emit("headPositionRes", {
-            "userId": userId,
-            "examId": examId,
-            "data": data,
-            "code": code
-        })
+def head_functionality(sio):
+    @sio.on("headPosition")
+    def add_in_queue(data):
+        constants.head_queue.put(data)
+    
+def handle_head_position(sio):
+    while True:
+        data = constants.head_queue.get()
+        buffer = data["buffer"]
+        userId = data["user_id"]
+        examId = data["exam_id"]
+        
+        future = executor.submit(process_head_position_data, buffer, userId, examId)
 
+        def emit_result(future):
+            try:
+                result = future.result()
+                if sio.connected:
+                    sio.emit("headPositionRes", result)
+            except Exception as e:
+                print(f"Error in head position processing: {e}")
+                error_result = {
+                    "userId": userId,
+                    "examId": examId,
+                    "data": {"headPos": "Error"},
+                    "code": -1
+                }
+                if sio.connected:
+                    sio.emit("headPositionRes", error_result)
+
+        future.add_done_callback(emit_result)
+
+def cleanup_head_functionality():
+    global executor
+    if executor:
+        executor.shutdown(wait=True)
+        print("Head functionality cleaned up.")
 
         
