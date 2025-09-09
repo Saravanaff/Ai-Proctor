@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 import { getUserId } from "@/constants/AuthStore";
 
-const SERVER_URL = "http://localhost:3001";
+const SERVER_URL = "https://localhost:3001";
 
 function currentUserId(): string | null {
   try {

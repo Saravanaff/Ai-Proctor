@@ -17,7 +17,7 @@ const storageServerUrl = process.env.STORAGE_SERVER_URL;
 
 export function initSocket(server: HttpServer) {
   const io = new Server(server, {
-    transports: ["websocket", "polling"],
+    transports: ["websocket"],
     cors: { origin: "*" },
   });
 
@@ -192,36 +192,26 @@ export function initSocket(server: HttpServer) {
       } catch {}
       emitToUserById(data?.userId,"webDetectRes-client",data);
     })
-    
-
-    socket.on("proxy", () => {
-      proxy = socket;
-      console.log("Proxy is connected...");
-
-      if (proxy) {
-        proxy.on("videos", (data: any) => {
-          emitToModel("thirdeye_detect", "mobileDetect", data);
-        });
-        proxy.on("recorder-add-video-stream-chunk", (data: any) => {
-          // console.log("chunk ,",data.chunk);
-          if (storageSocket) {
-            storageSocket.emit("add-video-stream-chunk", data);
-          }
-        });
-        proxy.on("start-exam", (data: any) => {
-          if (storageSocket) {
-            // console.log("Exam started", data);
-            storageSocket.emit("start-stream-recording", data);
-          }
-        });
-        proxy.on("end-exam", (data: any) => {
-          if (storageSocket) {
-            storageSocket.emit("stop-stream-recording", data);
-          }
-        });
-        
-      }
-    });
+      socket.on("videos", (data: any) => {
+        emitToModel("thirdeye_detect", "mobileDetect", data);
+      });
+      socket.on("recorder-add-video-stream-chunk", (data: any) => {
+        // console.log("chunk ,",data.chunk);
+        if (storageSocket) {
+          storageSocket.emit("add-video-stream-chunk", data);
+        }
+      });
+      socket.on("start-exam", (data: any) => {
+        if (storageSocket) {
+          // console.log("Exam started", data);
+          storageSocket.emit("start-stream-recording", data);
+        }
+      });
+      socket.on("end-exam", (data: any) => {
+        if (storageSocket) {
+          storageSocket.emit("stop-stream-recording", data);
+        }
+      });
 
     socket.on("photo-save", (data) => {
       console.log("sending data",data);
