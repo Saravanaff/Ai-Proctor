@@ -299,9 +299,10 @@ export function initSocket(server: HttpServer) {
       const { userId } = data;
       console.log(`Third eye setup registered for user: ${userId}`);
     });
-    socket.on("mobile-acknowledgment", () => {
+    socket.on("mobile-acknowledgment", (data) => {
+          const {userId}=data;
           console.log("Mobile device connected - sending acknowledgment");
-          socket.broadcast.emit("mobile-connected", { status: true, timestamp: new Date() });
+          emitToUserById(userId, "mobile-connected", { status: true, timestamp: new Date() });
     });
 
 

@@ -99,7 +99,7 @@ export default function ThirdEye() {
             variant: "success",
           });
           if (newSocket.current) {
-            newSocket.current.emit("mobile-acknowledgment");
+            newSocket.current.emit("mobile-acknowledgment",{userId:userId});
           }
         });
 
