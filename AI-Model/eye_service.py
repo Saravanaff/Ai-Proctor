@@ -4,7 +4,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import socketio
 import time
 import urllib3
-from functionality.eye_position import eye_functionality
+from functionality.eye_position import eye_functionality,handle_eye_position
+from threading import Thread
 
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -29,6 +30,8 @@ def disconnect():
     print("[Eye service] Disconnected from the server")
 
 eye_functionality(sio)
+
+Thread(target=handle_eye_position, args=(sio,), daemon=True).start()
 
 while not sio.connected:
     try:

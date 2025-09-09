@@ -1,4 +1,5 @@
 from threading import Lock
+import queue
 
 auth_status = False
 head_position = "Forward"
@@ -45,4 +46,5 @@ processing_cam = False
 
 face_data_path = "storage/face_data.json"
 
-
+eyes_queue = queue.Queue()
+head_queue = queue.Queue()

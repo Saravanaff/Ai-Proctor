@@ -1,8 +1,10 @@
 import numpy as np
 import cv2
 import mediapipe as mp
+import queue
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
+from core import constants
 import threading
 
 # Configuration
@@ -21,6 +23,7 @@ thread_local = threading.local()
 
 # Thread pool for handling multiple users
 executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+
 
 def get_face_mesh():
     """Get thread-local face mesh instance"""
@@ -149,7 +152,12 @@ def process_eye_position_data(buffer, userId, examId):
 
 def eye_functionality(sio):
     @sio.on("eyePosition")
-    def handle_eye_position(data):
+    def add_in_queue(data):
+        constants.eyes_queue.put(data)
+
+def handle_eye_position(sio):
+    while True:
+        data = constants.eyes_queue.get()
         buffer = data["buffer"]
         userId = data["user_id"]
         examId = data["exam_id"]
