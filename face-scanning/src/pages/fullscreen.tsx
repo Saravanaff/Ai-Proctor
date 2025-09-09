@@ -10,7 +10,7 @@ import axios from 'axios';
 
 
 const userId = getUserId() || "unknown";
-const examId = localStorage.getItem("exam_id") || "unknown";
+const examId = localStorage.getItem("examId") || "unknown";
 console.log("User ID:", userId);
 
 

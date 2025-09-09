@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
-import { usePost } from "../../hooks/usePost";
 import LoadingIndicator from "../../components/LoadingIndicator";
 import styles from "../../styles/ExamDetailsPage.module.css";
 import { getTokenFromCookie } from "@/constants/AuthStore";
@@ -25,33 +24,14 @@ interface ExamDetails {
   updatedAt: string;
 }
 
-interface ScoreDetails {
-  success: boolean;
-  data: number;
-  scoreBreakdown?: {
-    no_of_person_flagged: number;
-    no_person_flagged: number;
-    auth_face_flagged: number;
-    head_position_flagged: number;
-    eyes_flagged: number;
-    object_detected_flagged: number;
-    sound_flagged: number;
-    total_score: number;
-  };
-}
-
 const ExamDetailsPage: React.FC = () => {
   const router = useRouter();
   const { examId } = router.query;
 
   const [examDetails, setExamDetails] = useState<ExamDetails | null>(null);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [scoreDetails, setScoreDetails] = useState<ScoreDetails | null>(null);
   const [loadingExam, setLoadingExam] = useState(true);
-  const [loadingScore, setLoadingScore] = useState(false);
-  const [showScoreModal, setShowScoreModal] = useState(false);
 
-//   const { execute: fetchScore } = usePost("/getScore");
+  //   const { execute: fetchScore } = usePost("/getScore");
 
   axios.interceptors.request.use(
     (config) => {
@@ -65,30 +45,7 @@ const ExamDetailsPage: React.FC = () => {
     (error) => Promise.reject(error)
   );
 
-
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL;
-
-    const fetchScore = async (payload : any) => {
-
-        setLoadingExam(true);
-        const token = localStorage.getItem("token");
-        let data;
-        try {
-            const response = await axios.get(`${baseUrl}/getScore`, {
-                params: payload,
-            });
-            data = response.data;
-        }catch ( err ) {
-            console.log("Error fetching score in exam-details.tsx: ", err);
-        }
-        finally {
-          setLoadingExam(false);
-        }
-
-        return data;
-    }
-
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   useEffect(() => {
     const fetchExamDetails = async () => {
@@ -98,8 +55,7 @@ const ExamDetailsPage: React.FC = () => {
         setLoadingExam(true);
         const token = localStorage.getItem("token");
 
-        const response = await axios.get(`${baseUrl}/exam/${examId}`, {
-        });
+        const response = await axios.get(`${baseUrl}/exam/${examId}`, {});
 
         console.log("Exam details response:", response.data);
 
@@ -122,46 +78,11 @@ const ExamDetailsPage: React.FC = () => {
     fetchExamDetails();
   }, [examId, router]);
 
-  
   const handleUserClick = async (user: User) => {
-    setSelectedUser(user);
-    setLoadingScore(true);
-    setShowScoreModal(true);
-
-    try {
-      const scoreData = await fetchScore({
-        userId: user.id,
-        examId: examDetails?.id,
-      });
-
-
-      console.log("User score data:", scoreData);
-
-      setScoreDetails(scoreData);
-    } catch (error) {
-      console.error("Error fetching score:", error);
-      setScoreDetails(null);
-    } finally {
-      setLoadingScore(false);
-    }
-  };
-
-  const closeScoreModal = () => {
-    setShowScoreModal(false);
-    setSelectedUser(null);
-    setScoreDetails(null);
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score <= 30) return "var(--success-color)";
-    if (score <= 60) return "var(--warning-color)";
-    return "var(--error-color)";
-  };
-
-  const getScoreLabel = (score: number) => {
-    if (score <= 30) return "Low Risk";
-    if (score <= 60) return "Medium Risk";
-    return "High Risk";
+    // Navigate to participant details page
+    router.push(
+      `/examiner/participant-details?examId=${examDetails?.id}&userId=${user.id}`
+    );
   };
 
   if (loadingExam) {
@@ -293,131 +214,6 @@ const ExamDetailsPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Score Modal */}
-      {showScoreModal && (
-        <div className={styles.modal} onClick={closeScoreModal}>
-          <div
-            className={styles.modalContent}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>
-                Score Details - {selectedUser?.name}
-              </h3>
-              <button className={styles.closeButton} onClick={closeScoreModal}>
-                ×
-              </button>
-            </div>
-
-            <div className={styles.modalBody}>
-              {loadingScore ? (
-                <div className={styles.scoreLoading}>
-                  <LoadingIndicator />
-                  <span>Loading score details...</span>
-                </div>
-              ) : scoreDetails?.success ? (
-                <div className={styles.scoreContent}>
-                  <div className={styles.scoreOverview}>
-                    <div
-                      className={styles.scoreCircle}
-                      style={{ borderColor: getScoreColor(scoreDetails.data) }}
-                    >
-                      <span
-                        className={styles.scoreValue}
-                        style={{ color: getScoreColor(scoreDetails.data) }}
-                      >
-                        {scoreDetails.data}%
-                      </span>
-                      <span className={styles.scoreLabel}>
-                        {getScoreLabel(scoreDetails.data)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {scoreDetails.scoreBreakdown && (
-                    <div className={styles.scoreBreakdown}>
-                      <h4 className={styles.breakdownTitle}>
-                        Detailed Breakdown
-                      </h4>
-                      <div className={styles.breakdownGrid}>
-                        <div className={styles.breakdownItem}>
-                          <span className={styles.breakdownLabel}>
-                            Multiple Persons Detected
-                          </span>
-                          <span className={styles.breakdownValue}>
-                            {scoreDetails.scoreBreakdown.no_of_person_flagged}
-                          </span>
-                        </div>
-                        <div className={styles.breakdownItem}>
-                          <span className={styles.breakdownLabel}>
-                            Zero Person Detected
-                          </span>
-                          <span className={styles.breakdownValue}>
-                            {scoreDetails.scoreBreakdown.no_person_flagged}
-                          </span>
-                        </div>
-                        <div className={styles.breakdownItem}>
-                          <span className={styles.breakdownLabel}>
-                            Face Authentication Issues
-                          </span>
-                          <span className={styles.breakdownValue}>
-                            {scoreDetails.scoreBreakdown.auth_face_flagged}
-                          </span>
-                        </div>
-                        <div className={styles.breakdownItem}>
-                          <span className={styles.breakdownLabel}>
-                            Head Position Violations
-                          </span>
-                          <span className={styles.breakdownValue}>
-                            {scoreDetails.scoreBreakdown.head_position_flagged}
-                          </span>
-                        </div>
-                        <div className={styles.breakdownItem}>
-                          <span className={styles.breakdownLabel}>
-                            Eye Movement Violations
-                          </span>
-                          <span className={styles.breakdownValue}>
-                            {scoreDetails.scoreBreakdown.eyes_flagged}
-                          </span>
-                        </div>
-                        <div className={styles.breakdownItem}>
-                          <span className={styles.breakdownLabel}>
-                            Sound Violations
-                          </span>
-                          <span className={styles.breakdownValue}>
-                            {scoreDetails.scoreBreakdown.sound_flagged}
-                          </span>
-                        </div>
-                        <div className={styles.breakdownItem}>
-                          <span className={styles.breakdownLabel}>
-                            Unauthorized Devices Detected
-                          </span>
-                          <span className={styles.breakdownValue}>
-                            {
-                              scoreDetails.scoreBreakdown
-                                .object_detected_flagged
-                            }
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className={styles.scoreError}>
-                  <div className={styles.errorIcon}>⚠️</div>
-                  <h4 className={styles.errorTitle}>No Score Data Available</h4>
-                  <p className={styles.errorDescription}>
-                    Score data for this participant is not yet available or the
-                    exam hasn't been completed.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
