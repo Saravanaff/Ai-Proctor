@@ -1,14 +1,21 @@
 import socketio
 import time
+import urllib3
 
 from functionality.process_frame import setup_process_frame_handler
 from functionality.face_auth import face_auth
+
+# Suppress SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 sio = socketio.Client(
     reconnection=True,
     reconnection_attempts=10,
     reconnection_delay=2,  # seconds
-    reconnection_delay_max=10
+    reconnection_delay_max=10,
+    ssl_verify=False,
+    engineio_logger=False,
+    logger=False
 )
 
 @sio.event
@@ -27,7 +34,7 @@ def disconnect():
 while not sio.connected:
     try:
         print("[Face service] Trying to connect...")
-        sio.connect("http://localhost:3001/")
+        sio.connect("https://localhost:3001/", transports=['websocket'])
     except Exception as e:
         print(f"[Face service] Connection error: {e}")
         time.sleep(2)

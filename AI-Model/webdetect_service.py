@@ -3,14 +3,21 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 import socketio
 import time
+import urllib3
 
 from functionality.web_detect import web_detect
+
+# Suppress SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 sio = socketio.Client(
     reconnection=True,
     reconnection_attempts=10,
     reconnection_delay=2,  # seconds
-    reconnection_delay_max=10
+    reconnection_delay_max=10,
+    ssl_verify=False,
+    engineio_logger=False,
+    logger=False
 )
 
 @sio.event
@@ -28,7 +35,7 @@ web_detect(sio)
 while not sio.connected:
     try:
         print("[WebDetect service] Trying to connect...")
-        sio.connect("http://172.16.105.211:3001/")
+        sio.connect("https://localhost:3001/", transports=['websocket'])
     except Exception as e:
         print(f"[WebDetect service] Connection error: {e}")
         time.sleep(2)
