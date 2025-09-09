@@ -89,7 +89,6 @@ export default function ThirdEye() {
 
       if (newSocket.current) {
         newSocket.current.emit("mobile");
-        newSocket.current.emit("proxy");
 
         newSocket.current.on("connect", () => {
           console.log("Socket connected successfully");

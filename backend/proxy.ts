@@ -107,6 +107,7 @@ connectToBackend();
 ioServer.on("connection", (socket) => {
   console.log("⚡ Frontend client connected");
 
+
   socket.onAny((event, ...args) => {
     
     if (backendSocket?.connected) {
@@ -116,7 +117,6 @@ ioServer.on("connection", (socket) => {
     }
   });
 
-  // backendSocket.emit("proxy")
 
   backendSocket.onAny((event, ...args) => {
     socket.emit(event, ...args);

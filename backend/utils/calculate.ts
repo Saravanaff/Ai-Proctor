@@ -47,7 +47,7 @@ export function addScore(data: any) {
   if (typeof headPos === "string" && (headPos.toLowerCase() !== "forward" && headPos.toLowerCase() !== "down")) {
     examData.headFrames+=1;
     console.log(examData.headFrames);
-    if(examData.headFrames%5==0){
+    if(examData.headFrames%20==0){
       examData.headPositionFlagged+=1;
       examData.headFrames=0;
     }
@@ -63,7 +63,7 @@ export function addScore(data: any) {
     if (eyes[0].toLowerCase() !== "center" && eyes[1].toLowerCase() !== "center"){
       examData.eyeFrames+=1;
       console.log(examData.eyeFrames);
-      if(examData.eyeFrames%5==0){
+      if(examData.eyeFrames%20==0){
         examData.eyesFlagged+=1;
 
         examData.eyeFrames=0;
@@ -99,7 +99,7 @@ export function addScore(data: any) {
   if (Number.isFinite(persons)) {
     if (persons < 1){
       examData.zeroPersonFrames += 1;
-      if(examData.zeroPersonFrames%5==0){
+      if(examData.zeroPersonFrames%20==0){
         examData.noPersonFlagged+=1;
         examData.zeroPersonFrames=0;
       }
@@ -109,7 +109,7 @@ export function addScore(data: any) {
     }
     if (persons > 1){
       examData.morePersonFrames+=1;
-      if(examData.morePersonFrames%5==0){
+      if(examData.morePersonFrames%20==0){
         examData.noOfPersonFlagged+=1;
         examData.morePersonFrames=0;
       }
@@ -182,22 +182,40 @@ export const calculateExamScore = async (score: any) => {
 
   const totalFrames = Math.max(totalImagesProcessed || 1, 1);
 
-  const violationRates = {
-    noOfPersonRate: ((noOfPersonFlagged || 0) / totalFrames) * 100,
-    noPersonRate: ((noPersonFlagged || 0) / totalFrames) * 100,
-    authFaceRate: ((authFaceFlagged || 0) / totalFrames) * 100,
-    headPositionRate: ((headPositionFlagged || 0) / totalFrames) * 100,
-    eyesRate: ((eyesFlagged || 0) / totalFrames) * 100,
-    objectDetectedRate: ((objectDetectedFlagged || 0) / totalFrames) * 100,
+  // Calculate max possible flags based on frame thresholds
+  const maxPossibleFlags = {
+    headPosition: Math.floor(totalFrames / 20),    // Every 20 frames (2 seconds)
+    eyes: Math.floor(totalFrames / 20),            // Every 20 frames (2 seconds)
+    authFace: Math.floor(totalFrames / 30),        // Every 30 frames (3 seconds)
+    noPerson: Math.floor(totalFrames / 20),        // Every 20 frames (2 seconds)
+    multiplePerson: Math.floor(totalFrames / 20),  // Every 20 frames (2 seconds)
+    objectDetected: totalFrames,                   // Every frame
   };
 
+  // Calculate violation rates based on maximum possible violations (NOT total frames)
+  const violationRates = {
+    noOfPersonRate: maxPossibleFlags.multiplePerson > 0 ? 
+      ((noOfPersonFlagged || 0) / maxPossibleFlags.multiplePerson) * 100 : 0,
+    noPersonRate: maxPossibleFlags.noPerson > 0 ? 
+      ((noPersonFlagged || 0) / maxPossibleFlags.noPerson) * 100 : 0,
+    authFaceRate: maxPossibleFlags.authFace > 0 ? 
+      ((authFaceFlagged || 0) / maxPossibleFlags.authFace) * 100 : 0,
+    headPositionRate: maxPossibleFlags.headPosition > 0 ? 
+      ((headPositionFlagged || 0) / maxPossibleFlags.headPosition) * 100 : 0,
+    eyesRate: maxPossibleFlags.eyes > 0 ? 
+      ((eyesFlagged || 0) / maxPossibleFlags.eyes) * 100 : 0,
+    objectDetectedRate: totalFrames > 0 ? 
+      ((objectDetectedFlagged || 0) / totalFrames) * 100 : 0,
+  };
+
+  // Strict weights since students are pre-informed
   const weights = {
-    no_of_person_flagged: 0.5,
-    no_person_flagged: 0.7,
-    auth_face_flagged: 1.0,
-    head_position_flagged: 0.2,
-    eyes_flagged: 0.1,
-    object_detected_flagged: 0.7, 
+    no_of_person_flagged: 0.7,     // Very high - serious violation
+    no_person_flagged: 0.7,        // High - leaving exam area
+    auth_face_flagged: 1.0,        // Highest - identity verification
+    head_position_flagged: 0.5,    // Moderate-high - should know to look forward
+    eyes_flagged: 0.3,             // Moderate - should keep eyes on screen
+    object_detected_flagged: 1.0,  // Highest - prohibited items
   };
 
   const weightedScore =
@@ -208,32 +226,35 @@ export const calculateExamScore = async (score: any) => {
     violationRates.eyesRate * weights.eyes_flagged +
     violationRates.objectDetectedRate * weights.object_detected_flagged;
 
+  // More aggressive cheating percentage calculation since students are informed
   let cheatingPercentage;
   
   if (weightedScore === 0) {
     cheatingPercentage = 0;
-  } else if (weightedScore <= 10) {
-    // For very low scores (0-10%)
-    cheatingPercentage = (weightedScore / 5) * 10;
-  } else if (weightedScore <= 20) {
-    // For moderate scores (10-30%)
-    cheatingPercentage = 10 + ((weightedScore - 5) / 10) * 20;
-  } else if (weightedScore <= 40) {
-    // For higher scores (30-60%)
-    cheatingPercentage = 30 + ((weightedScore - 15) / 20) * 30;
-  } else if (weightedScore <= 60) {
-    // For very high scores (60-85%)
-    cheatingPercentage = 60 + ((weightedScore - 35) / 25) * 25;
+  } else if (weightedScore <= 5) {
+    // Even small violations should show meaningful percentages: 0-5% → 0-15%
+    cheatingPercentage = (weightedScore / 5) * 15;
+  } else if (weightedScore <= 15) {
+    // Low violations: 5-15% → 15-35% 
+    cheatingPercentage = 15 + ((weightedScore - 5) / 10) * 20;
+  } else if (weightedScore <= 30) {
+    // Moderate violations: 15-30% → 35-60%
+    cheatingPercentage = 35 + ((weightedScore - 15) / 15) * 25;
+  } else if (weightedScore <= 50) {
+    // High violations: 30-50% → 60-80%
+    cheatingPercentage = 60 + ((weightedScore - 30) / 20) * 20;
   } else {
-    // Cap at 95% for extreme cases
-    cheatingPercentage = Math.min(85 + ((weightedScore - 60) / 40) * 10, 95);
+    // Very high violations: 50%+ → 80-95%
+    cheatingPercentage = Math.min(80 + ((weightedScore - 50) / 50) * 15, 95);
   }
 
   return {
     totalFlagged,
-    weightedScore,
-    cheatingPercentage: Math.round(cheatingPercentage * 100) / 100, // Round to 2 decimal places
+    weightedScore: Math.round(weightedScore * 100) / 100,
+    cheatingPercentage: Math.round(cheatingPercentage * 100) / 100,
     severity: getSeverityLevel(cheatingPercentage),
+    maxPossibleFlags, // For debugging
+    violationRates,   // For debugging
     breakdown: {
       no_of_person_flagged: noOfPersonFlagged || 0,
       no_person_flagged: noPersonFlagged || 0,
@@ -248,8 +269,8 @@ export const calculateExamScore = async (score: any) => {
 
 
 function getSeverityLevel(percentage: number): string {
-  if (percentage <= 15) return "Low Risk";
-  if (percentage <= 35) return "Moderate Risk";
-  if (percentage <= 60) return "High Risk";
-  return "Critical Risk";
+  if (percentage <= 10) return "Low Risk";      // 0-10% (very minor violations)
+  if (percentage <= 25) return "Moderate Risk"; // 11-25% (some violations)
+  if (percentage <= 50) return "High Risk";     // 26-50% (significant violations)
+  return "Critical Risk";                       // 51%+ (major violations)
 }

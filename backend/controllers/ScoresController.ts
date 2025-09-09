@@ -58,6 +58,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
   try {
     console.log("exam", req.body);
     const userId = getUserIdFromToken(req);
+
     console.log(userId);
     const flaggedScore = getExamScore(userId, examId);
 
@@ -90,7 +91,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       object_detected_flagged: flaggedScore.objectDetectedFlagged || 0,
       total_images_processed: flaggedScore.totalImagesProcessed || 0,
       sound_flagged: flaggedScore.soundFlagged || 0,
-      total_score: calculatedScore.cheatingPercentage,
+      total_score: calculatedScore.cheatingPercentage || 0,
     };
 
     const existingScore = await Scores.findOne({
@@ -100,11 +101,17 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       },
     });
 
-    if (existingScore) {
-      await existingScore.update(scoreData);
-    } else {
+    if (!existingScore) {
       await Scores.create(scoreData as any);
+    } else {
+      return res.status(401).json({
+        success: false,
+        message: "User with Exam already exists"
+      })
     }
+    // else {
+    //   await Scores.create(scoreData as any);
+    // }
 
     res.status(200).json({
       success: true,
