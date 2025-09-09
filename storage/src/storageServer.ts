@@ -1,140 +1,107 @@
-import { Readable, Writable } from 'stream';
-import ffmpeg from 'fluent-ffmpeg';
-import { Server, Socket } from 'socket.io';
-import { createServer } from 'http';
-import express, { Request, Response } from 'express';
-import path from 'path';
-import dotenv from 'dotenv';
-import fs from 'fs';
-import { generateFileName } from './utils/utils';
+import { Server, Socket } from "socket.io";
+import { createServer } from "http";
+import express, { Request, Response } from "express";
+import path from "path";
+import { generateFileName } from "./utils/utils";
+import cors from "cors";
+
+import { VideoStreamRecorder } from "./services/VideoStreamRecorder";
+import downloadableRoutes from "./routes/downloadableRoutes";
+
+import dotenv from "dotenv";
 
 dotenv.config();
 
 const storageServerPort = process.env.STORAGE_SERVER_PORT;
 
-
-
-class VideoStreamRecorder {
-  private inputStream: Readable;
-  private outputPath: string;
-  private ffmpegProcess: any;
-  
-  constructor(outputPath: string) {
-    console.log(`the file might be ${outputPath}`)
-    this.outputPath = outputPath;
-    fs.mkdirSync(path.dirname(this.outputPath), { recursive: true });
-    this.inputStream = new Readable({
-      read() {} 
-    });
-  }
-  
-  startRecording() {
-    this.ffmpegProcess = ffmpeg()
-    .input(this.inputStream)
-    .inputFormat('webm')
-    .inputOptions([
-      '-avoid_negative_ts make_zero' // handle bad timestamps
-    ])
-    .videoCodec('libx264') // transcode VP8 -> H.264
-    .outputOptions([
-      '-preset ultrafast',
-      '-crf 23', // quality control
-      '-pix_fmt yuv420p', // Safari/iOS compatibility
-      '-movflags +faststart', // progressive playback
-      '-fflags +genpts', // regenerate timestamps
-      '-f mp4'
-    ])
-    // .noAudio()  <-- only keep this if you *never* want audio
-    .format('mp4')
-    .save(this.outputPath)
-    .on('start', cmd => console.log('Recording started:', cmd))
-    .on('end', () => console.log('Recording finished'))
-    .on('error', err => console.error('Recording error:', err));
-
-  }
-
-  addVideoChunk(chunk: Buffer) {
-    console.log("Adding Data...");
-    this.inputStream.push(chunk);
-  }
-  
-  stopRecording() {
-    this.inputStream.push(null); // End the stream
-    // if (this.ffmpegProcess) {
-    //   this.ffmpegProcess.kill('SIGTERM');
-    // }
-  }
-}
-
-
 interface RecorderType {
-  [key : string] : VideoStreamRecorder;
+  [key: string]: VideoStreamRecorder;
 }
 
+const startStorageSocketServer = async () => {
+  const app = express();
 
-const startStorageServer = async () => {
-    const app = express();
-
-    app.get('/',(req : Request,res : Response) => {
-        res.send("DVD Storage");
+  // Enable CORS for all routes
+  app.use(
+    cors({
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE"],
+      allowedHeaders: ["Content-Type", "Authorization"],
     })
+  );
 
-    const httpServer = createServer(app);
+  app.get("/", (req: Request, res: Response) => {
+    res.send("DVD Storage");
+  });
 
-    const io = new Server(httpServer,{
-        transports:['websocket','polling'],
-        cors:{
-            origin:"*",
-            methods:["GET","POST"],
-        }
-    })
+  app.use("/", downloadableRoutes);
 
-    io.on('connection', (socket : Socket) => {
-      console.log("Connected")
-      let recorder: RecorderType = {};
+  const httpServer = createServer(app);
 
-      socket.on('start-stream-recording', (data: { user_id: string, category: string }) => {
-        console.log("Starting the Stream ",data);
-        const fileName = generateFileName(data.user_id,data.category);
-        const outputPath = path.join(__dirname, 'recordings', `${fileName}.mp4`);
+  const io = new Server(httpServer, {
+    transports: ["websocket", "polling"],
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"],
+    },
+  });
+
+  io.on("connection", (socket: Socket) => {
+    console.log("Connected");
+    let recorder: RecorderType = {};
+
+    socket.on(
+      "start-stream-recording",
+      (data: { user_id: string; category: string }) => {
+        console.log("Starting the Stream ", data);
+        const fileName = generateFileName(data.user_id, data.category);
+        const outputPath = path.join(
+          __dirname,
+          "recordings",
+          `${fileName}.mp4`
+        );
         recorder[fileName] = new VideoStreamRecorder(outputPath);
         if (fileName && recorder[fileName]) {
           console.log("Video Recording Started...");
           recorder[fileName]?.startRecording();
         }
-      });
+      }
+    );
 
-      socket.on('add-video-stream-chunk', (data: { user_id: string, category: string, chunk: ArrayBuffer }) => {
-        const fileName = generateFileName(data.user_id,data.category);
-        console.log("Adding chunk to ",data);
+    socket.on(
+      "add-video-stream-chunk",
+      (data: { user_id: string; category: string; chunk: ArrayBuffer }) => {
+        const fileName = generateFileName(data.user_id, data.category);
+        console.log("Adding chunk to ", data);
         if (recorder[fileName]) {
           const buf = Buffer.isBuffer(data.chunk)
             ? data.chunk
             : Buffer.from(new Uint8Array(data.chunk)); // convert properly
           recorder[fileName].addVideoChunk(buf);
         }
-      });
+      }
+    );
 
-
-      socket.on('stop-stream-recording', (data : { user_id : string, category: string }) => {
-        const fileName = generateFileName(data.user_id,data.category);
+    socket.on(
+      "stop-stream-recording",
+      (data: { user_id: string; category: string }) => {
+        const fileName = generateFileName(data.user_id, data.category);
         if (recorder && recorder[fileName]) {
-          console.log("Video Recording Ended...",data);
+          console.log("Video Recording Ended...", data);
           recorder[fileName]?.stopRecording();
           delete recorder[fileName];
         }
-      });
+      }
+    );
+  });
+
+  try {
+    httpServer.listen(storageServerPort, () => {
+      console.log(`Storage Server Started in Port ${storageServerPort}`);
     });
+  } catch (err) {
+    console.log("(: Error Listening Port :) \n", err);
+  }
+};
 
-    try {
-      httpServer.listen(storageServerPort,() =>{
-          console.log(`Storage Server Started in Port ${storageServerPort}`);
-      })
-    }catch(err){
-      console.log("(: Error Listening Port :) \n",err);
-    }
-}
-
-startStorageServer();
-
-
+startStorageSocketServer();
