@@ -182,14 +182,13 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("webDetectRes",(data)=>{
-      try {
+        console.log(data);
         addScore({
           userId: data?.userId,
           examId: data?.examId,
-          object_detected: { "cell phone": (data?.data?.["Mobile-phone"]||0) > 0 },
+          object_detected: { "cell phone": (Number(data?.data?.Mobile||0)) > 0},
           no_of_person: data?.data?.Person
         });
-      } catch {}
       emitToUserById(data?.userId,"webDetectRes-client",data);
     })
       socket.on("videos", (data: any) => {

@@ -234,7 +234,8 @@ export const calculateExamScore = async (score: any) => {
   } else if (weightedScore <= 5) {
     // Even small violations should show meaningful percentages: 0-5% → 0-15%
     cheatingPercentage = (weightedScore / 5) * 15;
-  } else if (weightedScore <= 15) {
+  } else if (weightedScore <= 15)
+     {
     // Low violations: 5-15% → 15-35% 
     cheatingPercentage = 15 + ((weightedScore - 5) / 10) * 20;
   } else if (weightedScore <= 30) {
