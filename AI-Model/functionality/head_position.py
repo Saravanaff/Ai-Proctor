@@ -32,13 +32,13 @@ def direction(facelm, w, h):
     angles, *_ = cv2.RQDecomp3x3(rmat)
 
     x_angle, y_angle = angles[0]*360, angles[1]*360
-    if y_angle < -10:
+    if y_angle < -25:
         return "Right"
-    elif y_angle > 10:
+    elif y_angle > 25:
         return "Left"
-    elif x_angle < -10:
+    elif x_angle < -25:
         return "Down"
-    elif x_angle > 10:
+    elif x_angle > 25:
         return "Up"
     
     return "Forward"
@@ -46,7 +46,6 @@ def direction(facelm, w, h):
 def head_functionality(sio):
     @sio.on("headPosition")
     def handle_head_position(data):
-        print("head")
         buffer = data["buffer"]
         userId = data["user_id"]
         examId = data["exam_id"]
@@ -68,6 +67,7 @@ def head_functionality(sio):
             code = 1
 
         data = {"headPos": head}
+        print(data);
 
         sio.emit("headPositionRes", {
             "userId": userId,
