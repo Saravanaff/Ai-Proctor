@@ -76,11 +76,11 @@ def direction(o_cor, i_cor, iris_right, iris_left, facelm, w, h):
         else:
             gaze_direction = "Center"
 
-    if gaze_direction == "Center":
-        if o_cor == 163:
-            gaze_direction = up_down(33, 133, 468, 469, 161, 173, 159, facelm, w, h)
-        else:
-            gaze_direction = up_down(263, 362, 473, 476, 388, 398, 386, facelm, w, h)
+    # if gaze_direction == "Center":
+    #     if o_cor == 163:
+    #         gaze_direction = up_down(33, 133, 468, 469, 161, 173, 159, facelm, w, h)
+    #     else:
+    #         gaze_direction = up_down(263, 362, 473, 476, 388, 398, 386, facelm, w, h)
 
     return gaze_direction
 
@@ -106,13 +106,14 @@ def eye_functionality(sio):
             eyes[1] = direction(163, 157, 471, 469, facelm, w, h) # Right eye
 
         data = {"leftEye": eyes[0], "rightEye": eyes[1]}
+        print(data)
         code = 0
 
         if eyes[0] =="Error" or eyes[1] == "Error":
             code = -1 
 
         result = {
-            "UserId": userId,
+            "userId": userId,
             "examId": examId,
             "data": data,
             "code": code
