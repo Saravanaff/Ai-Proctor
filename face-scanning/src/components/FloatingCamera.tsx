@@ -21,6 +21,7 @@ else examId = "unknown";
 
 interface VideoChunkData {
   user_id: string;
+  exam_id: string | null;
   category: string;
   chunk: ArrayBuffer;
 }
@@ -236,12 +237,14 @@ const FloatingCamera = ({
       }
       socket.emit("end-exam", {
         user_id: userId,
+        exam_id: examId,
         category: "face_camera",
         status: "success",
         message: "Exam Ended successfully",
       });
       socket.emit("end-exam", {
         user_id: userId,
+        exam_id: examId,
         category: "screen_recording",
         status: "success",
         message: "Exam Ended successfully",
@@ -343,6 +346,7 @@ const FloatingCamera = ({
             e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
               const chunkData: VideoChunkData = {
                 user_id: userId,
+                exam_id: examId,
                 category: "face_camera",
                 chunk: buffer,
               };

@@ -5,9 +5,12 @@ import { sleep } from '@/utils/delay';
 import { getUserId } from '@/constants/AuthStore';
 import socket from "@/components/socket";
 import { useTheme } from "@/contexts/ThemeContext";
+import useMicrophoneDevices from '@/hooks/useMicrophoneDevices';
+import axios from 'axios';
 
 
 const userId = getUserId() || "unknown";
+const examId = localStorage.getItem("exam_id") || "unknown";
 console.log("User ID:", userId);
 
 
@@ -15,6 +18,16 @@ const fullscreen = () => {
     const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
     const [rulesAccepted, setRulesAccepted] = useState(false);
     const { theme } = useTheme();
+    const { getMicrophoneCount } = useMicrophoneDevices();
+
+
+    const uploadNumberOfMicrophones = async () => {
+        await axios.post("",{
+            user_id: userId,
+            exam_id: examId,
+            microphone_count: getMicrophoneCount(),
+        });
+    }
 
     // const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
     const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
@@ -24,6 +37,7 @@ const fullscreen = () => {
         try {
             socket.emit("start-exam", {
                 user_id: userId,
+                exam_id: examId,
                 category: "screen_recording"
             });
             // const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
@@ -42,6 +56,7 @@ const fullscreen = () => {
                         e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
                             const chunkData: any = {
                                 user_id: userId,
+                                exam_id: examId,
                                 category: "screen_recording",
                                 chunk: buffer,
                             };
@@ -200,23 +215,6 @@ const fullscreen = () => {
         );
     }
 
-    // if (!fullscreenAllowed) {
-
-    //     return (
-    //         <div className={`${styles.blockScreen} theme-transition`} data-theme={theme}>
-    //             <h2>Fullscreen is required to start the exam</h2>
-    //             <button 
-    //                 className="button-theme"
-    //                 onClick={async () => {
-    //                     const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-    //                     startScreenRecording(screenStream)
-    //                 }}
-    //             >
-    //                 Enter Fullscreen
-    //             </button>
-    //         </div>
-    //     );
-    // }
 
     return (
         <>

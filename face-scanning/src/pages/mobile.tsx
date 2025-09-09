@@ -15,8 +15,7 @@ import styles from "../styles/ThirdEye.module.css";
 import { delay } from "@/utils/delay";
 
 const userId = getUserId() || "unknown";
-// const examId = localStorage.getItem("examId") || "unknown";
-const examId = "unknown";
+const examId = localStorage.getItem("examId") || "unknown";
 
 function currentUserId(): string | null {
   try {
@@ -219,6 +218,7 @@ export default function ThirdEye() {
       console.log("Starting surveillance recording ...");
       newSocket.current?.emit("start-exam", {
         user_id: userId,
+        exam_id: examId,
         category: "third_eye",
       });
 
@@ -286,6 +286,7 @@ export default function ThirdEye() {
             e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
               const chunkData: any = {
                 user_id: userId,
+                exam_id: examId,
                 category: "third_eye",
                 chunk: buffer,
               };
@@ -327,6 +328,7 @@ export default function ThirdEye() {
 
     newSocket.current?.emit("end-exam", {
       user_id: userId,
+      exam_id: examId,
       category: "third_eye",
     });
 
