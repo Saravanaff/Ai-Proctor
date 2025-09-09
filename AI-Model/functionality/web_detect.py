@@ -1,6 +1,6 @@
 import time
 import cv2
-from core import constants, yolo_detect,image_utils
+from core import yolo_detect,image_utils
 
 def web_detect(sio):
     @sio.on("webDetect")
@@ -13,16 +13,16 @@ def web_detect(sio):
 
         now = time.time()
 
-        if not constants.processing_yolo and (now - constants.last_yolo_process > 0.2):
-            constants.detected_objects = yolo_detect.detect_person_and_objects(rgb_img)
-            constants.last_yolo_process = now
-        
-        print(constants.detected_objects)
+        # if not constants.processing_yolo and (now - constants.last_yolo_process > 0.2):
+        detected_objects = yolo_detect.detect_person_and_objects(rgb_img)
+            # constants.last_yolo_process = now
+
+        print(detected_objects)
         if sio.connected:
             sio.emit("webDetectRes", {
                 "userId": userId,
                 "examId": examId,
-                "data": constants.detected_objects,
+                "data": detected_objects,
                 "code": 0
             })
 

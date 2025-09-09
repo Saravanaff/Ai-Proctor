@@ -2,10 +2,31 @@ import numpy as np
 import cv2
 import mediapipe as mp
 from threading import Lock
+from concurrent.futures import ThreadPoolExecutor
+import threading
+
+# Configuration
+MAX_WORKERS = 4  # Adjust based on your server capacity
+FACE_MESH_CONFIG = {
+    'static_image_mode': True,
+    'refine_landmarks': True,
+    'max_num_faces': 1,
+    'min_detection_confidence': 0.5,
+    'min_tracking_confidence': 0.5
+}
 
 mp_face_mesh = mp.solutions.face_mesh
-face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, refine_landmarks=True)
-face_lock = Lock()
+# Thread-local storage for face mesh instances
+thread_local = threading.local()
+
+# Thread pool for handling multiple users
+executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+
+def get_face_mesh():
+    """Get thread-local face mesh instance"""
+    if not hasattr(thread_local, 'face_mesh'):
+        thread_local.face_mesh = mp_face_mesh.FaceMesh(**FACE_MESH_CONFIG)
+    return thread_local.face_mesh
 
 def get_landmark_point(facelm, id, w, h):
     lm = facelm.landmark[id]
@@ -84,20 +105,21 @@ def direction(o_cor, i_cor, iris_right, iris_left, facelm, w, h):
 
     return gaze_direction
 
-def eye_functionality(sio):
-    @sio.on("eyePosition")
-    def handle_eye_position(data):
-        buffer = data["buffer"]
-        userId = data["user_id"]
-        examId = data["exam_id"]
-        eyes = ["Error", "Error"]
-
+def process_eye_position_data(buffer, userId, examId):
+    """Process eye position data in a separate thread"""
+    eyes = ["Error", "Error"]
+    
+    try:
+        # Get thread-local face mesh instance
+        face_mesh = get_face_mesh()
+        
+        # Decode image
         image_array = np.frombuffer(buffer, dtype=np.uint8)
         img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
         rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-        with face_lock:
-            results = face_mesh.process(rgb_img)
+        
+        # Process face landmarks
+        results = face_mesh.process(rgb_img)
         h, w, _ = img.shape
 
         if results.multi_face_landmarks:
@@ -105,17 +127,57 @@ def eye_functionality(sio):
             eyes[0] = direction(390, 384, 474, 476, facelm, w, h)
             eyes[1] = direction(163, 157, 471, 469, facelm, w, h)
 
-        data = {"leftEye": eyes[0], "rightEye": eyes[1]}
-        print(data)
-        code = 0
-        if eyes[0] =="Error" or eyes[1] == "Error":
-            code = -1 
+    except Exception as e:
+        print(f"Error processing eye position for user {userId}: {e}")
+        eyes = ["Error", "Error"]
 
-        result = {
-            "userId": userId,
-            "examId": examId,
-            "data": data,
-            "code": code
-        }
+    data = {"leftEye": eyes[0], "rightEye": eyes[1]}
+    print(f"User {userId} eye data: {data}")
+    
+    code = 0
+    if eyes[0] == "Error" or eyes[1] == "Error":
+        code = -1 
 
-        sio.emit("eyePositionRes", result)
+    result = {
+        "userId": userId,
+        "examId": examId,
+        "data": data,
+        "code": code
+    }
+    
+    return result
+
+def eye_functionality(sio):
+    @sio.on("eyePosition")
+    def handle_eye_position(data):
+        buffer = data["buffer"]
+        userId = data["user_id"]
+        examId = data["exam_id"]
+        
+        # Submit task to thread pool for processing
+        future = executor.submit(process_eye_position_data, buffer, userId, examId)
+        
+        # Add callback to emit result when processing is complete
+        def emit_result(future):
+            try:
+                result = future.result()
+                sio.emit("eyePositionRes", result)
+            except Exception as e:
+                print(f"Error in eye position processing: {e}")
+                error_result = {
+                    "userId": userId,
+                    "examId": examId,
+                    "data": {"leftEye": "Error", "rightEye": "Error"},
+                    "code": -1
+                }
+                if sio.connected:
+                    sio.emit("eyePositionRes", error_result)
+        
+        future.add_done_callback(emit_result)
+
+def cleanup_eye_functionality():
+    """Cleanup function to properly shutdown the thread pool"""
+    global executor
+    if executor:
+        executor.shutdown(wait=True)
+        print("Eye position thread pool shutdown complete")
