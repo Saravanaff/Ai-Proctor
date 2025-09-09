@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { downloadVideo } from "../controllers/downloadController";
 
-
 const router = Router();
 
-router.get("download/:userId/:examId",downloadVideo)
+// Download a specific video
+router.get("/download/:userId/:examId", downloadVideo);
 
 export default router;
