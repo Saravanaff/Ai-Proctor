@@ -11,7 +11,7 @@ import path from 'path';
 import { io as ioClient } from "socket.io-client";
 import { getExamScore, addScore, calculateExamScore } from "../utils/calculate";
 
-dotenv.config({ path: path.join(__dirname, ".env") });
+dotenv.config();
 
 const storageServerUrl = process.env.STORAGE_SERVER_URL;
 
@@ -77,7 +77,26 @@ export function initSocket(server: HttpServer) {
   }
 
   let proxy: any = null;
-  let storageSocket: any = ioClient(`http://localhost:${3003}`);
+  const storageUrl = storageServerUrl || `https://localhost:3003`;
+  console.log("🔗 Attempting to connect to storage server:", storageUrl);
+  
+  let storageSocket: any = ioClient(storageUrl, {
+    rejectUnauthorized: false, // Accept self-signed certificates
+    transports: ["websocket", "polling"]
+  });
+
+  // Add connection event handlers for debugging
+  storageSocket.on("connect", () => {
+    console.log("✅ Connected to storage server");
+  });
+
+  storageSocket.on("disconnect", () => {
+    console.log("❌ Disconnected from storage server");
+  });
+
+  storageSocket.on("connect_error", (error: any) => {
+    console.log("🔥 Storage server connection error:", error.message);
+  });
 
   io.on("connection", (socket) => {
     const uid = resolveUserId(socket);
@@ -206,19 +225,26 @@ export function initSocket(server: HttpServer) {
       });
       socket.on("recorder-add-video-stream-chunk", (data: any) => {
         // console.log("chunk ,",data.chunk);
-        if (storageSocket) {
+        if (storageSocket && storageSocket.connected) {
           storageSocket.emit("add-video-stream-chunk", data);
+        } else {
+          console.warn("⚠️ Storage socket not connected - dropping video chunk");
         }
       });
       socket.on("start-exam", (data: any) => {
-        if (storageSocket) {
-          // console.log("Exam started", data);
+        if (storageSocket && storageSocket.connected) {
+          console.log("📹 Starting video recording for exam:", data.exam_id);
           storageSocket.emit("start-stream-recording", data);
+        } else {
+          console.error("❌ Cannot start recording - storage socket not connected");
         }
       });
       socket.on("end-exam", (data: any) => {
-        if (storageSocket) {
+        if (storageSocket && storageSocket.connected) {
+          console.log("⏹️ Stopping video recording for exam:", data.exam_id);
           storageSocket.emit("stop-stream-recording", data);
+        } else {
+          console.error("❌ Cannot stop recording - storage socket not connected");
         }
       });
 
@@ -279,29 +305,6 @@ export function initSocket(server: HttpServer) {
     socket.on("frame", (data) => {
       // console.log("framing");
       emitToModel("face_service","process-frame",data);
-    });
-
-    socket.on("recorder-add-video-stream-chunk", (data: any) => {
-      
-      if (storageSocket) {
-        storageSocket.emit("add-video-stream-chunk", data);
-      }
-    });
-
-    socket.on("start-exam", (data: any) => {
-      if (storageSocket) {
-        // console.log("Exam started", data);
-        storageSocket.emit("start-stream-recording", data);
-      }
-    });
-    socket.on("end-exam", (data: any) => {
-      if (storageSocket) {
-        /* For Closing Video Recording */
-
-        // const fileName = path.join(__dirname, "logs", "log.csv");
-        // const score = calculateScoreOnUser(fileName);
-        storageSocket.emit("stop-stream-recording", data);
-      }
     });
 
     socket.on("register-third-eye-setup", (data: any) => {
