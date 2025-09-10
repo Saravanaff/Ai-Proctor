@@ -43,6 +43,8 @@ def process_webcam_data(buffer, userId, examId):
     rgb_img = cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB)
     detected_objects = detect_person_and_objects(rgb_img)
 
+    print(f"[WebDetect] Detected objects for user {userId}, exam {examId}: {detected_objects}")
+
     result = {
             "userId": userId,
             "examId": examId,

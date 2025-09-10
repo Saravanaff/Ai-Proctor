@@ -34,7 +34,7 @@ Thread(target=handle_head_position, args=(sio,), daemon=True).start()
 while not sio.connected:
     try:
         print("[Head service] Trying to connect...")
-        sio.connect("https://10.67.46.168:3001/", transports=['websocket'])
+        sio.connect("https://172.16.105.211:3001/", transports=['websocket'])
     except Exception as e:
         print(f"[Head service] Connection error: {e}")
         time.sleep(2)

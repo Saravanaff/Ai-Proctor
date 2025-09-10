@@ -38,6 +38,7 @@ interface SocketFrameData {
   buffer: ArrayBuffer;
   metadata: FrameMetadata;
   user_id: string;
+  exam_id: string;
   stage: number;
   counter: number;
 }
@@ -236,6 +237,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                       height: boundingSize,
                     },
                     user_id: userId || "unknown",
+                    exam_id: examId || "unknown",
                     counter: counter.current,
                     stage: stage.current,
                   };

@@ -14,7 +14,7 @@ export const downloadVideo = async (req: Request, res: Response) => {
 
     // Get storage server URL from environment variables
     const storageServerUrl =
-      process.env.STORAGE_SERVER_URL || "http://localhost:3003";
+      process.env.STORAGE_SERVER_URL || "https://localhost:3003";
     const downloadUrl = `${storageServerUrl}/download/${user_id}/${exam_id}/${category}`;
 
     try {

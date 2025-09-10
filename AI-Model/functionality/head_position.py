@@ -62,6 +62,23 @@ def direction(facelm, w, h):
     
     return "Forward"
 
+def head_for_scan(rgb_img):
+    head = "Error"
+    try:
+        face_mesh = get_face_mesh()
+        results = face_mesh.process(rgb_img)
+        h, w, _ = rgb_img.shape
+
+        if results.multi_face_landmarks:
+            facelm = results.multi_face_landmarks[0]
+            head  =  direction(facelm, w, h)
+    except Exception as e:
+        print(f"Error in head position detection: {e}")
+        head = "Error"
+
+    return head
+
+
 def process_head_position_data(buffer, userId, examId):
 
     head = "Error"
