@@ -15,7 +15,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const storageServerPort = process.env.STORAGE_SERVER_PORT;
-const videoQuality = (process.env.VIDEO_QUALITY_PRESET || 'high') as keyof typeof import('./config/videoQuality').VIDEO_QUALITY_PRESETS;
+const videoQuality = (process.env.VIDEO_QUALITY_PRESET ||
+  "high") as keyof typeof import("./config/videoQuality").VIDEO_QUALITY_PRESETS;
 
 interface RecorderType {
   [key: string]: VideoStreamRecorder;
@@ -43,7 +44,7 @@ const startStorageSocketServer = async () => {
   const httpsOptions = {
     key: fs.readFileSync(path.join(__dirname, "..", "localhost-key.pem")),
     cert: fs.readFileSync(path.join(__dirname, "..", "localhost-cert.pem")),
-    ca: fs.readFileSync(path.join(__dirname, "..", "rootCA.pem"))
+    ca: fs.readFileSync(path.join(__dirname, "..", "rootCA.pem")),
   };
 
   const httpsServer = createServer(httpsOptions, app);
@@ -62,9 +63,13 @@ const startStorageSocketServer = async () => {
 
     socket.on(
       "start-stream-recording",
-      (data: { user_id: string; category: string, exam_id: string }) => {
+      (data: { user_id: string; category: string; exam_id: string }) => {
         console.log("Starting the Stream ", data);
-        const fileName = generateFileName(data.user_id, data.exam_id, data.category);
+        const fileName = generateFileName(
+          data.user_id,
+          data.exam_id,
+          data.category
+        );
         const outputPath = path.join(
           __dirname,
           "recordings",
@@ -74,15 +79,22 @@ const startStorageSocketServer = async () => {
         const qualityPreset = getVideoQualityPreset(videoQuality);
         const qualitySettings: any = {
           crf: qualityPreset.crf,
-          preset: qualityPreset.preset
+          preset: qualityPreset.preset,
         };
         if (qualityPreset.resolution) {
           qualitySettings.resolution = qualityPreset.resolution;
         }
-        console.log(`🎥 Using video quality preset: ${qualityPreset.name} - ${qualityPreset.description}`);
-        recorder[fileName] = new VideoStreamRecorder(outputPath, qualitySettings);
+        console.log(
+          `🎥 Using video quality preset: ${qualityPreset.name} - ${qualityPreset.description}`
+        );
+        recorder[fileName] = new VideoStreamRecorder(
+          outputPath,
+          qualitySettings
+        );
         if (fileName && recorder[fileName]) {
-          console.log("🎬 Video Recording Started with high quality settings...");
+          console.log(
+            "🎬 Video Recording Started with high quality settings..."
+          );
           recorder[fileName]?.startRecording();
         }
       }
@@ -90,24 +102,33 @@ const startStorageSocketServer = async () => {
 
     socket.on(
       "add-video-stream-chunk",
-      (data: { user_id: string; exam_id: string; category: string; chunk: ArrayBuffer }) => {
-        const fileName = generateFileName(data.user_id, data.exam_id, data.category);
+      (data: {
+        user_id: string;
+        exam_id: string;
+        category: string;
+        chunk: ArrayBuffer;
+      }) => {
+        const fileName = generateFileName(
+          data.user_id,
+          data.exam_id,
+          data.category
+        );
         if (recorder[fileName]) {
           // Validate chunk data
           if (!data.chunk) {
             console.warn("⚠️ Received empty chunk data");
             return;
           }
-          
+
           const buf = Buffer.isBuffer(data.chunk)
             ? data.chunk
             : Buffer.from(new Uint8Array(data.chunk)); // convert properly
-          
+
           if (buf.length === 0) {
             console.warn("⚠️ Received empty buffer");
             return;
           }
-          
+
           console.log(`📦 Adding chunk: ${buf.length} bytes for ${fileName}`);
           recorder[fileName].addVideoChunk(buf);
         } else {
@@ -119,7 +140,11 @@ const startStorageSocketServer = async () => {
     socket.on(
       "stop-stream-recording",
       (data: { user_id: string; exam_id: string; category: string }) => {
-        const fileName = generateFileName(data.user_id, data.exam_id, data.category);
+        const fileName = generateFileName(
+          data.user_id,
+          data.exam_id,
+          data.category
+        );
         if (recorder && recorder[fileName]) {
           console.log("⏹️ Video Recording Ended for:", fileName);
           recorder[fileName]?.stopRecording();
@@ -137,7 +162,9 @@ const startStorageSocketServer = async () => {
 
   try {
     httpsServer.listen(storageServerPort, () => {
-      console.log(`Storage Server Started in Port ${storageServerPort} (HTTPS)`);
+      console.log(
+        `Storage Server Started in Port ${storageServerPort} (HTTPS)`
+      );
     });
   } catch (err) {
     console.log("(: Error Listening Port :) \n", err);

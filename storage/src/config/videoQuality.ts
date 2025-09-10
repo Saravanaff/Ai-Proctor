@@ -12,29 +12,31 @@ export const VIDEO_QUALITY_PRESETS: { [key: string]: VideoQualityPreset } = {
     crf: 28,
     preset: "ultrafast",
     resolution: "640x480",
-    description: "Fast encoding, small file size, lower quality"
+    description: "Fast encoding, small file size, lower quality",
   },
   medium: {
-    name: "Medium Quality", 
+    name: "Medium Quality",
     crf: 23,
     preset: "fast",
     resolution: "1280x720",
-    description: "Balanced encoding speed and quality"
+    description: "Balanced encoding speed and quality",
   },
   high: {
     name: "High Quality",
     crf: 18,
     preset: "medium",
-    description: "Better quality, larger file size, slower encoding"
+    description: "Better quality, larger file size, slower encoding",
   },
   ultra: {
     name: "Ultra Quality",
     crf: 15,
     preset: "slow",
-    description: "Highest quality, largest file size, slowest encoding"
-  }
+    description: "Highest quality, largest file size, slowest encoding",
+  },
 };
 
-export function getVideoQualityPreset(quality: keyof typeof VIDEO_QUALITY_PRESETS = 'high'): VideoQualityPreset {
+export function getVideoQualityPreset(
+  quality: keyof typeof VIDEO_QUALITY_PRESETS = "high"
+): VideoQualityPreset {
   return VIDEO_QUALITY_PRESETS[quality] ?? VIDEO_QUALITY_PRESETS.high!;
 }
