@@ -1,40 +1,17 @@
 import numpy as np
 import cv2
 import mediapipe as mp
-from concurrent.futures import ThreadPoolExecutor
-from core import constants
-import threading
 
-# Configuration
-MAX_WORKERS = 4  # Adjust based on your server capacity
-FACE_MESH_CONFIG = {
-    'static_image_mode': True,
-    'refine_landmarks': True,
-    'max_num_faces': 1,
-    'min_detection_confidence': 0.5,
-    'min_tracking_confidence': 0.5
-}
 
 # Initialize MediaPipe FaceMesh
 mp_face_mesh = mp.solutions.face_mesh
-# Thread-local storage for face mesh instances
-thread_local = threading.local()
+face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, refine_landmarks=True)
 
-# Thread pool for handling multiple users
-executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
-
-
-def get_face_mesh():
-    """Get thread-local face mesh instance"""
-    if not hasattr(thread_local, 'face_mesh'):
-        thread_local.face_mesh = mp_face_mesh.FaceMesh(**FACE_MESH_CONFIG)
-    return thread_local.face_mesh
 
 
 def detect_head_direction(img: np.ndarray) -> tuple[str, list[str]]:
     head_result = "Error"
     eyes = ["Error", "Error"]
-    face_mesh = get_face_mesh()
     res = face_mesh.process(img)
     h, w, _ = img.shape
 

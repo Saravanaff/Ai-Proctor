@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import axios from "axios";
+import https from "https";
 
 export const downloadVideo = async (req: Request, res: Response) => {
   try {
@@ -14,7 +15,7 @@ export const downloadVideo = async (req: Request, res: Response) => {
 
     // Get storage server URL from environment variables
     const storageServerUrl =
-      process.env.STORAGE_SERVER_URL || "http://localhost:3003";
+      process.env.STORAGE_SERVER_URL || "https://localhost:3003";
     const downloadUrl = `${storageServerUrl}/download/${user_id}/${exam_id}/${category}`;
 
     try {
@@ -24,6 +25,9 @@ export const downloadVideo = async (req: Request, res: Response) => {
         url: downloadUrl,
         responseType: "stream",
         timeout: 30000, // 30 seconds timeout
+        httpsAgent: new https.Agent({
+          rejectUnauthorized: false          // for development should be removed in production
+        })
       });
 
       // Forward the headers from storage server

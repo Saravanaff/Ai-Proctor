@@ -4,10 +4,8 @@ import socketio
 import time
 import urllib3
 
-from functionality.process_frame import setup_process_frame_handler, cleanup_frame_functionality
-from functionality.face_auth import face_auth
-from threading import Thread
-from core import constants
+
+from functionality.process_frame import setup_process_frame_handler
 
 # Suppress SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -28,7 +26,6 @@ def connect():
     sio.emit("register-python", {"service": "face_service"})
 
 setup_process_frame_handler(sio)
-face_auth(sio)
 
 
 @sio.event
@@ -48,7 +45,4 @@ try:
         time.sleep(1)
 except KeyboardInterrupt:
     print("[Face service] disconnecting...")
-    constants.store_queue.put(None)  
-    constants.auth_queue.put(None)
-    cleanup_frame_functionality()
     sio.disconnect()
