@@ -156,7 +156,7 @@ const FloatingCamera = ({
     }
     
     if(socketName === "webDetectRes-client"){
-      if( data.data["Mobile-phone"] !== 0 || data.data["Laptop"] !== 0) {
+      if( data.data["Mobile"] !== 0 || data.data["Laptop"] !== 0) {
         if (now - lastNotificationRef.current.deviceDetected >= NOTIFICATION_THROTTLE_MS) {
           detect();
           changeColor();
@@ -173,7 +173,7 @@ const FloatingCamera = ({
     }
 
     if(socketName === "mobileDetectRes-client"){
-      if ( data.data["Mobile-phone"] !== 0 || data.data.Laptop > 1 ) {
+      if ( data.data["Mobile"] !== 0 || data.data.Laptop > 1 ) {
         if (now - lastNotificationRef.current.deviceDetected >= NOTIFICATION_THROTTLE_MS) {
           toast({
             title: "Unauthorized Device Detected",
