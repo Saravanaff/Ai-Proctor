@@ -5,7 +5,9 @@ import socketio
 import time
 import urllib3
 
-from functionality.web_detect import web_detect
+from functionality.web_detect import web_detect, handle_web_detect, cleanup_web_functionality
+from core import constants
+from threading import Thread
 
 # Suppress SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -31,11 +33,13 @@ def disconnect():
 
 web_detect(sio)
 
+Thread(target=handle_web_detect, args=(sio,), daemon=True).start()
+
 
 while not sio.connected:
     try:
         print("[WebDetect service] Trying to connect...")
-        sio.connect("https://localhost:3001/", transports=['websocket'])
+        sio.connect("https://10.67.46.168:3001/", transports=['websocket'])
     except Exception as e:
         print(f"[WebDetect service] Connection error: {e}")
         time.sleep(2)
@@ -45,4 +49,6 @@ try:
         time.sleep(1)
 except KeyboardInterrupt:
     print("[WebDetect service] disconnecting...")
+    constants.webdetect_queue.put(None)  
+    cleanup_web_functionality()
     sio.disconnect()

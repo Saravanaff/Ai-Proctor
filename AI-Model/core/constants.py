@@ -48,3 +48,6 @@ face_data_path = "storage/face_data.json"
 
 eyes_queue = queue.Queue()
 head_queue = queue.Queue()
+webdetect_queue = queue.Queue()
+auth_queue = queue.Queue()
+mobile_queue = queue.Queue()

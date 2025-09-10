@@ -11,8 +11,9 @@ import authMiddleware from "./middleware/authMiddleware";
 import { initSocket } from "./sockets";
 import examRoutes from "./routes/examRoutes";
 import studentRoutes from "./routes/studentRoutes";
-import scoreRoutes from './routes/scoreRoutes';
-import fs from 'fs';
+import scoreRoutes from "./routes/scoreRoutes";
+import videoRoutes from "./routes/videoRoutes";
+import fs from "fs";
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -42,6 +43,7 @@ async function startServer() {
   app.use("/", examRoutes);
   app.use("/", studentRoutes);
   app.use("/", scoreRoutes);
+  app.use("/", videoRoutes);
 
   const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
   const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));

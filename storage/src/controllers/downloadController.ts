@@ -5,15 +5,15 @@ import fs from "fs";
 
 export const downloadVideo = async (req: Request, res: Response) => {
   try {
-    const { userId, examId } = req.params;
+    const {  user_id, exam_id, category } = req.params;
 
-    if (!userId || !examId) {
+    if (!user_id || !exam_id) {
       return res.status(400).json({
         error: "Missing required parameters: userId and examId",
       });
     }
 
-    const fileName = generateFileName(userId, examId);
+    const fileName = generateFileName(user_id, exam_id, category);
     const filePath = path.join(__dirname, "../recordings", `${fileName}.mp4`);
 
     // Check if file exists
@@ -43,6 +43,7 @@ export const downloadVideo = async (req: Request, res: Response) => {
     readStream.on("error", (error) => {
       console.error("Error streaming video:", error);
       if (!res.headersSent) {
+        console.log("Error streaming video file")
         res.status(500).json({ error: "Error streaming video file" });
       }
     });

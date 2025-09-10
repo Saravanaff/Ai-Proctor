@@ -4,7 +4,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import socketio
 import time
 import urllib3
-from functionality.eye_position import eye_functionality,handle_eye_position
+from functionality.eye_position import eye_functionality,handle_eye_position, cleanup_eye_functionality
+from core import constants
 from threading import Thread
 
 # Disable SSL warnings
@@ -46,4 +47,6 @@ try:
         time.sleep(1)
 except KeyboardInterrupt:
     print("[Eye service] disconnecting...")
+    constants.eyes_queue.put(None)  
+    cleanup_eye_functionality()
     sio.disconnect()

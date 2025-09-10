@@ -4,6 +4,6 @@ import { downloadVideo } from "../controllers/downloadController";
 const router = Router();
 
 // Download a specific video
-router.get("/download/:userId/:examId", downloadVideo);
+router.get("/download/:user_id/:exam_id/:category", downloadVideo);
 
 export default router;

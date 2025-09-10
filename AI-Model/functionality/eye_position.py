@@ -1,8 +1,6 @@
 import numpy as np
 import cv2
 import mediapipe as mp
-import queue
-from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 from core import constants
 import threading

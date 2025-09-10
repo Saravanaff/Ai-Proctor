@@ -1,7 +1,12 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 import socketio
 import time
 import urllib3
-from functionality.mobile_detect import mobile_detect
+from functionality.mobile_detect import mobile_detect, handle_mobile_detect, cleanup_mobile_functionality
+from threading import Thread
+from core import constants
 
 # Suppress SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -23,6 +28,8 @@ def connect():
 
 mobile_detect(sio)
 
+Thread(target=handle_mobile_detect, args=(sio,), daemon=True).start()
+
 @sio.event
 def disconnect():
     print("[Mobile service] Disconnected from the server")
@@ -40,4 +47,6 @@ try:
         time.sleep(1)
 except KeyboardInterrupt:
     print("[Mobile service] disconnecting...")
+    constants.mobile_queue.put(None)
+    cleanup_mobile_functionality
     sio.disconnect()

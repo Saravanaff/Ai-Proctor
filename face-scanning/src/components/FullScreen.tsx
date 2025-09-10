@@ -15,6 +15,8 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
   options: ["Option A", "Option B", "Option C", "Option D"],
 }));
 
+const examId = localStorage?.getItem("examId") || "unknown";
+
 
 const baseUrl =
   process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -145,6 +147,7 @@ const ExamPage = ({
 
       socket.emit("start-exam", {
         user_id: userId,
+        exam_id: examId,
         category: "face_camera",
         status: "success",
         message: "Exam Started successfully",
