@@ -29,6 +29,7 @@ export function initSocket(server: HttpServer) {
   const authCounter = new Map<string, number>(); 
   const frameCounter = new Map<string, number>(); 
   const authVerified = new Map<string, boolean>();
+  const webDetectFrameCounter = new Map<string, number>();
   function linkSocketToUser(socketId: string, userId?: string | null) {
     if (!userId) return;
     const uid = String(userId);
@@ -183,13 +184,22 @@ export function initSocket(server: HttpServer) {
 
     socket.on("webDetectRes",(data)=>{
         console.log(data);
-        addScore({
-          userId: data?.userId,
-          examId: data?.examId,
-          object_detected: { "cell phone": (Number(data?.data?.Mobile||0)) > 0},
-          no_of_person: data?.data?.Person
-        });
-      emitToUserById(data?.userId,"webDetectRes-client",data);
+        const {userId}:any=String(data?.userId);
+        if(!webDetectFrameCounter.has(userId)){
+          webDetectFrameCounter.set(userId,0);
+        }
+        const currentCount=webDetectFrameCounter.get(userId) || 0;
+        const newCount=currentCount+1;
+
+        if(newCount%2===0){
+            addScore({
+              userId: data?.userId,
+              examId: data?.examId,
+              object_detected: { "cell phone": (Number(data?.data?.Mobile||0)) > 0},
+              no_of_person: data?.data?.Person
+            });
+            emitToUserById(data?.userId,"webDetectRes-client",data);
+        }
     })
       socket.on("videos", (data: any) => {
         emitToModel("thirdeye_detect", "mobileDetect", data);

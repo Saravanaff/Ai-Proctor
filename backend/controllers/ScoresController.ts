@@ -104,10 +104,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
     if (!existingScore) {
       await Scores.create(scoreData as any);
     } else {
-      return res.status(401).json({
-        success: false,
-        message: "User with Exam already exists"
-      })
+      await existingScore.update(scoreData);
     }
     // else {
     //   await Scores.create(scoreData as any);

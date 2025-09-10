@@ -251,7 +251,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
         intervalRef.current = setInterval(
           () => onInterval(video, userId, "frame"),
-          1000 / 30
+          1000 / 15
         );
 
         const onFres = (data: any) => {
