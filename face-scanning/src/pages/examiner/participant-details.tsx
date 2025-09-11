@@ -30,11 +30,30 @@ interface ScoreDetails {
     eyes_flagged: number;
     object_detected_flagged: number;
     sound_flagged: number;
+    tab_switch_violation: number;
+    number_of_microphone: number;
+    screen_sharing: boolean;
+    safe_browser: boolean;
+    control_desktop_apps: number;
+    blank_feed: number;
     total_score: number;
   };
 }
 
+interface ViolationEvent {
+  id: string;
+  type: string;
+  severity: "low" | "medium" | "high";
+  description: string;
+  timestamp: string;
+  details?: string;
+}
 
+interface TimelineEvent {
+  timestamp: string;
+  score: number;
+  violations: string[];
+}
 
 const ParticipantDetailsPage: React.FC = () => {
   const router = useRouter();
@@ -44,6 +63,47 @@ const ParticipantDetailsPage: React.FC = () => {
   const [examDetails, setExamDetails] = useState<ExamDetails | null>(null);
   const [scoreDetails, setScoreDetails] = useState<ScoreDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "timeline" | "review"
+  >("overview");
+
+  // Mock data for violations and timeline (you can replace with real API calls)
+  const [violations] = useState<ViolationEvent[]>([
+    {
+      id: "1",
+      type: "Multiple Persons Detected",
+      severity: "high",
+      description: "More than one person detected in the camera feed",
+      timestamp: "2024-01-15T10:30:00Z",
+      details: "Camera detected 2 people in the frame",
+    },
+    {
+      id: "2",
+      type: "Eye Movement Violation",
+      severity: "medium",
+      description: "Suspicious eye movement patterns detected",
+      timestamp: "2024-01-15T10:45:00Z",
+      details: "Eyes looking away from screen for extended period",
+    },
+    {
+      id: "3",
+      type: "Tab Switch",
+      severity: "high",
+      description: "Student switched to another browser tab",
+      timestamp: "2024-01-15T11:00:00Z",
+      details: "Switched away from exam for 30 seconds",
+    },
+  ]);
+
+  const [timelineEvents] = useState<TimelineEvent[]>([
+    { timestamp: "10:00", score: 100, violations: [] },
+    { timestamp: "10:15", score: 95, violations: [] },
+    { timestamp: "10:30", score: 85, violations: ["Multiple Persons"] },
+    { timestamp: "10:45", score: 80, violations: ["Eye Movement"] },
+    { timestamp: "11:00", score: 70, violations: ["Tab Switch"] },
+    { timestamp: "11:15", score: 75, violations: [] },
+    { timestamp: "11:30", score: 78, violations: [] },
+  ]);
 
   axios.interceptors.request.use(
     (config) => {
@@ -112,6 +172,19 @@ const ParticipantDetailsPage: React.FC = () => {
 
     fetchParticipantDetails();
   }, [examId, userId, router]);
+
+  const getSeverityColor = (severity: "low" | "medium" | "high") => {
+    switch (severity) {
+      case "low":
+        return "var(--success-color)";
+      case "medium":
+        return "var(--warning-color)";
+      case "high":
+        return "var(--error-color)";
+      default:
+        return "var(--text-secondary)";
+    }
+  };
 
   const getScoreColor = (score: number) => {
     if (score <= 30) return "var(--success-color)";
@@ -216,181 +289,431 @@ const ParticipantDetailsPage: React.FC = () => {
           </div>
           <div className={styles.participantInfo}>
             <h2 className={styles.participantName}>{user.name}</h2>
-            <p className={styles.participantEmail}>{user.email}</p>
-            <p className={styles.examName}>Exam: {examDetails.exam_name}</p>
+            <p className={styles.participantEmail}>📧 {user.email}</p>
+            <div className={styles.examDetails}>
+              <div className={styles.examBadge}>
+                <span className={styles.examIcon}>📋</span>
+                <span className={styles.examText}>{examDetails.exam_name}</span>
+              </div>
+              <div className={styles.examMeta}>
+                <span className={styles.examDate}>
+                  📅 {new Date(examDetails.createdAt).toLocaleDateString()}
+                </span>
+                <span className={styles.examKey}>
+                  🔑 Key: {examDetails.key}
+                </span>
+              </div>
+            </div>
           </div>
           {scoreDetails?.success && (
-            <div
-              className={styles.scoreChip}
-              style={{ backgroundColor: getScoreColor(scoreDetails.data) }}
-            >
-              <span className={styles.scoreValue}>{scoreDetails.data}%</span>
-              <span className={styles.scoreLabel}>
-                {getScoreLabel(scoreDetails.data)}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Video Downloads Section */}
-      <div className={styles.videoDownloadsCard}>
-        <h3 className={styles.sectionTitle}>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7,10 12,15 17,10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          Download Exam Videos
-        </h3>
-        <div className={styles.videoDownloadGrid}>
-          <div className={styles.videoDownloadItem}>
-            <div className={styles.videoDownloadIcon}>📹</div>
-            <div className={styles.videoDownloadInfo}>
-              <h4>Face Camera Recording</h4>
-              <p>Main camera feed showing participant's face during exam</p>
-            </div>
-            <button
-              className={styles.downloadButton}
-              onClick={() => handleVideoDownload("face_camera")}
-            >
-              ↓
-            </button>
-          </div>
-
-          <div className={styles.videoDownloadItem}>
-            <div className={styles.videoDownloadIcon}>🖥️</div>
-            <div className={styles.videoDownloadInfo}>
-              <h4>Screen Recording</h4>
-              <p>Screen capture showing participant's activity during exam</p>
-            </div>
-            <button
-              className={styles.downloadButton}
-              onClick={() => handleVideoDownload("screen_recording")}
-            >
-              ↓
-            </button>
-          </div>
-
-          <div className={styles.videoDownloadItem}>
-            <div className={styles.videoDownloadIcon}>📱</div>
-            <div className={styles.videoDownloadInfo}>
-              <h4>Third Eye Recording</h4>
-              <p>Mobile device surveillance feed for additional monitoring</p>
-            </div>
-            <button
-              className={styles.downloadButton}
-              onClick={() => handleVideoDownload("third_eye")}
-            >
-              ↓
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Overview Content */}
-      <div className={styles.tabContent}>
-        <div className={styles.overviewTab}>
-          {scoreDetails?.success ? (
-            <>
-              <div className={styles.scoreOverview}>
-                <div
-                  className={styles.scoreCircle}
-                  style={{ borderColor: getScoreColor(scoreDetails.data) }}
-                >
+            <div className={styles.scoreSection}>
+              <div
+                className={styles.scoreChip}
+                style={{ backgroundColor: getScoreColor(scoreDetails.data) }}
+              >
+                <span className={styles.scoreValue}>{scoreDetails.data}%</span>
+                <span className={styles.scoreLabel}>
+                  {getScoreLabel(scoreDetails.data)}
+                </span>
+              </div>
+              <div className={styles.quickStats}>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>Total Violations</span>
+                  <span className={styles.statValue}>
+                    {scoreDetails.scoreBreakdown
+                      ? Object.entries(scoreDetails.scoreBreakdown).reduce(
+                          (sum, [key, val]) => {
+                            if (
+                              key !== "total_score" &&
+                              key !== "screen_sharing" &&
+                              key !== "safe_browser" &&
+                              typeof val === "number"
+                            ) {
+                              return sum + val;
+                            }
+                            return sum;
+                          },
+                          0
+                        )
+                      : 0}
+                  </span>
+                </div>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>Risk Level</span>
                   <span
-                    className={styles.scoreValue}
+                    className={styles.statValue}
                     style={{ color: getScoreColor(scoreDetails.data) }}
                   >
-                    {scoreDetails.data}%
-                  </span>
-                  <span className={styles.scoreLabel}>
                     {getScoreLabel(scoreDetails.data)}
                   </span>
                 </div>
               </div>
-
-              {scoreDetails.scoreBreakdown && (
-                <div className={styles.scoreBreakdown}>
-                  <h3 className={styles.breakdownTitle}>Score Breakdown</h3>
-                  <div className={styles.breakdownGrid}>
-                    <div className={styles.breakdownItem}>
-                      <span className={styles.breakdownLabel}>
-                        Multiple Persons Detected
-                      </span>
-                      <span className={styles.breakdownValue}>
-                        {scoreDetails.scoreBreakdown.no_of_person_flagged}
-                      </span>
-                    </div>
-                    <div className={styles.breakdownItem}>
-                      <span className={styles.breakdownLabel}>
-                        Zero Person Detected
-                      </span>
-                      <span className={styles.breakdownValue}>
-                        {scoreDetails.scoreBreakdown.no_person_flagged}
-                      </span>
-                    </div>
-                    <div className={styles.breakdownItem}>
-                      <span className={styles.breakdownLabel}>
-                        Face Authentication Issues
-                      </span>
-                      <span className={styles.breakdownValue}>
-                        {scoreDetails.scoreBreakdown.auth_face_flagged}
-                      </span>
-                    </div>
-                    <div className={styles.breakdownItem}>
-                      <span className={styles.breakdownLabel}>
-                        Head Position Violations
-                      </span>
-                      <span className={styles.breakdownValue}>
-                        {scoreDetails.scoreBreakdown.head_position_flagged}
-                      </span>
-                    </div>
-                    <div className={styles.breakdownItem}>
-                      <span className={styles.breakdownLabel}>
-                        Eye Movement Violations
-                      </span>
-                      <span className={styles.breakdownValue}>
-                        {scoreDetails.scoreBreakdown.eyes_flagged}
-                      </span>
-                    </div>
-                    <div className={styles.breakdownItem}>
-                      <span className={styles.breakdownLabel}>
-                        Sound Violations
-                      </span>
-                      <span className={styles.breakdownValue}>
-                        {scoreDetails.scoreBreakdown.sound_flagged}
-                      </span>
-                    </div>
-                    <div className={styles.breakdownItem}>
-                      <span className={styles.breakdownLabel}>
-                        Unauthorized Devices Detected
-                      </span>
-                      <span className={styles.breakdownValue}>
-                        {scoreDetails.scoreBreakdown.object_detected_flagged}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className={styles.noDataMessage}>
-              <div className={styles.noDataIcon}>📊</div>
-              <h3>No Score Data Available</h3>
-              <p>
-                Score data for this participant is not yet available or the
-                exam hasn't been completed.
-              </p>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className={styles.tabNavigation}>
+        <button
+          className={`${styles.tab} ${
+            activeTab === "overview" ? styles.activeTab : ""
+          }`}
+          onClick={() => setActiveTab("overview")}
+        >
+          📊 Overview
+        </button>
+        <button
+          className={`${styles.tab} ${
+            activeTab === "timeline" ? styles.activeTab : ""
+          }`}
+          onClick={() => setActiveTab("timeline")}
+        >
+          📈 Timeline
+        </button>
+        <button
+          className={`${styles.tab} ${
+            activeTab === "review" ? styles.activeTab : ""
+          }`}
+          onClick={() => setActiveTab("review")}
+        >
+          🎥 Review Session
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className={styles.tabContent}>
+        {/* Overview Tab */}
+        {activeTab === "overview" && (
+          <div className={styles.overviewTab}>
+            {scoreDetails?.success ? (
+              <>
+                <div className={styles.scoreOverview}>
+                  <div
+                    className={styles.scoreCircle}
+                    style={{ borderColor: getScoreColor(scoreDetails.data) }}
+                  >
+                    <span
+                      className={styles.scoreValue}
+                      style={{ color: getScoreColor(scoreDetails.data) }}
+                    >
+                      {scoreDetails.data}%
+                    </span>
+                    <span className={styles.scoreLabel}>
+                      {getScoreLabel(scoreDetails.data)}
+                    </span>
+                  </div>
+                </div>
+
+                {scoreDetails.scoreBreakdown && (
+                  <div className={styles.scoreBreakdown}>
+                    <h3 className={styles.breakdownTitle}>
+                      Violations (
+                      {Object.entries(scoreDetails.scoreBreakdown).reduce(
+                        (sum, [key, val]) => {
+                          if (
+                            key !== "total_score" &&
+                            key !== "screen_sharing" &&
+                            key !== "safe_browser" &&
+                            typeof val === "number"
+                          ) {
+                            return sum + val;
+                          }
+                          return sum;
+                        },
+                        0
+                      )}
+                      )
+                    </h3>
+                    <div className={styles.breakdownGrid}>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Multiple Persons Detected
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.no_of_person_flagged}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Zero Person Detected
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.no_person_flagged}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Face Authentication Issues
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.auth_face_flagged}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Head Position Violations
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.head_position_flagged}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Eye Movement Violations
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.eyes_flagged}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Sound Violations
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.sound_flagged}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Unauthorized Devices Detected
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.object_detected_flagged}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Tab Switch Violations
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.tab_switch_violation}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Number of Microphones
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.number_of_microphone}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Mandatory Screen Sharing
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.screen_sharing
+                            ? "Yes"
+                            : "No"}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Mandatory Safe Browser
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.safe_browser
+                            ? "Yes"
+                            : "No"}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Desktop Apps Control
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.control_desktop_apps}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Blank Feed Incidents
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.blank_feed}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className={styles.noDataMessage}>
+                <div className={styles.noDataIcon}>📊</div>
+                <h3>No Score Data Available</h3>
+                <p>
+                  Score data for this participant is not yet available or the
+                  exam hasn't been completed.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Timeline Tab */}
+        {activeTab === "timeline" && (
+          <div className={styles.timelineTab}>
+            <h3 className={styles.sectionTitle} style={{ marginBottom: 12 }}>
+              📈 Performance Timeline
+            </h3>
+            <div className={styles.timeline}>
+              {timelineEvents.map((event, index) => {
+                // Convert "10:00" to a Date object for AM/PM formatting
+                let timeStr = event.timestamp;
+                let formattedTime = (() => {
+                  // Try to parse as HH:mm
+                  const [h, m] = timeStr.split(":");
+                  if (!isNaN(Number(h)) && !isNaN(Number(m))) {
+                    const d = new Date();
+                    d.setHours(Number(h));
+                    d.setMinutes(Number(m));
+                    d.setSeconds(0);
+                    return d.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    });
+                  }
+                  return timeStr;
+                })();
+                return (
+                  <div
+                    key={index}
+                    className={styles.timelineItem}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        backgroundColor:
+                          event.violations.length > 0
+                            ? "var(--error-color)"
+                            : "var(--success-color)",
+                        marginRight: 12,
+                        flexShrink: 0,
+                      }}
+                      title={
+                        event.violations.length > 0
+                          ? `${event.violations.length} violation(s)`
+                          : "No violations"
+                      }
+                    ></div>
+                    <span
+                      style={{
+                        fontSize: 14,
+                        minWidth: 70,
+                        color: "var(--text-secondary)",
+                        marginRight: 10,
+                      }}
+                    >
+                      {formattedTime}
+                    </span>
+                    {event.violations.length > 0 && (
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: "var(--error-color)",
+                          background: "rgba(255,0,0,0.07)",
+                          borderRadius: 4,
+                          padding: "2px 8px",
+                          marginLeft: 4,
+                        }}
+                      >
+                        {event.violations.join(", ")}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Review Session Tab */}
+        {activeTab === "review" && (
+          <div className={styles.reviewTab}>
+            <div className={styles.reviewHeader}>
+              <h3 className={styles.sectionTitle}>🎥 Review Session</h3>
+              <p className={styles.reviewDescription}>
+                Download video recordings and review all violations with
+                detailed timestamps
+              </p>
+            </div>
+
+            {/* Video Downloads in Review Tab */}
+            <div className={styles.videoSection}>
+              <h4 className={styles.subsectionTitle}>📹 Videos</h4>
+              <div className={styles.videoGrid}>
+                <div className={styles.videoCard}>
+                  <span>📹 Face Camera</span>
+                  <button
+                    className={styles.downloadBtn}
+                    onClick={() => handleVideoDownload("face_camera")}
+                  >
+                    Download
+                  </button>
+                </div>
+
+                <div className={styles.videoCard}>
+                  <span>🖥️ Screen Recording</span>
+                  <button
+                    className={styles.downloadBtn}
+                    onClick={() => handleVideoDownload("screen_recording")}
+                  >
+                    Download
+                  </button>
+                </div>
+
+                <div className={styles.videoCard}>
+                  <span>📱 Third Eye</span>
+                  <button
+                    className={styles.downloadBtn}
+                    onClick={() => handleVideoDownload("third_eye")}
+                  >
+                    Download
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Violations with Timestamps */}
+            <div className={styles.violationsSection}>
+              <h4 className={styles.subsectionTitle}>⚠️ Violations</h4>
+              <div className={styles.violationsList}>
+                {violations.map((violation) => (
+                  <div key={violation.id} className={styles.violationItem}>
+                    <div className={styles.violationHeader}>
+                      <span
+                        className={styles.violationSeverity}
+                        style={{
+                          backgroundColor: getSeverityColor(violation.severity),
+                        }}
+                      >
+                        {violation.severity.toUpperCase()}
+                      </span>
+                      <span className={styles.violationType}>
+                        {violation.type}
+                      </span>
+                      <span className={styles.violationTime}>
+                        {formatTimestamp(violation.timestamp)}
+                      </span>
+                    </div>
+                    <p className={styles.violationDescription}>
+                      {violation.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

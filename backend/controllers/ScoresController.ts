@@ -39,6 +39,12 @@ export const getScoreInPercent = async (req: Request, res: Response) => {
         eyes_flagged: score.eyes_flagged,
         object_detected_flagged: score.object_detected_flagged,
         sound_flagged: score.sound_flagged,
+        tab_switch_violation: score.tab_switch_violation,
+        number_of_microphone: score.number_of_microphone,
+        screen_sharing: score.screen_sharing,
+        safe_browser: score.safe_browser,
+        control_desktop_apps: score.control_desktop_apps,
+        blank_feed: score.blank_feed,
         total_score: score.total_score,
       },
     });
