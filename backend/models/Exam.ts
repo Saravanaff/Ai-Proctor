@@ -56,7 +56,52 @@ export class Exam extends Model{
 
     @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
     flag_notifications_enabled!:boolean
+
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    video_recording_enabled!:boolean
+
     
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    tab_switch_detection_enabled!:boolean
+    
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    microphone_detection_enabled!:boolean
+    
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    safe_browser_enabled!:boolean
+    
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    proctor_feed_to_test_taker_enabled!:boolean
+    
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    screen_sharing_enabled!:boolean
+    
+    
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:false })
+    screen_count_detection_enabled!:boolean
+    
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:false })
+    control_desktop_apps_enabled!:boolean
+    
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    normal_proctoring!:boolean
+
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    ai_powered_proctoring!:boolean
+
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
+    recorded_manual_proctoring!:boolean
+    
+
     @BelongsTo(() => User)
     user!: User;
 

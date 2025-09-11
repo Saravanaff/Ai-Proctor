@@ -26,6 +26,80 @@ const CreateExam = () => {
   const [objectDetect, setObjectDetect] = useState(true);
   const [headDirection, setHeadDirection] = useState(true);
   const [flagNotifications, setFlagNotifications] = useState(true);
+  const [videoRecording, setVideoRecording] = useState(true);
+  const [tabSwitchDetection, setTabSwitchDetection] = useState(true);
+  const [microphoneDetection, setMicrophoneDetection] = useState(true);
+  const [safeBrowser, setSafeBrowser] = useState(true);
+  const [proctorFeedToTestTaker, setProctorFeedToTestTaker] = useState(true);
+  const [screenSharing, setScreenSharing] = useState(true);
+  const [screenCountDetection, setScreenCountDetection] = useState(false);
+  const [controlDesktopApps, setControlDesktopApps] = useState(false);
+  const [normalProctoring, setNormalProctoring] = useState(true);
+  const [aiPoweredProctoring, setAiPoweredProctoring] = useState(true);
+  const [recordedManualProctoring, setRecordedManualProctoring] =
+    useState(true);
+
+  // Handler for AI Proctoring toggle that controls related features
+  const handleAiProctoringToggle = () => {
+    const newAiProctoringState = !aiPoweredProctoring;
+    setAiPoweredProctoring(newAiProctoringState);
+    
+    // When AI proctoring is turned off, turn off all AI-related features
+    if (!newAiProctoringState) {
+      setThirdEye(false);
+      setMultiPerson(false);
+      setEyeBall(false);
+      setObjectDetect(false);
+      setHeadDirection(false);
+    } else {
+      // When AI proctoring is turned on, turn on all AI-related features (reverse the effect)
+      setThirdEye(true);
+      setMultiPerson(true);
+      setEyeBall(true);
+      setObjectDetect(true);
+      setHeadDirection(true);
+    }
+  };
+
+  // Handler for Normal Proctoring toggle that controls related features
+  const handleNormalProctoringToggle = () => {
+    const newNormalProctoringState = !normalProctoring;
+    setNormalProctoring(newNormalProctoringState);
+    
+    // When normal proctoring is turned off, turn off basic monitoring features
+    if (!newNormalProctoringState) {
+      setVideoRecording(false);
+      setTabSwitchDetection(false);
+      setMicrophoneDetection(false);
+      setScreenSharing(false);
+      setSafeBrowser(false);
+    } else {
+      // When normal proctoring is turned on, turn on basic monitoring features (reverse the effect)
+      setVideoRecording(true);
+      setTabSwitchDetection(true);
+      setMicrophoneDetection(true);
+      setScreenSharing(true);
+      setSafeBrowser(true);
+    }
+  };
+
+  // Handler for Manual Proctoring toggle that controls related features
+  const handleManualProctoringToggle = () => {
+    const newManualProctoringState = !recordedManualProctoring;
+    setRecordedManualProctoring(newManualProctoringState);
+    
+    // When manual proctoring is turned off, turn off recording features
+    if (!newManualProctoringState) {
+      setVideoRecording(false);
+      setProctorFeedToTestTaker(false);
+      setFlagNotifications(false);
+    } else {
+      // When manual proctoring is turned on, turn on recording features (reverse the effect)
+      setVideoRecording(true);
+      setProctorFeedToTestTaker(true);
+      setFlagNotifications(true);
+    }
+  };
 
   axios.interceptors.request.use(
     (config) => {
@@ -88,6 +162,17 @@ const CreateExam = () => {
         object_detection_enabled: objectDetect,
         head_direction_enabled: headDirection,
         flag_notifications_enabled: flagNotifications,
+        video_recording_enabled: videoRecording,
+        tab_switch_detection_enabled: tabSwitchDetection,
+        microphone_detection_enabled: microphoneDetection,
+        safe_browser_enabled: safeBrowser,
+        proctor_feed_to_test_taker_enabled: proctorFeedToTestTaker,
+        screen_sharing_enabled: screenSharing,
+        screen_count_detection_enabled: screenCountDetection,
+        control_desktop_apps_enabled: controlDesktopApps,
+        normal_proctoring: normalProctoring,
+        ai_powered_proctoring: aiPoweredProctoring,
+        recorded_manual_proctoring: recordedManualProctoring,
       };
       const res = await axios.post<Exam>(`${base}/examCreate`, payload);
       console.log("hi", res);
@@ -122,10 +207,12 @@ const CreateExam = () => {
     label,
     enabled,
     onToggle,
+    disabled = false,
   }: {
     label: string;
     enabled: boolean;
     onToggle: () => void;
+    disabled?: boolean;
   }) => (
     <div
       className="theme-transition"
@@ -137,19 +224,25 @@ const CreateExam = () => {
         padding: "10px 12px",
         border: "1px solid var(--border-color)",
         borderRadius: 12,
-        background: "var(--card-bg)",
+        background: disabled ? "var(--secondary-bg)" : "var(--card-bg)",
+        opacity: disabled ? 0.6 : 1,
       }}
     >
       <span
         className="theme-transition"
-        style={{ color: "var(--text-primary)", fontSize: 14, fontWeight: 600 }}
+        style={{ 
+          color: disabled ? "var(--text-secondary)" : "var(--text-primary)", 
+          fontSize: 14, 
+          fontWeight: 600 
+        }}
       >
         {label}
       </span>
       <button
         type="button"
-        onClick={onToggle}
+        onClick={disabled ? undefined : onToggle}
         aria-pressed={enabled}
+        disabled={disabled}
         className="theme-transition"
         style={{
           position: "relative",
@@ -159,8 +252,9 @@ const CreateExam = () => {
           border: "1px solid var(--border-color)",
           background: enabled ? "var(--accent-color)" : "var(--secondary-bg)",
           boxShadow: enabled ? "inset 0 0 0 1px rgba(255,255,255,0.2)" : "none",
-          cursor: "pointer",
+          cursor: disabled ? "not-allowed" : "pointer",
           transition: "background 0.2s ease, box-shadow 0.2s ease",
+          opacity: disabled ? 0.5 : 1,
         }}
       >
         <span
@@ -212,7 +306,8 @@ const CreateExam = () => {
   const handleLogout = () => {
     try {
       // clear token cookie (adjust cookie name if different)
-      document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie =
+        "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
       // clear known localStorage keys (if your AuthStore uses others, remove them too)
       localStorage.removeItem("userId");
       localStorage.removeItem("userEmail");
@@ -236,7 +331,11 @@ const CreateExam = () => {
       const adjusted = payload + (pad ? "=".repeat(4 - pad) : "");
       const decoded = JSON.parse(window.atob(adjusted));
       const name =
-        decoded?.name || decoded?.fullname || decoded?.username || decoded?.email || null;
+        decoded?.name ||
+        decoded?.fullname ||
+        decoded?.username ||
+        decoded?.email ||
+        null;
       if (name) {
         setProfileName(name);
         const initials = name
@@ -246,8 +345,7 @@ const CreateExam = () => {
           .join("");
         setProfileInitials(initials || "U");
       }
-    } catch (err) {
-    }
+    } catch (err) {}
   }, []);
 
   return (
@@ -255,18 +353,24 @@ const CreateExam = () => {
       className={`${styles.examinerContainer} ${styles.enterpriseRoot} theme-transition`}
       style={{
         // Ensure background adapts to dark/light theme
-        background: 'var(--app-bg, var(--background, var(--body-bg, #0f1115)))',
-        minHeight: '100vh',
-        color: 'var(--text-primary)'
+        background: "var(--app-bg, var(--background, var(--body-bg, #0f1115)))",
+        minHeight: "100vh",
+        color: "var(--text-primary)",
       }}
     >
-      <div className={styles.pageBackdrop} style={{ display: 'none' }} />
+      <div className={styles.pageBackdrop} style={{ display: "none" }} />
       <header className={`${styles.header} ${styles.fadeIn} theme-transition`}>
         <div className={styles.headerContent}>
-          <h1 className={`${styles.title} theme-transition`} style={{ color: 'var(--text-primary)' }}>
+          <h1
+            className={`${styles.title} theme-transition`}
+            style={{ color: "var(--text-primary)" }}
+          >
             Exam Management Console
           </h1>
-          <p className={`${styles.subtitle} theme-transition`} style={{ color: 'var(--text-secondary)' }}>
+          <p
+            className={`${styles.subtitle} theme-transition`}
+            style={{ color: "var(--text-secondary)" }}
+          >
             Create, monitor and manage assessments
           </p>
         </div>
@@ -422,31 +526,131 @@ const CreateExam = () => {
                 label="Third Eye"
                 enabled={thirdEye}
                 onToggle={() => setThirdEye((v) => !v)}
+                disabled={!aiPoweredProctoring}
               />
               <Toggle
                 label="Multiple Person Detection"
                 enabled={multiPerson}
                 onToggle={() => setMultiPerson((v) => !v)}
+                disabled={!aiPoweredProctoring}
               />
               <Toggle
                 label="EyeBall Detection"
                 enabled={eyeBall}
                 onToggle={() => setEyeBall((v) => !v)}
+                disabled={!aiPoweredProctoring}
               />
               <Toggle
                 label="Object Detection"
                 enabled={objectDetect}
                 onToggle={() => setObjectDetect((v) => !v)}
+                disabled={!aiPoweredProctoring}
               />
               <Toggle
                 label="Head Direction"
                 enabled={headDirection}
                 onToggle={() => setHeadDirection((v) => !v)}
+                disabled={!aiPoweredProctoring}
               />
               <Toggle
                 label="Flag Notifications"
                 enabled={flagNotifications}
                 onToggle={() => setFlagNotifications((v) => !v)}
+                disabled={!recordedManualProctoring}
+              />
+              <Toggle
+                label="Video Recording"
+                enabled={videoRecording}
+                onToggle={() => setVideoRecording((v) => !v)}
+                disabled={!normalProctoring && !recordedManualProctoring}
+              />
+              <Toggle
+                label="Tab Switch Detection"
+                enabled={tabSwitchDetection}
+                onToggle={() => setTabSwitchDetection((v) => !v)}
+                disabled={!normalProctoring}
+              />
+              <Toggle
+                label="Microphone Detection"
+                enabled={microphoneDetection}
+                onToggle={() => setMicrophoneDetection((v) => !v)}
+                disabled={!normalProctoring}
+              />
+              <Toggle
+                label="Safe Browser"
+                enabled={safeBrowser}
+                onToggle={() => setSafeBrowser((v) => !v)}
+                disabled={!normalProctoring}
+              />
+              <Toggle
+                label="Proctor Feed to Test Taker"
+                enabled={proctorFeedToTestTaker}
+                onToggle={() => setProctorFeedToTestTaker((v) => !v)}
+                disabled={!recordedManualProctoring}
+              />
+              <Toggle
+                label="Screen Sharing"
+                enabled={screenSharing}
+                onToggle={() => setScreenSharing((v) => !v)}
+                disabled={!normalProctoring}
+              />
+              <Toggle
+                label="Screen Count Detection"
+                enabled={screenCountDetection}
+                onToggle={() => setScreenCountDetection((v) => !v)}
+              />
+              <Toggle
+                label="Control Desktop Apps"
+                enabled={controlDesktopApps}
+                onToggle={() => setControlDesktopApps((v) => !v)}
+              />
+            </div>
+          </div>
+
+          {/* Proctoring Modes */}
+          <div style={{ marginBottom: 16 }}>
+            <h4
+              className="theme-transition"
+              style={{
+                margin: "0 0 8px",
+                color: "var(--text-primary)",
+                fontSize: 14,
+                fontWeight: 700,
+              }}
+            >
+              Proctoring Modes
+            </h4>
+            <p
+              className="theme-transition"
+              style={{
+                margin: "0 0 12px",
+                color: "var(--text-secondary)",
+                fontSize: 12,
+              }}
+            >
+              Select the type of proctoring for this exam.
+            </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+                gap: 12,
+              }}
+            >
+              <Toggle
+                label="Normal Proctoring"
+                enabled={normalProctoring}
+                onToggle={handleNormalProctoringToggle}
+              />
+              <Toggle
+                label="AI Powered Proctoring"
+                enabled={aiPoweredProctoring}
+                onToggle={handleAiProctoringToggle}
+              />
+              <Toggle
+                label="Recorded Manual Proctoring"
+                enabled={recordedManualProctoring}
+                onToggle={handleManualProctoringToggle}
               />
             </div>
           </div>
@@ -491,17 +695,17 @@ const CreateExam = () => {
 
       <section
         className={`${styles.examsSection} ${styles.fadeIn} theme-transition`}
-        style={{ background: 'transparent' }}
+        style={{ background: "transparent" }}
       >
         <div className={`${styles.sectionHeader} theme-transition`}>
           <h2
             className={`${styles.sectionTitle} theme-transition`}
             style={{
-              color: 'var(--text-primary)',
-              fontSize: '20px',
-              fontWeight: '600',
+              color: "var(--text-primary)",
+              fontSize: "20px",
+              fontWeight: "600",
               margin: 0,
-              transition: 'color 0.3s ease'
+              transition: "color 0.3s ease",
             }}
           >
             Exams ({filteredExams.length})
@@ -510,9 +714,9 @@ const CreateExam = () => {
             <span
               className={`${styles.filterInfo} theme-transition`}
               style={{
-                color: 'var(--text-secondary)',
-                fontSize: '14px',
-                transition: 'color 0.3s ease'
+                color: "var(--text-secondary)",
+                fontSize: "14px",
+                transition: "color 0.3s ease",
               }}
             >
               Filtered by: "{search}"
