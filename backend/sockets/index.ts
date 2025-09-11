@@ -10,8 +10,16 @@ import dotenv from "dotenv";
 import path from "path";
 import { io as ioClient } from "socket.io-client";
 import { getExamScore, addScore, calculateExamScore } from "../utils/calculate";
+import * as fs from "fs";
+import ffmpeg from "fluent-ffmpeg";
+const ffmpegStatic = require("ffmpeg-static");
 
 dotenv.config();
+
+// Set ffmpeg path
+if (ffmpegStatic) {
+  ffmpeg.setFfmpegPath(ffmpegStatic);
+}
 
 const storageServerUrl = process.env.STORAGE_SERVER_URL;
 
@@ -30,6 +38,124 @@ export function initSocket(server: HttpServer) {
   const frameCounter = new Map<string, number>();
   const authVerified = new Map<string, boolean>();
   const webDetectFrameCounter = new Map<string, number>();
+  
+  // Video processing utilities
+  const videoBuffers = new Map<string, Buffer[]>();
+  const frameCounters = new Map<string, number>();
+
+  async function processVideoChunk(userId: string, chunkData: any, examSettings: any) {
+    try {
+      const userKey = String(userId);
+      
+      // Initialize buffer array if not exists
+      if (!videoBuffers.has(userKey)) {
+        videoBuffers.set(userKey, []);
+        frameCounters.set(userKey, 0);
+      }
+      
+      const buffers = videoBuffers.get(userKey)!;
+      const frameCount = frameCounters.get(userKey)!;
+      
+      // Add chunk to buffer
+      if (chunkData && chunkData.data) {
+        const buffer = Buffer.from(chunkData.data);
+        buffers.push(buffer);
+      }
+      
+      // Process every 10 chunks (adjust based on your video chunk rate)
+      if (buffers.length >= 10) {
+        const videoBuffer = Buffer.concat(buffers);
+        buffers.length = 0; // Clear the array
+        
+        // Create temporary files
+        const tempVideoPath = `/tmp/temp_video_${userKey}_${Date.now()}.webm`;
+        const tempOutputDir = `/tmp/frames_${userKey}_${Date.now()}`;
+        
+        // Ensure output directory exists
+        if (!fs.existsSync(tempOutputDir)) {
+          fs.mkdirSync(tempOutputDir, { recursive: true });
+        }
+        
+        // Write video buffer to file
+        fs.writeFileSync(tempVideoPath, videoBuffer);
+        
+        // Extract frames at 10fps
+        await new Promise((resolve, reject) => {
+          ffmpeg(tempVideoPath)
+            .outputOptions(['-vf', 'fps=10'])
+            .output(`${tempOutputDir}/frame_%03d.jpg`)
+            .on('end', resolve)
+            .on('error', reject)
+            .run();
+        });
+        
+        // Read extracted frames and send to AI models
+        const frameFiles = fs.readdirSync(tempOutputDir).filter(f => f.endsWith('.jpg'));
+        
+        for (const frameFile of frameFiles) {
+          const framePath = path.join(tempOutputDir, frameFile);
+          const frameBuffer = fs.readFileSync(framePath);
+          const base64Frame = frameBuffer.toString('base64');
+          
+          const frameData = {
+            userId: userId,
+            examId: chunkData.examId,
+            frame: base64Frame,
+            timestamp: Date.now(),
+            frameNumber: frameCount + frameFiles.indexOf(frameFile)
+          };
+          
+          // Send frame data to AI models similar to authenticate event
+          await processFrameForAIModels(frameData, examSettings);
+        }
+        
+        // Update frame counter
+        frameCounters.set(userKey, frameCount + frameFiles.length);
+        
+        // Cleanup temporary files
+        fs.unlinkSync(tempVideoPath);
+        frameFiles.forEach(file => {
+          fs.unlinkSync(path.join(tempOutputDir, file));
+        });
+        fs.rmdirSync(tempOutputDir);
+        
+      }
+    } catch (error) {
+      console.error('Error processing video chunk:', error);
+    }
+  }
+
+  async function processFrameForAIModels(data: any, examSettings: any) {
+    const uidKey = String(data.userId);
+    const verified = authVerified.get(uidKey) === true;
+    
+    // Always send to web detection
+    emitToModel("web_detect", "webDetect", data);
+    
+    // Send to other models based on settings
+    if (examSettings) {
+      if (examSettings.eyeball_detection_enabled) {
+        emitToModel("eye_position", "eyePosition", data);
+      }
+      if (examSettings.head_direction_enabled) {
+        emitToModel("head_service", "headPosition", data);
+      }
+    }
+
+    if (!verified) {
+      emitToModel("face_service", "faceAuth", data);
+      authCounter.set(uidKey, 0);
+      return;
+    }
+
+    const count = (authCounter.get(uidKey) ?? 0) + 1;
+    if (count % 50 === 0) {
+      emitToModel("face_service", "faceAuth", data);
+      authCounter.set(uidKey, 0);
+    } else {
+      authCounter.set(uidKey, count);
+    }
+  }
   function linkSocketToUser(socketId: string, userId?: string | null) {
     if (!userId) return;
     const uid = String(userId);
@@ -49,6 +175,10 @@ export function initSocket(server: HttpServer) {
     authCounter.delete(uid);
     frameCounter.delete(uid);
     authVerified.delete(uid);
+    
+    // Cleanup video processing buffers
+    videoBuffers.delete(uid);
+    frameCounters.delete(uid);
   }
 
   function emitToUserById(
@@ -230,7 +360,18 @@ export function initSocket(server: HttpServer) {
       emitToModel("thirdeye_detect", "mobileDetect", data);
     });
     socket.on("recorder-add-video-stream-chunk", (data: any) => {
-      // console.log("chunk ,",data.chunk);
+      // Process video chunk for AI analysis asynchronously (non-blocking)
+      const userId = data?.userId;
+      const examSettings = data?.examSettings ?? data?.settings;
+      
+      if (userId && examSettings) {
+        // Fire and forget - don't await this operation
+        processVideoChunk(userId, data, examSettings).catch(error => {
+          console.error('Error processing video chunk for AI analysis:', error);
+        });
+      }
+
+      // Continue with original storage functionality immediately
       if (storageSocket && storageSocket.connected) {
         storageSocket.emit("add-video-stream-chunk", data);
       } else {
