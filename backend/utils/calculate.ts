@@ -26,7 +26,15 @@ export function addScore(data: any) {
       eyeFrames:0,
       objectFrames:0,
       zeroPersonFrames:0,
-      morePersonFrames:0
+      morePersonFrames:0,
+      // Add violation frames tracking
+      violationFrames: {
+        faceAuthViolations: [],
+        headPositionViolations: [],
+        eyePositionViolations: [],
+        webDetectViolations: [],
+        personViolations: []
+      }
     });
   }
 
@@ -49,6 +57,20 @@ export function addScore(data: any) {
     console.log(examData.headFrames);
     if(examData.headFrames%20==0){
       examData.headPositionFlagged+=1;
+      
+      const dataTimestamp = new Date(data.timestamp);
+      const violationTime = new Date(dataTimestamp.getTime() - 2000);
+      examData.violationFrames.headPositionViolations.push({
+        timestamp: violationTime.toLocaleString(),
+        frameData: {
+          ...data,
+          violationType: 'head_position_violation',
+          detectedAt: dataTimestamp.toLocaleString(),
+          secondsBack: 2,
+          headPosition: headPos
+        }
+      });
+      
       examData.headFrames=0;
     }
 
@@ -65,6 +87,22 @@ export function addScore(data: any) {
       console.log(examData.eyeFrames);
       if(examData.eyeFrames%20==0){
         examData.eyesFlagged+=1;
+        const dataTimestamp = new Date(data.timestamp);
+        const violationTime = new Date(dataTimestamp.getTime() - 2000);
+        console.log('Eye violation timestamp:', dataTimestamp.toLocaleString());
+        console.log("violationTime:",violationTime.toLocaleString());
+        
+        examData.violationFrames.eyePositionViolations.push({
+          timestamp: violationTime.toLocaleString(),
+          frameData: {
+            ...data,
+            violationType: 'eye_position_violation',
+            detectedAt: dataTimestamp.toLocaleString(),
+            secondsBack: 2,
+            leftEye: eyes[0],
+            rightEye: eyes[1]
+          }
+        });
 
         examData.eyeFrames=0;
       }
@@ -77,6 +115,18 @@ export function addScore(data: any) {
   if (data.object_detected && data.object_detected["cell phone"] === true) {
     examData.objectDetectedFlagged += 1;
     console.log("object flag");
+    
+    const dataTimestamp = new Date(data.timestamp);
+    examData.violationFrames.webDetectViolations.push({
+      timestamp: dataTimestamp.toLocaleString(),
+      frameData: {
+        ...data,
+        violationType: 'object_detection_violation',
+        detectedAt: dataTimestamp.toLocaleString(),
+        secondsBack: 0,
+        mobileDetected: true
+      }
+    });
   }
   else if(data.object_detected && data?.object_detected["cell phone"]===false){
     examData.objectDetectedFlagged=0;
@@ -87,6 +137,20 @@ export function addScore(data: any) {
     console.log("hi",examData.authFrames);
     if(examData.authFrames%30==0){
       examData.authFaceFlagged+=1;
+      
+      const dataTimestamp = new Date(data.timestamp);
+      const violationTime = new Date(dataTimestamp.getTime() - 3000);
+      examData.violationFrames.faceAuthViolations.push({
+        timestamp: violationTime.toLocaleString(),
+        frameData: {
+          ...data,
+          violationType: 'face_auth_failed',
+          detectedAt: dataTimestamp.toLocaleString(),
+          secondsBack: 3,
+          authStatus: false
+        }
+      });
+      
       examData.authFrames=0;
     }
   }
@@ -101,6 +165,20 @@ export function addScore(data: any) {
       examData.zeroPersonFrames += 1;
       if(examData.zeroPersonFrames%20==0){
         examData.noPersonFlagged+=1;
+        
+        const dataTimestamp = new Date(data.timestamp);
+        const violationTime = new Date(dataTimestamp.getTime() - 2000);
+        examData.violationFrames.personViolations.push({
+          timestamp: violationTime.toLocaleString(),
+          frameData: {
+            ...data,
+            violationType: 'no_person_detected',
+            detectedAt: dataTimestamp.toLocaleString(),
+            secondsBack: 2,
+            personCount: persons
+          }
+        });
+        
         examData.zeroPersonFrames=0;
       }
     }
@@ -111,6 +189,21 @@ export function addScore(data: any) {
       examData.morePersonFrames+=1;
       if(examData.morePersonFrames%20==0){
         examData.noOfPersonFlagged+=1;
+        
+        const dataTimestamp = new Date(data.timestamp);
+        const violationTime = new Date(dataTimestamp.getTime() - 2000);
+
+        examData.violationFrames.personViolations.push({
+          timestamp: violationTime.toLocaleString(),
+          frameData: {
+            ...data,
+            violationType: 'multiple_persons_detected',
+            detectedAt: dataTimestamp.toLocaleString(),
+            secondsBack: 2,
+            personCount: persons
+          }
+        });
+        
         examData.morePersonFrames=0;
       }
     }
@@ -170,6 +263,7 @@ export const calculateExamScore = async (score: any) => {
     objectDetectedFlagged,
     totalImagesProcessed,
     soundFlagged,
+    violationFrames,
   } = score;
 
   const totalFlagged =
@@ -254,8 +348,8 @@ export const calculateExamScore = async (score: any) => {
     weightedScore: Math.round(weightedScore * 100) / 100,
     cheatingPercentage: Math.round(cheatingPercentage * 100) / 100,
     severity: getSeverityLevel(cheatingPercentage),
-    maxPossibleFlags, // For debugging
-    violationRates,   // For debugging
+    maxPossibleFlags,
+    violationRates,
     breakdown: {
       no_of_person_flagged: noOfPersonFlagged || 0,
       no_person_flagged: noPersonFlagged || 0,
@@ -265,6 +359,20 @@ export const calculateExamScore = async (score: any) => {
       object_detected_flagged: objectDetectedFlagged || 0,
       total_images_processed: totalImagesProcessed || 0,
     },
+    violationFrames: violationFrames || {
+      faceAuthViolations: [],
+      headPositionViolations: [],
+      eyePositionViolations: [],
+      webDetectViolations: [],
+      personViolations: []
+    },
+    totalViolations: {
+      faceAuth: (violationFrames?.faceAuthViolations || []).length,
+      headPosition: (violationFrames?.headPositionViolations || []).length,
+      eyePosition: (violationFrames?.eyePositionViolations || []).length,
+      webDetect: (violationFrames?.webDetectViolations || []).length,
+      person: (violationFrames?.personViolations || []).length
+    }
   };
 };
 

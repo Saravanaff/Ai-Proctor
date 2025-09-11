@@ -39,15 +39,14 @@ export function initSocket(server: HttpServer) {
   const authVerified = new Map<string, boolean>();
   const webDetectFrameCounter = new Map<string, number>();
   
-  // Video processing utilities
   const videoBuffers = new Map<string, Buffer[]>();
   const frameCounters = new Map<string, number>();
 
   async function processVideoChunk(userId: string, chunkData: any, examSettings: any) {
     try {
       const userKey = String(userId);
+      console.log("hello",chunkData);
       
-      // Initialize buffer array if not exists
       if (!videoBuffers.has(userKey)) {
         videoBuffers.set(userKey, []);
         frameCounters.set(userKey, 0);
@@ -56,13 +55,12 @@ export function initSocket(server: HttpServer) {
       const buffers = videoBuffers.get(userKey)!;
       const frameCount = frameCounters.get(userKey)!;
       
-      // Add chunk to buffer
-      if (chunkData && chunkData.data) {
-        const buffer = Buffer.from(chunkData.data);
+      if (chunkData && chunkData.chunk) {
+        console.log("hhhhhhhhhhhhhhhhhh");
+        const buffer = Buffer.from(chunkData.chunk);
         buffers.push(buffer);
       }
       
-      // Process every 10 chunks (adjust based on your video chunk rate)
       if (buffers.length >= 10) {
         const videoBuffer = Buffer.concat(buffers);
         buffers.length = 0; // Clear the array
@@ -313,6 +311,7 @@ export function initSocket(server: HttpServer) {
         userId: data?.userId,
         examId: data?.examId,
         auth_face: data?.auth,
+        timestamp: data.timestamp
       });
       console.log("auth");
 
@@ -320,11 +319,13 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("headPositionRes", (data) => {
+      const uid = String(data?.userId);
       console.log(data);
       addScore({
         userId: data?.userId,
         examId: data?.examId,
         head_position: data?.data?.headPos,
+        timestamp: data.timestamp
       });
       emitToUserById(data?.userId, "headPositionRes-client", data);
     });
@@ -332,17 +333,20 @@ export function initSocket(server: HttpServer) {
     socket.on("eyePositionRes", (data) => {
       const left = data?.data?.leftEye;
       const right = data?.data?.rightEye;
+      
       console.log(left, right, "hi");
       console.log(data);
       addScore({
         userId: data?.userId,
         examId: data?.examId,
         eyes: [left, right].filter(Boolean),
+        timestamp:data.timestamp
       });
       emitToUserById(data?.userId, "eyePositionRes-client", data);
     });
 
     socket.on("webDetectRes", (data) => {
+      const uid = String(data?.userId);
       console.log(data);
       
 
@@ -353,6 +357,7 @@ export function initSocket(server: HttpServer) {
             "cell phone": Number(data?.data?.Mobile || 0) > 0,
           },
           no_of_person: data?.data?.Person,
+          timestamp:data.timestamp
         });
         emitToUserById(data?.userId, "webDetectRes-client", data);
     });
@@ -360,18 +365,14 @@ export function initSocket(server: HttpServer) {
       emitToModel("thirdeye_detect", "mobileDetect", data);
     });
     socket.on("recorder-add-video-stream-chunk", (data: any) => {
-      // Process video chunk for AI analysis asynchronously (non-blocking)
-      const userId = data?.userId;
+      const userId = data?.user_id;
       const examSettings = data?.examSettings ?? data?.settings;
-      
       if (userId && examSettings) {
-        // Fire and forget - don't await this operation
         processVideoChunk(userId, data, examSettings).catch(error => {
           console.error('Error processing video chunk for AI analysis:', error);
         });
       }
 
-      // Continue with original storage functionality immediately
       if (storageSocket && storageSocket.connected) {
         storageSocket.emit("add-video-stream-chunk", data);
       } else {
@@ -447,9 +448,11 @@ export function initSocket(server: HttpServer) {
           return;
         }
         const computed = await calculateExamScore(raw);
+        
         const payload = { success: true, score: computed };
         emitToUserById(userId, "exam_score", payload);
         if (typeof cb === "function") cb(payload);
+        
       } catch (err: any) {
         const errorPayload = {
           success: false,
@@ -470,7 +473,7 @@ export function initSocket(server: HttpServer) {
       const { userId } = data;
       console.log(`Third eye setup registered for user: ${userId}`);
     });
-    socket.on("mobile-acknowledgment", (data) => {
+  socket.on("mobile-acknowledgment", (data) => {
       const { userId } = data;
       console.log("Mobile device connected - sending acknowledgment");
       emitToUserById(userId, "mobile-connected", {

@@ -25,6 +25,7 @@ interface VideoChunkData {
   category: string;
   chunk: ArrayBuffer;
   timestamps: number;
+  examSettings:any
 }
 
 const FloatingCamera = ({
@@ -86,7 +87,7 @@ const FloatingCamera = ({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [borderColor, setBorderColor] = useState("white");
   const [prevSoundDetected, setPrevSoundDetected] = useState(false);
-
+  
   // Initial authentication state
   const initialAuthDoneRef = useRef(false);
   const [showInitialScan, setShowInitialScan] = useState(true);
@@ -343,6 +344,7 @@ const FloatingCamera = ({
         }
 
         mediaRecorderRef.current.ondataavailable = (e: any) => {
+
           if (e.data.size > 0 && !examSubmitted) {
             e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
               const chunkData: VideoChunkData = {
@@ -351,6 +353,7 @@ const FloatingCamera = ({
                 category: "face_camera",
                 chunk: buffer,
                 timestamps: Date.now(),
+                examSettings: settingsRef.current
               };
               socket.emit("recorder-add-video-stream-chunk", chunkData);
             });
@@ -390,7 +393,7 @@ const FloatingCamera = ({
                 blob
                   .arrayBuffer()
                   .then((buffer) => {
-                    socket.emit("authenticate", {
+                    socket.emit("authenticate",{
                       buffer,
                       metadata: { width, height },
                       user_id: userId,
@@ -399,7 +402,7 @@ const FloatingCamera = ({
                       examId: examId,
                       settings: settingsRef.current, 
                       examSettings: settingsRef.current,
-                      timestamp: Date.now(),
+                      timestamp: new Date(),
                     });
                   })
                   .catch((error) => {
