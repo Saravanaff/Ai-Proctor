@@ -110,6 +110,8 @@ def process_eye_position_data(buffer, userId, examId):
     """Process eye position data in a separate thread"""
     eyes = ["Error", "Error"]
     
+    print("Processing eye position data...",buffer)
+    
     try:
         # Get thread-local face mesh instance
         face_mesh = get_face_mesh()
@@ -156,6 +158,7 @@ def eye_functionality(sio):
 def handle_eye_position(sio):
     while True:
         data = constants.eyes_queue.get()
+        print("Received eye position data:", data.keys())
         buffer = data["buffer"]
         userId = data["user_id"]
         examId = data["exam_id"]

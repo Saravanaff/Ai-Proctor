@@ -25,7 +25,8 @@ interface VideoChunkData {
   category: string;
   chunk: ArrayBuffer;
   timestamps: number;
-  examSettings:any
+  examSettings:any;
+  settings:any;
 }
 
 const FloatingCamera = ({
@@ -353,7 +354,8 @@ const FloatingCamera = ({
                 category: "face_camera",
                 chunk: buffer,
                 timestamps: Date.now(),
-                examSettings: settingsRef.current
+                examSettings: settingsRef.current,
+                settings: settingsRef.current,
               };
               socket.emit("recorder-add-video-stream-chunk", chunkData);
             });
