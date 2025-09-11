@@ -59,6 +59,30 @@ export class Scores extends Model<Scores> {
 
   @AllowNull(false)
   @Column({ type: DataType.INTEGER, defaultValue: 0 })
+  tab_switch_violation!: number;
+
+  @AllowNull(false)
+  @Column({ type: DataType.INTEGER, defaultValue: 0 })
+  number_of_microphone!: number;
+
+  @AllowNull(false)
+  @Column({ type: DataType.BOOLEAN, defaultValue: 1 })
+  screen_sharing!: boolean;
+
+  @AllowNull(false)
+  @Column({ type: DataType.BOOLEAN, defaultValue: 1 })
+  safe_browser!: boolean;
+
+  @AllowNull(false)
+  @Column({ type: DataType.INTEGER, defaultValue: 0 })
+  control_desktop_apps!: number;
+
+  @AllowNull(false)
+  @Column({ type: DataType.INTEGER, defaultValue: 0 })
+  blank_feed!: number;
+  
+  @AllowNull(false)
+  @Column({ type: DataType.INTEGER, defaultValue: 0 })
   total_score!: number;
 }
 

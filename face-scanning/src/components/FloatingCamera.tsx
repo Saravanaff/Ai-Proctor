@@ -397,6 +397,7 @@ const FloatingCamera = ({
                       examId: examId,
                       settings: settingsRef.current, 
                       examSettings: settingsRef.current,
+                      timestamp: Date.now(),
                     });
                   })
                   .catch((error) => {

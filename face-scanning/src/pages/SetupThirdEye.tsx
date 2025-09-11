@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import QRCode from "qrcode";
-import { getUserEmail, getUserId, getGlobalName } from "@/constants/AuthStore";
+import { getUserEmail, getUserId, getGlobalName, getExamId } from "@/constants/AuthStore";
 import { useTheme } from "@/contexts/ThemeContext";
 import styles from "@/styles/ThirdEyeSetup.module.css";
 // Use the shared socket connection (adjust the import path/name if different)
@@ -62,7 +62,7 @@ const ThirdEyeSetup = () => {
       const name = encodeURIComponent(userName);
       const email = encodeURIComponent(userEmail);
       const examId = encodeURIComponent(
-        localStorage.getItem("examId") || "unknown"
+        getExamId()
       );
       const clientUrl = process.env.NEXT_PUBLIC_CLIENT_URL;
       const thirdEyeUrl = `${clientUrl}?userId=${userId}&name=${name}&email=${email}&redirect=${redirect}&examId=${examId}`;

@@ -3,6 +3,7 @@ import socket from "@/components/socket";
 import { getUserId } from "@/constants/AuthStore";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { getNumberOfMicrophones, getTabSwitchViolations } from "@/constants/violationConsts";
 
 
 const userId = getUserId() || "unknown";
@@ -41,23 +42,25 @@ const EndPage =  () => {
       message: "Exam Ended successfully"
   });
 
-  const postData = async () => {
+  const postData = async (endpoint : string, data : any) => {
     
     const token = localStorage.getItem("token");
-    console.log(`${baseUrl}/saveScore`);
+    console.log(`${baseUrl}${endpoint}`);
 
     try {
-      await axios.post(`${baseUrl}/saveScore`, {
-        status: "completed",
-        examId: examId,
-      }
-      );
+      await axios.post(`${baseUrl}${endpoint}`, data);
     } catch (error) {
       console.error("Error updating data:", error);
     }
   };
 
-  postData();
+  postData("/saveScore", {
+    status: "completed",
+    userId: userId,
+    examId: examId,
+    numberOfMicrophones: getNumberOfMicrophones(),
+    tabSwitchViolations: getTabSwitchViolations(),
+  });
 
   return (
     <div style={{ textAlign: "center", paddingTop: "100px" }}>

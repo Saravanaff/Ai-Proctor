@@ -1,6 +1,7 @@
 let _globalName = "";
 let _globalId: string | null = null;
 let _globalEmail: string | null = null;
+let _globalExamId: string = "unknown";
 
 // No initial read from localStorage; start empty by default
 
@@ -17,6 +18,9 @@ export function setGlobalName(name: string) {
 export function setUserId(id: string | number | null | undefined) {
   _globalId = id != null ? String(id) : null;
 }
+export function setExamId(examId: string) {
+  _globalExamId = examId;
+}
 
 export function getTokenFromCookie(name='authToken'):string | null{
     const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -32,4 +36,7 @@ export function getUserId(): string | null {
 }
 export function getUserEmail(): string | null {
   return _globalEmail;
+}
+export function getExamId() : string {
+  return _globalExamId;
 }

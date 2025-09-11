@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import ExamPage from "@/components/FullScreen";
 import styles from "../styles/ExamPage.module.css";
 import { sleep } from '@/utils/delay';
-import { getUserId } from '@/constants/AuthStore';
+import { getExamId, getUserId } from '@/constants/AuthStore';
 import socket from "@/components/socket";
 import { useTheme } from "@/contexts/ThemeContext";
 import useMicrophoneDevices from '@/hooks/useMicrophoneDevices';
@@ -10,7 +10,7 @@ import axios from 'axios';
 
 
 const userId = getUserId() || "unknown";
-const examId = localStorage.getItem("examId") || "unknown";
+const examId = getExamId();
 console.log("User ID:", userId);
 
 

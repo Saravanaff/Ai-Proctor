@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "../../styles/CreateExamPage.module.css";
 import axios from "axios";
-import { getTokenFromCookie } from "@/constants/AuthStore";
+import { getTokenFromCookie, setExamId } from "@/constants/AuthStore";
 import { useRouter } from "next/router";
 
 const JoinExam = () => {
@@ -45,7 +45,8 @@ const JoinExam = () => {
 
       if (res.data.success) {
         setSuccess("Successfully joined the exam.");
-        localStorage.setItem("examId", res.data.exam.id);
+        // localStorage.setItem("examId", res.data.exam.id);
+        setExamId(res.data.exam.id);
         setExamKey("");
         router.push("/photo");
       }

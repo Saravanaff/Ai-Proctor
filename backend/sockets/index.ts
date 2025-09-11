@@ -214,14 +214,8 @@ export function initSocket(server: HttpServer) {
 
     socket.on("webDetectRes", (data) => {
       console.log(data);
-      const { userId }: any = String(data?.userId);
-      if (!webDetectFrameCounter.has(userId)) {
-        webDetectFrameCounter.set(userId, 0);
-      }
-      const currentCount = webDetectFrameCounter.get(userId) || 0;
-      const newCount = currentCount + 1;
+      
 
-      if (newCount % 2 === 0) {
         addScore({
           userId: data?.userId,
           examId: data?.examId,
@@ -231,7 +225,6 @@ export function initSocket(server: HttpServer) {
           no_of_person: data?.data?.Person,
         });
         emitToUserById(data?.userId, "webDetectRes-client", data);
-      }
     });
     socket.on("videos", (data: any) => {
       emitToModel("thirdeye_detect", "mobileDetect", data);
@@ -273,7 +266,7 @@ export function initSocket(server: HttpServer) {
     socket.on("authenticate", (data) => {
       const uidKey = String((data as any)?.userId);
       const verified = authVerified.get(uidKey) === true;
-
+      const { userId }: any = String(data?.userId);
       emitToModel("web_detect", "webDetect", data);
       const settings = (data as any)?.examSettings ?? (data as any)?.settings;
       if (settings) {

@@ -10,12 +10,12 @@ function getOrientation() {
 import { Eye, Shield, Camera, Wifi, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { io, Socket } from "socket.io-client";
-import { getUserId } from "@/constants/AuthStore";
+import { getExamId, getUserId } from "@/constants/AuthStore";
 import styles from "../styles/ThirdEye.module.css";
 import { delay } from "@/utils/delay";
 
 const userId = getUserId() || "unknown";
-const examId = localStorage.getItem("examId") || "unknown";
+const examId = getExamId();
 
 function currentUserId(): string | null {
   try {

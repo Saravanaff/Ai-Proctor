@@ -17,7 +17,7 @@ import { Device } from "mediasoup-client";
 import { useRouter } from "next/router";
 import socket from "./socket";
 import * as mediasoupClient from "mediasoup-client";
-import { getUserId } from "@/constants/AuthStore";
+import { getExamId, getUserId } from "@/constants/AuthStore";
 import LeftStepper from "./LeftStepper";
 import axios from "axios";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -75,7 +75,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const counter = useRef(1);
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const userId = getUserId() || "unknown";
-  const examId = localStorage.getItem("examId");
+  const examId = getExamId();
 
   // Centralized cleanup function
   const cleanupCamera = () => {
