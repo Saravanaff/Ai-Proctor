@@ -103,7 +103,7 @@ export function initSocket(server: HttpServer) {
   });
 
   storageSocket.on("connect_error", (error: any) => {
-    console.log("🔥 Storage server connection error:", error.message);
+    // console.log("🔥 Storage server connection error:", error.message);
   });
 
   io.on("connection", (socket) => {

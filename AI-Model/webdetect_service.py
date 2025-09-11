@@ -39,7 +39,7 @@ Thread(target=handle_web_detect, args=(sio,), daemon=True).start()
 while not sio.connected:
     try:
         print("[WebDetect service] Trying to connect...")
-        sio.connect("https://172.16.105.211:3001/", transports=['websocket'])
+        sio.connect("https://localhost:3001/", transports=['websocket'])
     except Exception as e:
         print(f"[WebDetect service] Connection error: {e}")
         time.sleep(2)

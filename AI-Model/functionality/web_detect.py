@@ -1,29 +1,28 @@
 import time
 import cv2
 import numpy as np
-from core import image_utils,constants
-from concurrent.futures import ThreadPoolExecutor
-import threading
+from core import image_utils, constants
+from concurrent.futures import ProcessPoolExecutor
 from ultralytics import YOLO
+import os
 
-MAX_WORKERS = 4  # Adjust based on your server capacity
+MAX_WORKERS = 4  # use available cores
 
-thread_local = threading.local()
-executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+# Global model placeholder for worker processes
+yolo_model = None
 
-def get_yolo_model():
-    if not hasattr(thread_local, 'yolo_model'):
-        thread_local.yolo_model = YOLO("yolov8m.pt")
-    return thread_local.yolo_model
+def init_worker():
+    """Initialize YOLO model in each process (runs once per worker)."""
+    global yolo_model
+    yolo_model = YOLO("yolo11n.pt")
+    print(f"[WebDetect] YOLO model loaded in process {os.getpid()}")
 
 def detect_person_and_objects(image: np.ndarray):
-    yolo_model = get_yolo_model()
+    global yolo_model
     detected_objects = {"Person": 0, "Mobile": 0, "Laptop": 0}
 
     try:
         result = yolo_model.predict(image, verbose=False)[0]
-
-
         for box in result.boxes:
             label = yolo_model.names[int(box.cls[0])]
             if label == "person":
@@ -37,7 +36,6 @@ def detect_person_and_objects(image: np.ndarray):
 
     return detected_objects
 
-
 def process_webcam_data(buffer, userId, examId):
     img_array = image_utils.decode_image(buffer)
     rgb_img = cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB)
@@ -46,14 +44,15 @@ def process_webcam_data(buffer, userId, examId):
     print(f"[WebDetect] Detected objects for user {userId}, exam {examId}: {detected_objects}")
 
     result = {
-            "userId": userId,
-            "examId": examId,
-            "data": detected_objects,
-            "code": 0
-        }
-    
+        "userId": userId,
+        "examId": examId,
+        "data": detected_objects,
+        "code": 0
+    }
     return result
 
+# Create global ProcessPoolExecutor with initializer
+executor = ProcessPoolExecutor(max_workers=MAX_WORKERS, initializer=init_worker)
 
 def web_detect(sio):
     @sio.on("webDetect")
@@ -66,7 +65,7 @@ def handle_web_detect(sio):
         buffer = data["buffer"]
         userId = data["userId"]
         examId = data["examId"]
-        
+
         future = executor.submit(process_webcam_data, buffer, userId, examId)
 
         def emit_result(future):
@@ -88,8 +87,8 @@ def handle_web_detect(sio):
         future.add_done_callback(emit_result)
 
 def cleanup_web_functionality():
-    """Cleanup function to properly shutdown the thread pool"""
+    """Cleanup function to properly shutdown the process pool"""
     global executor
     if executor:
         executor.shutdown(wait=True)
-        print("Web detect thread pool shutdown complete")
+        print("Web detect process pool shutdown complete")
