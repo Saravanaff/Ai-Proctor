@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { generateParticipantPdf } from "../../components/ParticipantPdfReport";
 import { useRouter } from "next/router";
 import axios from "axios";
 import LoadingIndicator from "../../components/LoadingIndicator";
@@ -22,6 +23,7 @@ interface ExamDetails {
 interface ScoreDetails {
   success: boolean;
   data: number;
+
   scoreBreakdown?: {
     no_of_person_flagged: number;
     no_person_flagged: number;
@@ -56,6 +58,28 @@ interface TimelineEvent {
 }
 
 const ParticipantDetailsPage: React.FC = () => {
+  // PDF generation handler
+  const handleGeneratePDF = () => {
+    if (!user || !examDetails) return;
+    generateParticipantPdf({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
+      exam: {
+        id: examDetails.id,
+        name: examDetails.exam_name,
+        date: new Date(examDetails.createdAt).toLocaleDateString(),
+      },
+      score: scoreDetails?.success
+        ? {
+            value: scoreDetails.data,
+            breakdown: scoreDetails.scoreBreakdown,
+          }
+        : undefined,
+    });
+  };
   const router = useRouter();
   const { examId, userId } = router.query;
 
@@ -287,24 +311,98 @@ const ParticipantDetailsPage: React.FC = () => {
           <div className={styles.participantAvatar}>
             {user.name.charAt(0).toUpperCase()}
           </div>
-          <div className={styles.participantInfo}>
-            <h2 className={styles.participantName}>{user.name}</h2>
-            <p className={styles.participantEmail}>📧 {user.email}</p>
-            <div className={styles.examDetails}>
-              <div className={styles.examBadge}>
-                <span className={styles.examIcon}>📋</span>
-                <span className={styles.examText}>{examDetails.exam_name}</span>
-              </div>
-              <div className={styles.examMeta}>
-                <span className={styles.examDate}>
-                  📅 {new Date(examDetails.createdAt).toLocaleDateString()}
+
+          {/* Two Column Layout for Details */}
+          <div
+            style={{
+              display: "flex",
+              gap: "40px",
+              alignItems: "flex-start",
+              flex: 1,
+              width: "100%",
+            }}
+          >
+            {/* Student Details Column */}
+            <div
+              className={styles.participantInfo}
+              style={{
+                flex: 1,
+                maxWidth: "50%",
+              }}
+            >
+              <h3
+                style={{
+                  margin: "0 0 12px 0",
+                  fontSize: "18px",
+                  color: "#2c3e50",
+                  borderBottom: "2px solid #e9ecef",
+                  paddingBottom: "8px",
+                }}
+              >
+                Student Details
+              </h3>
+              <h2
+                className={styles.participantName}
+                style={{
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
+                }}
+              >
+                {user.name}
+              </h2>
+              <p className={styles.participantEmail}>{user.email}</p>
+              <p className={styles.participantId}>
+                <strong style={{ color: "#495057" }}>User ID:</strong>{" "}
+                <span style={{ color: "#6c757d", fontWeight: "500" }}>
+                  {user.id}
                 </span>
-                <span className={styles.examKey}>
-                  🔑 Key: {examDetails.key}
+              </p>
+            </div>
+
+            {/* Exam Details Column */}
+            <div
+              className={styles.examDetailsSection}
+              style={{
+                flex: 1,
+                maxWidth: "50%",
+              }}
+            >
+              <h3
+                style={{
+                  margin: "0 0 12px 0",
+                  fontSize: "18px",
+                  color: "#2c3e50",
+                  borderBottom: "2px solid #e9ecef",
+                  paddingBottom: "8px",
+                }}
+              >
+                Exam Details
+              </h3>
+              <h2
+                className={styles.participantName}
+                style={{
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
+                }}
+              >
+                {examDetails.exam_name}
+              </h2>
+              <p className={styles.participantEmail}>
+                {new Date(examDetails.createdAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+              <p className={styles.participantId}>
+                <strong style={{ color: "#495057" }}>Exam ID:</strong>{" "}
+                <span style={{ color: "#6c757d", fontWeight: "500" }}>
+                  {examDetails.id}
                 </span>
-              </div>
+              </p>
             </div>
           </div>
+
           {scoreDetails?.success && (
             <div className={styles.scoreSection}>
               <div
@@ -353,6 +451,64 @@ const ParticipantDetailsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Generate PDF Button - Bottom left section */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-start",
+          margin: "30px 0",
+          width: "100%",
+        }}
+      >
+        <button
+          onClick={handleGeneratePDF}
+          className={styles.generatePdfButton}
+          style={{
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            border: "none",
+            borderRadius: "8px",
+            color: "white",
+            padding: "12px 24px",
+            fontSize: "14px",
+            fontWeight: "600",
+            cursor: "pointer",
+            boxShadow: "0 4px 15px rgba(102, 126, 234, 0.3)",
+            transition: "all 0.3s ease",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            minWidth: "180px",
+            justifyContent: "center",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-2px)";
+            e.currentTarget.style.boxShadow =
+              "0 6px 20px rgba(102, 126, 234, 0.4)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow =
+              "0 4px 15px rgba(102, 126, 234, 0.3)";
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14,2 14,8 20,8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10,9 9,9 8,9" />
+          </svg>
+          Generate Report
+        </button>
+      </div>
+
       {/* Tab Navigation */}
       <div className={styles.tabNavigation}>
         <button
@@ -361,7 +517,7 @@ const ParticipantDetailsPage: React.FC = () => {
           }`}
           onClick={() => setActiveTab("overview")}
         >
-          📊 Overview
+          Overview
         </button>
         <button
           className={`${styles.tab} ${
@@ -369,7 +525,7 @@ const ParticipantDetailsPage: React.FC = () => {
           }`}
           onClick={() => setActiveTab("timeline")}
         >
-          📈 Timeline
+          Timeline
         </button>
         <button
           className={`${styles.tab} ${
@@ -377,7 +533,7 @@ const ParticipantDetailsPage: React.FC = () => {
           }`}
           onClick={() => setActiveTab("review")}
         >
-          🎥 Review Session
+          Review Session
         </button>
       </div>
 
@@ -540,7 +696,7 @@ const ParticipantDetailsPage: React.FC = () => {
               </>
             ) : (
               <div className={styles.noDataMessage}>
-                <div className={styles.noDataIcon}>📊</div>
+                <div className={styles.noDataIcon}></div>
                 <h3>No Score Data Available</h3>
                 <p>
                   Score data for this participant is not yet available or the
@@ -555,7 +711,7 @@ const ParticipantDetailsPage: React.FC = () => {
         {activeTab === "timeline" && (
           <div className={styles.timelineTab}>
             <h3 className={styles.sectionTitle} style={{ marginBottom: 12 }}>
-              📈 Performance Timeline
+              Performance Timeline
             </h3>
             <div className={styles.timeline}>
               {timelineEvents.map((event, index) => {
@@ -640,7 +796,7 @@ const ParticipantDetailsPage: React.FC = () => {
         {activeTab === "review" && (
           <div className={styles.reviewTab}>
             <div className={styles.reviewHeader}>
-              <h3 className={styles.sectionTitle}>🎥 Review Session</h3>
+              <h3 className={styles.sectionTitle}>Review Session</h3>
               <p className={styles.reviewDescription}>
                 Download video recordings and review all violations with
                 detailed timestamps
@@ -649,10 +805,10 @@ const ParticipantDetailsPage: React.FC = () => {
 
             {/* Video Downloads in Review Tab */}
             <div className={styles.videoSection}>
-              <h4 className={styles.subsectionTitle}>📹 Videos</h4>
+              <h4 className={styles.subsectionTitle}>Videos</h4>
               <div className={styles.videoGrid}>
                 <div className={styles.videoCard}>
-                  <span>📹 Face Camera</span>
+                  <span>Face Camera</span>
                   <button
                     className={styles.downloadBtn}
                     onClick={() => handleVideoDownload("face_camera")}
@@ -662,7 +818,7 @@ const ParticipantDetailsPage: React.FC = () => {
                 </div>
 
                 <div className={styles.videoCard}>
-                  <span>🖥️ Screen Recording</span>
+                  <span>Screen Recording</span>
                   <button
                     className={styles.downloadBtn}
                     onClick={() => handleVideoDownload("screen_recording")}
@@ -672,7 +828,7 @@ const ParticipantDetailsPage: React.FC = () => {
                 </div>
 
                 <div className={styles.videoCard}>
-                  <span>📱 Third Eye</span>
+                  <span>Third Eye</span>
                   <button
                     className={styles.downloadBtn}
                     onClick={() => handleVideoDownload("third_eye")}
@@ -685,7 +841,7 @@ const ParticipantDetailsPage: React.FC = () => {
 
             {/* Violations with Timestamps */}
             <div className={styles.violationsSection}>
-              <h4 className={styles.subsectionTitle}>⚠️ Violations</h4>
+              <h4 className={styles.subsectionTitle}>Violations</h4>
               <div className={styles.violationsList}>
                 {violations.map((violation) => (
                   <div key={violation.id} className={styles.violationItem}>
