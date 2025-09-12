@@ -22,8 +22,8 @@ sio = socketio.Client(
 
 @sio.event
 def connect():
-    print("[Face service] Connected to the server")
-    sio.emit("register-python", {"service": "face_service"})
+    print("[Store service] Connected to the server")
+    sio.emit("register-python", {"service": "store_service"})
 
 setup_process_frame_handler(sio)
 
@@ -35,7 +35,7 @@ def disconnect():
 while not sio.connected:
     try:
         print("[Face service] Trying to connect...")
-        sio.connect("https://localhost:3001/", transports=['websocket'])
+        sio.connect("https://172.16.102.164:3001/", transports=['websocket'])
     except Exception as e:
         print(f"[Face service] Connection error: {e}")
         time.sleep(2)

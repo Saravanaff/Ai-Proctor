@@ -30,6 +30,7 @@ last_head_process = 0
 last_auth_process = 0
 last_processed_time = 0
 last_cam_process = 0
+last_global_detection = 0
 frameCount=0
 
 AUTH_INTERVAL = 0.5

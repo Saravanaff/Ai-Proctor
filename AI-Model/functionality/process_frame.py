@@ -1,31 +1,33 @@
 import numpy as np
 import cv2
-import face_recognition
-import time
-from core import constants,image_utils,head_pose,store_face
-import gc
+import onnxruntime as ort
+from core import head_pose,store_face
 
 stage_arr=["Forward","Right","Left"]
-is_store=False
 
-last_processed_time = 0
-frame_interval = 0.1
-frame_count=0
+sess_options = ort.SessionOptions()
+sess_options.intra_op_num_threads = 3  
+sess_options.inter_op_num_threads = 1     
+sess_options.execution_mode = ort.ExecutionMode.ORT_PARALLEL
+onnx_path = "MobileFaceNet.onnx"
+
+session = ort.InferenceSession(onnx_path,sess_options, providers=['CPUExecutionProvider'])
+input_name = session.get_inputs()[0].name
+
+def preprocessing(image):
+    img = cv2.resize(image, (112, 112))
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = img.astype(np.float32) / 128.0
+    img = np.transpose(img, (2, 0, 1))
+    img = np.expand_dims(img, 0)
+    return img
+
+
 def setup_process_frame_handler(sio):
     @sio.on("process-frame")
     def handle_frame(data):
-        global last_processed_time
-        global is_store
-        global frame_count
-        frame_count+=1
-        if frame_count%2!=0:
-            return
-        if time.time() - last_processed_time < frame_interval:
-            return
-
         try:
-            last_processed_time = time.time()
-
+            print("arrived")
             userId=data["user_id"]
             buffer = data["buffer"]
             metadata = data["metadata"]
@@ -33,41 +35,46 @@ def setup_process_frame_handler(sio):
             counter = data["counter"]
             stage = data["stage"]
             success = False
-            # print("width:", width, "height:", height)
 
             image_array = np.frombuffer(buffer, dtype=np.uint8)
             img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+            rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
             if img is None:
                 print("⚠ Failed to decode image")
                 return
             
-            if is_store==False:
-                cv2.imwrite("test_image.jpg",img)
-                print("Saved test data")
-                is_store=True
+            img = preprocessing(img)
+            embedding  = session.run(None, {input_name: img})
+            
 
-            small_img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
-            rgb_small = cv2.cvtColor(small_img, cv2.COLOR_BGR2RGB)
-            # print("rgb_small shape: " ,rgb_small.shape," dtype : ",rgb_small.dtype)
-            faces_fr = face_recognition.face_locations(rgb_small)
+            head_position = head_pose.detect_head_direction(rgb_img)
 
-            if last_processed_time - constants.last_head_process > constants.HEAD_INTERVAL:
-                with constants.head_lock:
-                    if last_processed_time - constants.last_head_process > constants.HEAD_INTERVAL:
-                        constants.head_position, constants.eyes = head_pose.detect_head_direction(rgb_small)
-                        constants.last_head_process = last_processed_time
-
-            if stage_arr[stage] == constants.head_position: 
-                if(len(faces_fr)>0):
+            if stage_arr[stage] == head_position: 
+                if(len(embedding)>0):
                     counter+=1
             else:
                 counter = 0
 
             if counter%2==0 and counter!=0:
-                if constants.head_position == stage_arr[stage] and len(faces_fr) >0 :
+                if head_position == stage_arr[stage] and len(embedding) >0 :
                     print("store called")
-                    if(store_face.store_data(rgb_small,faces_fr,stage,userId)):
+                    if len(embedding)>1:
+                        print("Multiple faces detected, skipping storage.")
+                        result_data = {
+                            "userId":userId,
+                            "face_found": len(embedding) > 0,
+                            "head_position": head_position,
+                            "stage":stage,
+                            "counter":counter,
+                            "success":success,
+                        }
+                        if sio.connected:
+                            sio.emit("result", result_data)
+                        return
+                    emb = embedding[0].squeeze()
+                    emb = emb.tolist()
+                    if(store_face.store_data(emb,stage,userId)):
                         success=True
                     else: 
                         print("Failure")
@@ -75,8 +82,8 @@ def setup_process_frame_handler(sio):
 
             result_data = {
                 "userId":userId,
-                "face_found": len(faces_fr) > 0,
-                "head_position": constants.head_position,
+                "face_found": len(embedding) > 0,
+                "head_position": head_position,
                 "stage":stage,
                 "counter":counter,
                 "success":success,
@@ -85,9 +92,6 @@ def setup_process_frame_handler(sio):
             print(result_data)
 
             sio.emit("result", result_data)
-
-            del img, small_img, rgb_small
-            gc.collect()
 
         except Exception as e:
             print("🚨 Error:", e)
