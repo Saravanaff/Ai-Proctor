@@ -113,7 +113,7 @@ export function addScore(data: any) {
 
   if (data.object_detected && data.object_detected["cell phone"] === true) {
     examData.objectFrames+=1;
-    if(examData.objectFrames%10==0){
+    if(examData.objectFrames%5==0){
       examData.objectDetectedFlagged+=1;
       
       const dataTimestamp = new Date(data.timestamp);
