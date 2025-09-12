@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { generateParticipantPdf } from "../../components/ParticipantPdfReport";
 import { useRouter } from "next/router";
 import axios from "axios";
@@ -57,7 +57,36 @@ interface TimelineEvent {
   violations: string[];
 }
 
+interface VideoState {
+  face_camera: {
+    isStreaming: boolean;
+    isLoading: boolean;
+    error: string | null;
+    url: string | null;
+  };
+  screen_recording: {
+    isStreaming: boolean;
+    isLoading: boolean;
+    error: string | null;
+    url: string | null;
+  };
+  third_eye: {
+    isStreaming: boolean;
+    isLoading: boolean;
+    error: string | null;
+    url: string | null;
+  };
+}
+
 const ParticipantDetailsPage: React.FC = () => {
+  // Video refs for streaming
+  const videoRefs = {
+    face_camera: useRef<HTMLVideoElement>(null),
+    screen_recording: useRef<HTMLVideoElement>(null),
+    third_eye: useRef<HTMLVideoElement>(null),
+  };
+
+  // PDF generation handler
   const handleGeneratePDF = () => {
     if (!user || !examDetails) return;
     generateParticipantPdf({
@@ -89,6 +118,28 @@ const ParticipantDetailsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     "overview" | "timeline" | "review"
   >("overview");
+
+  // Video streaming state
+  const [videoState, setVideoState] = useState<VideoState>({
+    face_camera: {
+      isStreaming: false,
+      isLoading: false,
+      error: null,
+      url: null,
+    },
+    screen_recording: {
+      isStreaming: false,
+      isLoading: false,
+      error: null,
+      url: null,
+    },
+    third_eye: {
+      isStreaming: false,
+      isLoading: false,
+      error: null,
+      url: null,
+    },
+  });
 
   // Mock data for violations and timeline (you can replace with real API calls)
   const [violations] = useState<ViolationEvent[]>([
@@ -196,6 +247,16 @@ const ParticipantDetailsPage: React.FC = () => {
     fetchParticipantDetails();
   }, [examId, userId, router]);
 
+  // Cleanup video streams on component unmount
+  useEffect(() => {
+    return () => {
+      // Stop all video streams when component unmounts
+      Object.keys(videoState).forEach((category) => {
+        stopVideoStream(category as keyof VideoState);
+      });
+    };
+  }, []);
+
   const getSeverityColor = (severity: "low" | "medium" | "high") => {
     switch (severity) {
       case "low":
@@ -264,6 +325,178 @@ const ParticipantDetailsPage: React.FC = () => {
       console.error("Error downloading video:", error);
       alert("Error downloading video. Please try again.");
     }
+  };
+
+  const handleVideoStream = async (category: keyof VideoState) => {
+    if (!user || !examDetails) return;
+
+    // If already streaming, stop it
+    if (videoState[category].isStreaming) {
+      stopVideoStream(category);
+      return;
+    }
+
+    // Start streaming
+    setVideoState(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        isLoading: true,
+        error: null,
+      }
+    }));
+
+    try {
+      const token = getTokenFromCookie();
+      const streamUrl = `${baseUrl}/stream-video/${user.id}/${examDetails.id}/${category}`;
+
+      // Check if video exists first
+      const response = await fetch(streamUrl, {
+        method: "HEAD",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Video not available for streaming");
+      }
+
+      // Set video source for streaming
+      const videoElement = videoRefs[category].current;
+      if (videoElement) {
+        // For streaming, we'll use the direct URL with authorization
+        const streamUrlWithAuth = `${streamUrl}?token=${encodeURIComponent(token || '')}`;
+        videoElement.src = streamUrlWithAuth;
+        
+        videoElement.load();
+        
+        setVideoState(prev => ({
+          ...prev,
+          [category]: {
+            ...prev[category],
+            isStreaming: true,
+            isLoading: false,
+            url: streamUrlWithAuth,
+          }
+        }));
+      }
+    } catch (error) {
+      console.error("Error streaming video:", error);
+      setVideoState(prev => ({
+        ...prev,
+        [category]: {
+          ...prev[category],
+          isLoading: false,
+          error: error instanceof Error ? error.message : "Video streaming not available. Try downloading instead.",
+        }
+      }));
+    }
+  };
+
+  const stopVideoStream = (category: keyof VideoState) => {
+    const videoElement = videoRefs[category].current;
+    if (videoElement) {
+      videoElement.pause();
+      videoElement.src = "";
+      videoElement.load();
+    }
+
+    setVideoState(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        isStreaming: false,
+        isLoading: false,
+        url: null,
+        error: null,
+      }
+    }));
+  };
+
+  const VideoPlayer: React.FC<{ 
+    category: keyof VideoState; 
+    title: string; 
+  }> = ({ category, title }) => {
+    const state = videoState[category];
+    
+    return (
+      <div className={styles.videoCard}>
+        <div className={styles.videoHeader}>
+          <span className={styles.videoTitle}>{title}</span>
+          <div className={styles.videoControls}>
+            <button
+              className={`${styles.streamBtn} ${state.isStreaming ? styles.streaming : ''}`}
+              onClick={() => handleVideoStream(category)}
+              disabled={state.isLoading}
+              style={{
+                backgroundColor: state.isStreaming ? '#dc3545' : '#007bff',
+                marginRight: '8px'
+              }}
+            >
+              {state.isLoading ? 'Loading...' : state.isStreaming ? 'Stop Stream' : 'Stream'}
+            </button>
+            <button
+              className={styles.downloadBtn}
+              onClick={() => handleVideoDownload(category)}
+            >
+              Download
+            </button>
+          </div>
+        </div>
+        
+        {state.error && (
+          <div className={styles.videoError} style={{ 
+            color: '#dc3545', 
+            fontSize: '14px', 
+            marginTop: '8px',
+            padding: '8px',
+            backgroundColor: '#f8d7da',
+            borderRadius: '4px',
+            border: '1px solid #f5c6cb'
+          }}>
+            {state.error}
+          </div>
+        )}
+        
+        {(state.isStreaming || state.isLoading) && (
+          <div className={styles.videoContainer} style={{ marginTop: '12px' }}>
+            <video
+              ref={videoRefs[category]}
+              controls
+              className={styles.videoPlayer}
+              style={{
+                width: '100%',
+                height: '300px',
+                backgroundColor: '#000',
+                borderRadius: '8px'
+              }}
+              onError={() => {
+                setVideoState(prev => ({
+                  ...prev,
+                  [category]: {
+                    ...prev[category],
+                    error: 'Failed to load video stream',
+                    isLoading: false,
+                  }
+                }));
+              }}
+              onLoadedData={() => {
+                setVideoState(prev => ({
+                  ...prev,
+                  [category]: {
+                    ...prev[category],
+                    isLoading: false,
+                  }
+                }));
+              }}
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (loading) {
@@ -806,35 +1039,9 @@ const ParticipantDetailsPage: React.FC = () => {
             <div className={styles.videoSection}>
               <h4 className={styles.subsectionTitle}>Videos</h4>
               <div className={styles.videoGrid}>
-                <div className={styles.videoCard}>
-                  <span>Face Camera</span>
-                  <button
-                    className={styles.downloadBtn}
-                    onClick={() => handleVideoDownload("face_camera")}
-                  >
-                    Download
-                  </button>
-                </div>
-
-                <div className={styles.videoCard}>
-                  <span>Screen Recording</span>
-                  <button
-                    className={styles.downloadBtn}
-                    onClick={() => handleVideoDownload("screen_recording")}
-                  >
-                    Download
-                  </button>
-                </div>
-
-                <div className={styles.videoCard}>
-                  <span>Third Eye</span>
-                  <button
-                    className={styles.downloadBtn}
-                    onClick={() => handleVideoDownload("third_eye")}
-                  >
-                    Download
-                  </button>
-                </div>
+                <VideoPlayer category="face_camera" title="Face Camera" />
+                <VideoPlayer category="screen_recording" title="Screen Recording" />
+                <VideoPlayer category="third_eye" title="Third Eye" />
               </div>
             </div>
 
