@@ -545,14 +545,14 @@ function handleSuccessfulFrameExtraction(frameOutputPath: string, originalData: 
     }
 
     if (!verified) {
-      emitToModel("face_service", "faceAuth", data);
+      emitToModel("auth_service", "faceAuth", data);
       authCounter.set(uidKey, 0);
       return;
     }
 
     const count = (authCounter.get(uidKey) ?? 0) + 1;
     if (count % 50 === 0) {
-      emitToModel("face_service", "faceAuth", data);
+      emitToModel("auth_service", "faceAuth", data);
       authCounter.set(uidKey, 0);
     } else {
       authCounter.set(uidKey, count);
