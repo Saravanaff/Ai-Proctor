@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { generateParticipantPdf } from "../../components/ParticipantPdfReport";
 import { useRouter } from "next/router";
 import axios from "axios";
@@ -57,35 +57,20 @@ interface TimelineEvent {
   violations: string[];
 }
 
-interface VideoState {
-  face_camera: {
-    isStreaming: boolean;
-    isLoading: boolean;
-    error: string | null;
-    url: string | null;
-  };
-  screen_recording: {
-    isStreaming: boolean;
-    isLoading: boolean;
-    error: string | null;
-    url: string | null;
-  };
-  third_eye: {
-    isStreaming: boolean;
-    isLoading: boolean;
-    error: string | null;
-    url: string | null;
-  };
+interface ViolationLogResponse {
+  success: boolean;
+  data: {
+    id: number;
+    user_id: number;
+    exam_id: number;
+    violation_name: string;
+    violation_timestamp: string;
+  }[];
+  count: number;
+  summary: { [key: string]: number };
 }
 
 const ParticipantDetailsPage: React.FC = () => {
-  // Video refs for streaming
-  const videoRefs = {
-    face_camera: useRef<HTMLVideoElement>(null),
-    screen_recording: useRef<HTMLVideoElement>(null),
-    third_eye: useRef<HTMLVideoElement>(null),
-  };
-
   // PDF generation handler
   const handleGeneratePDF = () => {
     if (!user || !examDetails) return;
@@ -119,65 +104,10 @@ const ParticipantDetailsPage: React.FC = () => {
     "overview" | "timeline" | "review"
   >("overview");
 
-  // Video streaming state
-  const [videoState, setVideoState] = useState<VideoState>({
-    face_camera: {
-      isStreaming: false,
-      isLoading: false,
-      error: null,
-      url: null,
-    },
-    screen_recording: {
-      isStreaming: false,
-      isLoading: false,
-      error: null,
-      url: null,
-    },
-    third_eye: {
-      isStreaming: false,
-      isLoading: false,
-      error: null,
-      url: null,
-    },
-  });
-
-  // Mock data for violations and timeline (you can replace with real API calls)
-  const [violations] = useState<ViolationEvent[]>([
-    {
-      id: "1",
-      type: "Multiple Persons Detected",
-      severity: "high",
-      description: "More than one person detected in the camera feed",
-      timestamp: "2024-01-15T10:30:00Z",
-      details: "Camera detected 2 people in the frame",
-    },
-    {
-      id: "2",
-      type: "Eye Movement Violation",
-      severity: "medium",
-      description: "Suspicious eye movement patterns detected",
-      timestamp: "2024-01-15T10:45:00Z",
-      details: "Eyes looking away from screen for extended period",
-    },
-    {
-      id: "3",
-      type: "Tab Switch",
-      severity: "high",
-      description: "Student switched to another browser tab",
-      timestamp: "2024-01-15T11:00:00Z",
-      details: "Switched away from exam for 30 seconds",
-    },
-  ]);
-
-  const [timelineEvents] = useState<TimelineEvent[]>([
-    { timestamp: "10:00", score: 100, violations: [] },
-    { timestamp: "10:15", score: 95, violations: [] },
-    { timestamp: "10:30", score: 85, violations: ["Multiple Persons"] },
-    { timestamp: "10:45", score: 80, violations: ["Eye Movement"] },
-    { timestamp: "11:00", score: 70, violations: ["Tab Switch"] },
-    { timestamp: "11:15", score: 75, violations: [] },
-    { timestamp: "11:30", score: 78, violations: [] },
-  ]);
+  // State for violations and timeline events (populated from API)
+  const [violations, setViolations] = useState<ViolationEvent[]>([]);
+  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
 
   axios.interceptors.request.use(
     (config) => {
@@ -205,6 +135,165 @@ const ParticipantDetailsPage: React.FC = () => {
     }
   };
 
+  const fetchLogs = async (examId: number) => {
+    try {
+      setLogsLoading(true);
+      const response = await axios.get<ViolationLogResponse>(
+        `${baseUrl}/getLogs`,
+        {
+          params: { examId, userId },
+        }
+      );
+
+      if (response.data.success) {
+        const logs = response.data.data;
+        console.log(logs);
+
+        // Transform logs to ViolationEvent format
+        const transformedViolations: ViolationEvent[] = logs.map(
+          (log, index: number) => ({
+            id: log.id.toString(),
+            type: log.violation_name,
+            severity: getSeverityFromViolation(log.violation_name),
+            description: getDescriptionFromViolation(log.violation_name),
+            timestamp: log.violation_timestamp,
+            details: `Violation detected at ${new Date(
+              log.violation_timestamp
+            ).toLocaleString()}`,
+          })
+        );
+
+        // Create timeline events by grouping violations by time intervals
+        const timelineEvents = createTimelineFromLogs(logs);
+
+        setViolations(transformedViolations);
+        setTimelineEvents(timelineEvents);
+      }
+    } catch (err) {
+      console.log("Error fetching logs in participant-details.tsx: ", err);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
+  // Helper function to determine severity based on violation type
+  const getSeverityFromViolation = (
+    violationType: string
+  ): "low" | "medium" | "high" => {
+    const highSeverityViolations = [
+      "Multiple Persons Detected",
+      "Tab Switch",
+      "Unauthorized Person",
+      3,
+    ];
+    const mediumSeverityViolations = [
+      "Eye Movement Violation",
+      "Head Position Violation",
+      "Sound Violation",
+      "Object Detected",
+    ];
+
+    if (
+      highSeverityViolations.some((v) =>
+        violationType.toLowerCase().includes(v.toString().toLowerCase())
+      )
+    ) {
+      return "high";
+    }
+    if (
+      mediumSeverityViolations.some((v) =>
+        violationType.toLowerCase().includes(v.toString().toLowerCase())
+      )
+    ) {
+      return "medium";
+    }
+    return "low";
+  };
+
+  // Helper function to get description based on violation type
+  const getDescriptionFromViolation = (violationType: string): string => {
+    const descriptions: { [key: string]: string } = {
+      "Multiple Persons Detected":
+        "More than one person detected in the camera feed",
+      "Eye Movement Violation": "Suspicious eye movement patterns detected",
+      "Tab Switch": "Student switched to another browser tab",
+      "Head Position Violation": "Improper head positioning detected",
+      "Sound Violation": "Unauthorized sound detected",
+      "Object Detected": "Unauthorized object detected in frame",
+      "Unauthorized Person": "Unauthorized person detected in the frame",
+      "Screen Sharing": "Screen sharing activity detected",
+    };
+
+    // Find matching description or return a generic one
+    const matchingKey = Object.keys(descriptions).find((key) =>
+      violationType.toLowerCase().includes(key.toLowerCase())
+    );
+
+    return matchingKey
+      ? descriptions[matchingKey]
+      : `${violationType} detected`;
+  };
+
+  // Helper function to create timeline events from logs
+  const createTimelineFromLogs = (
+    logs: ViolationLogResponse["data"]
+  ): TimelineEvent[] => {
+    if (logs.length === 0) return [];
+
+    // Sort logs by timestamp
+    const sortedLogs = logs.sort(
+      (a, b) =>
+        new Date(a.violation_timestamp).getTime() -
+        new Date(b.violation_timestamp).getTime()
+    );
+
+    const firstLog = new Date(sortedLogs[0].violation_timestamp);
+    const lastLog = new Date(
+      sortedLogs[sortedLogs.length - 1].violation_timestamp
+    );
+
+    // Create 15-minute intervals
+    const intervals: TimelineEvent[] = [];
+    const intervalMinutes = 15;
+    let currentTime = new Date(firstLog);
+    currentTime.setMinutes(
+      Math.floor(currentTime.getMinutes() / intervalMinutes) * intervalMinutes,
+      0,
+      0
+    );
+
+    let score = 100; // Start with perfect score
+
+    while (currentTime <= lastLog) {
+      const intervalEnd = new Date(
+        currentTime.getTime() + intervalMinutes * 60000
+      );
+
+      // Find violations in this interval
+      const intervalViolations = sortedLogs.filter((log) => {
+        const logTime = new Date(log.violation_timestamp);
+        return logTime >= currentTime && logTime < intervalEnd;
+      });
+
+      // Reduce score based on violations
+      const violationPenalty = intervalViolations.length * 5; // 5 points per violation
+      score = Math.max(0, score - violationPenalty);
+
+      intervals.push({
+        timestamp: currentTime.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        score,
+        violations: intervalViolations.map((log) => log.violation_name),
+      });
+
+      currentTime = intervalEnd;
+    }
+
+    return intervals;
+  };
+
   useEffect(() => {
     const fetchParticipantDetails = async () => {
       if (!examId || !userId) return;
@@ -230,6 +319,9 @@ const ParticipantDetailsPage: React.FC = () => {
             examId: examResponse.data.exam.id,
           });
           setScoreDetails(scoreData);
+
+          // Fetch violation logs
+          await fetchLogs(examResponse.data.exam.id);
         }
       } catch (error) {
         console.error("Error fetching participant details:", error);
@@ -246,16 +338,6 @@ const ParticipantDetailsPage: React.FC = () => {
 
     fetchParticipantDetails();
   }, [examId, userId, router]);
-
-  // Cleanup video streams on component unmount
-  useEffect(() => {
-    return () => {
-      // Stop all video streams when component unmounts
-      Object.keys(videoState).forEach((category) => {
-        stopVideoStream(category as keyof VideoState);
-      });
-    };
-  }, []);
 
   const getSeverityColor = (severity: "low" | "medium" | "high") => {
     switch (severity) {
@@ -327,115 +409,15 @@ const ParticipantDetailsPage: React.FC = () => {
     }
   };
 
-  const handleVideoStream = async (category: keyof VideoState) => {
-    if (!user || !examDetails) return;
-
-    // If already streaming, stop it
-    if (videoState[category].isStreaming) {
-      stopVideoStream(category);
-      return;
-    }
-
-    // Start streaming
-    setVideoState(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        isLoading: true,
-        error: null,
-      }
-    }));
-
-    try {
-      const token = getTokenFromCookie();
-      const streamUrl = `${baseUrl}/stream-video/${user.id}/${examDetails.id}/${category}`;
-
-      // Check if video exists first
-      const response = await fetch(streamUrl, {
-        method: "HEAD",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Video not available for streaming");
-      }
-
-      // Set video source for streaming
-      const videoElement = videoRefs[category].current;
-      if (videoElement) {
-        // For streaming, we'll use the direct URL with authorization
-        const streamUrlWithAuth = `${streamUrl}?token=${encodeURIComponent(token || '')}`;
-        videoElement.src = streamUrlWithAuth;
-        
-        videoElement.load();
-        
-        setVideoState(prev => ({
-          ...prev,
-          [category]: {
-            ...prev[category],
-            isStreaming: true,
-            isLoading: false,
-            url: streamUrlWithAuth,
-          }
-        }));
-      }
-    } catch (error) {
-      console.error("Error streaming video:", error);
-      setVideoState(prev => ({
-        ...prev,
-        [category]: {
-          ...prev[category],
-          isLoading: false,
-          error: error instanceof Error ? error.message : "Video streaming not available. Try downloading instead.",
-        }
-      }));
-    }
-  };
-
-  const stopVideoStream = (category: keyof VideoState) => {
-    const videoElement = videoRefs[category].current;
-    if (videoElement) {
-      videoElement.pause();
-      videoElement.src = "";
-      videoElement.load();
-    }
-
-    setVideoState(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        isStreaming: false,
-        isLoading: false,
-        url: null,
-        error: null,
-      }
-    }));
-  };
-
-  const VideoPlayer: React.FC<{ 
-    category: keyof VideoState; 
-    title: string; 
+  const VideoPlayer: React.FC<{
+    category: string;
+    title: string;
   }> = ({ category, title }) => {
-    const state = videoState[category];
-    
     return (
       <div className={styles.videoCard}>
         <div className={styles.videoHeader}>
           <span className={styles.videoTitle}>{title}</span>
           <div className={styles.videoControls}>
-            <button
-              className={`${styles.streamBtn} ${state.isStreaming ? styles.streaming : ''}`}
-              onClick={() => handleVideoStream(category)}
-              disabled={state.isLoading}
-              style={{
-                backgroundColor: state.isStreaming ? '#dc3545' : '#007bff',
-                marginRight: '8px'
-              }}
-            >
-              {state.isLoading ? 'Loading...' : state.isStreaming ? 'Stop Stream' : 'Stream'}
-            </button>
             <button
               className={styles.downloadBtn}
               onClick={() => handleVideoDownload(category)}
@@ -444,62 +426,11 @@ const ParticipantDetailsPage: React.FC = () => {
             </button>
           </div>
         </div>
-        
-        {state.error && (
-          <div className={styles.videoError} style={{ 
-            color: '#dc3545', 
-            fontSize: '14px', 
-            marginTop: '8px',
-            padding: '8px',
-            backgroundColor: '#f8d7da',
-            borderRadius: '4px',
-            border: '1px solid #f5c6cb'
-          }}>
-            {state.error}
-          </div>
-        )}
-        
-        {(state.isStreaming || state.isLoading) && (
-          <div className={styles.videoContainer} style={{ marginTop: '12px' }}>
-            <video
-              ref={videoRefs[category]}
-              controls
-              className={styles.videoPlayer}
-              style={{
-                width: '100%',
-                height: '300px',
-                backgroundColor: '#000',
-                borderRadius: '8px'
-              }}
-              onError={() => {
-                setVideoState(prev => ({
-                  ...prev,
-                  [category]: {
-                    ...prev[category],
-                    error: 'Failed to load video stream',
-                    isLoading: false,
-                  }
-                }));
-              }}
-              onLoadedData={() => {
-                setVideoState(prev => ({
-                  ...prev,
-                  [category]: {
-                    ...prev[category],
-                    isLoading: false,
-                  }
-                }));
-              }}
-            >
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        )}
       </div>
     );
   };
 
-  if (loading) {
+  if (loading || logsLoading) {
     return (
       <div className={styles.loadingContainer}>
         <LoadingIndicator />
@@ -650,22 +581,23 @@ const ParticipantDetailsPage: React.FC = () => {
                 <div className={styles.statItem}>
                   <span className={styles.statLabel}>Total Violations</span>
                   <span className={styles.statValue}>
-                    {scoreDetails.scoreBreakdown
-                      ? Object.entries(scoreDetails.scoreBreakdown).reduce(
-                          (sum, [key, val]) => {
-                            if (
-                              key !== "total_score" &&
-                              key !== "screen_sharing" &&
-                              key !== "safe_browser" &&
-                              typeof val === "number"
-                            ) {
-                              return sum + val;
-                            }
-                            return sum;
-                          },
-                          0
-                        )
-                      : 0}
+                    {violations.length ||
+                      (scoreDetails?.scoreBreakdown
+                        ? Object.entries(scoreDetails.scoreBreakdown).reduce(
+                            (sum, [key, val]) => {
+                              if (
+                                key !== "total_score" &&
+                                key !== "screen_sharing" &&
+                                key !== "safe_browser" &&
+                                typeof val === "number"
+                              ) {
+                                return sum + val;
+                              }
+                              return sum;
+                            },
+                            0
+                          )
+                        : 0)}
                   </span>
                 </div>
                 <div className={styles.statItem}>
@@ -911,80 +843,94 @@ const ParticipantDetailsPage: React.FC = () => {
               Performance Timeline
             </h3>
             <div className={styles.timeline}>
-              {timelineEvents.map((event, index) => {
-                // Convert "10:00" to a Date object for AM/PM formatting
-                let timeStr = event.timestamp;
-                let formattedTime = (() => {
-                  // Try to parse as HH:mm
-                  const [h, m] = timeStr.split(":");
-                  if (!isNaN(Number(h)) && !isNaN(Number(m))) {
-                    const d = new Date();
-                    d.setHours(Number(h));
-                    d.setMinutes(Number(m));
-                    d.setSeconds(0);
-                    return d.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    });
-                  }
-                  return timeStr;
-                })();
-                return (
-                  <div
-                    key={index}
-                    className={styles.timelineItem}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      marginBottom: 10,
-                    }}
-                  >
+              {timelineEvents.length > 0 ? (
+                timelineEvents.map((event, index) => {
+                  // Convert "10:00" to a Date object for AM/PM formatting
+                  let timeStr = event.timestamp;
+                  let formattedTime = (() => {
+                    // Try to parse as HH:mm
+                    const [h, m] = timeStr.split(":");
+                    if (!isNaN(Number(h)) && !isNaN(Number(m))) {
+                      const d = new Date();
+                      d.setHours(Number(h));
+                      d.setMinutes(Number(m));
+                      d.setSeconds(0);
+                      return d.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                      });
+                    }
+                    return timeStr;
+                  })();
+                  return (
                     <div
+                      key={index}
+                      className={styles.timelineItem}
                       style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: "50%",
-                        backgroundColor:
-                          event.violations.length > 0
-                            ? "var(--error-color)"
-                            : "var(--success-color)",
-                        marginRight: 12,
-                        flexShrink: 0,
-                      }}
-                      title={
-                        event.violations.length > 0
-                          ? `${event.violations.length} violation(s)`
-                          : "No violations"
-                      }
-                    ></div>
-                    <span
-                      style={{
-                        fontSize: 14,
-                        minWidth: 70,
-                        color: "var(--text-secondary)",
-                        marginRight: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        marginBottom: 10,
                       }}
                     >
-                      {formattedTime}
-                    </span>
-                    {event.violations.length > 0 && (
+                      <div
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          backgroundColor:
+                            event.violations.length > 0
+                              ? "var(--error-color)"
+                              : "var(--success-color)",
+                          marginRight: 12,
+                          flexShrink: 0,
+                        }}
+                        title={
+                          event.violations.length > 0
+                            ? `${event.violations.length} violation(s)`
+                            : "No violations"
+                        }
+                      ></div>
                       <span
                         style={{
-                          fontSize: 13,
-                          color: "var(--error-color)",
-                          background: "rgba(255,0,0,0.07)",
-                          borderRadius: 4,
-                          padding: "2px 8px",
-                          marginLeft: 4,
+                          fontSize: 14,
+                          minWidth: 70,
+                          color: "var(--text-secondary)",
+                          marginRight: 10,
                         }}
                       >
-                        {event.violations.join(", ")}
+                        {formattedTime}
                       </span>
-                    )}
-                  </div>
-                );
-              })}
+                      {event.violations.length > 0 && (
+                        <span
+                          style={{
+                            fontSize: 13,
+                            color: "var(--error-color)",
+                            background: "rgba(255,0,0,0.07)",
+                            borderRadius: 4,
+                            padding: "2px 8px",
+                            marginLeft: 4,
+                          }}
+                        >
+                          {event.violations.join(", ")}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })
+              ) : (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "40px",
+                    color: "var(--text-secondary)",
+                    fontStyle: "italic",
+                  }}
+                >
+                  No timeline data available. No violations recorded for this
+                  exam.
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1005,7 +951,10 @@ const ParticipantDetailsPage: React.FC = () => {
               <h4 className={styles.subsectionTitle}>Videos</h4>
               <div className={styles.videoGrid}>
                 <VideoPlayer category="face_camera" title="Face Camera" />
-                <VideoPlayer category="screen_recording" title="Screen Recording" />
+                <VideoPlayer
+                  category="screen_recording"
+                  title="Screen Recording"
+                />
                 <VideoPlayer category="third_eye" title="Third Eye" />
               </div>
             </div>
@@ -1014,29 +963,44 @@ const ParticipantDetailsPage: React.FC = () => {
             <div className={styles.violationsSection}>
               <h4 className={styles.subsectionTitle}>Violations</h4>
               <div className={styles.violationsList}>
-                {violations.map((violation) => (
-                  <div key={violation.id} className={styles.violationItem}>
-                    <div className={styles.violationHeader}>
-                      <span
-                        className={styles.violationSeverity}
-                        style={{
-                          backgroundColor: getSeverityColor(violation.severity),
-                        }}
-                      >
-                        {violation.severity.toUpperCase()}
-                      </span>
-                      <span className={styles.violationType}>
-                        {violation.type}
-                      </span>
-                      <span className={styles.violationTime}>
-                        {formatTimestamp(violation.timestamp)}
-                      </span>
+                {violations.length > 0 ? (
+                  violations.map((violation) => (
+                    <div key={violation.id} className={styles.violationItem}>
+                      <div className={styles.violationHeader}>
+                        <span
+                          className={styles.violationSeverity}
+                          style={{
+                            backgroundColor: getSeverityColor(
+                              violation.severity
+                            ),
+                          }}
+                        >
+                          {violation.severity.toUpperCase()}
+                        </span>
+                        <span className={styles.violationType}>
+                          {violation.type}
+                        </span>
+                        <span className={styles.violationTime}>
+                          {formatTimestamp(violation.timestamp)}
+                        </span>
+                      </div>
+                      <p className={styles.violationDescription}>
+                        {violation.description}
+                      </p>
                     </div>
-                    <p className={styles.violationDescription}>
-                      {violation.description}
-                    </p>
+                  ))
+                ) : (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "40px",
+                      color: "var(--text-secondary)",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    No violations recorded for this exam session.
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
