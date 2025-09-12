@@ -9,23 +9,29 @@ socket.on("connect", () => {
     console.log("Connected to backend server");
     console.log("Socket ID:", socket.id);
     
-    socket.emit("start-exam", {
-        user_id: 1,
-        exam_id: 1,
-        timestamp:new Date(),
-        status: "success",
-        message: "Exam Started successfully",
-      });
-
-      setTimeout(() => {
-        socket.emit("end-exam", {
-          user_id: 1,
-          exam_id: 1,
-          timestamp:new Date(),
-          status: "success",
-          message: "Exam Ended successfully",
+    for(var i=0;i<10;i++){
+        socket.emit("webDetectRes",{
+            "userId": 1,
+            "examId": 1,
+            "data": {"Mobile":1, "Person":0, "Laptop":0},
+            "code": 0,
+            "timestamp": Date.now()
         });
-      }, 2000);
+    }
+
+
+    console.log("webDetectRes event emitted successfully!");
+    
+    setTimeout(() => {
+        console.log("Requesting exam score from backend:");
+        socket.emit("submit", { userId: 1, examId: 1 });
+    }, 1000);
+});
+
+socket.on("exam_score", (response) => {
+    console.log("Received exam score from backend:");
+    console.log(response);
+    console.log(response.score.violationFrames);
 });
 
 socket.on("disconnect", () => {

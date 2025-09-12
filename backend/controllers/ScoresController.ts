@@ -77,6 +77,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
     }
 
     const calculatedScore = await calculateExamScore(flaggedScore);
+    console.log(calculatedScore);
 
     if (userId === null || userId === undefined) {
       return res.status(400).json({
@@ -116,45 +117,46 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
 
 
     const violationLogs = calculatedScore.violationFrames;
+    console.log(violationLogs.webDetectViolations);
 
     for (const log of violationLogs.faceAuthViolations) {
       await ViolationLog.create({
         user_id: userId,
         exam_id: examId,
-        violation_name: log.violationType,
-        violation_timestamp: log.detectedAt,
+        violation_name: log.frameData.violationType,
+        violation_timestamp: log.timestamp,
       })
     }
     for (const log of violationLogs.headPositionViolations) {
       await ViolationLog.create({
         user_id: userId,
         exam_id: examId,
-        violation_name: log.violationType,
-        violation_timestamp: log.detectedAt,
+        violation_name: log.frameData.violationType,
+        violation_timestamp: log.timestamp,
       })
     }
     for (const log of violationLogs.eyePositionViolations) {
       await ViolationLog.create({
         user_id: userId,
         exam_id: examId,
-        violation_name: log.violationType,
-        violation_timestamp: log.detectedAt,
+        violation_name: log.frameData.violationType,
+        violation_timestamp: log.timestamp,
       })
     }
     for (const log of violationLogs.webDetectViolations) {
       await ViolationLog.create({
         user_id: userId,
         exam_id: examId,
-        violation_name: log.violationType,
-        violation_timestamp: log.detectedAt,
+        violation_name: log.frameData.violationType,
+        violation_timestamp: log.timestamp,
       })
     }
     for (const log of violationLogs.personViolations) {
       await ViolationLog.create({
         user_id: userId,
         exam_id: examId,
-        violation_name: log.violationType,
-        violation_timestamp: log.detectedAt,
+        violation_name: log.frameData.violationType,
+        violation_timestamp: log.timestamp,
       })
     }
 

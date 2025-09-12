@@ -86,7 +86,6 @@ const FloatingCamera = ({
   const [borderColor, setBorderColor] = useState("white");
   const [prevSoundDetected, setPrevSoundDetected] = useState(false);
   
-  // Initial authentication state
   const initialAuthDoneRef = useRef(false);
   const [showInitialScan, setShowInitialScan] = useState(true);
 
@@ -94,7 +93,7 @@ const FloatingCamera = ({
   const unauthStartAtRef = useRef<number | null>(null);
   const unauthTriggeredRef = useRef(false);
 
-  const scanning = !initialAuthDoneRef.current; // Only scan when not authenticated
+  const scanning = !initialAuthDoneRef.current; 
 
   const { toast } = useToast();
 
@@ -235,27 +234,6 @@ const FloatingCamera = ({
       if (mediaRecorderRef.current) {
         mediaRecorderRef.current.stop();
       }
-      socket.emit("end-exam", {
-        user_id: userId,
-        exam_id: examId,
-        timestamp:new Date(),
-        status: "success",
-        message: "Exam Ended successfully",
-      });
-      socket.emit("end-exam", {
-        user_id: userId,
-        exam_id: examId,
-        category: "face_camera",
-        status: "success",
-        message: "Exam Ended successfully",
-      });
-      socket.emit("end-exam", {
-        user_id: userId,
-        exam_id: examId,
-        category: "screen_recording",
-        status: "success",
-        message: "Exam Ended successfully",
-      });
 
       if (screenRecorderMediaRecorderRef.current) {
         console.log("Stopped screenRecording...");

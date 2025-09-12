@@ -1,9 +1,10 @@
-import { useRef } from "react";
+import { useRef,useEffect } from "react";
 import socket from "@/components/socket";
 import { getExamId, getUserId } from "@/constants/AuthStore";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { getNumberOfMicrophones, getTabSwitchViolations } from "@/constants/violationConsts";
+import { time } from "console";
 
 
 const userId = getUserId() || "unknown";
@@ -12,6 +13,7 @@ const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const EndPage =  () => {
   const hasReloaded = useRef(false);
+  const hasSavedScore = useRef(false); 
 
   axios.interceptors.request.use(
     (config) => {
@@ -25,23 +27,6 @@ const EndPage =  () => {
     (error) => Promise.reject(error)
   );
 
-
-  socket.emit("end-exam",{
-    user_id: userId,
-    exam_id: examId,
-    category: "face_camera",
-    status: "success",
-    message: "Exam Ended successfully"
-  });
-  new Promise((resolve) => setTimeout(resolve, 2000));
-  socket.emit("end-exam",{
-      user_id: userId,
-      exam_id: examId,
-      category: "screen_recording",
-      status: "success",
-      message: "Exam Ended successfully"
-  });
-
   const postData = async (endpoint : string, data : any) => {
     
     const token = localStorage.getItem("token");
@@ -54,13 +39,47 @@ const EndPage =  () => {
     }
   };
 
-  postData("/saveScore", {
-    status: "completed",
-    userId: userId,
-    examId: examId,
-    numberOfMicrophones: getNumberOfMicrophones(),
-    tabSwitchViolations: getTabSwitchViolations(),
+useEffect(()=>{
+
+  socket.emit("end-exam",{
+    user_id: userId,
+    exam_id: examId,
+    timestamp:new Date(),
+    status: "success",
+    message: "Exam Ended successfully"
+  })
+  socket.emit("end-exam",{
+    user_id: userId,
+    exam_id: examId,
+    category: "face_camera",
+    status: "success",
+    message: "Exam Ended successfully"
   });
+
+  socket.emit("end-exam",{
+      user_id: userId,
+      exam_id: examId,
+      category: "screen_recording",
+      status: "success",
+      message: "Exam Ended successfully"
+  });
+
+  if (!hasSavedScore.current) {
+    hasSavedScore.current = true;
+    postData("/saveScore", {
+      status: "completed",
+      userId: userId,
+      examId: examId,
+      numberOfMicrophones: getNumberOfMicrophones(),
+      tabSwitchViolations: getTabSwitchViolations(),
+    });
+  }
+
+},[]);
+
+  
+
+
 
   return (
     <div style={{ textAlign: "center", paddingTop: "100px" }}>

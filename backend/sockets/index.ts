@@ -180,10 +180,8 @@ function processRawVideoData(videoBuffer: Buffer, originalData: any, examSetting
     const tempVideoPath = path.join('/tmp', `raw_video_${userId}_${Date.now()}.webm`);
     const tempJpgPath = path.join('/tmp', `raw_frame_${userId}_${Date.now()}.jpg`);
     
-    // Write raw data to temp file
     fs.writeFileSync(tempVideoPath, videoBuffer);
     
-    // Try to extract JPG with very aggressive settings
     const ffmpegCommand = ffmpeg(tempVideoPath)
       .inputOptions([
         '-f', 'webm',                 // Force webm format
@@ -229,7 +227,6 @@ function processRawVideoData(videoBuffer: Buffer, originalData: any, examSetting
           console.error('Error processing extracted JPG:', error);
         }
         
-        // Clean up temp video file
         if (fs.existsSync(tempVideoPath)) {
           fs.unlinkSync(tempVideoPath);
         }
@@ -825,16 +822,17 @@ function handleSuccessfulFrameExtraction(frameOutputPath: string, originalData: 
     socket.on("end-exam", async(data: any) => {
       try {
         const { user_id, exam_id, timestamp } = data;
+        console.log("endu da vendru",data);
         
-        if (user_id && exam_id) {
+        if (user_id && exam_id && timestamp) {
           const localTime = timestamp;
           const endTimeDate = new Date(localTime);
           const endTime = endTimeDate.toLocaleString();
           
           const attendRecord = await Attend.findOne({
             where: { 
-              user_id: user_id,
-              exam_id: exam_id
+              user_id: Number(user_id),
+              exam_id: Number(exam_id)
             }
           });
           

@@ -99,7 +99,7 @@ export const getExam = async (req: Request, res: Response) => {
       include: [
         {
           model: Attend,
-          attributes: ["user_id", "exam_id"],
+          attributes: ["user_id", "exam_id",],
           include: [
             {
               model: User,
@@ -194,7 +194,7 @@ export const getSingleExam = async (req: Request, res: Response) => {
       include: [
         {
           model: Attend,
-          attributes: ["user_id"],
+          attributes: ["user_id","startTime","endTime"],
           include: [
             {
               model: User,

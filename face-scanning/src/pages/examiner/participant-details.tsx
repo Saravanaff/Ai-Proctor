@@ -749,7 +749,7 @@ const ParticipantDetailsPage: React.FC = () => {
           }`}
           onClick={() => setActiveTab("overview")}
         >
-          Overview
+          Violations
         </button>
         <button
           className={`${styles.tab} ${
@@ -776,43 +776,8 @@ const ParticipantDetailsPage: React.FC = () => {
           <div className={styles.overviewTab}>
             {scoreDetails?.success ? (
               <>
-                <div className={styles.scoreOverview}>
-                  <div
-                    className={styles.scoreCircle}
-                    style={{ borderColor: getScoreColor(scoreDetails.data) }}
-                  >
-                    <span
-                      className={styles.scoreValue}
-                      style={{ color: getScoreColor(scoreDetails.data) }}
-                    >
-                      {scoreDetails.data}%
-                    </span>
-                    <span className={styles.scoreLabel}>
-                      {getScoreLabel(scoreDetails.data)}
-                    </span>
-                  </div>
-                </div>
-
                 {scoreDetails.scoreBreakdown && (
                   <div className={styles.scoreBreakdown}>
-                    <h3 className={styles.breakdownTitle}>
-                      Violations (
-                      {Object.entries(scoreDetails.scoreBreakdown).reduce(
-                        (sum, [key, val]) => {
-                          if (
-                            key !== "total_score" &&
-                            key !== "screen_sharing" &&
-                            key !== "safe_browser" &&
-                            typeof val === "number"
-                          ) {
-                            return sum + val;
-                          }
-                          return sum;
-                        },
-                        0
-                      )}
-                      )
-                    </h3>
                     <div className={styles.breakdownGrid}>
                       <div className={styles.breakdownItem}>
                         <span className={styles.breakdownLabel}>

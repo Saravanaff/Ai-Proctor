@@ -27,7 +27,6 @@ export function addScore(data: any) {
       objectFrames:0,
       zeroPersonFrames:0,
       morePersonFrames:0,
-      // Add violation frames tracking
       violationFrames: {
         faceAuthViolations: [],
         headPositionViolations: [],
@@ -113,23 +112,32 @@ export function addScore(data: any) {
   }
 
   if (data.object_detected && data.object_detected["cell phone"] === true) {
-    examData.objectDetectedFlagged += 1;
-    console.log("object flag");
-    
-    const dataTimestamp = new Date(data.timestamp);
-    examData.violationFrames.webDetectViolations.push({
-      timestamp: dataTimestamp.toLocaleString(),
-      frameData: {
-        ...data,
-        violationType: 'object_detection_violation',
-        detectedAt: dataTimestamp.toLocaleString(),
-        secondsBack: 0,
-        mobileDetected: true
-      }
-    });
+    examData.objectFrames+=1;
+    if(examData.objectFrames%10==0){
+      examData.objectDetectedFlagged+=1;
+      
+      const dataTimestamp = new Date(data.timestamp);
+      examData.violationFrames.webDetectViolations.push({
+        timestamp: dataTimestamp.toLocaleString(),
+        frameData: {
+          ...data,
+          violationType: 'object_detection_violation',
+          detectedAt: dataTimestamp.toLocaleString(),
+          secondsBack: 0,
+          mobileDetected: true
+        }
+      });
+      
+      console.log("object flag and violation stored");
+      examData.objectFrames=0;
+    }
+
+    console.log("User Map:,",user);
+    console.log(examData.violationFrames.webDetectViolations);
+
   }
   else if(data.object_detected && data?.object_detected["cell phone"]===false){
-    examData.objectDetectedFlagged=0;
+    examData.objectFrames=0;
   }
 
   if ( data?.auth_face == false) {
@@ -283,7 +291,7 @@ export const calculateExamScore = async (score: any) => {
     authFace: Math.floor(totalFrames / 30),        // Every 30 frames (3 seconds)
     noPerson: Math.floor(totalFrames / 20),        // Every 20 frames (2 seconds)
     multiplePerson: Math.floor(totalFrames / 20),  // Every 20 frames (2 seconds)
-    objectDetected: totalFrames,                   // Every frame
+    objectDetected: Math.floor(totalFrames / 5),   // Every 5 frames (matching your logic)
   };
 
   // Calculate violation rates based on maximum possible violations (NOT total frames)
@@ -298,8 +306,8 @@ export const calculateExamScore = async (score: any) => {
       ((headPositionFlagged || 0) / maxPossibleFlags.headPosition) * 100 : 0,
     eyesRate: maxPossibleFlags.eyes > 0 ? 
       ((eyesFlagged || 0) / maxPossibleFlags.eyes) * 100 : 0,
-    objectDetectedRate: totalFrames > 0 ? 
-      ((objectDetectedFlagged || 0) / totalFrames) * 100 : 0,
+    objectDetectedRate: maxPossibleFlags.objectDetected > 0 ? 
+      ((objectDetectedFlagged || 0) / maxPossibleFlags.objectDetected) * 100 : 0,
   };
 
   // Strict weights since students are pre-informed
