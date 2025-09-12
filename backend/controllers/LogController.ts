@@ -4,9 +4,9 @@ import { getUserIdFromToken } from '../utils/jwt';
 
 export const getExamLogs=async(req: Request, res: Response)=> {
     try {
-      const userId = Number(getUserIdFromToken(req));
-      const {examId} = req.query;
-      const examIdNum = Number(examId);
+      const {examId,userId} = req.query;
+      const examIdNum = examId;
+
       
       if (!userId || !examIdNum) {
         return res.status(401).json({
@@ -15,12 +15,12 @@ export const getExamLogs=async(req: Request, res: Response)=> {
         });
       }
       
-      if (isNaN(examIdNum)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid exam ID'
-        });
-      }
+    //   if (isNaN(examIdNum)) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: 'Invalid exam ID'
+    //     });
+    //   }
 
       const logs = await ViolationLog.findAll({
         where: { 
@@ -29,6 +29,8 @@ export const getExamLogs=async(req: Request, res: Response)=> {
         },
         order: [['violation_timestamp', 'ASC']] // Chronological order for exam
       });
+
+      console.log(logs);
 
       const summary: { [key: string]: number } = {};
       logs.forEach(log => {
