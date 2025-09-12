@@ -781,8 +781,8 @@
 
 .videoGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
 }
 
 .videoCard {
@@ -790,11 +790,8 @@
   border-radius: 8px;
   padding: 16px;
   border: 1px solid var(--border-color);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
   transition: all 0.2s ease;
+  flex-direction: column;
 }
 
 .videoCard:hover {
@@ -802,11 +799,54 @@
   box-shadow: 0 4px 12px var(--shadow);
 }
 
-.videoCard span {
+.videoCard.selectedVideo {
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+}
+
+.videoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.videoTitle {
   font-weight: 500;
   color: var(--text-primary);
   flex: 1;
   text-align: left;
+}
+
+.videoControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.selectBtn {
+  background: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.selectBtn:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.videoContainer {
+  width: 100%;
+  margin-top: 12px;
 }
 
 .downloadBtn {
