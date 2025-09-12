@@ -716,7 +716,7 @@ const ExamPage = ({
           onHeadDirection={handleHeadDirection}
           examSubmitted={examSubmitted}
           mediaRecorderRef={frontCameraMediaRecorderRef}
-          screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
+          screenRecorderMediaRecorderRef={(screenRecorderMediaRecorderRef)}
           onAuthPause={() => setPaused(true)}
           onAuthResume={() => setPaused(false)}
         />

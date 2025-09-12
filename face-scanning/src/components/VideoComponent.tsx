@@ -17,10 +17,11 @@ import { Device } from "mediasoup-client";
 import { useRouter } from "next/router";
 import socket from "./socket";
 import * as mediasoupClient from "mediasoup-client";
-import { getExamId, getUserId } from "@/constants/AuthStore";
+import { getExamId, getUserId, setExamId } from "@/constants/AuthStore";
 import LeftStepper from "./LeftStepper";
 import axios from "axios";
 import { useTheme } from "@/contexts/ThemeContext";
+import { setExamSettings } from "@/constants/examSettingsConsts";
 
 interface CircleMetadata {
   x: number;
@@ -61,7 +62,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
     "forward" | "right" | "left" | null
   >(null);
   const [isComplete, setIsComplete] = useState(false);
-  const [examSettings, setExamSettings] = useState<any>({});
+  // const [examSettings, setExamSettings] = useState<any>({});
   const [showTips, setShowTips] = useState(true);
   const [faceVisible, setFaceVisible] = useState<boolean>(false);
 
@@ -264,7 +265,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             " success :",
             data.success,
             " con: ",
-            data.head_position.toLowerCase() ===
+            data.head_position?.toString().toLowerCase() ===
               faceDirectionSequence.current[stage.current]
           );
 
@@ -277,12 +278,12 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           if (
             data.face_found &&
             data.success &&
-            data.head_position.toLowerCase() ===
+            data.head_position?.toString().toLowerCase() ===
               faceDirectionSequence.current[stage.current]
           ) {
             setStoredFaceDirection((prev) => [
               ...prev,
-              data.head_position.toLowerCase(),
+              data.head_position?.toString().toLowerCase(),
             ]);
             stage.current++;
             counter.current = 0;
@@ -849,6 +850,10 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                       },
                     }
                   );
+
+                  if (response.data) {
+                    setExamSettings(response.data);
+                  }
 
                   if (!response.data.third_eye_enabled) {
                     router.push("/fullscreen");
