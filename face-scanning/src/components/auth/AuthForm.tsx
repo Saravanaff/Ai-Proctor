@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import styles from "../../styles/AuthForm.module.css";
-import { setGlobalIdentity } from "@/constants/AuthStore";
+import { setExamId, setGlobalIdentity } from "@/constants/AuthStore";
 import { setGlobal } from "next/dist/trace";
 
 interface AuthFormProps {
@@ -40,7 +40,9 @@ const AuthForm = ({
     typeof userEmail === "string"
   ) {
     setGlobalIdentity(userName, userEmail, userId);
+
     localStorage.setItem("examId", examId || "unknown");
+    setExamId(examId || "unknown");
     router.push(redirect);
   }
 

@@ -4,7 +4,7 @@ import FloatingCamera from "./FloatingCamera";
 import socket from "./socket";
 import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
-import { getUserId } from "@/constants/AuthStore";
+import { getExamId, getUserId } from "@/constants/AuthStore";
 import axios from 'axios';
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { timeStamp } from "console";
@@ -16,7 +16,7 @@ const questions = Array.from({ length: 10 }, (_, i) => ({
   options: ["Option A", "Option B", "Option C", "Option D"],
 }));
 
-const examId = localStorage?.getItem("examId") || "unknown";
+const examId = getExamId();
 
 
 const baseUrl =
@@ -92,7 +92,7 @@ const ExamPage = ({
       }
     }
 
-    const examId = localStorage?.getItem("examId");
+    const examId = getExamId();
     fetchExamSettings({userId: Number(userId), examId: Number(examId)});
   }, []);
 

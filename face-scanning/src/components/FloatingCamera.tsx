@@ -9,15 +9,12 @@ import styles from "../styles/FloatingCamera.module.css";
 import { useToast } from "@/hooks/use-toast";
 import * as mediasoupClient from "mediasoup-client";
 import useSoundLevel from "@/hooks/useSoundLevel";
-import { getUserId } from "../constants/AuthStore";
+import { getExamId, getUserId } from "../constants/AuthStore";
 import { delay } from "@/utils/delay";
 import axios from 'axios'
 
 const userId = getUserId() || "unknown";
-let examId;
-if(localStorage)
-examId = localStorage?.getItem("examId");
-else examId = "unknown";
+let examId = getExamId();
 
 interface VideoChunkData {
   user_id: string;

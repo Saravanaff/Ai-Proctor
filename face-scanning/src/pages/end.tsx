@@ -1,13 +1,13 @@
 import { useRef } from "react";
 import socket from "@/components/socket";
-import { getUserId } from "@/constants/AuthStore";
+import { getExamId, getUserId } from "@/constants/AuthStore";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { getNumberOfMicrophones, getTabSwitchViolations } from "@/constants/violationConsts";
 
 
 const userId = getUserId() || "unknown";
-const examId = localStorage?.getItem("examId") || "unknown";
+const examId = getExamId();
 const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const EndPage =  () => {
