@@ -879,14 +879,14 @@ function handleSuccessfulFrameExtraction(frameOutputPath: string, originalData: 
       }
 
       if (!verified) {
-        emitToModel("face_service", "faceAuth", data);
+        emitToModel("auth_service", "faceAuth", data);
         authCounter.set(uidKey, 0);
         return;
       }
 
       const count = (authCounter.get(uidKey) ?? 0) + 1;
       if (count % 50 === 0) {
-        emitToModel("face_service", "faceAuth", data);
+        emitToModel("auth_service", "faceAuth", data);
         authCounter.set(uidKey, 0);
       } else {
         authCounter.set(uidKey, count);
@@ -902,6 +902,7 @@ function handleSuccessfulFrameExtraction(frameOutputPath: string, originalData: 
             success: false,
             message: "No score data found",
           };
+
           emitToUserById(userId, "exam_score", failPayload);
           if (typeof cb === "function") cb(failPayload);
           return;
@@ -925,7 +926,7 @@ function handleSuccessfulFrameExtraction(frameOutputPath: string, originalData: 
 
     socket.on("frame", (data: any) => {
       // console.log("framing");
-      emitToModel("face_service", "process-frame", data);
+      emitToModel("store_service", "process-frame", data);
     });
 
     socket.on("register-third-eye-setup", (data: any) => {
