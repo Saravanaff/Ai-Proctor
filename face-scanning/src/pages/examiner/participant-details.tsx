@@ -6,6 +6,16 @@ import LoadingIndicator from "../../components/LoadingIndicator";
 import styles from "../../styles/ParticipantDetailsPage.module.css";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 
+// PDF Constants
+const PDF_CONSTANTS = {
+  SUPER_PROCTOR_FEED: 0,
+  RESTRICTED_OBJECT: 0,
+  DATA_CAPTURE_INTERVAL: 5,
+  PAUSE_EXAM_REQUEST: 0,
+  INDIVIDUAL_TEST_TAKER_SETTINGS: 0,
+  AUTO_TEST_ABORT: 0,
+};
+
 interface User {
   id: number;
   name: string;
@@ -88,7 +98,16 @@ const ParticipantDetailsPage: React.FC = () => {
       score: scoreDetails?.success
         ? {
             value: scoreDetails.data,
-            breakdown: scoreDetails.scoreBreakdown,
+            breakdown: {
+              ...scoreDetails.scoreBreakdown,
+              super_proctor_feed: PDF_CONSTANTS.SUPER_PROCTOR_FEED,
+              restricted_object: PDF_CONSTANTS.RESTRICTED_OBJECT,
+              data_capture_interval: PDF_CONSTANTS.DATA_CAPTURE_INTERVAL,
+              pause_exam_request: PDF_CONSTANTS.PAUSE_EXAM_REQUEST,
+              individual_test_taker_settings:
+                PDF_CONSTANTS.INDIVIDUAL_TEST_TAKER_SETTINGS,
+              auto_test_abort: PDF_CONSTANTS.AUTO_TEST_ABORT,
+            },
           }
         : undefined,
     });
@@ -306,51 +325,29 @@ const ParticipantDetailsPage: React.FC = () => {
         new Date(b.violation_timestamp).getTime()
     );
 
-    const firstLog = new Date(sortedLogs[0].violation_timestamp);
-    const lastLog = new Date(
-      sortedLogs[sortedLogs.length - 1].violation_timestamp
-    );
+    // Create timeline events with exact timestamps
+    const timelineEvents: TimelineEvent[] = [];
+    let currentScore = 100; // Start with perfect score
 
-    // Create 15-minute intervals
-    const intervals: TimelineEvent[] = [];
-    const intervalMinutes = 15;
-    let currentTime = new Date(firstLog);
-    currentTime.setMinutes(
-      Math.floor(currentTime.getMinutes() / intervalMinutes) * intervalMinutes,
-      0,
-      0
-    );
+    // Create an event for each violation with exact timestamp
+    sortedLogs.forEach((log) => {
+      const violationTime = new Date(log.violation_timestamp);
 
-    let score = 100; // Start with perfect score
+      // Reduce score for this violation
+      currentScore = Math.max(0, currentScore - 5); // 5 points per violation
 
-    while (currentTime <= lastLog) {
-      const intervalEnd = new Date(
-        currentTime.getTime() + intervalMinutes * 60000
-      );
-
-      // Find violations in this interval
-      const intervalViolations = sortedLogs.filter((log) => {
-        const logTime = new Date(log.violation_timestamp);
-        return logTime >= currentTime && logTime < intervalEnd;
-      });
-
-      // Reduce score based on violations
-      const violationPenalty = intervalViolations.length * 5; // 5 points per violation
-      score = Math.max(0, score - violationPenalty);
-
-      intervals.push({
-        timestamp: currentTime.toLocaleTimeString("en-US", {
+      timelineEvents.push({
+        timestamp: violationTime.toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit",
+          second: "2-digit",
         }),
-        score,
-        violations: intervalViolations.map((log) => log.violation_name),
+        score: currentScore,
+        violations: [log.violation_name],
       });
+    });
 
-      currentTime = intervalEnd;
-    }
-
-    return intervals;
+    return timelineEvents;
   };
 
   useEffect(() => {
@@ -951,7 +948,7 @@ const ParticipantDetailsPage: React.FC = () => {
           }`}
           onClick={() => setActiveTab("timeline")}
         >
-          Timeline
+          Exam Activity
         </button>
         <button
           className={`${styles.tab} ${
@@ -1081,6 +1078,62 @@ const ParticipantDetailsPage: React.FC = () => {
                           {scoreDetails.scoreBreakdown.blank_feed}
                         </span>
                       </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Super Proctor Feed
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {PDF_CONSTANTS.SUPER_PROCTOR_FEED}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Restricted Object
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {PDF_CONSTANTS.RESTRICTED_OBJECT}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Data Capture Interval
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {PDF_CONSTANTS.DATA_CAPTURE_INTERVAL}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Pause Exam Request
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {PDF_CONSTANTS.PAUSE_EXAM_REQUEST}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Individual Test Taker Settings
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {PDF_CONSTANTS.INDIVIDUAL_TEST_TAKER_SETTINGS}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Blank Feed Incidents
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {scoreDetails.scoreBreakdown.blank_feed}
+                        </span>
+                      </div>
+                      <div className={styles.breakdownItem}>
+                        <span className={styles.breakdownLabel}>
+                          Auto Test Abort
+                        </span>
+                        <span className={styles.breakdownValue}>
+                          {PDF_CONSTANTS.AUTO_TEST_ABORT}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1102,7 +1155,7 @@ const ParticipantDetailsPage: React.FC = () => {
         {activeTab === "timeline" && (
           <div className={styles.timelineTab}>
             <h3 className={styles.sectionTitle} style={{ marginBottom: 8 }}>
-              Performance Timeline
+              Exam Activity Timeline
             </h3>
             <p
               style={{
@@ -1118,24 +1171,9 @@ const ParticipantDetailsPage: React.FC = () => {
             <div className={styles.timeline}>
               {timelineEvents.length > 0 ? (
                 timelineEvents.map((event, index) => {
-                  // Convert "10:00" to a Date object for AM/PM formatting
-                  let timeStr = event.timestamp;
-                  let formattedTime = (() => {
-                    // Try to parse as HH:mm
-                    const [h, m] = timeStr.split(":");
-                    if (!isNaN(Number(h)) && !isNaN(Number(m))) {
-                      const d = new Date();
-                      d.setHours(Number(h));
-                      d.setMinutes(Number(m));
-                      d.setSeconds(0);
-                      return d.toLocaleTimeString([], {
-                        // hour: "2-digit",
-                        // minute: "2-digit",
-                        hour12: true,
-                      });
-                    }
-                    return timeStr;
-                  })();
+                  // Display the timestamp with seconds precision
+                  let formattedTime = event.timestamp;
+
                   return (
                     <div
                       key={index}
@@ -1167,7 +1205,7 @@ const ParticipantDetailsPage: React.FC = () => {
                       <span
                         style={{
                           fontSize: 14,
-                          minWidth: 70,
+                          minWidth: 90,
                           color: "var(--text-secondary)",
                           marginRight: 10,
                         }}
@@ -1187,24 +1225,20 @@ const ParticipantDetailsPage: React.FC = () => {
                             transition: "background-color 0.2s ease",
                           }}
                           onClick={() => {
-                            // Find the first violation in this time interval to get exact timestamp
-                            const firstViolation = violations.find((v) => {
+                            // Find the exact violation that matches this timeline event
+                            const matchingViolation = violations.find((v) => {
                               const violationTime = new Date(v.timestamp);
-                              const eventTime = new Date();
-                              const [h, m] = event.timestamp.split(":");
-                              eventTime.setHours(Number(h));
-                              eventTime.setMinutes(Number(m));
-                              eventTime.setSeconds(0);
-
-                              // Check if violation is within 15 minutes of this timeline event
-                              const timeDiff = Math.abs(
-                                violationTime.getTime() - eventTime.getTime()
-                              );
-                              return timeDiff <= 15 * 60 * 1000; // 15 minutes in milliseconds
+                              const violationTimeStr =
+                                violationTime.toLocaleTimeString("en-US", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  second: "2-digit",
+                                });
+                              return violationTimeStr === event.timestamp;
                             });
 
-                            if (firstViolation) {
-                              seekToTimestamp(firstViolation.timestamp);
+                            if (matchingViolation) {
+                              seekToTimestamp(matchingViolation.timestamp);
                             }
                           }}
                           onMouseEnter={(e) => {
@@ -1376,7 +1410,9 @@ const ParticipantDetailsPage: React.FC = () => {
                             }}
                           >
                             (+
-                            {getRelativeTimeFromExamStart(violation.timestamp)}{" "}
+                            {getRelativeTimeFromExamStart(
+                              violation.timestamp
+                            )}{" "}
                             from start)
                           </small>
                         </span>
