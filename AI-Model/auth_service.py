@@ -3,9 +3,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import socketio
 import time
 import urllib3
-from threading import Thread
 
-from functionality.face_auth import face_auth,handle_face_auth
+from functionality.face_auth import face_auth
 
 # Suppress SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -22,29 +21,28 @@ sio = socketio.Client(
 
 @sio.event
 def connect():
-    print("[Face service] Connected to the server")
-    sio.emit("register-python", {"service": "face_service"})
+    print("[Auth service] Connected to the server")
+    sio.emit("register-python", {"service": "auth_service"})
 
 
 face_auth(sio)
-Thread(target=handle_face_auth, args=(sio,), daemon=True).start()
 
 
 @sio.event
 def disconnect():
-    print("[Face service] Disconnected from the server")
+    print("[Auth service] Disconnected from the server")
 
 while not sio.connected:
     try:
-        print("[Face service] Trying to connect...")
+        print("[Auth service] Trying to connect...")
         sio.connect("https://localhost:3001/", transports=['websocket'])
     except Exception as e:
-        print(f"[Face service] Connection error: {e}")
+        print(f"[Auth service] Connection error: {e}")
         time.sleep(2)
     
 try:
     while True:
         time.sleep(1)
 except KeyboardInterrupt:
-    print("[Face service] disconnecting...")
+    print("[Auth service] disconnecting...")
     sio.disconnect()

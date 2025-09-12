@@ -5,8 +5,6 @@ import socketio
 import time
 import urllib3
 from functionality.eye_position import eye_functionality,handle_eye_position, cleanup_eye_functionality
-from core import constants
-from threading import Thread
 
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -32,8 +30,6 @@ def disconnect():
 
 eye_functionality(sio)
 
-Thread(target=handle_eye_position, args=(sio,), daemon=True).start()
-
 while not sio.connected:
     try:
         print("[Eye service] Trying to connect...")
@@ -47,6 +43,5 @@ try:
         time.sleep(1)
 except KeyboardInterrupt:
     print("[Eye service] disconnecting...")
-    constants.eyes_queue.put(None)  
     cleanup_eye_functionality()
     sio.disconnect()

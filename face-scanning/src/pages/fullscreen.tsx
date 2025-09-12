@@ -7,10 +7,13 @@ import socket from "@/components/socket";
 import { useTheme } from "@/contexts/ThemeContext";
 import useMicrophoneDevices from '@/hooks/useMicrophoneDevices';
 import axios from 'axios';
+import { getExamSettings } from '@/constants/examSettingsConsts';
+import { setNumberOfMicrophones } from '@/constants/violationConsts';
 
 
 const userId = getUserId() || "unknown";
 const examId = getExamId();
+const examSettings = getExamSettings();
 console.log("User ID:", userId);
 
 
@@ -20,14 +23,15 @@ const fullscreen = () => {
     const { theme } = useTheme();
     const { getMicrophoneCount } = useMicrophoneDevices();
 
-
-    const uploadNumberOfMicrophones = async () => {
-        await axios.post("",{
-            user_id: userId,
-            exam_id: examId,
-            microphone_count: getMicrophoneCount(),
+    useEffect(() => {
+        const getCount = async() => {
+            let cnt = await getMicrophoneCount();
+            return cnt;
+        }
+        getCount().then(cnt => {
+            setNumberOfMicrophones(cnt);
         });
-    }
+    },[])
 
     // const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
     const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
@@ -203,7 +207,10 @@ const fullscreen = () => {
                             className={`${styles.proceedButton} button-theme`}
                             disabled={!rulesAccepted}
                             onClick={async () => {
-                                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                                let screenStream = null;
+                                if(examSettings.screen_sharing_enabled){
+                                    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                                }
                                 startScreenRecording(screenStream)
                             }}
                         >

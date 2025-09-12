@@ -1,22 +1,9 @@
 import json
-import numpy as np
-import cv2
-import face_recognition
 import os
 
 data_path = "storage/face_data.json"
 
-def store_data(image, face_locations, angle, userId):
-    print("Face count:", len(face_locations))
-    print("Stage no:", angle)
-
-    if len(face_locations) != 1:
-        print("Expect exactly 1 face, found", len(face_locations))
-        return False
-
-    encodings = face_recognition.face_encodings(image, face_locations)
-    encoding = encodings[0].tolist()
-
+def store_data(encoding, angle, userId):
     # Load existing data
     if os.path.exists(data_path):
         with open(data_path, "r") as f:
