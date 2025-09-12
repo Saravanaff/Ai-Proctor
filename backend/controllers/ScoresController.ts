@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { calculateExamScore, getExamScore } from "../utils/calculate";
 import Scores from "../models/Scores";
+import { ViolationLog } from "../models/ViolationLog";
 import { getUserIdFromToken } from "../utils/jwt";
 
 export const getScoreInPercent = async (req: Request, res: Response) => {
@@ -112,7 +113,50 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
     } else {
       await existingScore.update(scoreData);
     }
-    
+
+
+    const violationLogs = calculatedScore.violationFrames;
+
+    for (const log of violationLogs.faceAuthViolations) {
+      await ViolationLog.create({
+        user_id: userId,
+        exam_id: examId,
+        violation_name: log.violationType,
+        violation_timestamp: log.detectedAt,
+      })
+    }
+    for (const log of violationLogs.headPositionViolations) {
+      await ViolationLog.create({
+        user_id: userId,
+        exam_id: examId,
+        violation_name: log.violationType,
+        violation_timestamp: log.detectedAt,
+      })
+    }
+    for (const log of violationLogs.eyePositionViolations) {
+      await ViolationLog.create({
+        user_id: userId,
+        exam_id: examId,
+        violation_name: log.violationType,
+        violation_timestamp: log.detectedAt,
+      })
+    }
+    for (const log of violationLogs.webDetectViolations) {
+      await ViolationLog.create({
+        user_id: userId,
+        exam_id: examId,
+        violation_name: log.violationType,
+        violation_timestamp: log.detectedAt,
+      })
+    }
+    for (const log of violationLogs.personViolations) {
+      await ViolationLog.create({
+        user_id: userId,
+        exam_id: examId,
+        violation_name: log.violationType,
+        violation_timestamp: log.detectedAt,
+      })
+    }
 
     res.status(200).json({
       success: true,
@@ -211,7 +255,6 @@ export const setMicrophoneCount = async (req: Request, res: Response) => {
     });
   }
 };
-
 export const updateTabSwitch = async (req: Request, res: Response) => {
   const { userId, examId, tabSwitchCount } = req.body;
 
