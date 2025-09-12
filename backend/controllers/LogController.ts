@@ -5,16 +5,17 @@ import { getUserIdFromToken } from '../utils/jwt';
 export const getExamLogs=async(req: Request, res: Response)=> {
     try {
       const userId = Number(getUserIdFromToken(req));
-      const {examId}:any=Number(req.query);
+      const {examId} = req.query;
+      const examIdNum = Number(examId);
       
-      if (!userId || !examId) {
+      if (!userId || !examIdNum) {
         return res.status(401).json({
           success: false,
           message: 'User not authenticated'
         });
       }
       
-      if (isNaN(examId)) {
+      if (isNaN(examIdNum)) {
         return res.status(400).json({
           success: false,
           message: 'Invalid exam ID'
@@ -24,7 +25,7 @@ export const getExamLogs=async(req: Request, res: Response)=> {
       const logs = await ViolationLog.findAll({
         where: { 
           user_id: userId,
-          exam_id: examId
+          exam_id: examIdNum
         },
         order: [['violation_timestamp', 'ASC']] // Chronological order for exam
       });

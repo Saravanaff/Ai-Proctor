@@ -38,6 +38,7 @@ async function startServer() {
     res.download(caPath, "rootCA.pem");
   });
 
+
   app.use("/", authRoutes);
   // app.use(authMiddleware);
 

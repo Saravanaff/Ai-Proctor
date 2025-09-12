@@ -12,9 +12,11 @@ import useSoundLevel from "@/hooks/useSoundLevel";
 import { getExamId, getUserId } from "../constants/AuthStore";
 import { delay } from "@/utils/delay";
 import axios from 'axios'
+import { getExamSettings } from "@/constants/examSettingsConsts";
 
 const userId = getUserId() || "unknown";
 let examId = getExamId();
+const examSettings = getExamSettings();
 
 interface VideoChunkData {
   user_id: string;
