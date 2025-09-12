@@ -43,7 +43,7 @@ const CreateExam = () => {
   const handleAiProctoringToggle = () => {
     const newAiProctoringState = !aiPoweredProctoring;
     setAiPoweredProctoring(newAiProctoringState);
-    
+
     // When AI proctoring is turned off, turn off all AI-related features
     if (!newAiProctoringState) {
       setThirdEye(false);
@@ -65,7 +65,7 @@ const CreateExam = () => {
   const handleNormalProctoringToggle = () => {
     const newNormalProctoringState = !normalProctoring;
     setNormalProctoring(newNormalProctoringState);
-    
+
     // When normal proctoring is turned off, turn off basic monitoring features
     if (!newNormalProctoringState) {
       setVideoRecording(false);
@@ -87,7 +87,7 @@ const CreateExam = () => {
   const handleManualProctoringToggle = () => {
     const newManualProctoringState = !recordedManualProctoring;
     setRecordedManualProctoring(newManualProctoringState);
-    
+
     // When manual proctoring is turned off, turn off recording features
     if (!newManualProctoringState) {
       setVideoRecording(false);
@@ -230,9 +230,9 @@ const CreateExam = () => {
     >
       <span
         className="theme-transition"
-        style={{ 
-          color: disabled ? "var(--text-secondary)" : "var(--text-primary)", 
-          fontSize: 14, 
+        style={{
+          color: disabled ? "var(--text-secondary)" : "var(--text-primary)",
+          fontSize: 14,
           fontWeight: 600 
         }}
       >
