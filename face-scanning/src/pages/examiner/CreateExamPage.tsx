@@ -233,7 +233,7 @@ const CreateExam = () => {
         style={{
           color: disabled ? "var(--text-secondary)" : "var(--text-primary)",
           fontSize: 14,
-          fontWeight: 600 
+          fontWeight: 600,
         }}
       >
         {label}
@@ -435,262 +435,359 @@ const CreateExam = () => {
       <ExamStats stats={stats} />
 
       {showCreateForm && (
-        <div className={`${styles.glassPanel} theme-transition`}>
-          <div style={{ marginBottom: "20px" }}>
-            <h3
-              className="theme-transition"
-              style={{
-                color: "var(--text-primary)",
-                marginBottom: "8px",
-                fontSize: "18px",
-                fontWeight: 600,
-                transition: "color 0.3s ease",
-              }}
-            >
-              Create New Exam
-            </h3>
-            <p
-              className="theme-transition"
-              style={{
-                color: "var(--text-secondary)",
-                fontSize: "14px",
-                margin: 0,
-                transition: "color 0.3s ease",
-              }}
-            >
-              Enter a name for your new exam
-            </p>
-          </div>
-
-          <div style={{ marginBottom: "20px" }}>
-            <label
-              className="theme-transition"
-              style={{
-                display: "block",
-                marginBottom: "8px",
-                color: "var(--text-secondary)",
-                fontWeight: 500,
-                fontSize: "14px",
-                transition: "color 0.3s ease",
-              }}
-            >
-              Exam Name
-            </label>
-            <input
-              type="text"
-              value={examName}
-              onChange={(e) => setExamName(e.target.value)}
-              placeholder="Enter exam name"
-              className="input-theme theme-transition"
-              style={{
-                width: "100%",
-                padding: "12px 14px",
-                borderRadius: "10px",
-                fontSize: "15px",
-                outline: "none",
-              }}
-            />
-          </div>
-
-          {/* Proctoring Features */}
-          <div style={{ marginBottom: 16 }}>
-            <h4
-              className="theme-transition"
-              style={{
-                margin: "0 0 8px",
-                color: "var(--text-primary)",
-                fontSize: 14,
-                fontWeight: 700,
-              }}
-            >
-              Proctoring Features
-            </h4>
-            <p
-              className="theme-transition"
-              style={{
-                margin: "0 0 12px",
-                color: "var(--text-secondary)",
-                fontSize: 12,
-              }}
-            >
-              Choose which monitoring features to enable for this exam.
-            </p>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-                gap: 12,
-              }}
-            >
-              <Toggle
-                label="Third Eye"
-                enabled={thirdEye}
-                onToggle={() => setThirdEye((v) => !v)}
-                disabled={!aiPoweredProctoring}
-              />
-              <Toggle
-                label="Multiple Person Detection"
-                enabled={multiPerson}
-                onToggle={() => setMultiPerson((v) => !v)}
-                disabled={!aiPoweredProctoring}
-              />
-              <Toggle
-                label="EyeBall Detection"
-                enabled={eyeBall}
-                onToggle={() => setEyeBall((v) => !v)}
-                disabled={!aiPoweredProctoring}
-              />
-              <Toggle
-                label="Object Detection"
-                enabled={objectDetect}
-                onToggle={() => setObjectDetect((v) => !v)}
-                disabled={!aiPoweredProctoring}
-              />
-              <Toggle
-                label="Head Direction"
-                enabled={headDirection}
-                onToggle={() => setHeadDirection((v) => !v)}
-                disabled={!aiPoweredProctoring}
-              />
-              <Toggle
-                label="Flag Notifications"
-                enabled={flagNotifications}
-                onToggle={() => setFlagNotifications((v) => !v)}
-                disabled={!recordedManualProctoring}
-              />
-              <Toggle
-                label="Video Recording"
-                enabled={videoRecording}
-                onToggle={() => setVideoRecording((v) => !v)}
-                disabled={!normalProctoring && !recordedManualProctoring}
-              />
-              <Toggle
-                label="Tab Switch Detection"
-                enabled={tabSwitchDetection}
-                onToggle={() => setTabSwitchDetection((v) => !v)}
-                disabled={!normalProctoring}
-              />
-              <Toggle
-                label="Microphone Detection"
-                enabled={microphoneDetection}
-                onToggle={() => setMicrophoneDetection((v) => !v)}
-                disabled={!normalProctoring}
-              />
-              <Toggle
-                label="Safe Browser"
-                enabled={safeBrowser}
-                onToggle={() => setSafeBrowser((v) => !v)}
-                disabled={!normalProctoring}
-              />
-              <Toggle
-                label="Proctor Feed to Test Taker"
-                enabled={proctorFeedToTestTaker}
-                onToggle={() => setProctorFeedToTestTaker((v) => !v)}
-                disabled={!recordedManualProctoring}
-              />
-              <Toggle
-                label="Screen Sharing"
-                enabled={screenSharing}
-                onToggle={() => setScreenSharing((v) => !v)}
-                disabled={!normalProctoring}
-              />
-              <Toggle
-                label="Screen Count Detection"
-                enabled={screenCountDetection}
-                onToggle={() => setScreenCountDetection((v) => !v)}
-              />
-              <Toggle
-                label="Control Desktop Apps"
-                enabled={controlDesktopApps}
-                onToggle={() => setControlDesktopApps((v) => !v)}
-              />
-            </div>
-          </div>
-
-          {/* Proctoring Modes */}
-          <div style={{ marginBottom: 16 }}>
-            <h4
-              className="theme-transition"
-              style={{
-                margin: "0 0 8px",
-                color: "var(--text-primary)",
-                fontSize: 14,
-                fontWeight: 700,
-              }}
-            >
-              Proctoring Modes
-            </h4>
-            <p
-              className="theme-transition"
-              style={{
-                margin: "0 0 12px",
-                color: "var(--text-secondary)",
-                fontSize: 12,
-              }}
-            >
-              Select the type of proctoring for this exam.
-            </p>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-                gap: 12,
-              }}
-            >
-              <Toggle
-                label="Normal Proctoring"
-                enabled={normalProctoring}
-                onToggle={handleNormalProctoringToggle}
-              />
-              <Toggle
-                label="AI Powered Proctoring"
-                enabled={aiPoweredProctoring}
-                onToggle={handleAiProctoringToggle}
-              />
-              <Toggle
-                label="Recorded Manual Proctoring"
-                enabled={recordedManualProctoring}
-                onToggle={handleManualProctoringToggle}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: "12px" }}>
-            <button
-              onClick={handleCreateExam}
-              disabled={isCreating || !examName.trim()}
-              className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
-              style={{
-                flex: 1,
-                padding: "12px 18px",
-                borderRadius: "10px",
-                fontSize: "15px",
-                fontWeight: 600,
-                opacity: isCreating || !examName.trim() ? 0.6 : 1,
-                cursor:
-                  isCreating || !examName.trim() ? "not-allowed" : "pointer",
-              }}
-            >
-              {isCreating ? "Creating..." : "Create Exam"}
-            </button>
-            <button
-              onClick={() => {
+        <>
+          {/* Modal Backdrop */}
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.6)",
+              backdropFilter: "blur(8px)",
+              zIndex: 1000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              animation: "fadeIn 0.3s ease",
+            }}
+            className="theme-transition"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
                 setShowCreateForm(false);
                 setExamName("");
-              }}
-              className={`${styles.btn} ${styles.btnGhost} theme-transition`}
+              }
+            }}
+          >
+            {/* Modal Content */}
+            <div
+              className={`${styles.glassPanel} theme-transition`}
               style={{
-                padding: "12px 18px",
-                borderRadius: "10px",
-                fontSize: "15px",
-                fontWeight: 500,
-                cursor: "pointer",
+                maxWidth: "900px",
+                width: "90vw",
+                maxHeight: "90vh",
+                overflowY: "auto",
+                position: "relative",
+                animation: "slideIn 0.3s ease",
+                margin: "20px",
               }}
+              onClick={(e) => e.stopPropagation()}
             >
-              Cancel
-            </button>
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setShowCreateForm(false);
+                  setExamName("");
+                }}
+                style={{
+                  position: "absolute",
+                  top: "16px",
+                  right: "16px",
+                  background: "var(--secondary-bg)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "8px",
+                  width: "32px",
+                  height: "32px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "var(--text-secondary)",
+                  fontSize: "18px",
+                  fontWeight: "bold",
+                  zIndex: 10,
+                }}
+                className="theme-transition"
+                title="Close"
+              >
+                ×
+              </button>
+
+              <div style={{ marginBottom: "20px" }}>
+                <h3
+                  className="theme-transition"
+                  style={{
+                    color: "var(--text-primary)",
+                    marginBottom: "8px",
+                    fontSize: "18px",
+                    fontWeight: 600,
+                    transition: "color 0.3s ease",
+                    paddingRight: "40px",
+                  }}
+                >
+                  Create New Exam
+                </h3>
+                <p
+                  className="theme-transition"
+                  style={{
+                    color: "var(--text-secondary)",
+                    fontSize: "14px",
+                    margin: 0,
+                    transition: "color 0.3s ease",
+                  }}
+                >
+                  Enter a name for your new exam
+                </p>
+              </div>
+
+              <div style={{ marginBottom: "20px" }}>
+                <label
+                  className="theme-transition"
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    color: "var(--text-secondary)",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                    transition: "color 0.3s ease",
+                  }}
+                >
+                  Exam Name
+                </label>
+                <input
+                  type="text"
+                  value={examName}
+                  onChange={(e) => setExamName(e.target.value)}
+                  placeholder="Enter exam name"
+                  className="input-theme theme-transition"
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    fontSize: "15px",
+                    outline: "none",
+                  }}
+                />
+              </div>
+
+              {/* Proctoring Modes */}
+              <div style={{ marginBottom: 16 }}>
+                <h4
+                  className="theme-transition"
+                  style={{
+                    margin: "0 0 8px",
+                    color: "var(--text-primary)",
+                    fontSize: 14,
+                    fontWeight: 700,
+                  }}
+                >
+                  Proctoring Modes
+                </h4>
+                <p
+                  className="theme-transition"
+                  style={{
+                    margin: "0 0 12px",
+                    color: "var(--text-secondary)",
+                    fontSize: 12,
+                  }}
+                >
+                  Select the type of proctoring for this exam.
+                </p>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(240px, 1fr))",
+                    gap: 12,
+                  }}
+                >
+                  <Toggle
+                    label="Normal Proctoring"
+                    enabled={normalProctoring}
+                    onToggle={handleNormalProctoringToggle}
+                  />
+                  <Toggle
+                    label="AI Powered Proctoring"
+                    enabled={aiPoweredProctoring}
+                    onToggle={handleAiProctoringToggle}
+                  />
+                  <Toggle
+                    label="Recorded Manual Proctoring"
+                    enabled={recordedManualProctoring}
+                    onToggle={handleManualProctoringToggle}
+                  />
+                </div>
+              </div>
+
+              {/* Proctoring Features */}
+              <div style={{ marginBottom: 16 }}>
+                <h4
+                  className="theme-transition"
+                  style={{
+                    margin: "0 0 8px",
+                    color: "var(--text-primary)",
+                    fontSize: 14,
+                    fontWeight: 700,
+                  }}
+                >
+                  Proctoring Features
+                </h4>
+                <p
+                  className="theme-transition"
+                  style={{
+                    margin: "0 0 12px",
+                    color: "var(--text-secondary)",
+                    fontSize: 12,
+                  }}
+                >
+                  Choose which monitoring features to enable for this exam.
+                </p>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(240px, 1fr))",
+                    gap: 12,
+                  }}
+                >
+                  <Toggle
+                    label="Third Eye"
+                    enabled={thirdEye}
+                    onToggle={() => setThirdEye((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                  <Toggle
+                    label="Multiple Person Detection"
+                    enabled={multiPerson}
+                    onToggle={() => setMultiPerson((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                  <Toggle
+                    label="EyeBall Detection"
+                    enabled={eyeBall}
+                    onToggle={() => setEyeBall((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                  <Toggle
+                    label="Object Detection"
+                    enabled={objectDetect}
+                    onToggle={() => setObjectDetect((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                  <Toggle
+                    label="Head Direction"
+                    enabled={headDirection}
+                    onToggle={() => setHeadDirection((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                  <Toggle
+                    label="Flag Notifications"
+                    enabled={flagNotifications}
+                    onToggle={() => setFlagNotifications((v) => !v)}
+                    disabled={!recordedManualProctoring}
+                  />
+                  <Toggle
+                    label="Video Recording"
+                    enabled={videoRecording}
+                    onToggle={() => setVideoRecording((v) => !v)}
+                    disabled={!normalProctoring && !recordedManualProctoring}
+                  />
+                  <Toggle
+                    label="Tab Switch Detection"
+                    enabled={tabSwitchDetection}
+                    onToggle={() => setTabSwitchDetection((v) => !v)}
+                    disabled={!normalProctoring}
+                  />
+                  <Toggle
+                    label="Microphone Detection"
+                    enabled={microphoneDetection}
+                    onToggle={() => setMicrophoneDetection((v) => !v)}
+                    disabled={!normalProctoring}
+                  />
+                  <Toggle
+                    label="Safe Browser"
+                    enabled={safeBrowser}
+                    onToggle={() => setSafeBrowser((v) => !v)}
+                    disabled={!normalProctoring}
+                  />
+                  <Toggle
+                    label="Proctor Feed to Test Taker"
+                    enabled={proctorFeedToTestTaker}
+                    onToggle={() => setProctorFeedToTestTaker((v) => !v)}
+                    disabled={!recordedManualProctoring}
+                  />
+                  <Toggle
+                    label="Screen Sharing"
+                    enabled={screenSharing}
+                    onToggle={() => setScreenSharing((v) => !v)}
+                    disabled={!normalProctoring}
+                  />
+                  <Toggle
+                    label="Screen Count Detection"
+                    enabled={screenCountDetection}
+                    onToggle={() => setScreenCountDetection((v) => !v)}
+                  />
+                  <Toggle
+                    label="Control Desktop Apps"
+                    enabled={controlDesktopApps}
+                    onToggle={() => setControlDesktopApps((v) => !v)}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  onClick={handleCreateExam}
+                  disabled={isCreating || !examName.trim()}
+                  className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
+                  style={{
+                    flex: 1,
+                    padding: "12px 18px",
+                    borderRadius: "10px",
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    opacity: isCreating || !examName.trim() ? 0.6 : 1,
+                    cursor:
+                      isCreating || !examName.trim()
+                        ? "not-allowed"
+                        : "pointer",
+                  }}
+                >
+                  {isCreating ? "Creating..." : "Create Exam"}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setExamName("");
+                  }}
+                  className={`${styles.btn} ${styles.btnGhost} theme-transition`}
+                  style={{
+                    padding: "12px 18px",
+                    borderRadius: "10px",
+                    fontSize: "15px",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* Add CSS animations */}
+          <style jsx>{`
+            @keyframes fadeIn {
+              from {
+                opacity: 0;
+              }
+              to {
+                opacity: 1;
+              }
+            }
+            @keyframes slideIn {
+              from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+              }
+            }
+          `}</style>
+        </>
       )}
 
       <section
