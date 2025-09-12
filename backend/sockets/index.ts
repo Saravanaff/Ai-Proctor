@@ -773,11 +773,11 @@ function handleSuccessfulFrameExtraction(frameOutputPath: string, originalData: 
       const userId = data?.user_id;
       const examSettings = data?.examSettings ?? data?.settings;
       console.log("Received video chunk from user: .... ", userId);
-      if (userId && examSettings) {
-        processVideoChunk(data, userId, examSettings).catch(error => {
-          console.error('Error processing video chunk for AI analysis:', error);
-        });
-      }
+      // if (userId && examSettings) {
+      //   processVideoChunk(data, userId, examSettings).catch(error => {
+      //     console.error('Error processing video chunk for AI analysis:', error);
+      //   });
+      // }
 
       if (storageSocket && storageSocket.connected) {
         storageSocket.emit("add-video-stream-chunk", data);
@@ -864,34 +864,34 @@ function handleSuccessfulFrameExtraction(frameOutputPath: string, originalData: 
       emitToModel("face_service", "faceStore", data);
     });
 
-    // socket.on("authenticate", (data: any) => {
-    //   const uidKey = String((data as any)?.userId);
-    //   const verified = authVerified.get(uidKey) === true;
-    //   const { userId }: any = String(data?.userId);
-    //   emitToModel("web_detect", "webDetect", data);
-    //   const settings = (data as any)?.examSettings ?? (data as any)?.settings;
-    //   if (settings) {
-    //     if (settings.eyeball_detection_enabled) {
-    //       emitToModel("eye_position", "eyePosition", data);
-    //     }
-    //     if (settings.head_direction_enabled)
-    //       emitToModel("head_service", "headPosition", data);
-    //   }
+    socket.on("authenticate", (data: any) => {
+      const uidKey = String((data as any)?.userId);
+      const verified = authVerified.get(uidKey) === true;
+      const { userId }: any = String(data?.userId);
+      emitToModel("web_detect", "webDetect", data);
+      const settings = (data as any)?.examSettings ?? (data as any)?.settings;
+      if (settings) {
+        if (settings.eyeball_detection_enabled) {
+          emitToModel("eye_position", "eyePosition", data);
+        }
+        if (settings.head_direction_enabled)
+          emitToModel("head_service", "headPosition", data);
+      }
 
-    //   if (!verified) {
-    //     emitToModel("face_service", "faceAuth", data);
-    //     authCounter.set(uidKey, 0);
-    //     return;
-    //   }
+      if (!verified) {
+        emitToModel("face_service", "faceAuth", data);
+        authCounter.set(uidKey, 0);
+        return;
+      }
 
-    //   const count = (authCounter.get(uidKey) ?? 0) + 1;
-    //   if (count % 50 === 0) {
-    //     emitToModel("face_service", "faceAuth", data);
-    //     authCounter.set(uidKey, 0);
-    //   } else {
-    //     authCounter.set(uidKey, count);
-    //   }
-    // });
+      const count = (authCounter.get(uidKey) ?? 0) + 1;
+      if (count % 50 === 0) {
+        emitToModel("face_service", "faceAuth", data);
+        authCounter.set(uidKey, 0);
+      } else {
+        authCounter.set(uidKey, count);
+      }
+    });
 
     socket.on("submit", async (data: any, cb: Function) => {
       try {
