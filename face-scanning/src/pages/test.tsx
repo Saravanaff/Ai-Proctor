@@ -120,7 +120,6 @@ const TestPage: React.FC<TestPageProps> = () => {
           chunksRef.current.push(event.data);
           addLog(`📊 Recorded chunk: ${event.data.size} bytes`);
           
-          // Emit chunk to backend via socket
           if (socketRef.current && socketConnected) {
             const reader = new FileReader();
             reader.onload = () => {
@@ -156,7 +155,7 @@ const TestPage: React.FC<TestPageProps> = () => {
         addLog(`📁 Final video blob size: ${blob.size} bytes`);
       };
 
-      mediaRecorder.start(1000); // Record in 1-second chunks
+      mediaRecorder.start(1000); 
       mediaRecorderRef.current = mediaRecorder;
       setIsRecording(true);
       addLog('🔴 Recording started');
@@ -165,7 +164,6 @@ const TestPage: React.FC<TestPageProps> = () => {
     }
   };
 
-  // Stop recording
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
@@ -174,7 +172,6 @@ const TestPage: React.FC<TestPageProps> = () => {
     }
   };
 
-  // Test socket emissions
   const testFaceAuth = () => {
     if (socketRef.current && socketConnected) {
       const testData = {

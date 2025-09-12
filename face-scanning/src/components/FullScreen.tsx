@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getUserId } from "@/constants/AuthStore";
 import axios from 'axios';
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { timeStamp } from "console";
 
 
 const questions = Array.from({ length: 10 }, (_, i) => ({
@@ -144,6 +145,14 @@ const ExamPage = ({
       };
 
       const userId = getUserId() || "unknown";
+
+      socket.emit("start-exam",{
+        user_id: userId,
+        exam_id: examId,
+        timestamp:new Date(),
+        status: "success",
+        message: "Exam Started successfully",
+      })
 
       socket.emit("start-exam", {
         user_id: userId,

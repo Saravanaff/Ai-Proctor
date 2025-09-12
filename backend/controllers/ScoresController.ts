@@ -64,7 +64,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
     console.log("exam", req.body);
 
     console.log(userId);
-    const flaggedScore = getExamScore(userId, examId);
+    const flaggedScore = getExamScore(userId, examId); 
 
     console.log("Getting Exam Score :", flaggedScore);
 

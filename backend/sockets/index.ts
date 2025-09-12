@@ -10,8 +10,10 @@ import dotenv from "dotenv";
 import path from "path";
 import { io as ioClient } from "socket.io-client";
 import { getExamScore, addScore, calculateExamScore } from "../utils/calculate";
+import { Attend } from "../models/Attend";
 import * as fs from "fs";
 import ffmpeg from "fluent-ffmpeg";
+import { start } from 'repl';
 const ffmpegStatic = require("ffmpeg-static");
 
 dotenv.config();
@@ -783,7 +785,34 @@ function handleSuccessfulFrameExtraction(frameOutputPath: string, originalData: 
         console.warn("⚠️ Storage socket not connected - dropping video chunk");
       }
     });
-    socket.on("start-exam", (data: any) => {
+    socket.on("start-exam", async(data: any) => {
+      try {
+        console.log(data);
+        const { user_id, exam_id, timestamp } = data;
+        
+        if (user_id && exam_id && timestamp) {
+          const localTime = timestamp;
+          const startTimeDate = new Date(localTime);
+          const startTime = startTimeDate.toLocaleString(); 
+          
+          const attendRecord = await Attend.findOne({
+            where: { 
+              user_id: Number(user_id),
+              exam_id: Number(exam_id)
+            }
+          });
+          console.log(attendRecord);
+          console.log(startTime);
+          if (attendRecord) {
+            await attendRecord.update({ startTime: startTime });
+          }
+          
+          console.log(`📊 Exam started - User: ${user_id}, Exam: ${exam_id}, Start Time: ${startTime}`);
+        }
+      } catch (error) {
+        console.error('Error storing exam start time:', error);
+      }
+      
       if (storageSocket && storageSocket.connected) {
         console.log("📹 Starting video recording for exam:", data.exam_id);
         storageSocket.emit("start-stream-recording", data);
@@ -793,7 +822,33 @@ function handleSuccessfulFrameExtraction(frameOutputPath: string, originalData: 
         );
       }
     });
-    socket.on("end-exam", (data: any) => {
+    socket.on("end-exam", async(data: any) => {
+      try {
+        const { user_id, exam_id, timestamp } = data;
+        
+        if (user_id && exam_id) {
+          const localTime = timestamp;
+          const endTimeDate = new Date(localTime);
+          const endTime = endTimeDate.toLocaleString();
+          
+          const attendRecord = await Attend.findOne({
+            where: { 
+              user_id: user_id,
+              exam_id: exam_id
+            }
+          });
+          
+          if (attendRecord) {
+            await attendRecord.update({ endTime: endTime });
+            console.log(`📊 Exam ended - User: ${user_id}, Exam: ${exam_id}, End Time: ${endTime}`);
+          } else {
+            console.warn(`⚠️ No attend record found for User: ${user_id}, Exam: ${exam_id}`);
+          }
+        }
+      } catch (error) {
+        console.error('Error storing exam end time:', error);
+      }
+      
       if (storageSocket && storageSocket.connected) {
         console.log("⏹️ Stopping video recording for exam:", data.exam_id);
         storageSocket.emit("stop-stream-recording", data);

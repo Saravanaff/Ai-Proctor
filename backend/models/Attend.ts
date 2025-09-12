@@ -30,6 +30,16 @@ export class Attend extends Model {
     })
     exam_id!: number;
 
+    @Column({
+        type:DataType.STRING
+    })
+    startTime?:String
+
+    @Column({
+        type:DataType.STRING
+    })
+    endTime?:String
+
     @BelongsTo(() => User)
     user!: User;
 

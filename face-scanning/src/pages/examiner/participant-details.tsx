@@ -58,7 +58,6 @@ interface TimelineEvent {
 }
 
 const ParticipantDetailsPage: React.FC = () => {
-  // PDF generation handler
   const handleGeneratePDF = () => {
     if (!user || !examDetails) return;
     generateParticipantPdf({

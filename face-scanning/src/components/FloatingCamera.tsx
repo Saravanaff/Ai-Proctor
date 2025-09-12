@@ -241,6 +241,13 @@ const FloatingCamera = ({
       socket.emit("end-exam", {
         user_id: userId,
         exam_id: examId,
+        timestamp:new Date(),
+        status: "success",
+        message: "Exam Ended successfully",
+      });
+      socket.emit("end-exam", {
+        user_id: userId,
+        exam_id: examId,
         category: "face_camera",
         status: "success",
         message: "Exam Ended successfully",

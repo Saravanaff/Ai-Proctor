@@ -9,13 +9,23 @@ socket.on("connect", () => {
     console.log("Connected to backend server");
     console.log("Socket ID:", socket.id);
     
-    socket.emit("webDetectRes", {
-        "Person": 0,
-        "Mobile": 1,
-        "Laptop": 0,
-        "userId":1,
-        "examId":1
-    });
+    socket.emit("start-exam", {
+        user_id: 1,
+        exam_id: 1,
+        timestamp:new Date(),
+        status: "success",
+        message: "Exam Started successfully",
+      });
+
+      setTimeout(() => {
+        socket.emit("end-exam", {
+          user_id: 1,
+          exam_id: 1,
+          timestamp:new Date(),
+          status: "success",
+          message: "Exam Ended successfully",
+        });
+      }, 2000);
 });
 
 socket.on("disconnect", () => {
