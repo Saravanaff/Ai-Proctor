@@ -116,19 +116,78 @@ const ParticipantDetailsPage: React.FC = () => {
   const { examId, userId } = router.query;
 
   const [user, setUser] = useState<User | null>(null);
+  const [attendance, setAttendance] = useState<any>(null);
   const [examDetails, setExamDetails] = useState<ExamDetails | null>(null);
+
+  // Function to calculate total exam duration
+  const calculateExamDuration = (): string => {
+    if (!attendance) {
+      return "Duration not available";
+    }
+
+    try {
+      // Use startTime and endTime from attendance if available
+      if (attendance.startTime) {
+        const startTime = new Date(attendance.startTime);
+        const endTime = attendance.endTime ? new Date(attendance.endTime) : new Date();
+        const durationMs = endTime.getTime() - startTime.getTime();
+        
+        if (durationMs <= 0) {
+          return "Just started";
+        }
+
+        const hours = Math.floor(durationMs / (1000 * 60 * 60));
+        const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
+
+        if (hours > 0) {
+          return `${hours}h ${minutes}m ${seconds}s`;
+        } else if (minutes > 0) {
+          return `${minutes}m ${seconds}s`;
+        } else {
+          return `${seconds}s`;
+        }
+      }
+      
+      // Fallback to createdAt if startTime is not available
+      if (attendance.createdAt) {
+        const startTime = new Date(attendance.createdAt);
+        const endTime = new Date();
+        const durationMs = endTime.getTime() - startTime.getTime();
+        
+        if (durationMs <= 0) {
+          return "Just joined";
+        }
+
+        const hours = Math.floor(durationMs / (1000 * 60 * 60));
+        const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
+
+        if (hours > 0) {
+          return `${hours}h ${minutes}m ${seconds}s`;
+        } else if (minutes > 0) {
+          return `${minutes}m ${seconds}s`;
+        } else {
+          return `${seconds}s`;
+        }
+      }
+
+      return "Duration not available";
+    } catch (error) {
+      console.error("Error calculating duration:", error);
+      return "Duration not available";
+    }
+  };
   const [scoreDetails, setScoreDetails] = useState<ScoreDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
     "overview" | "timeline" | "review"
   >("overview");
 
-  // State for violations and timeline events (populated from API)
   const [violations, setViolations] = useState<ViolationEvent[]>([]);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
 
-  // Video player states
   const [examStartTime, setExamStartTime] = useState<Date | null>(null);
   const [selectedVideoCategory, setSelectedVideoCategory] =
     useState<string>("face_camera");
@@ -376,7 +435,6 @@ const ParticipantDetailsPage: React.FC = () => {
     return "low";
   };
 
-  // Helper function to get description based on violation type
   const getDescriptionFromViolation = (violationType: string): string => {
     const descriptions: { [key: string]: string } = {
       "Multiple Persons Detected":
@@ -390,7 +448,6 @@ const ParticipantDetailsPage: React.FC = () => {
       "Screen Sharing": "Screen sharing activity detected",
     };
 
-    // Find matching description or return a generic one
     const matchingKey = Object.keys(descriptions).find((key) =>
       violationType.toLowerCase().includes(key.toLowerCase())
     );
@@ -400,7 +457,6 @@ const ParticipantDetailsPage: React.FC = () => {
       : `${violationType} detected`;
   };
 
-  // Helper function to create timeline events from logs
   const createTimelineFromLogs = (
     logs: ViolationLogResponse["data"]
   ): TimelineEvent[] => {
@@ -461,6 +517,7 @@ const ParticipantDetailsPage: React.FC = () => {
 
         if (attendance) {
           setUser(attendance.user);
+          setAttendance(attendance);
 
           // Fetch score details
           const scoreData = await fetchScore({
@@ -575,16 +632,38 @@ const ParticipantDetailsPage: React.FC = () => {
     }
   }, [user, examDetails]);
 
-  const getSeverityColor = (severity: "low" | "medium" | "high") => {
-    switch (severity) {
+  // Calculate total violations
+  const getTotalViolations = () => {
+    if (!scoreDetails?.scoreBreakdown) return 0;
+    
+    const breakdown = scoreDetails.scoreBreakdown;
+    return (
+      (breakdown.no_of_person_flagged || 0) +
+      (breakdown.no_person_flagged || 0) +
+      (breakdown.auth_face_flagged || 0) +
+      (breakdown.head_position_flagged || 0) +
+      (breakdown.eyes_flagged || 0) +
+      (breakdown.sound_flagged || 0) +
+      (breakdown.object_detected_flagged || 0) +
+      (breakdown.tab_switch_violation || 0) +
+      (breakdown.number_of_microphone || 0) +
+      (breakdown.screen_sharing ? 1 : 0) +
+      (breakdown.safe_browser ? 1 : 0) +
+      (breakdown.control_desktop_apps ? 1 : 0) +
+      (breakdown.blank_feed || 0)
+    );
+  };
+
+  const getSeverityColor = (severity: "low" | "medium" | "high" | string) => {
+    switch (severity.toLowerCase()) {
       case "low":
-        return "var(--success-color)";
+        return "#28a745"; // Green
       case "medium":
-        return "var(--warning-color)";
+        return "#fd7e14"; // Orange  
       case "high":
-        return "var(--error-color)";
+        return "#dc3545"; // Red
       default:
-        return "var(--text-secondary)";
+        return "#6c757d"; // Gray
     }
   };
 
@@ -1222,6 +1301,292 @@ const ParticipantDetailsPage: React.FC = () => {
                   {user.id}
                 </span>
               </p>
+              
+              {/* Clean Attendance Details */}
+              <div style={{
+                marginTop: "24px",
+                paddingTop: "20px",
+                borderTop: "2px solid #e9ecef"
+              }}>
+                <h4 style={{
+                  margin: "0 0 20px 0",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  color: "#2c3e50",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px"
+                }}>
+                  <span style={{
+                    fontSize: "18px"
+                  }}>⏱</span>
+                  Exam Timeline
+                </h4>
+                
+                <div style={{
+                  display: "grid",
+                  gap: "16px"
+                }}>
+                  {/* Session Joined */}
+                  {attendance?.createdAt && (
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 0",
+                      borderBottom: "1px solid #f1f3f4"
+                    }}>
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px"
+                      }}>
+                        <span style={{
+                          fontSize: "16px",
+                          width: "24px",
+                          textAlign: "center"
+                        }}>📱</span>
+                        <div>
+                          <div style={{
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            color: "#2c3e50",
+                            marginBottom: "2px"
+                          }}>
+                            Session Joined
+                          </div>
+                          <div style={{
+                            fontSize: "12px",
+                            color: "#6c757d"
+                          }}>
+                            When user entered the exam room
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{
+                        textAlign: "right"
+                      }}>
+                        <div style={{
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#2c3e50"
+                        }}>
+                          {new Date(attendance.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </div>
+                        <div style={{
+                          fontSize: "14px",
+                          color: "#007bff",
+                          fontWeight: "500"
+                        }}>
+                          {new Date(attendance.createdAt).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Exam Started */}
+                  {attendance?.startTime && (
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 0",
+                      borderBottom: "1px solid #f1f3f4"
+                    }}>
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px"
+                      }}>
+                        <span style={{
+                          fontSize: "16px",
+                          width: "24px",
+                          textAlign: "center"
+                        }}>▶️</span>
+                        <div>
+                          <div style={{
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            color: "#2c3e50",
+                            marginBottom: "2px"
+                          }}>
+                            Exam Started
+                          </div>
+                          <div style={{
+                            fontSize: "12px",
+                            color: "#6c757d"
+                          }}>
+                            When user began taking the exam
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{
+                        textAlign: "right"
+                      }}>
+                        <div style={{
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#2c3e50"
+                        }}>
+                          {new Date(attendance.startTime).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </div>
+                        <div style={{
+                          fontSize: "14px",
+                          color: "#28a745",
+                          fontWeight: "500"
+                        }}>
+                          {new Date(attendance.startTime).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Exam Ended */}
+                  {attendance?.endTime && (
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 0",
+                      borderBottom: "1px solid #f1f3f4"
+                    }}>
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px"
+                      }}>
+                        <span style={{
+                          fontSize: "16px",
+                          width: "24px",
+                          textAlign: "center"
+                        }}>⏹️</span>
+                        <div>
+                          <div style={{
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            color: "#2c3e50",
+                            marginBottom: "2px"
+                          }}>
+                            Exam Ended
+                          </div>
+                          <div style={{
+                            fontSize: "12px",
+                            color: "#6c757d"
+                          }}>
+                            When user completed the exam
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{
+                        textAlign: "right"
+                      }}>
+                        <div style={{
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#2c3e50"
+                        }}>
+                          {new Date(attendance.endTime).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </div>
+                        <div style={{
+                          fontSize: "14px",
+                          color: "#dc3545",
+                          fontWeight: "500"
+                        }}>
+                          {new Date(attendance.endTime).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Duration Summary */}
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "16px 0 8px 0",
+                    background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
+                    borderRadius: "8px",
+                    paddingLeft: "16px",
+                    paddingRight: "16px",
+                    marginTop: "8px"
+                  }}>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px"
+                    }}>
+                      <span style={{
+                        fontSize: "16px",
+                        width: "24px",
+                        textAlign: "center"
+                      }}>⏳</span>
+                      <div>
+                        <div style={{
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#2c3e50",
+                          marginBottom: "2px"
+                        }}>
+                          Total Duration
+                        </div>
+                        <div style={{
+                          fontSize: "12px",
+                          color: "#6c757d"
+                        }}>
+                          {attendance?.endTime ? "Exam completed" : "Currently ongoing"}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{
+                      textAlign: "right"
+                    }}>
+                      <div style={{
+                        fontSize: "18px",
+                        fontWeight: "700",
+                        color: "#495057"
+                      }}>
+                        {calculateExamDuration()}
+                      </div>
+                      <div style={{
+                        fontSize: "12px",
+                        color: attendance?.endTime ? "#28a745" : "#ffc107",
+                        fontWeight: "500",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "flex-end",
+                        gap: "4px"
+                      }}>
+                        <span>{attendance?.endTime ? "✅" : "🔄"}</span>
+                        {attendance?.endTime ? "Completed" : "Ongoing"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Exam Details Column */}
@@ -1384,7 +1749,7 @@ const ParticipantDetailsPage: React.FC = () => {
           }`}
           onClick={() => setActiveTab("overview")}
         >
-          Violations
+          Violations ({getTotalViolations()})
         </button>
         <button
           className={`${styles.tab} ${
@@ -1392,7 +1757,7 @@ const ParticipantDetailsPage: React.FC = () => {
           }`}
           onClick={() => setActiveTab("timeline")}
         >
-          Exam Activity
+          Violation Details
         </button>
         <button
           className={`${styles.tab} ${
@@ -1621,8 +1986,77 @@ const ParticipantDetailsPage: React.FC = () => {
             <div className={styles.timeline}>
               {timelineEvents.length > 0 ? (
                 timelineEvents.map((event, index) => {
-                  // Display the timestamp with seconds precision
-                  let formattedTime = event.timestamp;
+                  // Get detailed date information for the violation
+                  const violationDate = violations.find((v) => {
+                    const violationTime = new Date(v.timestamp);
+                    const violationTimeStr = violationTime.toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    });
+                    return violationTimeStr === event.timestamp;
+                  });
+
+                  // Parse the date correctly - format is YYYY-DD-MM (Year-Day-Month)
+                  const fullDate = violationDate ? new Date(violationDate.timestamp) : new Date();
+                  const severity = violationDate ? violationDate.severity : 'low';
+
+                  // Handle the custom date format YYYY-DD-MM
+                  const formatDate = (dateStr: string) => {
+                    try {
+                      // If it's in YYYY-DD-MM format, we need to rearrange to standard format
+                      if (dateStr && dateStr.includes('-')) {
+                        const parts = dateStr.split('T')[0].split('-'); // Get date part only, ignore time
+                        if (parts.length === 3) {
+                          const year = parts[0];   // 2025
+                          const day = parts[1];    // 12 
+                          const month = parts[2];  // 09
+                          
+                          // Create date in standard format: YYYY-MM-DD
+                          const standardDate = new Date(`${year}-${month}-${day}`);
+                          
+                          return {
+                            formatted: standardDate.toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric', 
+                              year: 'numeric'
+                            }),
+                            weekday: standardDate.toLocaleDateString('en-US', {
+                              weekday: 'long'
+                            })
+                          };
+                        }
+                      }
+                      
+                      // Fallback to standard parsing if format doesn't match
+                      const date = new Date(dateStr);
+                      return {
+                        formatted: date.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric', 
+                          year: 'numeric'
+                        }),
+                        weekday: date.toLocaleDateString('en-US', {
+                          weekday: 'long'
+                        })
+                      };
+                    } catch (error) {
+                      // Fallback to current date if parsing fails
+                      const now = new Date();
+                      return {
+                        formatted: now.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        }),
+                        weekday: now.toLocaleDateString('en-US', {
+                          weekday: 'long'
+                        })
+                      };
+                    }
+                  };
+
+                  const dateInfo = formatDate(violationDate ? violationDate.timestamp : new Date().toISOString());
 
                   return (
                     <div
@@ -1630,139 +2064,162 @@ const ParticipantDetailsPage: React.FC = () => {
                       className={styles.timelineItem}
                       style={{
                         display: "flex",
-                        alignItems: "center",
+                        flexDirection: "column",
                         marginBottom: 12,
-                        padding: "8px 12px",
+                        padding: "12px",
                         borderRadius: "8px",
                         transition: "all 0.2s ease",
-                        background:
-                          event.violations.length > 0
-                            ? "rgba(255,0,0,0.02)"
-                            : "rgba(0,255,0,0.02)",
-                        border: "1px solid transparent",
+                        background: "white",
+                        border: event.violations.length > 0 
+                          ? `1px solid ${getSeverityColor(severity)}` 
+                          : "1px solid #e9ecef",
+                        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.04)",
+                        cursor: event.violations.length > 0 ? "pointer" : "default"
+                      }}
+                      onClick={() => {
+                        if (event.violations.length > 0 && violationDate) {
+                          seekToTimestamp(violationDate.timestamp);
+                        }
                       }}
                       onMouseEnter={(e) => {
                         if (event.violations.length > 0) {
-                          e.currentTarget.style.backgroundColor =
-                            "rgba(255,0,0,0.05)";
-                          e.currentTarget.style.borderColor =
-                            "rgba(255,0,0,0.2)";
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                          e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.08)";
                         }
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          event.violations.length > 0
-                            ? "rgba(255,0,0,0.02)"
-                            : "rgba(0,255,0,0.02)";
-                        e.currentTarget.style.borderColor = "transparent";
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow = "0 2px 6px rgba(0, 0, 0, 0.04)";
                       }}
                     >
-                      <div
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          backgroundColor:
-                            event.violations.length > 0
-                              ? "var(--error-color)"
-                              : "var(--success-color)",
-                          marginRight: 16,
-                          flexShrink: 0,
-                          boxShadow:
-                            event.violations.length > 0
-                              ? "0 0 8px rgba(255,0,0,0.3)"
-                              : "0 0 8px rgba(0,255,0,0.3)",
-                        }}
-                        title={
-                          event.violations.length > 0
-                            ? `${event.violations.length} violation(s)`
-                            : "No violations"
-                        }
-                      ></div>
-                      <span
-                        style={{
-                          fontSize: 14,
-                          minWidth: 100,
-                          color: "var(--text-primary)",
-                          marginRight: 16,
-                          fontWeight: "500",
-                          fontFamily: "monospace",
-                        }}
-                      >
-                        🕒 {formattedTime}
-                      </span>
-                      {event.violations.length > 0 && (
-                        <span
-                          style={{
-                            fontSize: 13,
-                            color: "var(--error-color)",
-                            background: "rgba(255,0,0,0.1)",
-                            borderRadius: 6,
-                            padding: "4px 12px",
-                            marginLeft: 4,
-                            cursor: "pointer",
-                            transition: "all 0.3s ease",
-                            border: "1px solid rgba(255,0,0,0.2)",
-                            fontWeight: "500",
-                            flex: 1,
-                          }}
-                          onClick={() => {
-                            console.log(
-                              `Timeline seeking to: ${event.timestamp}`
-                            );
-                            // Find the exact violation that matches this timeline event
-                            const matchingViolation = violations.find((v) => {
-                              const violationTime = new Date(v.timestamp);
-                              const violationTimeStr =
-                                violationTime.toLocaleTimeString("en-US", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  second: "2-digit",
-                                });
-                              return violationTimeStr === event.timestamp;
-                            });
+                      {/* Compact Header */}
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "8px"
+                      }}>
+                        <div style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px"
+                        }}>
+                          <div style={{
+                            width: "12px",
+                            height: "12px",
+                            borderRadius: "50%",
+                            backgroundColor: event.violations.length > 0 
+                              ? getSeverityColor(severity) 
+                              : "#28a745",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }}>
+                            <span style={{
+                              fontSize: "8px",
+                              color: "white",
+                              fontWeight: "bold"
+                            }}>
+                              {event.violations.length > 0 ? "!" : "✓"}
+                            </span>
+                          </div>
+                          
+                          <div>
+                            <h4 style={{
+                              margin: "0",
+                              fontSize: "14px",
+                              fontWeight: "600",
+                              color: "#2c3e50"
+                            }}>
+                              {event.violations.length > 0 
+                                ? `${event.violations.length} Violation${event.violations.length > 1 ? 's' : ''}`
+                                : "Clean"}
+                            </h4>
+                          </div>
+                        </div>
 
-                            if (matchingViolation) {
-                              seekToTimestamp(matchingViolation.timestamp);
-                            }
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "rgba(255,0,0,0.2)";
-                            e.currentTarget.style.transform = "scale(1.02)";
-                            e.currentTarget.style.borderColor =
-                              "var(--error-color)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "rgba(255,0,0,0.1)";
-                            e.currentTarget.style.transform = "scale(1)";
-                            e.currentTarget.style.borderColor =
-                              "rgba(255,0,0,0.2)";
-                          }}
-                          title={`Click to jump to violation: ${event.violations.join(
-                            ", "
-                          )}`}
-                        >
-                          🎬 {event.violations.join(", ")} → Jump to video
-                        </span>
-                      )}
-                      {event.violations.length === 0 && (
-                        <span
-                          style={{
-                            fontSize: 13,
-                            color: "var(--success-color)",
-                            background: "rgba(0,255,0,0.1)",
-                            borderRadius: 6,
-                            padding: "4px 12px",
-                            marginLeft: 4,
-                            border: "1px solid rgba(0,255,0,0.2)",
-                            fontWeight: "500",
-                            flex: 1,
-                          }}
-                        >
-                          ✅ No violations at this time
-                        </span>
+                        {event.violations.length > 0 && (
+                          <div style={{
+                            background: `${getSeverityColor(severity)}15`,
+                            color: getSeverityColor(severity),
+                            padding: "3px 8px",
+                            borderRadius: "12px",
+                            fontSize: "10px",
+                            fontWeight: "500"
+                          }}>
+                            🎬 Jump
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Compact Date and Time Row */}
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "16px",
+                        marginBottom: "8px",
+                        fontSize: "12px",
+                        color: "#6c757d"
+                      }}>
+                        <span>📅 {dateInfo.formatted}</span>
+                        <span>📆 {dateInfo.weekday}</span>
+                        <span>🕒 {event.timestamp}</span>
+                      </div>
+
+                      {/* Compact Violation Details */}
+                      {event.violations.length > 0 ? (
+                        <div style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "6px"
+                        }}>
+                          <div style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "4px"
+                          }}>
+                            {event.violations.map((violation, vIndex) => (
+                              <div
+                                key={vIndex}
+                                style={{
+                                  background: `${getSeverityColor(severity)}15`,
+                                  color: getSeverityColor(severity),
+                                  padding: "4px 8px",
+                                  borderRadius: "4px",
+                                  fontSize: "11px",
+                                  fontWeight: "500",
+                                  border: `1px solid ${getSeverityColor(severity)}30`
+                                }}
+                              >
+                                {violation}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Compact Image placeholder */}
+                          <div style={{
+                            padding: "8px",
+                            background: "#f8f9fa",
+                            borderRadius: "4px",
+                            border: "1px dashed #dee2e6",
+                            textAlign: "center",
+                            color: "#6c757d",
+                            fontSize: "11px"
+                          }}>
+                            🖼️ Image Not Found
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{
+                          textAlign: "center",
+                          padding: "6px",
+                          background: "#e8f5e8",
+                          borderRadius: "4px",
+                          color: "#28a745",
+                          fontSize: "12px"
+                        }}>
+                          ✅ No violations
+                        </div>
                       )}
                     </div>
                   );

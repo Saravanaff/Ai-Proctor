@@ -194,7 +194,7 @@ export const getSingleExam = async (req: Request, res: Response) => {
       include: [
         {
           model: Attend,
-          attributes: ["user_id","startTime","endTime"],
+          attributes: ["user_id","startTime","endTime","createdAt"],
           include: [
             {
               model: User,
