@@ -104,9 +104,16 @@ body {
 
 /* Light theme gradient background */
 [data-theme="light"] body {
-  background: 
-    radial-gradient(circle at 25% 25%, rgba(14, 165, 233, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(16, 185, 129, 0.03) 0%, transparent 50%),
+  background: radial-gradient(
+      circle at 25% 25%,
+      rgba(14, 165, 233, 0.03) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 75% 75%,
+      rgba(16, 185, 129, 0.03) 0%,
+      transparent 50%
+    ),
     linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
   min-height: 100vh;
   position: relative;
@@ -114,14 +121,17 @@ body {
 
 /* Add subtle pattern overlay */
 [data-theme="light"] body::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
-    radial-gradient(circle, rgba(14, 165, 233, 0.04) 1px, transparent 1px);
+  background-image: radial-gradient(
+    circle,
+    rgba(14, 165, 233, 0.04) 1px,
+    transparent 1px
+  );
   background-size: 24px 24px;
   pointer-events: none;
   z-index: 0;
@@ -271,4 +281,54 @@ textarea:focus-visible {
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px var(--shadow);
+}
+
+/* Spinner animation for video loading */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pulse animation for interactive elements */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide in animation */
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }

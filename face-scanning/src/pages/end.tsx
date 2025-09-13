@@ -44,7 +44,7 @@ useEffect(()=>{
   socket.emit("end-exam",{
     user_id: userId,
     exam_id: examId,
-    timestamp:new Date(),
+    timestamp: new Date(),
     status: "success",
     message: "Exam Ended successfully"
   })

@@ -29,6 +29,7 @@ def face_auth(sio):
         userId = data["userId"]
         examId = data["examId"]
         buffer = data["buffer"]
+        timestamp = data["timestamp"]
 
         # print("arrived")
         img_array = np.frombuffer(buffer, dtype=np.uint8)
@@ -41,7 +42,8 @@ def face_auth(sio):
                 "userId": userId,
                 "examId": examId,
                 "code": -1,
-                "auth": False
+                "auth": False,
+                "timestamp": timestamp
             }
             if sio.connected:
                 sio.emit("faceAuthRes", result)
@@ -59,7 +61,8 @@ def face_auth(sio):
                 "userId": userId,
                 "examId": examId,
                 "code": -1,
-                "auth": False
+                "auth": False,
+                "timestamp": timestamp
             }
             if sio.connected:
                 sio.emit("faceAuthRes", result)
@@ -76,7 +79,8 @@ def face_auth(sio):
                     "userId": userId,
                     "examId": examId,
                     "code": -1,
-                    "auth": False
+                    "auth": False,
+                    "timestamp": timestamp
                 }
                 if sio.connected:
                     sio.emit("faceAuthRes", result)
@@ -89,7 +93,8 @@ def face_auth(sio):
                 "userId": userId,
                 "examId": examId,
                 "code": -1,
-                "auth": False
+                "auth": False,
+                "timestamp": timestamp
             }
             if sio.connected:
                 sio.emit("faceAuthRes", result)
@@ -108,7 +113,8 @@ def face_auth(sio):
                     "userId": userId,
                     "examId": examId,
                 "code": 0,
-                "auth": True
+                "auth": True,
+                "timestamp": timestamp
                 }
                 if sio.connected:
                     sio.emit("faceAuthRes", result)
@@ -118,7 +124,8 @@ def face_auth(sio):
             "userId": userId,
             "examId": examId,
             "code": 0,
-            "auth": False
+            "auth": False,
+            "timestamp": timestamp
         }
         if sio.connected:
             sio.emit("faceAuthRes", result)

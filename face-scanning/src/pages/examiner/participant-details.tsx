@@ -154,39 +154,127 @@ const ParticipantDetailsPage: React.FC = () => {
   );
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  console.log("Base URL for video streaming:", baseUrl);
+
+  // Debug function to test video URLs manually
+  const testVideoUrl = async (category: string) => {
+    if (!user || !examDetails) {
+      console.log("Cannot test - missing user or exam details");
+      return;
+    }
+
+    const testUrl = `${baseUrl}/stream-video/${user.id}/${examDetails.id}/${category}`;
+    console.log(`Testing URL: ${testUrl}`);
+
+    try {
+      const response = await fetch(testUrl, {
+        method: "HEAD",
+        headers: {
+          Authorization: `Bearer ${getTokenFromCookie()}`,
+        },
+      });
+      if (response.status === 404) {
+        console.log(
+          `Test result for ${category}: Video not found (404) - this is normal if video wasn't recorded`
+        );
+      } else {
+        console.log(
+          `Test result for ${category}: ${response.status} ${response.statusText}`
+        );
+      }
+    } catch (error) {
+      console.error(`Test failed for ${category}:`, error);
+    }
+  };
+
+  // Expose test function to window for debugging
+  if (typeof window !== "undefined") {
+    (window as any).testVideoUrl = testVideoUrl;
+    (window as any).checkVideoAvailability = () => checkAllVideosAvailability();
+    (window as any).debugVideoStreaming = () => {
+      console.log("=== Video Streaming Debug Info ===");
+      console.log("Base URL:", baseUrl);
+      console.log("User:", user);
+      console.log("Exam Details:", examDetails);
+      console.log("Videos Availability:", videosAvailability);
+      console.log("Selected Video Category:", selectedVideoCategory);
+      console.log("Video Loading:", videoLoading);
+      console.log("Video Error:", videoError);
+      console.log("==================================");
+    };
+  }
 
   // Function to check if video is available
   const checkVideoAvailability = async (category: string): Promise<boolean> => {
+    if (!user || !examDetails) {
+      console.log(
+        `Cannot check video availability: user=${!!user}, examDetails=${!!examDetails}`
+      );
+      return false;
+    }
+
     try {
-      const response = await axios.head(
-        `${baseUrl}/stream-video/${user?.id}/${examDetails?.id}/${category}`
+      const videoUrl = `${baseUrl}/stream-video/${user.id}/${examDetails.id}/${category}`;
+      console.log(`Checking video availability for: ${videoUrl}`);
+
+      const response = await axios.head(videoUrl);
+      console.log(
+        `Video availability check for ${category}: ${response.status}`
       );
       return response.status === 200;
     } catch (error) {
-      console.log(`Video not available for category: ${category}`);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          console.log(
+            `Video not found for category ${category} (404) - this is normal if video wasn't recorded`
+          );
+          return false;
+        }
+        console.error(
+          `Video availability check failed for ${category}: Status ${error.response?.status}, Message: ${error.message}`
+        );
+      } else {
+        console.error(
+          `Video availability check error for category ${category}:`,
+          error
+        );
+      }
       return false;
     }
   };
 
   // Function to check all videos availability
   const checkAllVideosAvailability = async () => {
-    if (!user || !examDetails) return;
+    if (!user || !examDetails) {
+      console.log(
+        `Cannot check videos: user=${!!user}, examDetails=${!!examDetails}`
+      );
+      return;
+    }
 
+    console.log(
+      `Checking video availability for user ${user.id} and exam ${examDetails.id}`
+    );
     setCheckingVideoAvailability(true);
     const categories = ["face_camera", "screen_recording", "third_eye"];
     const availability: { [key: string]: boolean } = {};
 
     for (const category of categories) {
       availability[category] = await checkVideoAvailability(category);
+      console.log(`${category}: ${availability[category]}`);
     }
 
+    console.log("Final video availability:", availability);
     setVideosAvailability(availability);
     setCheckingVideoAvailability(false);
 
     // Auto-select first available video
     const firstAvailable = categories.find((cat) => availability[cat]);
     if (firstAvailable) {
+      console.log(`Auto-selecting first available video: ${firstAvailable}`);
       setSelectedVideoCategory(firstAvailable);
+    } else {
+      console.log("No videos available for auto-selection");
     }
   };
 
@@ -385,7 +473,77 @@ const ParticipantDetailsPage: React.FC = () => {
           await fetchLogs(examResponse.data.exam.id);
 
           // Check video availability after user and exam details are set
-          setTimeout(() => checkAllVideosAvailability(), 100);
+          console.log("About to check video availability...");
+          console.log(
+            "User:",
+            attendance.user.id,
+            "Exam:",
+            examResponse.data.exam.id
+          );
+
+          // Call video availability check directly with the user data we just set
+          const checkVideosWithUserData = async () => {
+            console.log(
+              `Checking video availability for user ${attendance.user.id} and exam ${examResponse.data.exam.id}`
+            );
+            setCheckingVideoAvailability(true);
+            const categories = ["face_camera", "screen_recording", "third_eye"];
+            const availability: { [key: string]: boolean } = {};
+
+            for (const category of categories) {
+              const videoUrl = `${baseUrl}/stream-video/${attendance.user.id}/${examResponse.data.exam.id}/${category}`;
+              console.log(`Checking video availability for: ${videoUrl}`);
+
+              try {
+                const response = await axios.head(videoUrl);
+                console.log(
+                  `Video availability check for ${category}: ${response.status}`
+                );
+                availability[category] = response.status === 200;
+              } catch (error) {
+                if (axios.isAxiosError(error)) {
+                  if (error.response?.status === 404) {
+                    console.log(
+                      `Video not found for category ${category} (404) - this is normal if video wasn't recorded`
+                    );
+                    availability[category] = false;
+                  } else {
+                    console.error(
+                      `Video availability check failed for ${category}: Status ${error.response?.status}, Message: ${error.message}`
+                    );
+                    availability[category] = false;
+                  }
+                } else {
+                  console.error(
+                    `Video availability check error for category ${category}:`,
+                    error
+                  );
+                  availability[category] = false;
+                }
+              }
+              console.log(`${category}: ${availability[category]}`);
+            }
+
+            console.log("Final video availability:", availability);
+            setVideosAvailability(availability);
+            setCheckingVideoAvailability(false);
+
+            // Auto-select first available video
+            const firstAvailable = categories.find((cat) => availability[cat]);
+            if (firstAvailable) {
+              console.log(
+                `Auto-selecting first available video: ${firstAvailable}`
+              );
+              setSelectedVideoCategory(firstAvailable);
+            } else {
+              console.log("No videos available for auto-selection");
+            }
+          };
+
+          setTimeout(() => {
+            console.log("Triggering video availability check...");
+            checkVideosWithUserData();
+          }, 500);
         }
       } catch (error) {
         console.error("Error fetching participant details:", error);
@@ -402,6 +560,20 @@ const ParticipantDetailsPage: React.FC = () => {
 
     fetchParticipantDetails();
   }, [examId, userId, router]);
+
+  // Additional useEffect to check video availability when user and examDetails are both available
+  useEffect(() => {
+    if (
+      user &&
+      examDetails &&
+      !checkingVideoAvailability &&
+      Object.keys(videosAvailability).length === 0
+    ) {
+      console.log("Fallback video availability check triggered");
+      console.log("User ID:", user.id, "Exam ID:", examDetails.id);
+      checkAllVideosAvailability();
+    }
+  }, [user, examDetails]);
 
   const getSeverityColor = (severity: "low" | "medium" | "high") => {
     switch (severity) {
@@ -502,7 +674,10 @@ const ParticipantDetailsPage: React.FC = () => {
 
   // Function to seek video to specific timestamp
   const seekToTimestamp = (violationTimestamp: string) => {
-    if (!videoRef.current || !examStartTime) return;
+    if (!examStartTime) {
+      alert("Exam start time not available. Cannot seek to timestamp.");
+      return;
+    }
 
     // Check if any video is available
     const hasAvailableVideos = Object.values(videosAvailability).some(
@@ -511,6 +686,11 @@ const ParticipantDetailsPage: React.FC = () => {
     if (!hasAvailableVideos) {
       alert("No video data available for timestamp seeking.");
       return;
+    }
+
+    // Switch to review tab if not already there
+    if (activeTab !== "review") {
+      setActiveTab("review");
     }
 
     // Check if currently selected video is available
@@ -522,10 +702,14 @@ const ParticipantDetailsPage: React.FC = () => {
       if (firstAvailable) {
         setSelectedVideoCategory(firstAvailable);
         // Give time for video to load before seeking
-        setTimeout(() => seekToTimestamp(violationTimestamp), 500);
+        setTimeout(() => seekToTimestamp(violationTimestamp), 1000);
         return;
       }
     }
+
+    // Show seeking feedback
+    setVideoLoading(true);
+    setVideoError(null);
 
     try {
       const violationTime = new Date(violationTimestamp);
@@ -533,14 +717,44 @@ const ParticipantDetailsPage: React.FC = () => {
         (violationTime.getTime() - examStartTime.getTime()) / 1000;
 
       if (timeDifferenceInSeconds >= 0) {
-        videoRef.current.currentTime = timeDifferenceInSeconds;
-        // Switch to review tab if not already there
-        if (activeTab !== "review") {
-          setActiveTab("review");
-        }
+        // Wait for video to be ready before seeking
+        const attemptSeek = () => {
+          if (videoRef.current) {
+            const video = videoRef.current;
+
+            // Check if video is loaded enough to seek
+            if (video.readyState >= 2) {
+              // HAVE_CURRENT_DATA or higher
+              video.currentTime = timeDifferenceInSeconds;
+              setVideoLoading(false);
+
+              // Scroll video into view
+              video.scrollIntoView({ behavior: "smooth", block: "center" });
+
+              // Highlight the video briefly to indicate seeking
+              video.style.border = "3px solid var(--primary-color)";
+              setTimeout(() => {
+                video.style.border = "none";
+              }, 2000);
+            } else {
+              // Video not ready, wait a bit and try again
+              setTimeout(attemptSeek, 500);
+            }
+          } else {
+            setVideoLoading(false);
+            alert("Video player not available. Please select a video first.");
+          }
+        };
+
+        attemptSeek();
+      } else {
+        setVideoLoading(false);
+        alert("This violation occurred before the exam started.");
       }
     } catch (error) {
       console.error("Error seeking to timestamp:", error);
+      setVideoLoading(false);
+      alert("Error seeking to timestamp. Please try again.");
     }
   };
 
@@ -550,26 +764,157 @@ const ParticipantDetailsPage: React.FC = () => {
     isSelected?: boolean;
     onSelect?: () => void;
   }> = ({ category, title, isSelected = false, onSelect }) => {
-    const videoStreamUrl = `${baseUrl}/stream-video/${user?.id}/${examDetails?.id}/${category}`;
+    const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+    const [showLoading, setShowLoading] = useState(false);
+    const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Reset loading state when selection changes
+    useEffect(() => {
+      if (!isSelected) {
+        setHasLoadedOnce(false);
+        setVideoError(null);
+        setVideoLoading(false);
+        setShowLoading(false);
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
+      }
+    }, [isSelected]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+      return () => {
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
+      };
+    }, []);
+
+    if (!user || !examDetails) {
+      console.log(
+        `VideoPlayer: Cannot render ${category} - missing user or examDetails`
+      );
+      return null;
+    }
+
+    const videoStreamUrl = `${baseUrl}/stream-video/${user.id}/${examDetails.id}/${category}`;
     const isVideoAvailable = videosAvailability[category];
 
-    const handleVideoLoad = () => {
-      setVideoLoading(false);
-      setVideoError(null);
-    };
+    console.log(
+      `VideoPlayer ${category}: URL=${videoStreamUrl}, Available=${isVideoAvailable}, Selected=${isSelected}`
+    );
 
-    const handleVideoError = () => {
+    const handleVideoError = (event: any) => {
       setVideoLoading(false);
-      setVideoError(
-        "Failed to load video stream. Please try downloading the video instead."
-      );
+      setShowLoading(false);
+      setHasLoadedOnce(false); // Reset on error
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+
+      // Check if it's a network error (likely 404)
+      const target = event.target as HTMLVideoElement;
+      if (target.error) {
+        switch (target.error.code) {
+          case 1: // MEDIA_ERR_ABORTED
+            console.log(`Video loading aborted for ${category}`);
+            setVideoError("Video loading was interrupted. Please try again.");
+            break;
+          case 2: // MEDIA_ERR_NETWORK
+            console.log(
+              `Video not available for ${category} - network issue or 404`
+            );
+            setVideoError(
+              "Video not available. This recording may not exist for this exam session."
+            );
+            break;
+          case 3: // MEDIA_ERR_DECODE
+            console.log(`Video decode error for ${category}`);
+            setVideoError(
+              "Video format not supported or corrupted. This video uses H.264 codec in MP4 container. Please ensure your browser supports H.264 playback or try downloading the video instead."
+            );
+            break;
+          case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
+            console.log(`Video format not supported for ${category}`);
+            setVideoError(
+              "Video format not supported by your browser. This video uses H.264 codec which should be supported by modern browsers. Please update your browser (Chrome, Firefox, or Edge recommended) or try downloading the video."
+            );
+            break;
+          default:
+            console.error(`Video error for ${category}:`, target.error);
+            setVideoError(
+              "Failed to load video stream. The video uses H.264 codec in MP4 format. Please ensure your browser supports this format or try downloading the video instead."
+            );
+        }
+      } else {
+        console.error(`Video error for ${category}:`, event);
+        setVideoError(
+          "Failed to load video stream. Please check your connection or try downloading the video instead."
+        );
+      }
     };
 
     const handleVideoLoadStart = () => {
-      if (isSelected) {
+      if (isSelected && !hasLoadedOnce) {
         setVideoLoading(true);
         setVideoError(null);
+        // Show loading indicator after a short delay to prevent flashing
+        loadingTimeoutRef.current = setTimeout(() => {
+          setShowLoading(true);
+        }, 200);
+        console.log(`Video load started for ${category}`);
       }
+    };
+
+    const handleVideoCanPlay = () => {
+      if (isSelected) {
+        setVideoLoading(false);
+        setShowLoading(false);
+        setHasLoadedOnce(true);
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
+        console.log(`Video can play for ${category}`);
+      }
+    };
+
+    const handleVideoWaiting = () => {
+      if (isSelected && hasLoadedOnce) {
+        setVideoLoading(true);
+        // Only show loading for longer waits during playback
+        loadingTimeoutRef.current = setTimeout(() => {
+          setShowLoading(true);
+        }, 500);
+        console.log(`Video waiting/buffering for ${category}`);
+      }
+    };
+
+    const handleVideoPlaying = () => {
+      if (isSelected) {
+        setVideoLoading(false);
+        setShowLoading(false);
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
+        console.log(`Video playing for ${category}`);
+      }
+    };
+
+    const handleVideoLoadedData = () => {
+      if (isSelected) {
+        setVideoLoading(false);
+        setShowLoading(false);
+        setVideoError(null);
+        setHasLoadedOnce(true);
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
+        console.log(`Video data loaded successfully for ${category}`);
+      }
+    };
+
+    const handleVideoTimeUpdate = () => {
+      // This can be used for real-time feedback if needed
     };
 
     return (
@@ -599,6 +944,9 @@ const ParticipantDetailsPage: React.FC = () => {
                     onSelect?.();
                     if (!isSelected) {
                       setVideoError(null);
+                      setVideoLoading(false);
+                      setShowLoading(false);
+                      setHasLoadedOnce(false);
                     }
                   }}
                   style={{
@@ -607,16 +955,50 @@ const ParticipantDetailsPage: React.FC = () => {
                       : "transparent",
                     color: isSelected ? "white" : "var(--primary-color)",
                     marginRight: "8px",
+                    border: "1px solid var(--primary-color)",
+                    borderRadius: "4px",
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
                   }}
                   disabled={!isVideoAvailable}
+                  onMouseEnter={(e) => {
+                    if (!isSelected && isVideoAvailable) {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--primary-color)";
+                      e.currentTarget.style.color = "white";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "var(--primary-color)";
+                    }
+                  }}
                 >
-                  {isSelected ? "Selected" : "Select"}
+                  {isSelected ? "✓ Selected" : "Select"}
                 </button>
                 <button
                   className={styles.downloadBtn}
                   onClick={() => handleVideoDownload(category)}
+                  style={{
+                    backgroundColor: "var(--success-color)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#218838";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--success-color)";
+                  }}
                 >
-                  Download
+                  📥 Download
                 </button>
               </>
             )}
@@ -624,15 +1006,35 @@ const ParticipantDetailsPage: React.FC = () => {
         </div>
         {isSelected && isVideoAvailable && (
           <div className={styles.videoContainer}>
-            {videoLoading && (
+            {showLoading && (
               <div
                 style={{
-                  textAlign: "center",
-                  padding: "20px",
-                  color: "var(--text-secondary)",
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  zIndex: 10,
+                  background: "rgba(0,0,0,0.8)",
+                  color: "white",
+                  padding: "12px 20px",
+                  borderRadius: "8px",
+                  fontSize: "0.9rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                Loading video...
+                <div
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    border: "2px solid transparent",
+                    borderTop: "2px solid white",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                ></div>
+                {hasLoadedOnce ? "Buffering..." : "Loading video stream..."}
               </div>
             )}
             {videoError && (
@@ -642,28 +1044,67 @@ const ParticipantDetailsPage: React.FC = () => {
                   padding: "20px",
                   color: "var(--error-color)",
                   fontSize: "0.9rem",
+                  background: "rgba(255,0,0,0.05)",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(255,0,0,0.2)",
                 }}
               >
-                {videoError}
+                ⚠️ {videoError}
               </div>
             )}
             <video
               ref={videoRef}
               controls
               width="100%"
-              height="300"
-              src={videoStreamUrl}
+              height="350"
               onLoadStart={handleVideoLoadStart}
-              onLoadedData={handleVideoLoad}
+              onLoadedData={handleVideoLoadedData}
+              onCanPlay={handleVideoCanPlay}
+              onWaiting={handleVideoWaiting}
+              onPlaying={handleVideoPlaying}
+              onTimeUpdate={handleVideoTimeUpdate}
               onError={handleVideoError}
               style={{
                 backgroundColor: "#000",
-                borderRadius: "4px",
+                borderRadius: "8px",
                 display: videoError ? "none" : "block",
+                position: "relative",
               }}
+              preload="metadata"
+              playsInline
+              muted={false}
             >
-              Your browser does not support the video tag.
+              <source
+                src={videoStreamUrl}
+                type="video/mp4; codecs=avc1.64001e"
+              />
+              <source src={videoStreamUrl} type="video/mp4" />
+              Your browser does not support the video tag or the video format.
+              <br />
+              <a
+                href={videoStreamUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Download video file directly
+              </a>
             </video>
+
+            {/* Video Controls Info */}
+            {isSelected && !videoError && (
+              <div
+                style={{
+                  marginTop: "8px",
+                  fontSize: "0.8rem",
+                  color: "var(--text-secondary)",
+                  textAlign: "center",
+                  fontStyle: "italic",
+                }}
+              >
+                💡 Click on violations in the timeline or violations list to
+                jump to specific timestamps
+              </div>
+            )}
           </div>
         )}
         {isSelected && isVideoAvailable === false && (
@@ -675,10 +1116,13 @@ const ParticipantDetailsPage: React.FC = () => {
                 color: "var(--text-secondary)",
                 fontSize: "0.9rem",
                 fontStyle: "italic",
+                background: "rgba(0,0,0,0.02)",
+                borderRadius: "8px",
+                border: "1px dashed var(--border-color)",
               }}
             >
-              <div style={{ marginBottom: "12px", fontSize: "1.2rem" }}>📹</div>
-              No video data available for this category.
+              <div style={{ marginBottom: "12px", fontSize: "1.5rem" }}>📹</div>
+              <strong>No video data available for this category.</strong>
               <br />
               The video may not have been recorded during this exam session.
             </div>
@@ -1155,19 +1599,25 @@ const ParticipantDetailsPage: React.FC = () => {
         {activeTab === "timeline" && (
           <div className={styles.timelineTab}>
             <h3 className={styles.sectionTitle} style={{ marginBottom: 8 }}>
-              Exam Activity Timeline
+              📊 Exam Activity Timeline
             </h3>
-            <p
+            <div
               style={{
                 fontSize: "0.9rem",
                 color: "var(--text-secondary)",
-                marginBottom: 16,
-                fontStyle: "italic",
+                marginBottom: 20,
+                background: "rgba(0,123,255,0.05)",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                border: "1px solid rgba(0,123,255,0.15)",
               }}
             >
-              Click on any violation to jump to that timestamp in the video
-              player
-            </p>
+              💡 <strong>Interactive Timeline:</strong> Click on any violation
+              below to automatically jump to that moment in the video stream.
+              <br />
+              🎬 The system will switch to the Review tab and seek to the exact
+              timestamp.
+            </div>
             <div className={styles.timeline}>
               {timelineEvents.length > 0 ? (
                 timelineEvents.map((event, index) => {
@@ -1181,20 +1631,47 @@ const ParticipantDetailsPage: React.FC = () => {
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        marginBottom: 10,
+                        marginBottom: 12,
+                        padding: "8px 12px",
+                        borderRadius: "8px",
+                        transition: "all 0.2s ease",
+                        background:
+                          event.violations.length > 0
+                            ? "rgba(255,0,0,0.02)"
+                            : "rgba(0,255,0,0.02)",
+                        border: "1px solid transparent",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (event.violations.length > 0) {
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(255,0,0,0.05)";
+                          e.currentTarget.style.borderColor =
+                            "rgba(255,0,0,0.2)";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          event.violations.length > 0
+                            ? "rgba(255,0,0,0.02)"
+                            : "rgba(0,255,0,0.02)";
+                        e.currentTarget.style.borderColor = "transparent";
                       }}
                     >
                       <div
                         style={{
-                          width: 10,
-                          height: 10,
+                          width: 12,
+                          height: 12,
                           borderRadius: "50%",
                           backgroundColor:
                             event.violations.length > 0
                               ? "var(--error-color)"
                               : "var(--success-color)",
-                          marginRight: 12,
+                          marginRight: 16,
                           flexShrink: 0,
+                          boxShadow:
+                            event.violations.length > 0
+                              ? "0 0 8px rgba(255,0,0,0.3)"
+                              : "0 0 8px rgba(0,255,0,0.3)",
                         }}
                         title={
                           event.violations.length > 0
@@ -1205,26 +1682,34 @@ const ParticipantDetailsPage: React.FC = () => {
                       <span
                         style={{
                           fontSize: 14,
-                          minWidth: 90,
-                          color: "var(--text-secondary)",
-                          marginRight: 10,
+                          minWidth: 100,
+                          color: "var(--text-primary)",
+                          marginRight: 16,
+                          fontWeight: "500",
+                          fontFamily: "monospace",
                         }}
                       >
-                        {formattedTime}
+                        🕒 {formattedTime}
                       </span>
                       {event.violations.length > 0 && (
                         <span
                           style={{
                             fontSize: 13,
                             color: "var(--error-color)",
-                            background: "rgba(255,0,0,0.07)",
-                            borderRadius: 4,
-                            padding: "2px 8px",
+                            background: "rgba(255,0,0,0.1)",
+                            borderRadius: 6,
+                            padding: "4px 12px",
                             marginLeft: 4,
                             cursor: "pointer",
-                            transition: "background-color 0.2s ease",
+                            transition: "all 0.3s ease",
+                            border: "1px solid rgba(255,0,0,0.2)",
+                            fontWeight: "500",
+                            flex: 1,
                           }}
                           onClick={() => {
+                            console.log(
+                              `Timeline seeking to: ${event.timestamp}`
+                            );
                             // Find the exact violation that matches this timeline event
                             const matchingViolation = violations.find((v) => {
                               const violationTime = new Date(v.timestamp);
@@ -1243,15 +1728,40 @@ const ParticipantDetailsPage: React.FC = () => {
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor =
-                              "rgba(255,0,0,0.15)";
+                              "rgba(255,0,0,0.2)";
+                            e.currentTarget.style.transform = "scale(1.02)";
+                            e.currentTarget.style.borderColor =
+                              "var(--error-color)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.backgroundColor =
-                              "rgba(255,0,0,0.07)";
+                              "rgba(255,0,0,0.1)";
+                            e.currentTarget.style.transform = "scale(1)";
+                            e.currentTarget.style.borderColor =
+                              "rgba(255,0,0,0.2)";
                           }}
-                          title="Click to jump to this violation in the video"
+                          title={`Click to jump to violation: ${event.violations.join(
+                            ", "
+                          )}`}
                         >
-                          {event.violations.join(", ")}
+                          🎬 {event.violations.join(", ")} → Jump to video
+                        </span>
+                      )}
+                      {event.violations.length === 0 && (
+                        <span
+                          style={{
+                            fontSize: 13,
+                            color: "var(--success-color)",
+                            background: "rgba(0,255,0,0.1)",
+                            borderRadius: 6,
+                            padding: "4px 12px",
+                            marginLeft: 4,
+                            border: "1px solid rgba(0,255,0,0.2)",
+                            fontWeight: "500",
+                            flex: 1,
+                          }}
+                        >
+                          ✅ No violations at this time
                         </span>
                       )}
                     </div>
@@ -1261,13 +1771,28 @@ const ParticipantDetailsPage: React.FC = () => {
                 <div
                   style={{
                     textAlign: "center",
-                    padding: "40px",
+                    padding: "60px 40px",
                     color: "var(--text-secondary)",
                     fontStyle: "italic",
+                    background: "var(--card-bg)",
+                    borderRadius: "12px",
+                    border: "1px dashed var(--border-color)",
                   }}
                 >
-                  No timeline data available. No violations recorded for this
-                  exam.
+                  <div style={{ fontSize: "2rem", marginBottom: "16px" }}>
+                    📊
+                  </div>
+                  <h4
+                    style={{
+                      margin: "0 0 8px 0",
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    No Timeline Data Available
+                  </h4>
+                  <p style={{ margin: "0", fontSize: "0.9rem" }}>
+                    No activity timeline recorded for this exam session.
+                  </p>
                 </div>
               )}
             </div>
@@ -1278,17 +1803,86 @@ const ParticipantDetailsPage: React.FC = () => {
         {activeTab === "review" && (
           <div className={styles.reviewTab}>
             <div className={styles.reviewHeader}>
-              <h3 className={styles.sectionTitle}>Review Session</h3>
-              <p className={styles.reviewDescription}>
-                Download video recordings and review all violations with
-                detailed timestamps. Click on timeline violations or individual
-                violation entries to jump to specific timestamps in the video.
-              </p>
+              <h3 className={styles.sectionTitle}>
+                🎬 Review Session - Live Video Streaming
+              </h3>
+              <div className={styles.reviewDescription}>
+                <p
+                  style={{
+                    marginBottom: "8px",
+                    fontSize: "1rem",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <strong>Interactive Video Review:</strong> Stream exam
+                  recordings in real-time and navigate instantly to violation
+                  timestamps.
+                </p>
+                <div
+                  style={{
+                    fontSize: "0.9rem",
+                    color: "var(--text-secondary)",
+                    background: "rgba(0,123,255,0.05)",
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(0,123,255,0.15)",
+                    marginBottom: "16px",
+                  }}
+                >
+                  📋 <strong>How to use:</strong>
+                  <ul style={{ margin: "8px 0 0 20px", padding: 0 }}>
+                    <li>Select a video category below to start streaming</li>
+                    <li>
+                      Click on any violation in the timeline or violations list
+                      to jump to that exact moment
+                    </li>
+                    <li>
+                      Download videos for offline review or evidence collection
+                    </li>
+                    <li>
+                      Use standard video controls (play, pause, seek, volume,
+                      fullscreen)
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
 
             {/* Video Downloads in Review Tab */}
             <div className={styles.videoSection}>
-              <h4 className={styles.subsectionTitle}>Videos</h4>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "16px",
+                }}
+              >
+                <h4 className={styles.subsectionTitle}>Videos</h4>
+                <button
+                  onClick={() => {
+                    console.log("Manual video availability refresh triggered");
+                    checkAllVideosAvailability();
+                  }}
+                  style={{
+                    background: "var(--primary-color)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                  disabled={checkingVideoAvailability}
+                >
+                  {checkingVideoAvailability
+                    ? "Checking..."
+                    : "🔄 Refresh Videos"}
+                </button>
+              </div>
               {checkingVideoAvailability ? (
                 <div
                   style={{
@@ -1299,6 +1893,9 @@ const ParticipantDetailsPage: React.FC = () => {
                   }}
                 >
                   Checking video availability...
+                  <div style={{ marginTop: "8px", fontSize: "0.8rem" }}>
+                    User ID: {user?.id}, Exam ID: {examDetails?.id}
+                  </div>
                 </div>
               ) : Object.values(videosAvailability).some(
                   (available) => available
@@ -1349,7 +1946,7 @@ const ParticipantDetailsPage: React.FC = () => {
                   </h4>
                   <p
                     style={{
-                      margin: "0",
+                      margin: "0 0 16px 0",
                       fontSize: "0.9rem",
                       fontStyle: "italic",
                     }}
@@ -1359,79 +1956,214 @@ const ParticipantDetailsPage: React.FC = () => {
                     Videos may not have been recorded or are still being
                     processed.
                   </p>
+                  <div
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "var(--text-secondary)",
+                      background: "rgba(0,0,0,0.05)",
+                      padding: "12px",
+                      borderRadius: "6px",
+                      fontFamily: "monospace",
+                    }}
+                  >
+                    <strong>Debug Info:</strong>
+                    <br />
+                    User ID: {user?.id}
+                    <br />
+                    Exam ID: {examDetails?.id}
+                    <br />
+                    Base URL: {baseUrl}
+                    <br />
+                    Availability Status: {JSON.stringify(videosAvailability)}
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Violations with Timestamps */}
             <div className={styles.violationsSection}>
-              <h4 className={styles.subsectionTitle}>Violations</h4>
+              <h4 className={styles.subsectionTitle}>
+                Violations & Timeline Navigation
+              </h4>
+              <p
+                style={{
+                  fontSize: "0.9rem",
+                  color: "var(--text-secondary)",
+                  marginBottom: "16px",
+                  fontStyle: "italic",
+                  background: "rgba(0,123,255,0.05)",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid rgba(0,123,255,0.15)",
+                }}
+              >
+                💡 <strong>Interactive Timeline:</strong> Click on any violation
+                below to automatically jump to that exact moment in the video
+                stream. The video will seek to the timestamp and highlight
+                briefly to confirm the navigation.
+              </p>
               <div className={styles.violationsList}>
                 {violations.length > 0 ? (
-                  violations.map((violation) => (
+                  violations.map((violation, index) => (
                     <div
                       key={violation.id}
                       className={styles.violationItem}
-                      onClick={() => seekToTimestamp(violation.timestamp)}
+                      onClick={() => {
+                        console.log(
+                          `Seeking to violation: ${violation.type} at ${violation.timestamp}`
+                        );
+                        seekToTimestamp(violation.timestamp);
+                      }}
                       style={{
                         cursor: "pointer",
-                        transition: "background-color 0.2s ease",
+                        transition: "all 0.3s ease",
+                        border: "1px solid transparent",
+                        borderRadius: "8px",
+                        padding: "12px",
+                        marginBottom: "8px",
+                        background: "var(--card-bg)",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor =
-                          "rgba(0,0,0,0.02)";
+                          "rgba(0,123,255,0.05)";
+                        e.currentTarget.style.borderColor =
+                          "var(--primary-color)";
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(0,123,255,0.15)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.backgroundColor =
+                          "var(--card-bg)";
+                        e.currentTarget.style.borderColor = "transparent";
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow =
+                          "0 2px 4px rgba(0,0,0,0.05)";
                       }}
-                      title="Click to jump to this violation in the video"
+                      title={`Click to jump to ${
+                        violation.type
+                      } at ${formatTimestamp(violation.timestamp)}`}
                     >
                       <div className={styles.violationHeader}>
-                        <span
-                          className={styles.violationSeverity}
+                        <div
                           style={{
-                            backgroundColor: getSeverityColor(
-                              violation.severity
-                            ),
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            flexWrap: "wrap",
                           }}
                         >
-                          {violation.severity.toUpperCase()}
-                        </span>
-                        <span className={styles.violationType}>
-                          {violation.type}
-                        </span>
-                        <span className={styles.violationTime}>
-                          {formatTimestamp(violation.timestamp)}
-                          <br />
-                          <small
+                          <span
+                            className={styles.violationSeverity}
                             style={{
-                              color: "var(--text-secondary)",
-                              fontSize: "0.8rem",
+                              backgroundColor: getSeverityColor(
+                                violation.severity
+                              ),
+                              color: "white",
+                              padding: "4px 8px",
+                              borderRadius: "4px",
+                              fontSize: "0.75rem",
+                              fontWeight: "600",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.5px",
                             }}
                           >
-                            (+
-                            {getRelativeTimeFromExamStart(
-                              violation.timestamp
-                            )}{" "}
-                            from start)
-                          </small>
-                        </span>
+                            {violation.severity}
+                          </span>
+                          <span
+                            className={styles.violationType}
+                            style={{
+                              fontWeight: "600",
+                              color: "var(--text-primary)",
+                              fontSize: "1rem",
+                            }}
+                          >
+                            {violation.type}
+                          </span>
+                          <div
+                            style={{ marginLeft: "auto", textAlign: "right" }}
+                          >
+                            <div
+                              className={styles.violationTime}
+                              style={{
+                                fontSize: "0.85rem",
+                                color: "var(--primary-color)",
+                                fontWeight: "500",
+                              }}
+                            >
+                              🕒 {formatTimestamp(violation.timestamp)}
+                            </div>
+                            <small
+                              style={{
+                                color: "var(--text-secondary)",
+                                fontSize: "0.75rem",
+                                display: "block",
+                                marginTop: "2px",
+                              }}
+                            >
+                              +
+                              {getRelativeTimeFromExamStart(
+                                violation.timestamp
+                              )}{" "}
+                              from start
+                            </small>
+                          </div>
+                        </div>
                       </div>
-                      <p className={styles.violationDescription}>
+                      <p
+                        className={styles.violationDescription}
+                        style={{
+                          margin: "8px 0 0 0",
+                          color: "var(--text-secondary)",
+                          fontSize: "0.9rem",
+                          lineHeight: "1.4",
+                        }}
+                      >
                         {violation.description}
                       </p>
+                      <div
+                        style={{
+                          marginTop: "8px",
+                          fontSize: "0.8rem",
+                          color: "var(--primary-color)",
+                          fontWeight: "500",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        🎬 Click to jump to video timestamp
+                      </div>
                     </div>
                   ))
                 ) : (
                   <div
                     style={{
                       textAlign: "center",
-                      padding: "40px",
+                      padding: "60px 40px",
                       color: "var(--text-secondary)",
                       fontStyle: "italic",
+                      background: "var(--card-bg)",
+                      borderRadius: "12px",
+                      border: "1px dashed var(--border-color)",
                     }}
                   >
-                    No violations recorded for this exam session.
+                    <div style={{ fontSize: "2rem", marginBottom: "16px" }}>
+                      ✅
+                    </div>
+                    <h4
+                      style={{
+                        margin: "0 0 8px 0",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      No Violations Recorded
+                    </h4>
+                    <p style={{ margin: "0", fontSize: "0.9rem" }}>
+                      Great! No violations were detected during this exam
+                      session.
+                    </p>
                   </div>
                 )}
               </div>

@@ -65,7 +65,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
     console.log("exam", req.body);
 
     console.log(userId);
-    const flaggedScore = getExamScore(userId, examId); 
+    const flaggedScore = getExamScore(userId, examId);
 
     console.log("Getting Exam Score :", flaggedScore);
 
@@ -115,54 +115,81 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       await existingScore.update(scoreData);
     }
 
-
     const violationLogs = calculatedScore.violationFrames;
-    console.log(violationLogs.webDetectViolations);
+    console.log(
+      "Violation Logs of webdetect: ",
+      violationLogs.webDetectViolations
+    );
 
     for (const log of violationLogs.faceAuthViolations) {
+      console.log(
+        "faceAuth log timestamp:",
+        log?.timestamp,
+        "type:",
+        typeof log?.timestamp
+      );
+      const timestamp = log?.timestamp ? new Date(log.timestamp) : null;
+      console.log("converted timestamp:", timestamp);
+
       await ViolationLog.create({
         user_id: userId,
         exam_id: examId,
-        violation_name: log.frameData.violationType,
-        violation_timestamp: log.timestamp,
-      })
+        violation_name: log?.frameData?.violationType,
+        violation_timestamp: timestamp,
+      });
     }
     for (const log of violationLogs.headPositionViolations) {
+      const timestamp = log?.timestamp ? new Date(log.timestamp) : null;
+
       await ViolationLog.create({
         user_id: userId,
         exam_id: examId,
-        violation_name: log.frameData.violationType,
-        violation_timestamp: log.timestamp,
-      })
+        violation_name: log?.frameData?.violationType,
+        violation_timestamp: timestamp,
+      });
     }
     for (const log of violationLogs.eyePositionViolations) {
+      const timestamp = log?.timestamp ? new Date(log.timestamp) : null;
+
       await ViolationLog.create({
         user_id: userId,
         exam_id: examId,
-        violation_name: log.frameData.violationType,
-        violation_timestamp: log.timestamp,
-      })
+        violation_name: log?.frameData?.violationType,
+        violation_timestamp: timestamp,
+      });
     }
     for (const log of violationLogs.webDetectViolations) {
+      const timestamp = log?.timestamp ? new Date(log.timestamp) : null;
+
+      console.log(
+        "webDetect log timestamp:",
+        log?.timestamp,
+        "type:",
+        typeof log?.timestamp
+      );
+
       await ViolationLog.create({
         user_id: userId,
         exam_id: examId,
-        violation_name: log.frameData.violationType,
-        violation_timestamp: log.timestamp,
-      })
+        violation_name: log?.frameData?.violationType,
+        violation_timestamp: timestamp,
+      });
     }
     for (const log of violationLogs.personViolations) {
+      const timestamp = log?.timestamp ? new Date(log.timestamp) : null;
+
       await ViolationLog.create({
         user_id: userId,
         exam_id: examId,
-        violation_name: log.frameData.violationType,
-        violation_timestamp: log.timestamp,
-      })
+        violation_name: log?.frameData?.violationType,
+        violation_timestamp: timestamp,
+      });
     }
 
     res.status(200).json({
       success: true,
       message: "Score saved successfully",
+      timestamp: new Date().toISOString(),
       data: {
         userId,
         examId,
@@ -176,6 +203,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: "Failed to save score Error Occured",
+      err: error,
     });
   }
 };

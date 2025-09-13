@@ -15,7 +15,7 @@ const router = Router();
 
 router.get("/getScore", requireExaminerRole, getScoreInPercent);
 
-router.post("/saveScore", requireStudentRole, putScoreInPercent);
+router.post("/saveScore",  putScoreInPercent);
 
 // router.post("/setMicrophone", requireStudentRole, setMicrophoneCount);
 

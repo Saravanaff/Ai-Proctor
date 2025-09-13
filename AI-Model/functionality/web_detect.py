@@ -37,6 +37,7 @@ def web_detect(sio):
             sio.emit("webDetectRes", {
                 "userId": userId,
                 "examId": examId,
+                "timestamp": data["timestamp"],
                 "data": detected_objects,
                 "code": 0
             })
