@@ -33,7 +33,7 @@ eye_functionality(sio)
 while not sio.connected:
     try:
         print("[Eye service] Trying to connect...")
-        sio.connect("https://localhost:3001/", transports=['websocket'])
+        sio.connect("https://10.75.222.168:3001/", transports=['websocket'])
     except Exception as e:
         print(f"[Eye service] Connection error: {e}")
         time.sleep(2)

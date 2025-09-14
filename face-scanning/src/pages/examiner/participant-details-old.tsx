@@ -1,87 +1,53 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { generateParticipantPdf } from "../../components/ParticipantPdfReport";
-import { useRouter } from "next/router";
-import axios from "axios";
 import LoadingIndicator from "../../components/LoadingIndicator";
 import styles from "../../styles/ParticipantDetailsPage.module.css";
-import { getTokenFromCookie } from "@/constants/AuthStore";
 import VideoPlayer from "../../components/VideoPlayer";
-
-// PDF Constants
-const PDF_CONSTANTS = {
-  SUPER_PROCTOR_FEED: 0,
-  RESTRICTED_OBJECT: 0,
-  DATA_CAPTURE_INTERVAL: 5,
-  PAUSE_EXAM_REQUEST: 0,
-  INDIVIDUAL_TEST_TAKER_SETTINGS: 0,
-  AUTO_TEST_ABORT: 0,
-};
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
-interface ExamDetails {
-  id: number;
-  exam_name: string;
-  key: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ScoreDetails {
-  success: boolean;
-  data: number;
-
-  scoreBreakdown?: {
-    no_of_person_flagged: number;
-    no_person_flagged: number;
-    auth_face_flagged: number;
-    head_position_flagged: number;
-    eyes_flagged: number;
-    object_detected_flagged: number;
-    sound_flagged: number;
-    tab_switch_violation: number;
-    number_of_microphone: number;
-    screen_sharing: boolean;
-    safe_browser: boolean;
-    control_desktop_apps: number;
-    blank_feed: number;
-    total_score: number;
-  };
-}
-
-interface ViolationEvent {
-  id: string;
-  type: string;
-  severity: "low" | "medium" | "high";
-  description: string;
-  timestamp: string;
-  details?: string;
-}
-
-interface TimelineEvent {
-  timestamp: string;
-  score: number;
-  violations: string[];
-}
-
-interface ViolationLogResponse {
-  success: boolean;
-  data: {
-    id: number;
-    user_id: number;
-    exam_id: number;
-    violation_name: string;
-    violation_timestamp: string;
-  }[];
-  count: number;
-  summary: { [key: string]: number };
-}
+import ParticipantHeader from "../../components/participant/ParticipantHeader";
+import ViolationsOverview from "../../components/participant/ViolationsOverview";
+import ViolationsTimeline from "../../components/participant/ViolationsTimeline";
+import VideoReview from "../../components/participant/VideoReview";
+import ViolationsList from "../../components/participant/ViolationsList";
+import TooltipProvider from "../../components/participant/TooltipProvider";
+import TabNavigation from "../../components/participant/TabNavigation";
+import { useParticipantDetails, useTooltip } from "../../hooks";
+import {
+  PDF_CONSTANTS,
+  calculateExamDuration,
+  getTotalViolations,
+} from "../../utils/participantUtils";
 
 const ParticipantDetailsPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<"overview" | "timeline" | "review">("overview");
+  const tooltip = useTooltip();
+  const participantDetails = useParticipantDetails();
+
+  // Destructure all the data and methods we need
+  const {
+    user,
+    examDetails,
+    attendance,
+    examStartTime,
+    scoreDetails,
+    violations,
+    timelineEvents,
+    loading,
+    selectedVideoCategory,
+    setSelectedVideoCategory,
+    videoLoading,
+    videoError,
+    videosAvailability,
+    checkingVideoAvailability,
+    handleVideoDownload,
+    seekToTimestamp,
+    videoRef,
+  } = participantDetails;
+
+  // Calculate exam duration
+  const calculateExamDurationForComponent = (): string => {
+    return calculateExamDuration(attendance);
+  };
+
   // PDF generation handler
   const handleGeneratePDF = () => {
     if (!user || !examDetails) return;
@@ -105,87 +71,20 @@ const ParticipantDetailsPage: React.FC = () => {
               restricted_object: PDF_CONSTANTS.RESTRICTED_OBJECT,
               data_capture_interval: PDF_CONSTANTS.DATA_CAPTURE_INTERVAL,
               pause_exam_request: PDF_CONSTANTS.PAUSE_EXAM_REQUEST,
-              individual_test_taker_settings:
-                PDF_CONSTANTS.INDIVIDUAL_TEST_TAKER_SETTINGS,
+              individual_test_taker_settings: PDF_CONSTANTS.INDIVIDUAL_TEST_TAKER_SETTINGS,
               auto_test_abort: PDF_CONSTANTS.AUTO_TEST_ABORT,
             },
           }
         : undefined,
     });
   };
-  const router = useRouter();
-  const { examId, userId } = router.query;
 
-  const [user, setUser] = useState<User | null>(null);
-  const [attendance, setAttendance] = useState<any>(null);
-  const [examDetails, setExamDetails] = useState<ExamDetails | null>(null);
+  // Check if video data is available
+  const hasVideoData = Object.values(videosAvailability).some((available) => available);
 
-  // Function to calculate total exam duration
-  const calculateExamDuration = (): string => {
-    if (!attendance) {
-      return "Duration not available";
-    }
-
-    try {
-      // Use startTime and endTime from attendance if available
-      if (attendance.startTime) {
-        const startTime = new Date(attendance.startTime);
-        const endTime = attendance.endTime
-          ? new Date(attendance.endTime)
-          : new Date();
-        const durationMs = endTime.getTime() - startTime.getTime();
-
-        if (durationMs <= 0) {
-          return "Just started";
-        }
-
-        const hours = Math.floor(durationMs / (1000 * 60 * 60));
-        const minutes = Math.floor(
-          (durationMs % (1000 * 60 * 60)) / (1000 * 60)
-        );
-        const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
-
-        if (hours > 0) {
-          return `${hours}h ${minutes}m ${seconds}s`;
-        } else if (minutes > 0) {
-          return `${minutes}m ${seconds}s`;
-        } else {
-          return `${seconds}s`;
-        }
-      }
-
-      // Fallback to createdAt if startTime is not available
-      if (attendance.createdAt) {
-        const startTime = new Date(attendance.createdAt);
-        const endTime = new Date();
-        const durationMs = endTime.getTime() - startTime.getTime();
-
-        if (durationMs <= 0) {
-          return "Just joined";
-        }
-
-        const hours = Math.floor(durationMs / (1000 * 60 * 60));
-        const minutes = Math.floor(
-          (durationMs % (1000 * 60 * 60)) / (1000 * 60)
-        );
-        const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
-
-        if (hours > 0) {
-          return `${hours}h ${minutes}m ${seconds}s`;
-        } else if (minutes > 0) {
-          return `${minutes}m ${seconds}s`;
-        } else {
-          return `${seconds}s`;
-        }
-      }
-
-      return "Duration not available";
-    } catch (error) {
-      console.error("Error calculating duration:", error);
-      return "Duration not available";
-    }
-  };
-  const [scoreDetails, setScoreDetails] = useState<ScoreDetails | null>(null);
+  if (loading) {
+    return <LoadingIndicator />;
+  }
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
     "overview" | "timeline" | "review"
@@ -207,13 +106,7 @@ const ParticipantDetailsPage: React.FC = () => {
     useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Modal and tooltip state
-  const [modalImage, setModalImage] = useState<{
-    src: string;
-    alt: string;
-    timestamp: string;
-    violationType: string;
-  } | null>(null);
+  // Tooltip state
   const [tooltip, setTooltip] = useState<{
     visible: boolean;
     content: string;
@@ -676,13 +569,10 @@ const ParticipantDetailsPage: React.FC = () => {
     }
   }, [user, examDetails]);
 
-  // Keyboard event handling for modal
+  // Keyboard event handling for tooltip
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        if (modalImage) {
-          closeImageModal();
-        }
         if (tooltip.visible) {
           hideTooltip();
         }
@@ -691,7 +581,7 @@ const ParticipantDetailsPage: React.FC = () => {
 
     document.addEventListener("keydown", handleKeyPress);
     return () => document.removeEventListener("keydown", handleKeyPress);
-  }, [modalImage, tooltip.visible]);
+  }, [tooltip.visible]);
 
   // Calculate total violations
   const getTotalViolations = () => {
@@ -728,115 +618,7 @@ const ParticipantDetailsPage: React.FC = () => {
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score <= 30) return "var(--success-color)";
-    if (score <= 60) return "var(--warning-color)";
-    return "var(--error-color)";
-  };
-
-  const getScoreLabel = (score: number) => {
-    if (score <= 30) return "Low Risk";
-    if (score <= 60) return "Medium Risk";
-    return "High Risk";
-  };
-
-  // Violation explanation data
-  const getViolationExplanation = (violationType: string) => {
-    const explanations: {
-      [key: string]: { title: string; description: string; severity: string };
-    } = {
-      no_person_detected: {
-        title: "No Person Detected",
-        description:
-          "The system could not detect a person in the camera feed. This may indicate the participant left their seat or moved out of view.",
-        severity: "high",
-      },
-      multiple_persons: {
-        title: "Multiple Persons Detected",
-        description:
-          "More than one person was detected in the camera feed. Only the registered participant should be visible during the exam.",
-        severity: "high",
-      },
-      unauthorized_face: {
-        title: "Unauthorized Person",
-        description:
-          "A face that doesn't match the registered participant was detected. This could indicate identity fraud or assistance from another person.",
-        severity: "high",
-      },
-      suspicious_head_movement: {
-        title: "Suspicious Head Movement",
-        description:
-          "Unusual head movements detected that may indicate looking at unauthorized materials or receiving assistance.",
-        severity: "medium",
-      },
-      eyes_not_on_screen: {
-        title: "Eyes Not on Screen",
-        description:
-          "The participant's gaze was directed away from the screen for an extended period, possibly looking at unauthorized materials.",
-        severity: "medium",
-      },
-      prohibited_object: {
-        title: "Prohibited Object Detected",
-        description:
-          "An unauthorized object such as a phone, book, or notes was detected in the exam environment.",
-        severity: "high",
-      },
-      audio_violation: {
-        title: "Audio Violation",
-        description:
-          "Unauthorized audio was detected, which may indicate communication with another person or use of prohibited assistance.",
-        severity: "medium",
-      },
-      tab_switching: {
-        title: "Tab Switching",
-        description:
-          "The participant switched to a different browser tab or application, which is prohibited during the exam.",
-        severity: "high",
-      },
-      screen_sharing: {
-        title: "Screen Sharing Detected",
-        description:
-          "Screen sharing software was detected, which could be used to share exam content with unauthorized persons.",
-        severity: "high",
-      },
-      microphone_violation: {
-        title: "Microphone Issue",
-        description:
-          "Multiple microphones detected or microphone tampering observed, which may indicate unauthorized communication.",
-        severity: "medium",
-      },
-      browser_violation: {
-        title: "Browser Security Violation",
-        description:
-          "The exam was not taken in the required secure browser or browser security features were bypassed.",
-        severity: "high",
-      },
-    };
-
-    return (
-      explanations[violationType] || {
-        title: "Unknown Violation",
-        description:
-          "An unspecified violation was detected during the exam session.",
-        severity: "low",
-      }
-    );
-  };
-
   // Modal and tooltip handlers
-  const openImageModal = (
-    imageSrc: string,
-    alt: string,
-    timestamp: string,
-    violationType: string
-  ) => {
-    setModalImage({ src: imageSrc, alt, timestamp, violationType });
-  };
-
-  const closeImageModal = () => {
-    setModalImage(null);
-  };
-
   const showTooltip = (e: React.MouseEvent, violationType: string) => {
     const explanation = getViolationExplanation(violationType);
     const rect = e.currentTarget.getBoundingClientRect();
@@ -862,19 +644,6 @@ const ParticipantDetailsPage: React.FC = () => {
 
   const hideTooltip = () => {
     setTooltip((prev) => ({ ...prev, visible: false }));
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    try {
-      const date = new Date(timestamp);
-      // Check if the date is valid
-      if (isNaN(date.getTime())) {
-        return "Invalid Date";
-      }
-      return date.toLocaleString();
-    } catch (error) {
-      return "Invalid Date";
-    }
   };
 
   const handleVideoDownload = async (category: string) => {
@@ -1619,7 +1388,7 @@ const ParticipantDetailsPage: React.FC = () => {
               <h2
                 className={styles.participantName}
                 style={{
-                  fontSize: "2.5rem",
+                  fontSize: "1.8rem",
                   wordBreak: "break-word",
                   overflowWrap: "break-word",
                 }}
@@ -2153,7 +1922,8 @@ const ParticipantDetailsPage: React.FC = () => {
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = "translateY(0)";
                         e.currentTarget.style.boxShadow =
-                          "0 2px 6px rgba(0, 0, 0, 0.04)";
+                    Material: "Dear Students, take print of your hardcopy material and UPC questions to study for UPC classed. Ensure the UPC Questions and study materials(Notes)."
+      "0 2px 6px rgba(0, 0, 0, 0.04)";
                       }}
                     >
                       {/* Compact Header */}
@@ -2267,63 +2037,36 @@ const ParticipantDetailsPage: React.FC = () => {
 
                       {/* Compact Violation Details */}
                       {event.violations.length > 0 ? (
-                        <div className={styles.violationWithImage}>
-                          <div className={styles.violationContent}>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: "4px",
-                                marginBottom: "8px",
-                              }}
-                            >
-                              {event.violations.map((violation, vIndex) => (
-                                <div
-                                  key={vIndex}
-                                  style={{
-                                    background: `${getSeverityColor(
-                                      severity
-                                    )}15`,
-                                    color: getSeverityColor(severity),
-                                    padding: "4px 8px",
-                                    borderRadius: "4px",
-                                    fontSize: "11px",
-                                    fontWeight: "500",
-                                    border: `1px solid ${getSeverityColor(
-                                      severity
-                                    )}30`,
-                                    cursor: "pointer",
-                                  }}
-                                  onMouseEnter={(e) =>
-                                    showTooltip(e, violation)
-                                  }
-                                  onMouseLeave={hideTooltip}
-                                >
-                                  {violation}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Image on the right side */}
+                        <div className={styles.violationContent}>
                           <div
-                            className={styles.violationImageContainer}
-                            onClick={() =>
-                              openImageModal(
-                                `/api/violation-image/${user?.id}/${examDetails?.id}/${event.timestamp}`,
-                                `Violation at ${event.timestamp}`,
-                                event.timestamp,
-                                event.violations[0] || "Unknown"
-                              )
-                            }
-                            title="Click to view larger image"
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: "4px",
+                              marginBottom: "8px",
+                            }}
                           >
-                            <div className={styles.imageNotFound}>
-                              <div className={styles.iconContainer}>
-                                <div className={styles.imageIcon}></div>
+                            {event.violations.map((violation, vIndex) => (
+                              <div
+                                key={vIndex}
+                                style={{
+                                  background: `${getSeverityColor(severity)}15`,
+                                  color: getSeverityColor(severity),
+                                  padding: "4px 8px",
+                                  borderRadius: "4px",
+                                  fontSize: "11px",
+                                  fontWeight: "500",
+                                  border: `1px solid ${getSeverityColor(
+                                    severity
+                                  )}30`,
+                                  cursor: "pointer",
+                                }}
+                                onMouseEnter={(e) => showTooltip(e, violation)}
+                                onMouseLeave={hideTooltip}
+                              >
+                                {violation}
                               </div>
-                              Image Not Found
-                            </div>
+                            ))}
                           </div>
                         </div>
                       ) : (
@@ -2756,58 +2499,33 @@ const ParticipantDetailsPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className={styles.violationWithImage}>
-                        <div className={styles.violationContent}>
-                          <p
-                            className={styles.violationDescription}
-                            style={{
-                              margin: "8px 0 0 0",
-                              color: "var(--text-secondary)",
-                              fontSize: "0.9rem",
-                              lineHeight: "1.4",
-                            }}
-                          >
-                            {violation.description}
-                          </p>
-                          <div
-                            style={{
-                              marginTop: "8px",
-                              fontSize: "0.8rem",
-                              color: "var(--primary-color)",
-                              fontWeight: "500",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "4px",
-                            }}
-                          >
-                            <div className={styles.iconContainer}>
-                              <div className={styles.playIcon}></div>
-                            </div>
-                            Click to jump to video timestamp
-                          </div>
-                        </div>
-
-                        {/* Image on the right side */}
-                        <div
-                          className={styles.violationImageContainer}
-                          onClick={() =>
-                            openImageModal(
-                              `/api/violation-image/${user?.id}/${examDetails?.id}/${violation.timestamp}`,
-                              `${violation.type} at ${formatTimestamp(
-                                violation.timestamp
-                              )}`,
-                              violation.timestamp,
-                              violation.type
-                            )
-                          }
-                          title="Click to view larger image"
+                      <div className={styles.violationContent}>
+                        <p
+                          className={styles.violationDescription}
+                          style={{
+                            margin: "8px 0 0 0",
+                            color: "var(--text-secondary)",
+                            fontSize: "0.9rem",
+                            lineHeight: "1.4",
+                          }}
                         >
-                          <div className={styles.imageNotFound}>
-                            <div className={styles.iconContainer}>
-                              <div className={styles.imageIcon}></div>
-                            </div>
-                            View Image
+                          {violation.description}
+                        </p>
+                        <div
+                          style={{
+                            marginTop: "8px",
+                            fontSize: "0.8rem",
+                            color: "var(--primary-color)",
+                            fontWeight: "500",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <div className={styles.iconContainer}>
+                            <div className={styles.playIcon}></div>
                           </div>
+                          Click to jump to video timestamp
                         </div>
                       </div>
                     </div>
@@ -2862,42 +2580,6 @@ const ParticipantDetailsPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Image Modal */}
-      {modalImage && (
-        <div className={styles.imageModal} onClick={closeImageModal}>
-          <div
-            className={styles.imageModalContent}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className={styles.modalCloseButton}
-              onClick={closeImageModal}
-              aria-label="Close modal"
-            >
-              ×
-            </button>
-            <img
-              src={modalImage.src}
-              alt={modalImage.alt}
-              className={styles.modalImage}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                target.parentNode?.insertBefore(
-                  document.createTextNode("Image not available"),
-                  target
-                );
-              }}
-            />
-            <div className={styles.modalInfo}>
-              <strong>{modalImage.violationType}</strong>
-              <br />
-              <small>{modalImage.timestamp}</small>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Violation Tooltip */}
       {tooltip.visible && (

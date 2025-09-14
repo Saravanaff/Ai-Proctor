@@ -28,13 +28,13 @@ export const streamVideo = async (req: Request, res: Response) => {
       );
       if (fs.existsSync(testPath)) {
         filePath = testPath;
-        // Set proper MIME types with codec information
+        // Set proper MIME types - simplified without codec specification
         switch (ext) {
           case "mp4":
-            contentType = "video/mp4; codecs=avc1.64001e";
+            contentType = "video/mp4";
             break;
           case "webm":
-            contentType = "video/webm; codecs=vp8,vorbis";
+            contentType = "video/webm";
             break;
           case "mkv":
             contentType = "video/x-matroska";

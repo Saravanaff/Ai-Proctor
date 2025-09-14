@@ -15,6 +15,10 @@
   --text-primary: #1e293b;
   --text-secondary: #475569;
   --accent-color: #0ea5e9;
+  --primary-color: #007bff;
+  --primary-color-light: rgba(0, 123, 255, 0.3);
+  --primary-shadow: rgba(0, 123, 255, 0.2);
+  --primary-bg-light: rgba(0, 123, 255, 0.02);
   --error-color: #e11d48;
   --warning-color: #f59e0b;
   --info-color: #3b82f6;
@@ -59,6 +63,10 @@
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --accent-color: #10b981;
+  --primary-color: #3b82f6;
+  --primary-color-light: rgba(59, 130, 246, 0.3);
+  --primary-shadow: rgba(59, 130, 246, 0.2);
+  --primary-bg-light: rgba(59, 130, 246, 0.02);
   --error-color: #f87171;
   --warning-color: #fbbf24;
   --info-color: #60a5fa;

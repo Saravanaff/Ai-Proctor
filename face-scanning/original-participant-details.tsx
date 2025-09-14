@@ -5,7 +5,6 @@ import axios from "axios";
 import LoadingIndicator from "../../components/LoadingIndicator";
 import styles from "../../styles/ParticipantDetailsPage.module.css";
 import { getTokenFromCookie } from "@/constants/AuthStore";
-import VideoPlayer from "../../components/VideoPlayer";
 
 // PDF Constants
 const PDF_CONSTANTS = {
@@ -117,84 +116,19 @@ const ParticipantDetailsPage: React.FC = () => {
   const { examId, userId } = router.query;
 
   const [user, setUser] = useState<User | null>(null);
-  const [attendance, setAttendance] = useState<any>(null);
   const [examDetails, setExamDetails] = useState<ExamDetails | null>(null);
-
-  // Function to calculate total exam duration
-  const calculateExamDuration = (): string => {
-    if (!attendance) {
-      return "Duration not available";
-    }
-
-    try {
-      // Use startTime and endTime from attendance if available
-      if (attendance.startTime) {
-        const startTime = new Date(attendance.startTime);
-        const endTime = attendance.endTime
-          ? new Date(attendance.endTime)
-          : new Date();
-        const durationMs = endTime.getTime() - startTime.getTime();
-
-        if (durationMs <= 0) {
-          return "Just started";
-        }
-
-        const hours = Math.floor(durationMs / (1000 * 60 * 60));
-        const minutes = Math.floor(
-          (durationMs % (1000 * 60 * 60)) / (1000 * 60)
-        );
-        const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
-
-        if (hours > 0) {
-          return `${hours}h ${minutes}m ${seconds}s`;
-        } else if (minutes > 0) {
-          return `${minutes}m ${seconds}s`;
-        } else {
-          return `${seconds}s`;
-        }
-      }
-
-      // Fallback to createdAt if startTime is not available
-      if (attendance.createdAt) {
-        const startTime = new Date(attendance.createdAt);
-        const endTime = new Date();
-        const durationMs = endTime.getTime() - startTime.getTime();
-
-        if (durationMs <= 0) {
-          return "Just joined";
-        }
-
-        const hours = Math.floor(durationMs / (1000 * 60 * 60));
-        const minutes = Math.floor(
-          (durationMs % (1000 * 60 * 60)) / (1000 * 60)
-        );
-        const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
-
-        if (hours > 0) {
-          return `${hours}h ${minutes}m ${seconds}s`;
-        } else if (minutes > 0) {
-          return `${minutes}m ${seconds}s`;
-        } else {
-          return `${seconds}s`;
-        }
-      }
-
-      return "Duration not available";
-    } catch (error) {
-      console.error("Error calculating duration:", error);
-      return "Duration not available";
-    }
-  };
   const [scoreDetails, setScoreDetails] = useState<ScoreDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
     "overview" | "timeline" | "review"
   >("overview");
 
+  // State for violations and timeline events (populated from API)
   const [violations, setViolations] = useState<ViolationEvent[]>([]);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
 
+  // Video player states
   const [examStartTime, setExamStartTime] = useState<Date | null>(null);
   const [selectedVideoCategory, setSelectedVideoCategory] =
     useState<string>("face_camera");
@@ -206,29 +140,6 @@ const ParticipantDetailsPage: React.FC = () => {
   const [checkingVideoAvailability, setCheckingVideoAvailability] =
     useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  // Modal and tooltip state
-  const [modalImage, setModalImage] = useState<{
-    src: string;
-    alt: string;
-    timestamp: string;
-    violationType: string;
-  } | null>(null);
-  const [tooltip, setTooltip] = useState<{
-    visible: boolean;
-    content: string;
-    title: string;
-    severity: string;
-    x: number;
-    y: number;
-  }>({
-    visible: false,
-    content: "",
-    title: "",
-    severity: "",
-    x: 0,
-    y: 0,
-  });
 
   axios.interceptors.request.use(
     (config) => {
@@ -413,22 +324,15 @@ const ParticipantDetailsPage: React.FC = () => {
         setViolations(transformedViolations);
         setTimelineEvents(timelineEvents);
 
-        // Set exam start time from exam creation time (most accurate)
-        if (examDetails) {
-          const examStartFromCreation = new Date(examDetails.createdAt);
-          console.log(
-            "Setting exam start time from examDetails.createdAt:",
-            examStartFromCreation.toISOString()
-          );
-          setExamStartTime(examStartFromCreation);
-        } else if (logs.length > 0) {
-          // Fallback: use first violation time if exam details not available
+        // Set exam start time from the first log or exam creation time
+        if (logs.length > 0) {
           const firstViolationTime = new Date(logs[0].violation_timestamp);
-          console.log(
-            "Setting exam start time from first violation (fallback):",
-            firstViolationTime.toISOString()
+          // Assume exam started 5 minutes before first violation for safety
+          setExamStartTime(
+            new Date(firstViolationTime.getTime() - 5 * 60 * 1000)
           );
-          setExamStartTime(firstViolationTime);
+        } else if (examDetails) {
+          setExamStartTime(new Date(examDetails.createdAt));
         }
       }
     } catch (err) {
@@ -472,6 +376,7 @@ const ParticipantDetailsPage: React.FC = () => {
     return "low";
   };
 
+  // Helper function to get description based on violation type
   const getDescriptionFromViolation = (violationType: string): string => {
     const descriptions: { [key: string]: string } = {
       "Multiple Persons Detected":
@@ -485,6 +390,7 @@ const ParticipantDetailsPage: React.FC = () => {
       "Screen Sharing": "Screen sharing activity detected",
     };
 
+    // Find matching description or return a generic one
     const matchingKey = Object.keys(descriptions).find((key) =>
       violationType.toLowerCase().includes(key.toLowerCase())
     );
@@ -494,6 +400,7 @@ const ParticipantDetailsPage: React.FC = () => {
       : `${violationType} detected`;
   };
 
+  // Helper function to create timeline events from logs
   const createTimelineFromLogs = (
     logs: ViolationLogResponse["data"]
   ): TimelineEvent[] => {
@@ -544,14 +451,7 @@ const ParticipantDetailsPage: React.FC = () => {
 
         // Set exam start time as fallback
         if (examResponse.data.exam.createdAt) {
-          const examStartFromCreation = new Date(
-            examResponse.data.exam.createdAt
-          );
-          console.log(
-            "Setting exam start time from exam creation (fetchUserDetails):",
-            examStartFromCreation.toISOString()
-          );
-          setExamStartTime(examStartFromCreation);
+          setExamStartTime(new Date(examResponse.data.exam.createdAt));
         }
 
         // Find the specific user from exam attendances
@@ -561,7 +461,6 @@ const ParticipantDetailsPage: React.FC = () => {
 
         if (attendance) {
           setUser(attendance.user);
-          setAttendance(attendance);
 
           // Fetch score details
           const scoreData = await fetchScore({
@@ -676,55 +575,16 @@ const ParticipantDetailsPage: React.FC = () => {
     }
   }, [user, examDetails]);
 
-  // Keyboard event handling for modal
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (modalImage) {
-          closeImageModal();
-        }
-        if (tooltip.visible) {
-          hideTooltip();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyPress);
-    return () => document.removeEventListener("keydown", handleKeyPress);
-  }, [modalImage, tooltip.visible]);
-
-  // Calculate total violations
-  const getTotalViolations = () => {
-    if (!scoreDetails?.scoreBreakdown) return 0;
-
-    const breakdown = scoreDetails.scoreBreakdown;
-    return (
-      (breakdown.no_of_person_flagged || 0) +
-      (breakdown.no_person_flagged || 0) +
-      (breakdown.auth_face_flagged || 0) +
-      (breakdown.head_position_flagged || 0) +
-      (breakdown.eyes_flagged || 0) +
-      (breakdown.sound_flagged || 0) +
-      (breakdown.object_detected_flagged || 0) +
-      (breakdown.tab_switch_violation || 0) +
-      (breakdown.number_of_microphone || 0) +
-      (breakdown.screen_sharing ? 1 : 0) +
-      (breakdown.safe_browser ? 1 : 0) +
-      (breakdown.control_desktop_apps ? 1 : 0) +
-      (breakdown.blank_feed || 0)
-    );
-  };
-
-  const getSeverityColor = (severity: "low" | "medium" | "high" | string) => {
-    switch (severity.toLowerCase()) {
+  const getSeverityColor = (severity: "low" | "medium" | "high") => {
+    switch (severity) {
       case "low":
-        return "#28a745"; // Green
+        return "var(--success-color)";
       case "medium":
-        return "#fd7e14"; // Orange
+        return "var(--warning-color)";
       case "high":
-        return "#dc3545"; // Red
+        return "var(--error-color)";
       default:
-        return "#6c757d"; // Gray
+        return "var(--text-secondary)";
     }
   };
 
@@ -740,141 +600,8 @@ const ParticipantDetailsPage: React.FC = () => {
     return "High Risk";
   };
 
-  // Violation explanation data
-  const getViolationExplanation = (violationType: string) => {
-    const explanations: {
-      [key: string]: { title: string; description: string; severity: string };
-    } = {
-      no_person_detected: {
-        title: "No Person Detected",
-        description:
-          "The system could not detect a person in the camera feed. This may indicate the participant left their seat or moved out of view.",
-        severity: "high",
-      },
-      multiple_persons: {
-        title: "Multiple Persons Detected",
-        description:
-          "More than one person was detected in the camera feed. Only the registered participant should be visible during the exam.",
-        severity: "high",
-      },
-      unauthorized_face: {
-        title: "Unauthorized Person",
-        description:
-          "A face that doesn't match the registered participant was detected. This could indicate identity fraud or assistance from another person.",
-        severity: "high",
-      },
-      suspicious_head_movement: {
-        title: "Suspicious Head Movement",
-        description:
-          "Unusual head movements detected that may indicate looking at unauthorized materials or receiving assistance.",
-        severity: "medium",
-      },
-      eyes_not_on_screen: {
-        title: "Eyes Not on Screen",
-        description:
-          "The participant's gaze was directed away from the screen for an extended period, possibly looking at unauthorized materials.",
-        severity: "medium",
-      },
-      prohibited_object: {
-        title: "Prohibited Object Detected",
-        description:
-          "An unauthorized object such as a phone, book, or notes was detected in the exam environment.",
-        severity: "high",
-      },
-      audio_violation: {
-        title: "Audio Violation",
-        description:
-          "Unauthorized audio was detected, which may indicate communication with another person or use of prohibited assistance.",
-        severity: "medium",
-      },
-      tab_switching: {
-        title: "Tab Switching",
-        description:
-          "The participant switched to a different browser tab or application, which is prohibited during the exam.",
-        severity: "high",
-      },
-      screen_sharing: {
-        title: "Screen Sharing Detected",
-        description:
-          "Screen sharing software was detected, which could be used to share exam content with unauthorized persons.",
-        severity: "high",
-      },
-      microphone_violation: {
-        title: "Microphone Issue",
-        description:
-          "Multiple microphones detected or microphone tampering observed, which may indicate unauthorized communication.",
-        severity: "medium",
-      },
-      browser_violation: {
-        title: "Browser Security Violation",
-        description:
-          "The exam was not taken in the required secure browser or browser security features were bypassed.",
-        severity: "high",
-      },
-    };
-
-    return (
-      explanations[violationType] || {
-        title: "Unknown Violation",
-        description:
-          "An unspecified violation was detected during the exam session.",
-        severity: "low",
-      }
-    );
-  };
-
-  // Modal and tooltip handlers
-  const openImageModal = (
-    imageSrc: string,
-    alt: string,
-    timestamp: string,
-    violationType: string
-  ) => {
-    setModalImage({ src: imageSrc, alt, timestamp, violationType });
-  };
-
-  const closeImageModal = () => {
-    setModalImage(null);
-  };
-
-  const showTooltip = (e: React.MouseEvent, violationType: string) => {
-    const explanation = getViolationExplanation(violationType);
-    const rect = e.currentTarget.getBoundingClientRect();
-
-    console.log("Tooltip triggered:", {
-      violationType,
-      explanation,
-      rect,
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10,
-      windowScroll: { x: window.scrollX, y: window.scrollY },
-    });
-
-    setTooltip({
-      visible: true,
-      content: explanation.description,
-      title: explanation.title,
-      severity: explanation.severity,
-      x: rect.left + rect.width / 2,
-      y: rect.top - 10,
-    });
-  };
-
-  const hideTooltip = () => {
-    setTooltip((prev) => ({ ...prev, visible: false }));
-  };
-
   const formatTimestamp = (timestamp: string) => {
-    try {
-      const date = new Date(timestamp);
-      // Check if the date is valid
-      if (isNaN(date.getTime())) {
-        return "Invalid Date";
-      }
-      return date.toLocaleString();
-    } catch (error) {
-      return "Invalid Date";
-    }
+    return new Date(timestamp).toLocaleString();
   };
 
   const handleVideoDownload = async (category: string) => {
@@ -927,13 +654,6 @@ const ParticipantDetailsPage: React.FC = () => {
       const diffInSeconds =
         (violationTime.getTime() - examStartTime.getTime()) / 1000;
 
-      console.log("Timeline calculation:", {
-        timestamp,
-        violationTime: violationTime.toISOString(),
-        examStartTime: examStartTime.toISOString(),
-        diffInSeconds,
-      });
-
       if (diffInSeconds < 0) return "Before exam start";
 
       const hours = Math.floor(diffInSeconds / 3600);
@@ -981,8 +701,8 @@ const ParticipantDetailsPage: React.FC = () => {
       );
       if (firstAvailable) {
         setSelectedVideoCategory(firstAvailable);
-        // Give more time for video to load before seeking
-        setTimeout(() => seekToTimestamp(violationTimestamp), 2000);
+        // Give time for video to load before seeking
+        setTimeout(() => seekToTimestamp(violationTimestamp), 1000);
         return;
       }
     }
@@ -996,103 +716,37 @@ const ParticipantDetailsPage: React.FC = () => {
       const timeDifferenceInSeconds =
         (violationTime.getTime() - examStartTime.getTime()) / 1000;
 
-      console.log("Seek Time Calculation:", {
-        violationTimestamp,
-        violationTime: violationTime.toISOString(),
-        examStartTime: examStartTime.toISOString(),
-        timeDifferenceInSeconds,
-        timeDifferenceFormatted: `${Math.floor(
-          timeDifferenceInSeconds / 60
-        )}:${Math.floor(timeDifferenceInSeconds % 60)
-          .toString()
-          .padStart(2, "0")}`,
-      });
-
       if (timeDifferenceInSeconds >= 0) {
-        // Enhanced video seeking with better error handling
-        const attemptSeek = (attempts = 0) => {
-          if (attempts > 10) {
-            setVideoLoading(false);
-            alert(
-              "Video not ready for seeking. Please wait for the video to load and try again."
-            );
-            return;
-          }
-
+        // Wait for video to be ready before seeking
+        const attemptSeek = () => {
           if (videoRef.current) {
             const video = videoRef.current;
 
-            // Check if video is loaded enough to seek and has duration
-            if (
-              video.readyState >= 2 &&
-              video.duration &&
-              !isNaN(video.duration)
-            ) {
-              // Check if seeking to valid time within video duration
-              const seekTime = Math.min(
-                timeDifferenceInSeconds,
-                video.duration - 1
-              );
+            // Check if video is loaded enough to seek
+            if (video.readyState >= 2) {
+              // HAVE_CURRENT_DATA or higher
+              video.currentTime = timeDifferenceInSeconds;
+              setVideoLoading(false);
 
-              if (seekTime >= 0) {
-                video.currentTime = seekTime;
-                setVideoLoading(false);
+              // Scroll video into view
+              video.scrollIntoView({ behavior: "smooth", block: "center" });
 
-                // Scroll video into view
-                const videoContainer =
-                  video.closest(".videoContainer") || video;
-                videoContainer.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center",
-                });
-
-                // Highlight the video briefly to indicate seeking
-                video.style.border = "3px solid var(--primary-color)";
-                setTimeout(() => {
-                  video.style.border = "none";
-                }, 2000);
-
-                console.log(
-                  `Successfully seeked to ${seekTime} seconds (${timeDifferenceInSeconds} requested)`,
-                  {
-                    seekTime,
-                    seekTimeFormatted: `${Math.floor(
-                      seekTime / 60
-                    )}:${Math.floor(seekTime % 60)
-                      .toString()
-                      .padStart(2, "0")}`,
-                    videoDuration: video.duration,
-                    videoDurationFormatted: `${Math.floor(
-                      video.duration / 60
-                    )}:${Math.floor(video.duration % 60)
-                      .toString()
-                      .padStart(2, "0")}`,
-                  }
-                );
-              } else {
-                setVideoLoading(false);
-                alert("Invalid timestamp for seeking.");
-              }
+              // Highlight the video briefly to indicate seeking
+              video.style.border = "3px solid var(--primary-color)";
+              setTimeout(() => {
+                video.style.border = "none";
+              }, 2000);
             } else {
               // Video not ready, wait a bit and try again
-              console.log(
-                `Video not ready for seeking (attempt ${
-                  attempts + 1
-                }), readyState: ${video.readyState}, duration: ${
-                  video.duration
-                }`
-              );
-              setTimeout(() => attemptSeek(attempts + 1), 800);
+              setTimeout(attemptSeek, 500);
             }
           } else {
-            console.log(`Video ref not available (attempt ${attempts + 1})`);
-            // Video reference not available, wait and try again
-            setTimeout(() => attemptSeek(attempts + 1), 800);
+            setVideoLoading(false);
+            alert("Video player not available. Please select a video first.");
           }
         };
 
-        // Start seeking attempt after a short delay to ensure video is initialized
-        setTimeout(() => attemptSeek(), 500);
+        attemptSeek();
       } else {
         setVideoLoading(false);
         alert("This violation occurred before the exam started.");
@@ -1102,6 +756,380 @@ const ParticipantDetailsPage: React.FC = () => {
       setVideoLoading(false);
       alert("Error seeking to timestamp. Please try again.");
     }
+  };
+
+  const VideoPlayer: React.FC<{
+    category: string;
+    title: string;
+    isSelected?: boolean;
+    onSelect?: () => void;
+  }> = ({ category, title, isSelected = false, onSelect }) => {
+    const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+    const [showLoading, setShowLoading] = useState(false);
+    const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Reset loading state when selection changes
+    useEffect(() => {
+      if (!isSelected) {
+        setHasLoadedOnce(false);
+        setVideoError(null);
+        setVideoLoading(false);
+        setShowLoading(false);
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
+      }
+    }, [isSelected]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+      return () => {
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
+      };
+    }, []);
+
+    if (!user || !examDetails) {
+      console.log(
+        `VideoPlayer: Cannot render ${category} - missing user or examDetails`
+      );
+      return null;
+    }
+
+    const videoStreamUrl = `${baseUrl}/stream-video/${user.id}/${examDetails.id}/${category}`;
+    const isVideoAvailable = videosAvailability[category];
+
+    console.log(
+      `VideoPlayer ${category}: URL=${videoStreamUrl}, Available=${isVideoAvailable}, Selected=${isSelected}`
+    );
+
+    const handleVideoError = (event: any) => {
+      setVideoLoading(false);
+      setShowLoading(false);
+      setHasLoadedOnce(false); // Reset on error
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+
+      // Check if it's a network error (likely 404)
+      const target = event.target as HTMLVideoElement;
+      if (target.error) {
+        switch (target.error.code) {
+          case 1: // MEDIA_ERR_ABORTED
+            console.log(`Video loading aborted for ${category}`);
+            setVideoError("Video loading was interrupted. Please try again.");
+            break;
+          case 2: // MEDIA_ERR_NETWORK
+            console.log(
+              `Video not available for ${category} - network issue or 404`
+            );
+            setVideoError(
+              "Video not available. This recording may not exist for this exam session."
+            );
+            break;
+          case 3: // MEDIA_ERR_DECODE
+            console.log(`Video decode error for ${category}`);
+            setVideoError(
+              "Video format not supported or corrupted. This video uses H.264 codec in MP4 container. Please ensure your browser supports H.264 playback or try downloading the video instead."
+            );
+            break;
+          case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
+            console.log(`Video format not supported for ${category}`);
+            setVideoError(
+              "Video format not supported by your browser. This video uses H.264 codec which should be supported by modern browsers. Please update your browser (Chrome, Firefox, or Edge recommended) or try downloading the video."
+            );
+            break;
+          default:
+            console.error(`Video error for ${category}:`, target.error);
+            setVideoError(
+              "Failed to load video stream. The video uses H.264 codec in MP4 format. Please ensure your browser supports this format or try downloading the video instead."
+            );
+        }
+      } else {
+        console.error(`Video error for ${category}:`, event);
+        setVideoError(
+          "Failed to load video stream. Please check your connection or try downloading the video instead."
+        );
+      }
+    };
+
+    const handleVideoLoadStart = () => {
+      if (isSelected && !hasLoadedOnce) {
+        setVideoLoading(true);
+        setVideoError(null);
+        // Show loading indicator after a short delay to prevent flashing
+        loadingTimeoutRef.current = setTimeout(() => {
+          setShowLoading(true);
+        }, 200);
+        console.log(`Video load started for ${category}`);
+      }
+    };
+
+    const handleVideoCanPlay = () => {
+      if (isSelected) {
+        setVideoLoading(false);
+        setShowLoading(false);
+        setHasLoadedOnce(true);
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
+        console.log(`Video can play for ${category}`);
+      }
+    };
+
+    const handleVideoWaiting = () => {
+      if (isSelected && hasLoadedOnce) {
+        setVideoLoading(true);
+        // Only show loading for longer waits during playback
+        loadingTimeoutRef.current = setTimeout(() => {
+          setShowLoading(true);
+        }, 500);
+        console.log(`Video waiting/buffering for ${category}`);
+      }
+    };
+
+    const handleVideoPlaying = () => {
+      if (isSelected) {
+        setVideoLoading(false);
+        setShowLoading(false);
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
+        console.log(`Video playing for ${category}`);
+      }
+    };
+
+    const handleVideoLoadedData = () => {
+      if (isSelected) {
+        setVideoLoading(false);
+        setShowLoading(false);
+        setVideoError(null);
+        setHasLoadedOnce(true);
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
+        console.log(`Video data loaded successfully for ${category}`);
+      }
+    };
+
+    const handleVideoTimeUpdate = () => {
+      // This can be used for real-time feedback if needed
+    };
+
+    return (
+      <div
+        className={`${styles.videoCard} ${
+          isSelected ? styles.selectedVideo : ""
+        }`}
+      >
+        <div className={styles.videoHeader}>
+          <span className={styles.videoTitle}>{title}</span>
+          <div className={styles.videoControls}>
+            {checkingVideoAvailability ? (
+              <span
+                style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}
+              >
+                Checking...
+              </span>
+            ) : isVideoAvailable === false ? (
+              <span style={{ fontSize: "0.8rem", color: "var(--error-color)" }}>
+                No data available
+              </span>
+            ) : (
+              <>
+                <button
+                  className={styles.selectBtn}
+                  onClick={() => {
+                    onSelect?.();
+                    if (!isSelected) {
+                      setVideoError(null);
+                      setVideoLoading(false);
+                      setShowLoading(false);
+                      setHasLoadedOnce(false);
+                    }
+                  }}
+                  style={{
+                    backgroundColor: isSelected
+                      ? "var(--primary-color)"
+                      : "transparent",
+                    color: isSelected ? "white" : "var(--primary-color)",
+                    marginRight: "8px",
+                    border: "1px solid var(--primary-color)",
+                    borderRadius: "4px",
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  disabled={!isVideoAvailable}
+                  onMouseEnter={(e) => {
+                    if (!isSelected && isVideoAvailable) {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--primary-color)";
+                      e.currentTarget.style.color = "white";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "var(--primary-color)";
+                    }
+                  }}
+                >
+                  {isSelected ? "✓ Selected" : "Select"}
+                </button>
+                <button
+                  className={styles.downloadBtn}
+                  onClick={() => handleVideoDownload(category)}
+                  style={{
+                    backgroundColor: "var(--success-color)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#218838";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--success-color)";
+                  }}
+                >
+                  📥 Download
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        {isSelected && isVideoAvailable && (
+          <div className={styles.videoContainer}>
+            {showLoading && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  zIndex: 10,
+                  background: "rgba(0,0,0,0.8)",
+                  color: "white",
+                  padding: "12px 20px",
+                  borderRadius: "8px",
+                  fontSize: "0.9rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    border: "2px solid transparent",
+                    borderTop: "2px solid white",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                ></div>
+                {hasLoadedOnce ? "Buffering..." : "Loading video stream..."}
+              </div>
+            )}
+            {videoError && (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "20px",
+                  color: "var(--error-color)",
+                  fontSize: "0.9rem",
+                  background: "rgba(255,0,0,0.05)",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(255,0,0,0.2)",
+                }}
+              >
+                ⚠️ {videoError}
+              </div>
+            )}
+            <video
+              ref={videoRef}
+              controls
+              width="100%"
+              height="350"
+              onLoadStart={handleVideoLoadStart}
+              onLoadedData={handleVideoLoadedData}
+              onCanPlay={handleVideoCanPlay}
+              onWaiting={handleVideoWaiting}
+              onPlaying={handleVideoPlaying}
+              onTimeUpdate={handleVideoTimeUpdate}
+              onError={handleVideoError}
+              style={{
+                backgroundColor: "#000",
+                borderRadius: "8px",
+                display: videoError ? "none" : "block",
+                position: "relative",
+              }}
+              preload="metadata"
+              playsInline
+              muted={false}
+            >
+              <source
+                src={videoStreamUrl}
+                type="video/mp4; codecs=avc1.64001e"
+              />
+              <source src={videoStreamUrl} type="video/mp4" />
+              Your browser does not support the video tag or the video format.
+              <br />
+              <a
+                href={videoStreamUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Download video file directly
+              </a>
+            </video>
+
+            {/* Video Controls Info */}
+            {isSelected && !videoError && (
+              <div
+                style={{
+                  marginTop: "8px",
+                  fontSize: "0.8rem",
+                  color: "var(--text-secondary)",
+                  textAlign: "center",
+                  fontStyle: "italic",
+                }}
+              >
+                💡 Click on violations in the timeline or violations list to
+                jump to specific timestamps
+              </div>
+            )}
+          </div>
+        )}
+        {isSelected && isVideoAvailable === false && (
+          <div className={styles.videoContainer}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "40px",
+                color: "var(--text-secondary)",
+                fontSize: "0.9rem",
+                fontStyle: "italic",
+                background: "rgba(0,0,0,0.02)",
+                borderRadius: "8px",
+                border: "1px dashed var(--border-color)",
+              }}
+            >
+              <div style={{ marginBottom: "12px", fontSize: "1.5rem" }}>📹</div>
+              <strong>No video data available for this category.</strong>
+              <br />
+              The video may not have been recorded during this exam session.
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (loading || logsLoading) {
@@ -1194,407 +1222,6 @@ const ParticipantDetailsPage: React.FC = () => {
                   {user.id}
                 </span>
               </p>
-
-              {/* Clean Attendance Details */}
-              <div
-                style={{
-                  marginTop: "24px",
-                  paddingTop: "20px",
-                  borderTop: "2px solid #e9ecef",
-                }}
-              >
-                <h4
-                  style={{
-                    margin: "0 0 20px 0",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    color: "#2c3e50",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "18px",
-                    }}
-                  >
-                    ⏱
-                  </span>
-                  Exam Timeline
-                </h4>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gap: "16px",
-                  }}
-                >
-                  {/* Session Joined */}
-                  {attendance?.createdAt && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "12px 0",
-                        borderBottom: "1px solid #f1f3f4",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "16px",
-                            width: "24px",
-                            textAlign: "center",
-                          }}
-                        >
-                          <div className={styles.iconContainer}>
-                            <div className={styles.phoneIcon}></div>
-                          </div>
-                        </span>
-                        <div>
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: "#2c3e50",
-                              marginBottom: "2px",
-                            }}
-                          >
-                            Session Joined
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6c757d",
-                            }}
-                          >
-                            When user entered the exam room
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          textAlign: "right",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            color: "#2c3e50",
-                          }}
-                        >
-                          {new Date(attendance.createdAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            }
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#007bff",
-                            fontWeight: "500",
-                          }}
-                        >
-                          {new Date(attendance.createdAt).toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            }
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Exam Started */}
-                  {attendance?.startTime && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "12px 0",
-                        borderBottom: "1px solid #f1f3f4",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "16px",
-                            width: "24px",
-                            textAlign: "center",
-                          }}
-                        >
-                          ▶️
-                        </span>
-                        <div>
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: "#2c3e50",
-                              marginBottom: "2px",
-                            }}
-                          >
-                            Exam Started
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6c757d",
-                            }}
-                          >
-                            When user began taking the exam
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          textAlign: "right",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            color: "#2c3e50",
-                          }}
-                        >
-                          {new Date(attendance.startTime).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            }
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#28a745",
-                            fontWeight: "500",
-                          }}
-                        >
-                          {new Date(attendance.startTime).toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            }
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Exam Ended */}
-                  {attendance?.endTime && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "12px 0",
-                        borderBottom: "1px solid #f1f3f4",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "16px",
-                            width: "24px",
-                            textAlign: "center",
-                          }}
-                        >
-                          ⏹️
-                        </span>
-                        <div>
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: "#2c3e50",
-                              marginBottom: "2px",
-                            }}
-                          >
-                            Exam Ended
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6c757d",
-                            }}
-                          >
-                            When user completed the exam
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          textAlign: "right",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            color: "#2c3e50",
-                          }}
-                        >
-                          {new Date(attendance.endTime).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            }
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#dc3545",
-                            fontWeight: "500",
-                          }}
-                        >
-                          {new Date(attendance.endTime).toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            }
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Duration Summary */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "16px 0 8px 0",
-                      background:
-                        "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
-                      borderRadius: "8px",
-                      paddingLeft: "16px",
-                      paddingRight: "16px",
-                      marginTop: "8px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "16px",
-                          width: "24px",
-                          textAlign: "center",
-                        }}
-                      >
-                        ⏳
-                      </span>
-                      <div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            color: "#2c3e50",
-                            marginBottom: "2px",
-                          }}
-                        >
-                          Total Duration
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "#6c757d",
-                          }}
-                        >
-                          {attendance?.endTime
-                            ? "Exam completed"
-                            : "Currently ongoing"}
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        textAlign: "right",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "18px",
-                          fontWeight: "700",
-                          color: "#495057",
-                        }}
-                      >
-                        {calculateExamDuration()}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          color: attendance?.endTime ? "#28a745" : "#ffc107",
-                          fontWeight: "500",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "flex-end",
-                          gap: "4px",
-                        }}
-                      >
-                        <span>
-                          {attendance?.endTime ? (
-                            <div className={styles.iconContainer}>
-                              <div className={styles.checkIcon}></div>
-                            </div>
-                          ) : (
-                            <div className={styles.iconContainer}>
-                              <div className={styles.loadingIcon}></div>
-                            </div>
-                          )}
-                        </span>
-                        {attendance?.endTime ? "Completed" : "Ongoing"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Exam Details Column */}
@@ -1757,7 +1384,7 @@ const ParticipantDetailsPage: React.FC = () => {
           }`}
           onClick={() => setActiveTab("overview")}
         >
-          Violations ({getTotalViolations()})
+          Violations
         </button>
         <button
           className={`${styles.tab} ${
@@ -1765,7 +1392,7 @@ const ParticipantDetailsPage: React.FC = () => {
           }`}
           onClick={() => setActiveTab("timeline")}
         >
-          Violation Details
+          Exam Activity
         </button>
         <button
           className={`${styles.tab} ${
@@ -1972,10 +1599,7 @@ const ParticipantDetailsPage: React.FC = () => {
         {activeTab === "timeline" && (
           <div className={styles.timelineTab}>
             <h3 className={styles.sectionTitle} style={{ marginBottom: 8 }}>
-              <div className={styles.iconContainer}>
-                <div className={styles.chartIcon}></div>
-              </div>
-              Exam Activity Timeline
+              📊 Exam Activity Timeline
             </h3>
             <div
               style={{
@@ -1988,135 +1612,17 @@ const ParticipantDetailsPage: React.FC = () => {
                 border: "1px solid rgba(0,123,255,0.15)",
               }}
             >
-              <div className={styles.iconContainer}>
-                <div className={styles.infoIcon}></div>
-              </div>
-              <strong>Interactive Timeline:</strong> Click on any violation
+              💡 <strong>Interactive Timeline:</strong> Click on any violation
               below to automatically jump to that moment in the video stream.
               <br />
-              <div className={styles.iconContainer}>
-                <div className={styles.playIcon}></div>
-              </div>
-              The system will switch to the Review tab and seek to the exact
+              🎬 The system will switch to the Review tab and seek to the exact
               timestamp.
             </div>
             <div className={styles.timeline}>
               {timelineEvents.length > 0 ? (
                 timelineEvents.map((event, index) => {
-                  // Get detailed date information for the violation
-                  const violationDate = violations.find((v) => {
-                    const violationTime = new Date(v.timestamp);
-                    const violationTimeStr = violationTime.toLocaleTimeString(
-                      "en-US",
-                      {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      }
-                    );
-                    return violationTimeStr === event.timestamp;
-                  });
-
-                  // Parse the date correctly - format is YYYY-DD-MM (Year-Day-Month)
-                  const fullDate = violationDate
-                    ? new Date(violationDate.timestamp)
-                    : new Date();
-                  const severity = violationDate
-                    ? violationDate.severity
-                    : "low";
-
-                  // Handle the custom date format YYYY-DD-MM
-                  const formatDate = (dateStr: string) => {
-                    try {
-                      if (!dateStr) {
-                        return {
-                          formatted: "Date N/A",
-                          weekday: "Day N/A",
-                        };
-                      }
-
-                      // If it's in YYYY-DD-MM format, we need to rearrange to standard format
-                      if (dateStr && dateStr.includes("-")) {
-                        const parts = dateStr.split("T")[0].split("-"); // Get date part only, ignore time
-                        if (parts.length === 3) {
-                          const year = parts[0]; // 2025
-                          const day = parts[1]; // 12
-                          const month = parts[2]; // 09
-
-                          // Validate parts are numbers and in reasonable ranges
-                          const yearNum = parseInt(year, 10);
-                          const monthNum = parseInt(month, 10);
-                          const dayNum = parseInt(day, 10);
-
-                          if (
-                            yearNum >= 1970 &&
-                            yearNum <= 2100 &&
-                            monthNum >= 1 &&
-                            monthNum <= 12 &&
-                            dayNum >= 1 &&
-                            dayNum <= 31
-                          ) {
-                            // Create date in standard format: YYYY-MM-DD
-                            const standardDate = new Date(
-                              `${year}-${month}-${day}`
-                            );
-
-                            // Double-check if the date is valid
-                            if (!isNaN(standardDate.getTime())) {
-                              return {
-                                formatted: standardDate.toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  }
-                                ),
-                                weekday: standardDate.toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    weekday: "long",
-                                  }
-                                ),
-                              };
-                            }
-                          }
-                        }
-                      }
-
-                      // Fallback to standard parsing if format doesn't match
-                      const date = new Date(dateStr);
-                      if (!isNaN(date.getTime())) {
-                        return {
-                          formatted: date.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          }),
-                          weekday: date.toLocaleDateString("en-US", {
-                            weekday: "long",
-                          }),
-                        };
-                      } else {
-                        return {
-                          formatted: "Date N/A",
-                          weekday: "Day N/A",
-                        };
-                      }
-                    } catch (error) {
-                      // Fallback for any errors
-                      return {
-                        formatted: "Date N/A",
-                        weekday: "Day N/A",
-                      };
-                    }
-                  };
-
-                  const dateInfo = formatDate(
-                    violationDate
-                      ? violationDate.timestamp
-                      : new Date().toISOString()
-                  );
+                  // Display the timestamp with seconds precision
+                  let formattedTime = event.timestamp;
 
                   return (
                     <div
@@ -2124,224 +1630,139 @@ const ParticipantDetailsPage: React.FC = () => {
                       className={styles.timelineItem}
                       style={{
                         display: "flex",
-                        flexDirection: "column",
+                        alignItems: "center",
                         marginBottom: 12,
-                        padding: "12px",
+                        padding: "8px 12px",
                         borderRadius: "8px",
                         transition: "all 0.2s ease",
-                        background: "white",
-                        border:
+                        background:
                           event.violations.length > 0
-                            ? `1px solid ${getSeverityColor(severity)}`
-                            : "1px solid #e9ecef",
-                        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.04)",
-                        cursor:
-                          event.violations.length > 0 ? "pointer" : "default",
-                      }}
-                      onClick={() => {
-                        if (event.violations.length > 0 && violationDate) {
-                          seekToTimestamp(violationDate.timestamp);
-                        }
+                            ? "rgba(255,0,0,0.02)"
+                            : "rgba(0,255,0,0.02)",
+                        border: "1px solid transparent",
                       }}
                       onMouseEnter={(e) => {
                         if (event.violations.length > 0) {
-                          e.currentTarget.style.transform = "translateY(-1px)";
-                          e.currentTarget.style.boxShadow =
-                            "0 4px 12px rgba(0, 0, 0, 0.08)";
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(255,0,0,0.05)";
+                          e.currentTarget.style.borderColor =
+                            "rgba(255,0,0,0.2)";
                         }
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow =
-                          "0 2px 6px rgba(0, 0, 0, 0.04)";
+                        e.currentTarget.style.backgroundColor =
+                          event.violations.length > 0
+                            ? "rgba(255,0,0,0.02)"
+                            : "rgba(0,255,0,0.02)";
+                        e.currentTarget.style.borderColor = "transparent";
                       }}
                     >
-                      {/* Compact Header */}
                       <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginBottom: "8px",
+                          width: 12,
+                          height: 12,
+                          borderRadius: "50%",
+                          backgroundColor:
+                            event.violations.length > 0
+                              ? "var(--error-color)"
+                              : "var(--success-color)",
+                          marginRight: 16,
+                          flexShrink: 0,
+                          boxShadow:
+                            event.violations.length > 0
+                              ? "0 0 8px rgba(255,0,0,0.3)"
+                              : "0 0 8px rgba(0,255,0,0.3)",
+                        }}
+                        title={
+                          event.violations.length > 0
+                            ? `${event.violations.length} violation(s)`
+                            : "No violations"
+                        }
+                      ></div>
+                      <span
+                        style={{
+                          fontSize: 14,
+                          minWidth: 100,
+                          color: "var(--text-primary)",
+                          marginRight: 16,
+                          fontWeight: "500",
+                          fontFamily: "monospace",
                         }}
                       >
-                        <div
+                        🕒 {formattedTime}
+                      </span>
+                      {event.violations.length > 0 && (
+                        <span
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
+                            fontSize: 13,
+                            color: "var(--error-color)",
+                            background: "rgba(255,0,0,0.1)",
+                            borderRadius: 6,
+                            padding: "4px 12px",
+                            marginLeft: 4,
+                            cursor: "pointer",
+                            transition: "all 0.3s ease",
+                            border: "1px solid rgba(255,0,0,0.2)",
+                            fontWeight: "500",
+                            flex: 1,
                           }}
-                        >
-                          <div
-                            style={{
-                              width: "12px",
-                              height: "12px",
-                              borderRadius: "50%",
-                              backgroundColor:
-                                event.violations.length > 0
-                                  ? getSeverityColor(severity)
-                                  : "#28a745",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: "8px",
-                                color: "white",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              {event.violations.length > 0 ? "!" : "✓"}
-                            </span>
-                          </div>
+                          onClick={() => {
+                            console.log(
+                              `Timeline seeking to: ${event.timestamp}`
+                            );
+                            // Find the exact violation that matches this timeline event
+                            const matchingViolation = violations.find((v) => {
+                              const violationTime = new Date(v.timestamp);
+                              const violationTimeStr =
+                                violationTime.toLocaleTimeString("en-US", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  second: "2-digit",
+                                });
+                              return violationTimeStr === event.timestamp;
+                            });
 
-                          <div>
-                            <h4
-                              style={{
-                                margin: "0",
-                                fontSize: "14px",
-                                fontWeight: "600",
-                                color: "#2c3e50",
-                              }}
-                            >
-                              {event.violations.length > 0
-                                ? `${event.violations.length} Violation${
-                                    event.violations.length > 1 ? "s" : ""
-                                  }`
-                                : "Clean"}
-                            </h4>
-                          </div>
-                        </div>
-
-                        {event.violations.length > 0 && (
-                          <div
-                            style={{
-                              background: `${getSeverityColor(severity)}15`,
-                              color: getSeverityColor(severity),
-                              padding: "3px 8px",
-                              borderRadius: "12px",
-                              fontSize: "10px",
-                              fontWeight: "500",
-                            }}
-                          >
-                            <div className={styles.iconContainer}>
-                              <div className={styles.playIcon}></div>
-                            </div>
-                            Jump
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Compact Date and Time Row */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "16px",
-                          marginBottom: "8px",
-                          fontSize: "12px",
-                          color: "#6c757d",
-                        }}
-                      >
-                        <span>
-                          <div className={styles.iconContainer}>
-                            <div className={styles.calendarIcon}></div>
-                          </div>
-                          {dateInfo.formatted}
-                        </span>
-                        <span>
-                          <div className={styles.iconContainer}>
-                            <div className={styles.weekdayIcon}></div>
-                          </div>
-                          {dateInfo.weekday}
-                        </span>
-                        <span>
-                          <div className={styles.iconContainer}>
-                            <div className={styles.clockIcon}></div>
-                          </div>
-                          {event.timestamp}
-                        </span>
-                      </div>
-
-                      {/* Compact Violation Details */}
-                      {event.violations.length > 0 ? (
-                        <div className={styles.violationWithImage}>
-                          <div className={styles.violationContent}>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: "4px",
-                                marginBottom: "8px",
-                              }}
-                            >
-                              {event.violations.map((violation, vIndex) => (
-                                <div
-                                  key={vIndex}
-                                  style={{
-                                    background: `${getSeverityColor(
-                                      severity
-                                    )}15`,
-                                    color: getSeverityColor(severity),
-                                    padding: "4px 8px",
-                                    borderRadius: "4px",
-                                    fontSize: "11px",
-                                    fontWeight: "500",
-                                    border: `1px solid ${getSeverityColor(
-                                      severity
-                                    )}30`,
-                                    cursor: "pointer",
-                                  }}
-                                  onMouseEnter={(e) =>
-                                    showTooltip(e, violation)
-                                  }
-                                  onMouseLeave={hideTooltip}
-                                >
-                                  {violation}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Image on the right side */}
-                          <div
-                            className={styles.violationImageContainer}
-                            onClick={() =>
-                              openImageModal(
-                                `/api/violation-image/${user?.id}/${examDetails?.id}/${event.timestamp}`,
-                                `Violation at ${event.timestamp}`,
-                                event.timestamp,
-                                event.violations[0] || "Unknown"
-                              )
+                            if (matchingViolation) {
+                              seekToTimestamp(matchingViolation.timestamp);
                             }
-                            title="Click to view larger image"
-                          >
-                            <div className={styles.imageNotFound}>
-                              <div className={styles.iconContainer}>
-                                <div className={styles.imageIcon}></div>
-                              </div>
-                              Image Not Found
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(255,0,0,0.2)";
+                            e.currentTarget.style.transform = "scale(1.02)";
+                            e.currentTarget.style.borderColor =
+                              "var(--error-color)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(255,0,0,0.1)";
+                            e.currentTarget.style.transform = "scale(1)";
+                            e.currentTarget.style.borderColor =
+                              "rgba(255,0,0,0.2)";
+                          }}
+                          title={`Click to jump to violation: ${event.violations.join(
+                            ", "
+                          )}`}
+                        >
+                          🎬 {event.violations.join(", ")} → Jump to video
+                        </span>
+                      )}
+                      {event.violations.length === 0 && (
+                        <span
                           style={{
-                            textAlign: "center",
-                            padding: "6px",
-                            background: "#e8f5e8",
-                            borderRadius: "4px",
-                            color: "#28a745",
-                            fontSize: "12px",
+                            fontSize: 13,
+                            color: "var(--success-color)",
+                            background: "rgba(0,255,0,0.1)",
+                            borderRadius: 6,
+                            padding: "4px 12px",
+                            marginLeft: 4,
+                            border: "1px solid rgba(0,255,0,0.2)",
+                            fontWeight: "500",
+                            flex: 1,
                           }}
                         >
-                          <div className={styles.iconContainer}>
-                            <div className={styles.checkIcon}></div>
-                          </div>
-                          No violations
-                        </div>
+                          ✅ No violations at this time
+                        </span>
                       )}
                     </div>
                   );
@@ -2359,19 +1780,7 @@ const ParticipantDetailsPage: React.FC = () => {
                   }}
                 >
                   <div style={{ fontSize: "2rem", marginBottom: "16px" }}>
-                    <div
-                      className={styles.iconContainer}
-                      style={{
-                        fontSize: "2rem",
-                        width: "40px",
-                        height: "40px",
-                      }}
-                    >
-                      <div
-                        className={styles.chartIcon}
-                        style={{ width: "32px", height: "32px" }}
-                      ></div>
-                    </div>
+                    📊
                   </div>
                   <h4
                     style={{
@@ -2395,10 +1804,7 @@ const ParticipantDetailsPage: React.FC = () => {
           <div className={styles.reviewTab}>
             <div className={styles.reviewHeader}>
               <h3 className={styles.sectionTitle}>
-                <div className={styles.iconContainer}>
-                  <div className={styles.videoIcon}></div>
-                </div>
-                Review Session - Live Video Streaming
+                🎬 Review Session - Live Video Streaming
               </h3>
               <div className={styles.reviewDescription}>
                 <p
@@ -2423,10 +1829,7 @@ const ParticipantDetailsPage: React.FC = () => {
                     marginBottom: "16px",
                   }}
                 >
-                  <div className={styles.iconContainer}>
-                    <div className={styles.infoIcon}></div>
-                  </div>
-                  <strong>How to use:</strong>
+                  📋 <strong>How to use:</strong>
                   <ul style={{ margin: "8px 0 0 20px", padding: 0 }}>
                     <li>Select a video category below to start streaming</li>
                     <li>
@@ -2475,14 +1878,9 @@ const ParticipantDetailsPage: React.FC = () => {
                   }}
                   disabled={checkingVideoAvailability}
                 >
-                  {checkingVideoAvailability ? (
-                    "Checking..."
-                  ) : (
-                    <>
-                      <div className={styles.refreshIcon}></div>
-                      Refresh Videos
-                    </>
-                  )}
+                  {checkingVideoAvailability
+                    ? "Checking..."
+                    : "🔄 Refresh Videos"}
                 </button>
               </div>
               {checkingVideoAvailability ? (
@@ -2504,26 +1902,12 @@ const ParticipantDetailsPage: React.FC = () => {
                 ) ? (
                 <div className={styles.videoGrid}>
                   <VideoPlayer
-                    user={user}
-                    examDetails={examDetails}
-                    videosAvailability={videosAvailability}
-                    checkingVideoAvailability={checkingVideoAvailability}
-                    videoRef={videoRef}
-                    baseUrl={baseUrl}
-                    onVideoDownload={handleVideoDownload}
                     category="face_camera"
                     title="Face Camera"
                     isSelected={selectedVideoCategory === "face_camera"}
                     onSelect={() => setSelectedVideoCategory("face_camera")}
                   />
                   <VideoPlayer
-                    user={user}
-                    examDetails={examDetails}
-                    videosAvailability={videosAvailability}
-                    checkingVideoAvailability={checkingVideoAvailability}
-                    videoRef={videoRef}
-                    baseUrl={baseUrl}
-                    onVideoDownload={handleVideoDownload}
                     category="screen_recording"
                     title="Screen Recording"
                     isSelected={selectedVideoCategory === "screen_recording"}
@@ -2532,13 +1916,6 @@ const ParticipantDetailsPage: React.FC = () => {
                     }
                   />
                   <VideoPlayer
-                    user={user}
-                    examDetails={examDetails}
-                    videosAvailability={videosAvailability}
-                    checkingVideoAvailability={checkingVideoAvailability}
-                    videoRef={videoRef}
-                    baseUrl={baseUrl}
-                    onVideoDownload={handleVideoDownload}
                     category="third_eye"
                     title="Third Eye"
                     isSelected={selectedVideoCategory === "third_eye"}
@@ -2557,19 +1934,7 @@ const ParticipantDetailsPage: React.FC = () => {
                   }}
                 >
                   <div style={{ fontSize: "2rem", marginBottom: "16px" }}>
-                    <div
-                      className={styles.iconContainer}
-                      style={{
-                        fontSize: "2rem",
-                        width: "40px",
-                        height: "40px",
-                      }}
-                    >
-                      <div
-                        className={styles.videoIcon}
-                        style={{ width: "32px", height: "32px" }}
-                      ></div>
-                    </div>
+                    📹
                   </div>
                   <h4
                     style={{
@@ -2632,10 +1997,7 @@ const ParticipantDetailsPage: React.FC = () => {
                   border: "1px solid rgba(0,123,255,0.15)",
                 }}
               >
-                <div className={styles.iconContainer}>
-                  <div className={styles.infoIcon}></div>
-                </div>
-                <strong>Interactive Timeline:</strong> Click on any violation
+                💡 <strong>Interactive Timeline:</strong> Click on any violation
                 below to automatically jump to that exact moment in the video
                 stream. The video will seek to the timestamp and highlight
                 briefly to confirm the navigation.
@@ -2715,10 +2077,7 @@ const ParticipantDetailsPage: React.FC = () => {
                               fontWeight: "600",
                               color: "var(--text-primary)",
                               fontSize: "1rem",
-                              cursor: "help",
                             }}
-                            onMouseEnter={(e) => showTooltip(e, violation.type)}
-                            onMouseLeave={hideTooltip}
                           >
                             {violation.type}
                           </span>
@@ -2733,10 +2092,7 @@ const ParticipantDetailsPage: React.FC = () => {
                                 fontWeight: "500",
                               }}
                             >
-                              <div className={styles.iconContainer}>
-                                <div className={styles.clockIcon}></div>
-                              </div>
-                              {formatTimestamp(violation.timestamp)}
+                              🕒 {formatTimestamp(violation.timestamp)}
                             </div>
                             <small
                               style={{
@@ -2755,60 +2111,29 @@ const ParticipantDetailsPage: React.FC = () => {
                           </div>
                         </div>
                       </div>
-
-                      <div className={styles.violationWithImage}>
-                        <div className={styles.violationContent}>
-                          <p
-                            className={styles.violationDescription}
-                            style={{
-                              margin: "8px 0 0 0",
-                              color: "var(--text-secondary)",
-                              fontSize: "0.9rem",
-                              lineHeight: "1.4",
-                            }}
-                          >
-                            {violation.description}
-                          </p>
-                          <div
-                            style={{
-                              marginTop: "8px",
-                              fontSize: "0.8rem",
-                              color: "var(--primary-color)",
-                              fontWeight: "500",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "4px",
-                            }}
-                          >
-                            <div className={styles.iconContainer}>
-                              <div className={styles.playIcon}></div>
-                            </div>
-                            Click to jump to video timestamp
-                          </div>
-                        </div>
-
-                        {/* Image on the right side */}
-                        <div
-                          className={styles.violationImageContainer}
-                          onClick={() =>
-                            openImageModal(
-                              `/api/violation-image/${user?.id}/${examDetails?.id}/${violation.timestamp}`,
-                              `${violation.type} at ${formatTimestamp(
-                                violation.timestamp
-                              )}`,
-                              violation.timestamp,
-                              violation.type
-                            )
-                          }
-                          title="Click to view larger image"
-                        >
-                          <div className={styles.imageNotFound}>
-                            <div className={styles.iconContainer}>
-                              <div className={styles.imageIcon}></div>
-                            </div>
-                            View Image
-                          </div>
-                        </div>
+                      <p
+                        className={styles.violationDescription}
+                        style={{
+                          margin: "8px 0 0 0",
+                          color: "var(--text-secondary)",
+                          fontSize: "0.9rem",
+                          lineHeight: "1.4",
+                        }}
+                      >
+                        {violation.description}
+                      </p>
+                      <div
+                        style={{
+                          marginTop: "8px",
+                          fontSize: "0.8rem",
+                          color: "var(--primary-color)",
+                          fontWeight: "500",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        🎬 Click to jump to video timestamp
                       </div>
                     </div>
                   ))
@@ -2825,23 +2150,7 @@ const ParticipantDetailsPage: React.FC = () => {
                     }}
                   >
                     <div style={{ fontSize: "2rem", marginBottom: "16px" }}>
-                      <div
-                        className={styles.iconContainer}
-                        style={{
-                          fontSize: "2rem",
-                          width: "40px",
-                          height: "40px",
-                        }}
-                      >
-                        <div
-                          className={styles.checkIcon}
-                          style={{
-                            width: "32px",
-                            height: "32px",
-                            border: "4px solid var(--success-color)",
-                          }}
-                        ></div>
-                      </div>
+                      ✅
                     </div>
                     <h4
                       style={{
@@ -2862,65 +2171,6 @@ const ParticipantDetailsPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Image Modal */}
-      {modalImage && (
-        <div className={styles.imageModal} onClick={closeImageModal}>
-          <div
-            className={styles.imageModalContent}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className={styles.modalCloseButton}
-              onClick={closeImageModal}
-              aria-label="Close modal"
-            >
-              ×
-            </button>
-            <img
-              src={modalImage.src}
-              alt={modalImage.alt}
-              className={styles.modalImage}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                target.parentNode?.insertBefore(
-                  document.createTextNode("Image not available"),
-                  target
-                );
-              }}
-            />
-            <div className={styles.modalInfo}>
-              <strong>{modalImage.violationType}</strong>
-              <br />
-              <small>{modalImage.timestamp}</small>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Violation Tooltip */}
-      {tooltip.visible && (
-        <div
-          className={styles.violationTooltip}
-          style={{
-            left: tooltip.x - 150,
-            top: tooltip.y - 80,
-          }}
-        >
-          <span className={styles.tooltipTitle}>{tooltip.title}</span>
-          <div className={styles.tooltipDescription}>{tooltip.content}</div>
-          <span
-            className={styles.tooltipSeverity}
-            style={{
-              backgroundColor: getSeverityColor(tooltip.severity),
-              color: "white",
-            }}
-          >
-            {tooltip.severity} risk
-          </span>
-        </div>
-      )}
     </div>
   );
 };

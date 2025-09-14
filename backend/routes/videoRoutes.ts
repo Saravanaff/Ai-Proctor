@@ -31,7 +31,6 @@ router.head(
 // Stream video route - requires authentication
 router.get(
   "/stream-video/:user_id/:exam_id/:category",
-  authMiddleware,
   streamVideo
 );
 

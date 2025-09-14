@@ -6,6 +6,12 @@ export const streamVideo = async (req: Request, res: Response) => {
   try {
     const { user_id, exam_id, category } = req.params;
 
+    console.log(
+      `Video stream request: user_id=${user_id}, exam_id=${exam_id}, category=${category}`
+    );
+    console.log(`Request headers:`, req.headers);
+    console.log(`Request query:`, req.query);
+
     if (!user_id || !exam_id || !category) {
       return res.status(400).json({
         success: false,
@@ -35,10 +41,20 @@ export const streamVideo = async (req: Request, res: Response) => {
       });
 
       // Forward the headers from storage server
-      res.setHeader(
-        "Content-Type",
-        response.headers["content-type"] || "video/mp4; codecs=avc1.64001e"
-      );
+      const contentType = response.headers["content-type"];
+      // Clean up content type - remove any problematic codec specifications
+      let cleanContentType = contentType || "video/mp4";
+
+      // If the content type has codec specification that might be problematic, simplify it
+      if (cleanContentType.includes("codecs=")) {
+        if (cleanContentType.includes("video/mp4")) {
+          cleanContentType = "video/mp4";
+        } else if (cleanContentType.includes("video/webm")) {
+          cleanContentType = "video/webm";
+        }
+      }
+
+      res.setHeader("Content-Type", cleanContentType);
 
       // Handle range responses for video seeking
       if (response.status === 206) {

@@ -10,6 +10,11 @@ function getTokenFromRequest(req: Request): string | null {
     return auth.slice(7).trim();
   }
 
+  // Check query parameter for token (for video streaming)
+  if (req.query.token && typeof req.query.token === "string") {
+    return decodeURIComponent(req.query.token);
+  }
+
   // Fallback: parse cookie header for authToken (no cookie-parser required)
   const cookieHeader = req.headers["cookie"];
   if (typeof cookieHeader === "string") {
@@ -23,7 +28,11 @@ function getTokenFromRequest(req: Request): string | null {
   return null;
 }
 
-export default function authMiddleware(req: Request, res: Response, next: NextFunction): void {
+export default function authMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
   try {
     // Allow CORS preflight
     if (req.method === "OPTIONS") {
