@@ -4,6 +4,7 @@ A comprehensive AI-powered proctoring system with real-time monitoring capabilit
 
 ## 📋 Table of Contents
 
+- [Windows Quick Setup Guide](#windows-quick-setup-guide)
 - [System Architecture](#system-architecture)
 - [Prerequisites](#prerequisites)
 - [Installation Guide](#installation-guide)
@@ -16,6 +17,87 @@ A comprehensive AI-powered proctoring system with real-time monitoring capabilit
 - [Running the Application](#running-the-application)
 - [Troubleshooting](#troubleshooting)
 - [Project Structure](#project-structure)
+
+## 📚 Additional Documentation
+
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Visual system architecture and service diagrams
+- **[WINDOWS_SETUP.md](./WINDOWS_SETUP.md)** - Complete Windows installation guide with troubleshooting
+- **[SETUP_SUMMARY.md](./SETUP_SUMMARY.md)** - Summary of environment specifications and changes
+- **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Quick reference card for developers
+- **[start-services-windows.bat](./start-services-windows.bat)** - Automated script to start all Python services (CMD)
+- **[start-services-windows.ps1](./start-services-windows.ps1)** - Automated script to start all Python services (PowerShell)
+
+---
+
+## 🪟 Windows Quick Setup Guide
+
+> **📘 For detailed Windows setup instructions, see [WINDOWS_SETUP.md](./WINDOWS_SETUP.md)**
+
+### Required Software for Windows
+
+| Software | Version      | Download Link                               |
+| -------- | ------------ | ------------------------------------------- |
+| Python   | **3.10.11**  | https://www.python.org/downloads/windows/   |
+| Node.js  | **22.x LTS** | https://nodejs.org/en/download/             |
+| XAMPP    | Latest       | https://www.apachefriends.org/download.html |
+| CMake    | Latest       | https://cmake.org/download/                 |
+| FFmpeg   | Latest       | https://ffmpeg.org/download.html            |
+
+### Python Services to Run (6 Services)
+
+The AI-Model requires running **6 separate Python microservices**:
+
+1. **auth_service.py** - Face authentication and recognition
+2. **eye_service.py** - Eye movement tracking
+3. **webdetect_service.py** - Web browsing detection
+4. **head_service.py** - Head pose estimation
+5. **mobile_service.py** - Mobile device detection
+6. **store_service.py** - Face data storage and frame processing
+
+Each service must run in its own terminal with the virtual environment activated.
+
+### Quick Installation Steps (Windows)
+
+```cmd
+# 1. Install Python 3.10, Node.js 22, XAMPP, CMake, FFmpeg (use links above)
+# 2. Verify installations
+python --version    # Should show 3.10.x
+node --version      # Should show v22.x.x
+
+# 3. Create Python virtual environment
+cd C:\path\to\Ai-Proctor\AI-Model
+python -m venv venv
+venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# 4. Install backend dependencies
+cd ..\backend
+npm install
+
+# 5. Install frontend dependencies
+cd ..\face-scanning
+npm install
+
+# 6. Install storage dependencies
+cd ..\storage
+npm install
+
+# 7. Start XAMPP and create database 'test'
+# 8. Configure backend .env file
+# 9. Run all 10 services (see Running the Application section)
+```
+
+### 🚀 Quick Start with Batch Script
+
+For Windows users, use the automated script to start all Python services:
+
+```cmd
+cd C:\path\to\Ai-Proctor
+start-services-windows.bat
+```
+
+This will open 6 terminal windows with all Python microservices running.
 
 ---
 
@@ -35,8 +117,14 @@ The AI Proctor system consists of four main components:
 ### Operating System
 
 - **Linux** (Ubuntu 20.04+, Debian, Fedora) - Recommended
-- **Windows 10/11** (with WSL2 for better compatibility)
+- **Windows 10/11** - Fully supported (native Windows environment)
 - **macOS** (Catalina or later)
+
+### Required Software Versions
+
+- **Python**: 3.10.x
+- **Node.js**: 22.x LTS
+- **MySQL**: 5.7+ or 8.0+
 
 ### Minimum Hardware
 
@@ -116,71 +204,92 @@ brew install cmake
 
 Download from: https://cmake.org/download/
 
-- Install and add to PATH during installation
+- Download the Windows x64 Installer
+- Install and **check "Add CMake to system PATH"** during installation
+- Verify: Open Command Prompt and run `cmake --version`
 
-#### 1.3 Install Python 3.11
+#### 1.3 Install Python 3.10 (Required)
+
+##### Windows (Recommended for this project)
+
+1. Download Python 3.10.x from: https://www.python.org/downloads/
+
+   - Go to: https://www.python.org/downloads/windows/
+   - Download **Python 3.10.11** (stable release)
+
+2. Run the installer:
+
+   - ✅ **IMPORTANT**: Check "Add Python 3.10 to PATH"
+   - ✅ Check "Install pip"
+   - Click "Install Now"
+
+3. Verify installation:
+
+```cmd
+python --version
+# Should show: Python 3.10.11
+
+pip --version
+# Should show pip for Python 3.10
+```
 
 ##### Linux (Ubuntu/Debian)
 
 ```bash
 sudo apt update
-sudo apt install python3.11 python3.11-venv python3.11-dev python3-pip -y
+sudo apt install python3.10 python3.10-venv python3.10-dev python3-pip -y
 
-# Set Python 3.11 as default (optional)
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+# Set Python 3.10 as default (optional)
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
 ```
 
 ##### macOS
 
 ```bash
-brew install python@3.11
+brew install python@3.10
 ```
 
-##### Windows
+#### 1.4 Install Node.js 22 (Required)
 
-Download from: https://www.python.org/downloads/
+##### Windows (Recommended for this project)
 
-- Download Python 3.11.x installer
-- Check "Add Python to PATH" during installation
+1. Download Node.js 22.x LTS from: https://nodejs.org/
 
-Verify:
+   - Visit: https://nodejs.org/en/download/
+   - Download **Node.js 22.x LTS** Windows Installer (.msi)
 
-```bash
-python3 --version  # Should show Python 3.11.x
+2. Run the installer:
+
+   - Accept license agreement
+   - Choose default installation path: `C:\Program Files\nodejs\`
+   - Install with default settings (includes npm)
+
+3. Verify installation:
+
+```cmd
+node --version
+# Should show: v22.x.x
+
+npm --version
+# Should show: 10.x.x or higher
 ```
-
-#### 1.4 Install Node.js and npm
 
 ##### Linux (Ubuntu/Debian)
 
 ```bash
-# Install Node.js 20.x LTS
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+# Install Node.js 22.x LTS
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install nodejs -y
 
 # Verify
-node --version  # Should be v20.x.x
+node --version  # Should be v22.x.x
 npm --version
 ```
 
 ##### macOS
 
 ```bash
-brew install node@20
-```
-
-##### Windows
-
-Download from: https://nodejs.org/
-
-- Download LTS version (20.x)
-- Install with default settings
-
-Verify:
-
-```bash
-node --version
-npm --version
+brew install node@22
 ```
 
 ---
@@ -273,22 +382,42 @@ The backend will automatically create tables on first run using Sequelize migrat
 
 #### 3.1 Navigate to AI-Model Directory
 
+##### Windows
+
+```cmd
+cd C:\path\to\your\Ai-Proctor\AI-Model
+```
+
+Replace `C:\path\to\your\` with your actual project path.
+
+##### Linux/macOS
+
 ```bash
 cd /home/raghul/projects/cdc/Ai-Proctor/AI-Model
 ```
 
 #### 3.2 Create Virtual Environment
 
-```bash
-# Create virtual environment
-python3.11 -m venv venv
+##### Windows
+
+```cmd
+# Create virtual environment with Python 3.10
+python -m venv venv
 
 # Activate virtual environment
-# Linux/macOS:
-source venv/bin/activate
-
-# Windows:
 venv\Scripts\activate
+
+# You should see (venv) in your command prompt
+```
+
+##### Linux/macOS
+
+```bash
+# Create virtual environment
+python3.10 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate
 ```
 
 #### 3.3 Upgrade pip
@@ -306,15 +435,40 @@ sudo apt install libopenblas-dev liblapack-dev libx11-dev libgtk-3-dev -y
 
 #### 3.5 Install Python Requirements
 
+##### Windows
+
+```cmd
+# Install all requirements (with virtual environment activated)
+pip install -r requirements.txt
+```
+
+**Important for Windows Users with dlib**:
+
+If you encounter issues installing `dlib` on Windows:
+
+1. Download the pre-built wheel for Python 3.10:
+
+   - Visit: https://github.com/jloh02/dlib/releases
+   - Download: `dlib-19.24.0-cp310-cp310-win_amd64.whl`
+
+2. Install the wheel:
+
+```cmd
+pip install path\to\dlib-19.24.0-cp310-cp310-win_amd64.whl
+```
+
+3. Continue with remaining packages:
+
+```cmd
+pip install -r requirements.txt
+```
+
+##### Linux/macOS
+
 ```bash
 # Install all requirements
 pip install -r requirements.txt
 ```
-
-**Note for Windows Users**: If you encounter issues with `dlib`:
-
-1. Download pre-built wheel from: https://github.com/jloh02/dlib/releases
-2. Install: `pip install dlib-19.24.0-cp311-cp311-win_amd64.whl`
 
 #### 3.6 Verify Installation
 
@@ -446,7 +600,21 @@ mkdir -p videos recordings
 
 ## 🚀 Running the Application
 
+### Windows Environment Setup Summary
+
+For Windows users, ensure you have:
+
+- ✅ Python 3.10.x installed and in PATH
+- ✅ Node.js 22.x installed and in PATH
+- ✅ XAMPP installed with MySQL running
+- ✅ CMake installed and in PATH
+- ✅ FFmpeg installed and in PATH
+- ✅ All npm packages installed (backend, frontend, storage)
+- ✅ Python virtual environment created with all requirements installed
+
 ### Starting Services in Order
+
+**Note**: You need to start **10 terminals** total (1 for database, 1 for backend, 1 for storage, 6 for Python services, 1 for frontend)
 
 #### Terminal 1: Start XAMPP/MySQL
 
@@ -478,23 +646,88 @@ npm run dev
 # Service will run on default port (check console)
 ```
 
-#### Terminal 4: Start AI-Model Service
+#### Terminals 4-9: Start AI-Model Python Services (6 Services)
+
+The AI-Model has **6 microservices** that need to run separately. Open 6 terminals and run each service:
+
+##### Terminal 4: Authentication Service
 
 ```bash
 cd /home/raghul/projects/cdc/Ai-Proctor/AI-Model
 
-# Activate virtual environment first
-source venv/bin/activate  # Linux/macOS
-# OR
-venv\Scripts\activate  # Windows
+# Windows: Activate virtual environment
+venv\Scripts\activate
 
-# Run the service
-python main.py
+# Linux/macOS: Activate virtual environment
+source venv/bin/activate
 
-# Wait for: ✅ Connected to server
+# Run authentication service
+python auth_service.py
+
+# Wait for: ✅ Auth Service Connected
 ```
 
-#### Terminal 5: Start Frontend (Next.js)
+##### Terminal 5: Eye Tracking Service
+
+```bash
+cd /home/raghul/projects/cdc/Ai-Proctor/AI-Model
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/macOS
+
+python eye_service.py
+
+# Wait for: ✅ Eye Service Connected
+```
+
+##### Terminal 6: Web Detection Service
+
+```bash
+cd /home/raghul/projects/cdc/Ai-Proctor/AI-Model
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/macOS
+
+python webdetect_service.py
+
+# Wait for: ✅ Web Detection Service Connected
+```
+
+##### Terminal 7: Head Pose Service
+
+```bash
+cd /home/raghul/projects/cdc/Ai-Proctor/AI-Model
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/macOS
+
+python head_service.py
+
+# Wait for: ✅ Head Service Connected
+```
+
+##### Terminal 8: Mobile Detection Service
+
+```bash
+cd /home/raghul/projects/cdc/Ai-Proctor/AI-Model
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/macOS
+
+python mobile_service.py
+
+# Wait for: ✅ Mobile Service Connected
+```
+
+##### Terminal 9: Store Service (Face Data Storage)
+
+```bash
+cd /home/raghul/projects/cdc/Ai-Proctor/AI-Model
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/macOS
+
+python store_service.py
+
+# Wait for: ✅ Store Service Connected
+```
+
+#### Terminal 10: Start Frontend (Next.js)
 
 ```bash
 cd /home/raghul/projects/cdc/Ai-Proctor/face-scanning
@@ -726,23 +959,44 @@ For issues and questions:
 
 ## ✅ Quick Start Checklist
 
+### Windows Environment
+
 - [ ] FFmpeg installed and in PATH
-- [ ] CMake installed
-- [ ] Python 3.11 installed
-- [ ] Node.js 20.x installed
+- [ ] CMake installed and in PATH
+- [ ] **Python 3.10.x** installed and in PATH (not 3.11)
+- [ ] **Node.js 22.x** installed and in PATH (not 20.x)
 - [ ] XAMPP/MySQL installed and running
-- [ ] Database `test` created
-- [ ] Python virtual environment created and activated
-- [ ] Python requirements installed
-- [ ] Backend dependencies installed (`npm install`)
-- [ ] Frontend dependencies installed (`npm install`)
-- [ ] Storage dependencies installed (`npm install`)
+- [ ] Database `test` created in phpMyAdmin
+- [ ] Python virtual environment created in AI-Model folder
+- [ ] Python virtual environment activated
+- [ ] Python requirements installed (`pip install -r requirements.txt`)
+- [ ] dlib installed (use pre-built wheel if needed)
+- [ ] Backend dependencies installed (`npm install` in backend/)
+- [ ] Frontend dependencies installed (`npm install` in face-scanning/)
+- [ ] Storage dependencies installed (`npm install` in storage/)
 - [ ] Backend `.env` file configured
-- [ ] SSL certificates generated
-- [ ] All services started in correct order
-- [ ] Can access frontend at https://localhost:3000
+- [ ] SSL certificates generated (auto-generated on first run)
+- [ ] **6 Python services** running (auth, eye, webdetect, head, mobile, store)
+- [ ] Backend server running on https://localhost:3001
+- [ ] Storage service running
+- [ ] Frontend running on https://localhost:3000
+- [ ] Can access application at https://localhost:3000
+
+### Service Startup Order
+
+1. Start XAMPP MySQL
+2. Start Backend Server (Terminal 2)
+3. Start Storage Service (Terminal 3)
+4. Start 6 Python Services (Terminals 4-9):
+   - auth_service.py
+   - eye_service.py
+   - webdetect_service.py
+   - head_service.py
+   - mobile_service.py
+   - store_service.py
+5. Start Frontend (Terminal 10)
 
 ---
 
 **Last Updated**: October 2025  
-**Version**: 1.0.0
+**Version**: 1.1.0 - Windows Configuration (Python 3.10 + Node.js 22)
