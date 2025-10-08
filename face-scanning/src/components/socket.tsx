@@ -1,10 +1,23 @@
 import { io } from "socket.io-client";
-// import './envConfig.ts'
- 
+import { getUserId } from "@/constants/AuthStore";
 
-const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ;
-console.log("Connecting to server at:", SERVER_URL);
 
-const socket = io(SERVER_URL);
+const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+
+function currentUserId(): string | null {
+  try {
+    const id = getUserId?.();
+    if (id) return id;
+  } catch { }
+  try {
+    if (typeof window !== "undefined") return window.localStorage.getItem("userId");
+  } catch { }
+  return null;
+}
+
+const socket = io(SERVER_URL, {
+  transports: ["websocket", "polling"],
+  auth: { userId: currentUserId() || "" },
+});
 
 export default socket;

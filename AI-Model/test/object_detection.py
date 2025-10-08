@@ -2,9 +2,9 @@ from ultralytics import YOLO
 import cv2
 import time
 
-model = YOLO('yolov8n.pt')  # You can use yolov8s.pt for better accuracy
+model = YOLO('yolo11n.pt')  # You can use yolov8s.pt for better accuracy
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)

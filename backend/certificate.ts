@@ -1,9 +1,10 @@
 import { createCA, createCert } from "mkcert";
 import fs from "fs";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 
-const serverIpAddress:string = process.env.SERVER_IP_ADDRESS || "172.16.29.187-demo";
+const serverIpAddress: any =
+  process.env.SERVER_IP_ADDRESS;
 
 console.log(serverIpAddress);
 
@@ -16,19 +17,17 @@ async function generateCerts() {
     validity: 365,
   });
 
-  fs.writeFileSync("rootCA.pem", ca.cert); // ✅ required
-  fs.writeFileSync("rootCA-key.pem", ca.key); // optional
+  fs.writeFileSync("rootCA.pem", ca.cert);
+  fs.writeFileSync("rootCA-key.pem", ca.key);
 
-  // Step 2: Create domain certificate
   const cert = await createCert({
     ca: { key: ca.key, cert: ca.cert },
-    domains: ["localhost", "127.0.0.1","192.168.55.44","192.168.55.168",serverIpAddress],
+    domains: ["localhost", "127.0.0.1",serverIpAddress],
     validity: 365,
   });
 
-  // Save domain key and cert with the exact names your server uses
-  fs.writeFileSync("localhost-key.pem", cert.key);      // ✅ private key
-  fs.writeFileSync("localhost-cert.pem", cert.cert);    // ✅ domain certificate
+  fs.writeFileSync("localhost-key.pem", cert.key);
+  fs.writeFileSync("localhost-cert.pem", cert.cert);
 
   console.log("✅ All certificates written:");
   console.log("- rootCA.pem");

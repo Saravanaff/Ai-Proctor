@@ -1,0 +1,213 @@
+/* Full-page background with theme-aware gradients */
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(
+    --auth-bg-gradient,
+    radial-gradient(
+      1200px 800px at 10% 0%,
+      rgba(56, 189, 248, 0.12) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 700px at 90% 100%,
+      rgba(147, 51, 234, 0.12) 0%,
+      transparent 60%
+    ),
+    linear-gradient(180deg, var(--background) 0%, var(--secondary-bg) 100%)
+  );
+  padding: 40px 16px;
+  transition: background 0.3s ease;
+}
+
+/* Light theme background */
+:root[data-theme="light"] .container {
+  --auth-bg-gradient: radial-gradient(
+      1200px 800px at 10% 0%,
+      rgba(56, 189, 248, 0.08) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 700px at 90% 100%,
+      rgba(147, 51, 234, 0.08) 0%,
+      transparent 60%
+    ),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+/* Dark theme background */
+:root[data-theme="dark"] .container {
+  --auth-bg-gradient: radial-gradient(
+      1200px 800px at 10% 0%,
+      rgba(56, 189, 248, 0.12) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 700px at 90% 100%,
+      rgba(147, 51, 234, 0.12) 0%,
+      transparent 60%
+    ),
+    linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+}
+
+/* Glassmorphism auth card */
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px var(--shadow);
+  padding: 28px;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: linear-gradient(90deg, #38bdf8, #a78bfa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subtitle {
+  margin: 0 0 22px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.input {
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s,
+    color 0.3s ease;
+}
+
+.input::placeholder {
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.input:focus {
+  background: var(--input-bg);
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+}
+
+.error {
+  background: var(--error-bg, rgba(239, 68, 68, 0.14));
+  color: var(--error-color);
+  border: 1px solid var(--error-border, rgba(248, 113, 113, 0.35));
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  transition: all 0.3s ease;
+}
+
+:root[data-theme="light"] .error {
+  --error-bg: rgba(239, 68, 68, 0.1);
+  --error-border: rgba(239, 68, 68, 0.3);
+}
+
+:root[data-theme="dark"] .error {
+  --error-bg: rgba(239, 68, 68, 0.14);
+  --error-border: rgba(248, 113, 113, 0.35);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.button {
+  flex: 1;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.06s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.35);
+}
+
+.button:hover {
+  filter: brightness(1.05);
+}
+.button:active {
+  transform: translateY(1px);
+}
+
+.buttonSecondary {
+  flex: 1;
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--border-color);
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.buttonSecondary:hover {
+  background: var(--button-hover);
+  transform: translateY(-1px);
+}
+
+.toggle {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.toggleBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #93c5fd;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.toggleBtn:hover {
+  color: #60a5fa;
+}

@@ -1,0 +1,1 @@
+export const soundLimit = 25;

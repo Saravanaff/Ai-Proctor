@@ -6,7 +6,8 @@ def setup_drag_camera_handler(sio):
     @sio.on("drag_camera")
     def handle_drag_camera(data):
         buffer = data["buffer"]
-        name = data["name"]
+        userId = data["user_id"]
+        examId = data["exam_id"]
         img = image_utils.decode_image(buffer)
         rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -15,7 +16,7 @@ def setup_drag_camera_handler(sio):
         if now - constants.last_auth_process > constants.AUTH_INTERVAL:
             with constants.auth_lock:
                 if now - constants.last_auth_process > constants.AUTH_INTERVAL:
-                    constants.auth_status = auth.authenticate_face(rgb_img, name)
+                    constants.auth_status = auth.authenticate_face(rgb_img, userId)
                     constants.last_auth_process = now
 
         if now - constants.last_head_process > constants.HEAD_INTERVAL:
@@ -24,21 +25,32 @@ def setup_drag_camera_handler(sio):
                     constants.head_position, constants.eyes = head_pose.detect_head_direction(rgb_img)
                     constants.last_head_process = now
 
-        if not constants.processing_yolo and (now - constants.last_yolo_process > 0.5):
+        if not constants.processing_yolo and (now - constants.last_yolo_process > 0.2):
             constants.person_count, constants.detected_objects = yolo_detect.detect_person_and_objects(rgb_img)
             constants.last_yolo_process = now
-        print({
-            "no_of_person": constants.person_count,
-            "auth_face": constants.auth_status,
-            "head_position": constants.head_position,
-            "eyes": constants.eyes,
-            "object_detected": constants.detected_objects,
-        })
 
-        sio.emit("drag_camera_result", {
-            "no_of_person": constants.person_count,
-            "auth_face": constants.auth_status,
-            "head_position": constants.head_position,
-            "eyes": constants.eyes,
-            "object_detected": constants.detected_objects,
-        })
+        if sio.connected:
+            sio.emit("drag_camera_result", {
+
+                "no_of_person": constants.person_count,
+                "auth_face": constants.auth_status,
+                "head_position": constants.head_position,
+                "eyes": constants.eyes,
+                "object_detected": constants.detected_objects,
+                "userId":userId,
+                "user_id": userId,
+                "exam_id": examId,
+            })
+            print({
+                "no_of_person": constants.person_count,
+                "auth_face": constants.auth_status,
+                "head_position": constants.head_position,
+                "eyes": constants.eyes,
+                "object_detected": constants.detected_objects,
+                "userId":userId,
+                "user_id": userId,
+                "exam_id": examId,
+            })
+            
+        else:
+            print("[drag_camera] Socket not connected. Skipping emit.")

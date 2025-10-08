@@ -1,22 +1,32 @@
+import "reflect-metadata";
 import express from "express";
 import { createServer as createHttpsServer } from "https";
-import { Server } from "socket.io";
-import { createCA, createCert } from "mkcert";
-import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import cors from "cors";
+import { initMediasoup } from "./mediasoupServer";
+import { sequelize } from "./db";
+import authRoutes from "./routes/authRoutes";
+import authMiddleware from "./middleware/authMiddleware";
+import { initSocket } from "./sockets";
+import examRoutes from "./routes/examRoutes";
+import studentRoutes from "./routes/studentRoutes";
+import scoreRoutes from "./routes/scoreRoutes";
+import videoRoutes from "./routes/videoRoutes";
+import logRoute from "./routes/logRoute";
+import fs from "fs";
 
-// Load environment variables from .env file
 dotenv.config({ path: path.join(__dirname, ".env") });
 
-const serverPort = process.env.SERVER_PORT;
+const serverPort = 3001;
 
 async function startServer() {
-  const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
-  const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
-  const ca = fs.readFileSync(path.join(__dirname, "rootCA.pem"));
-
   const app = express();
+
+  app.use(cors());
+
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
   app.get("/", (req, res) => {
     res.send("DVD");
@@ -28,96 +38,32 @@ async function startServer() {
     res.download(caPath, "rootCA.pem");
   });
 
-  const httpsServer = createHttpsServer(
-    {
-      key,
-      cert,
-      ca,
-    },
-    app
-  );
 
-  const io = new Server(httpsServer, {
-    transports: ["polling", "websocket"],
-    cors: {
-      origin: "*",
-      methods: ["GET", "POST"],
-    },
-  });
+  app.use("/", authRoutes);
+  // app.use(authMiddleware);
 
-  let pythonSocket: any = null;
-  let mobileSocket: any = null;
+  app.use("/", examRoutes);
+  app.use("/", studentRoutes);
+  app.use("/", scoreRoutes);
+  app.use("/", videoRoutes);
+  app.use("/",logRoute);
 
-  io.on("connection", (socket) => {
-    console.log("A client connected");
+  const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
+  const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
+  const ca = fs.readFileSync(path.join(__dirname, "rootCA.pem"));
 
-    socket.on("register-python", () => {
-      console.log("🐍 Python connected");
-      pythonSocket = socket;
-    });
+  const httpsServer = createHttpsServer({ key, cert, ca }, app);
 
-    socket.on("mobile", () => {
-      console.log("Third Eye Connected");
-    });
-
-    socket.on("video", (data: any) => {
-      // console.log("Third Eye video received");
-      if (pythonSocket) {
-        pythonSocket.emit("thirdeye_cam", data);
-      }
-    });
-
-    socket.on("photo-save", (data) => {
-      if (pythonSocket) {
-        pythonSocket.emit("save-face-data", data);
-      }
-    });
-
-    socket.on("authenticate", (data) => {
-      if (pythonSocket) {
-        pythonSocket.emit("drag_camera", data);
-      }
-    });
-
-    socket.on("frame", (data) => {
-      if (pythonSocket) {
-        pythonSocket.emit("process-frame", data);
-      }
-    });
-
-    if (pythonSocket) {
-      pythonSocket.on("thirdeye_cam_result", (data: any) => {
-        console.log("hi");
-        if (data) {
-          console.log("Third Eye Camera Result : ", data);
-          socket.emit("thirdeye_alert", data);
-        }
-      });
-
-      pythonSocket.on("face_data_saved", (data: any) => {
-        // console.log("Result from Python", data);
-      });
-
-      pythonSocket.on("drag_camera_result", (data: any) => {
-        if (data) {
-          // console.log("Drag camera Result : ", data);
-          socket.emit("alert", data);
-        }
-      });
-
-      pythonSocket.on("result", (data: any) => {
-        socket.emit("fres", data);
-      });
-    }
-
-    socket.on("disconnect", () => {
-      console.log("A client disconnected");
-    });
-  });
+  initSocket(httpsServer);
 
   httpsServer.listen(serverPort, () => {
-    console.log(`✅ HTTPS Socket.IO server running at ${serverPort}`);
+    console.log(`✅ HTTP Socket.IO server running at ${serverPort}`);
   });
 }
 
-startServer().catch(console.error);
+(async () => {
+  await initMediasoup();
+  await sequelize.authenticate();
+  await sequelize.sync();
+  await startServer();
+})().catch(console.error);

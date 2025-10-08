@@ -1,0 +1,47 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+import socketio
+import time
+import urllib3
+from functionality.head_position import head_functionality,handle_head_position
+from threading import Thread
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+sio = socketio.Client(
+    reconnection=True,
+    reconnection_attempts=10,
+    reconnection_delay=2,  # seconds
+    reconnection_delay_max=10,
+    ssl_verify=False,
+    engineio_logger=False,
+    logger=False
+)
+
+@sio.event
+def connect():
+    print("[Head service] Connected to the server")
+    sio.emit("register-python", {"service": "head_service"})
+
+@sio.event
+def disconnect():
+    print("[Head service] Disconnected from the server")
+
+head_functionality(sio)
+Thread(target=handle_head_position, args=(sio,), daemon=True).start()
+
+while not sio.connected:
+    try:
+        print("[Head service] Trying to connect...")
+        sio.connect("https://172.16.105.211:3001/", transports=['websocket'])
+    except Exception as e:
+        print(f"[Head service] Connection error: {e}")
+        time.sleep(2)
+    
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("[Head service] disconnecting...")
+    sio.disconnect()

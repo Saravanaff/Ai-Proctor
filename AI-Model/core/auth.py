@@ -3,7 +3,8 @@ import numpy as np
 import face_recognition
 from .constants import face_data_path
 
-def authenticate_face(image: np.ndarray, name: str) -> bool:
+def authenticate_face(image: np.ndarray, userId: str) -> bool:
+    
     with open(face_data_path, "r") as f:
         try:
             data = json.load(f)
@@ -13,17 +14,26 @@ def authenticate_face(image: np.ndarray, name: str) -> bool:
             print("❌ Corrupted JSON data.")
             return False
 
-    target_entry = next((entry for entry in data if entry["name"] == name), None)
+    target_entry = next((entry for entry in data if entry["userId"] == userId), None)
     if not target_entry:
-        print(f"❌ No entry found for name: {name}")
+        print(f"❌ No entry found for userId: {userId}")
         return False
+    
+    stored_encodings = [np.array(e) for e in target_entry["embedding"]]
 
-    known_encoding = np.array(target_entry["encoding"])
     face_locations = face_recognition.face_locations(image)
-    face_encodings = face_recognition.face_encodings(image, face_locations)
+    if not face_locations:
+        print("❌ No faces detected in the image.")
+        return False
+    
+    face_encoding = face_recognition.face_encodings(image, face_locations)[0]
+    threshold = 0.6
 
-    for face_encoding in face_encodings:
-        if face_recognition.compare_faces([known_encoding], face_encoding)[0]:
+    for stored_encoding in stored_encodings:
+        distance = np.linalg.norm(stored_encoding - face_encoding)
+        if distance < threshold:
+            print("✅ Face authenticated successfully.")
             return True
 
+    
     return False

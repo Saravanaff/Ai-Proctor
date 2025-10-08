@@ -1,20 +1,49 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
-import {
-  Eye,
-  Shield,
-  Camera,
-  Wifi,
-  WifiOff,
-  RotateCcw,
-  Maximize2,
-  Video,
-} from "lucide-react";
+// Orientation helper
+function getOrientation() {
+  if (typeof window === "undefined") return "portrait";
+  if (window.matchMedia("(orientation: landscape)").matches) return "landscape";
+  return "portrait";
+}
+import { Eye, Shield, Camera, Wifi, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { io, Socket } from "socket.io-client";
+import { getExamId, getUserId } from "@/constants/AuthStore";
 import styles from "../styles/ThirdEye.module.css";
+import { delay } from "@/utils/delay";
+
+const userId = getUserId() || "unknown";
+const examId = getExamId();
+
+function currentUserId(): string | null {
+  try {
+    const id = getUserId?.();
+    if (id) return id;
+  } catch {}
+  try {
+    if (typeof window !== "undefined")
+      return window.localStorage.getItem("userId");
+  } catch {}
+  return null;
+}
 
 export default function ThirdEye() {
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [orientation, setOrientation] = useState(getOrientation());
+  // Listen for orientation changes
+  useEffect(() => {
+    function handleOrientation() {
+      setOrientation(getOrientation());
+    }
+    window.addEventListener("orientationchange", handleOrientation);
+    window.addEventListener("resize", handleOrientation);
+    return () => {
+      window.removeEventListener("orientationchange", handleOrientation);
+      window.removeEventListener("resize", handleOrientation);
+    };
+  }, []);
+  // const [socket, setSocket] = useState<Socket | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -22,202 +51,140 @@ export default function ThirdEye() {
   const [showSurveillanceNotice, setShowSurveillanceNotice] = useState(false);
   const [isStreamingFrames, setIsStreamingFrames] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
-  const [orientationAllowed, setOrientationAllowed] = useState(false);
-  const [cameraAllowed, setCameraAllowed] = useState(false);
-  const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const [videoRotation, setVideoRotation] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
   const { toast } = useToast();
 
-  const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+  const serverUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  console.log("Server URL:", serverUrl);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream>(null);
+  const newSocket = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const handleOrientationChange = () => {
-      const angle = screen.orientation?.angle ?? 0;
-      setVideoRotation(angle);
-      setOrientationAllowed(window.innerWidth > window.innerHeight);
-    };
+    let timer: NodeJS.Timeout;
+    setHydrated(true);
 
-    window.addEventListener("orientationchange", handleOrientationChange);
-    window.addEventListener("resize", handleOrientationChange);
-    handleOrientationChange();
-
-    return () => {
-      window.removeEventListener("orientationchange", handleOrientationChange);
-      window.removeEventListener("resize", handleOrientationChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    const handlePopState = () => {
-      window.history.pushState(null, "", window.location.href);
-    };
-    window.history.pushState(null, "", window.location.href);
-    window.addEventListener("popstate", handlePopState);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, []);
-
-  useEffect(() => {
-    const newSocket = io(SERVER_URL);
-    setSocket(newSocket);
-
-    newSocket.emit("mobile");
-
-    newSocket.on("connect", () => {
-      setIsConnected(true);
-      toast({
-        title: "Connected",
-        description: "Connected to Third Eye server.",
-        variant: "success",
-      });
-      newSocket.emit("summa");
-    });
-
-    newSocket.on("disconnect", (reason) => {
-      console.warn("Disconnected:", reason);
-      setIsConnected(false);
-      setIsStreamingFrames(false);
-    });
-
-    newSocket.on("connect_error", (err) => {
-      console.error("Connection error:", err.message);
-      toast({
-        title: "Connection Error",
-        description: "Could not connect to Third Eye server.",
-        variant: "destructive",
-      });
-    });
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach((track) => track.stop());
+    const initSocket = () => {
+      // Clean up existing socket first
+      if (newSocket.current) {
+        newSocket.current.removeAllListeners();
+        newSocket.current.disconnect();
+        newSocket.current = null;
       }
-      if (frameIntervalRef.current) {
-        clearInterval(frameIntervalRef.current);
-      }
-    };
-  }, [cameraStream]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowInitialNotice(false);
-      setShowSurveillanceNotice(true);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
+      // Create new socket with better configuration
+      newSocket.current = io(serverUrl, {
+        transports: ["polling", "websocket"],
+        auth: { userId: currentUserId() || "" },
+        timeout: 20000,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        forceNew: true,
+      });
 
-  const requestOrientation = async () => {
-    try {
-      if (screen.orientation && (screen.orientation as any).lock) {
-        await (screen.orientation as any).lock("landscape");
-        setOrientationAllowed(true);
-      } else {
-        if (window.innerWidth > window.innerHeight) {
-          setOrientationAllowed(true);
-        } else {
-          setOrientationAllowed(false);
+      console.log("newSocket Created...");
+
+      if (newSocket.current) {
+        newSocket.current.emit("mobile");
+
+        newSocket.current.on("connect", () => {
+          console.log("Socket connected successfully");
+          setIsConnected(true);
           toast({
-            title: "Orientation Required",
-            description: "Please rotate your device to landscape mode.",
+            title: "Connected",
+            description: "Connected to Third Eye server.",
+            variant: "success",
+          });
+          if (newSocket.current) {
+            newSocket.current.emit("mobile-acknowledgment",{userId:userId});
+          }
+        });
+
+        newSocket.current.on("disconnect", (reason) => {
+          console.warn("Disconnected:", reason);
+          setIsConnected(false);
+          setIsStreamingFrames(false);
+        });
+
+        newSocket.current.on("reconnect", (attemptNumber) => {
+          console.log("Reconnected after", attemptNumber, "attempts");
+          setIsConnected(true);
+        });
+
+        newSocket.current.on("reconnect_error", (error) => {
+          console.error("Reconnection error:", error);
+        });
+
+        newSocket.current.on("connect_error", (err) => {
+          console.error("Connection error:", err.message);
+          toast({
+            title: "Connection Error",
+            description: "Could not connect to Third Eye server. Retrying...",
             variant: "destructive",
           });
+        });
+      }
+    };
+
+    const init = async () => {
+      timer = setTimeout(() => {
+        setShowInitialNotice(false);
+        setShowSurveillanceNotice(true);
+      }, 3000);
+
+      setTimeout(initSocket, 100);
+    };
+
+    try {
+      init();
+    } catch (err) {
+      console.error("Initialization error:", err);
+    }
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+
+      if (frameIntervalRef.current) {
+        clearInterval(frameIntervalRef.current);
+        frameIntervalRef.current = null;
+      }
+
+      if (mediaRecorderRef.current) {
+        try {
+          if (mediaRecorderRef.current.state !== "inactive") {
+            mediaRecorderRef.current.stop();
+          }
+          mediaRecorderRef.current.ondataavailable = null;
+          mediaRecorderRef.current.onstop = null;
+        } catch (err) {
+          console.error("Error stopping media recorder:", err);
         }
       }
-    } catch (err) {
-      setOrientationAllowed(false);
-      toast({
-        title: "Orientation Required",
-        description:
-          "Please rotate your device to landscape and allow orientation lock.",
-        variant: "destructive",
-      });
-    }
-  };
 
-  const requestCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
-      });
-      setCameraStream(stream);
-      setCameraAllowed(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
       }
-      toast({
-        title: "Camera Allowed",
-        description: "Camera access granted.",
-        variant: "success",
-      });
-    } catch (error) {
-      setCameraAllowed(false);
-      toast({
-        title: "Camera Error",
-        description: "Could not access the camera.",
-        variant: "destructive",
-      });
-    }
-  };
 
-  const requestFullscreen = async () => {
-    const el = document.documentElement;
-    try {
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if ((el as any).webkitRequestFullscreen)
-        await (el as any).webkitRequestFullscreen();
-      else if ((el as any).msRequestFullscreen)
-        await (el as any).msRequestFullscreen();
-      setFullscreenAllowed(true);
-    } catch (err) {
-      setFullscreenAllowed(false);
-      toast({
-        title: "Fullscreen Required",
-        description: "You must allow fullscreen to continue.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    const checkFullscreen = () => {
-      setFullscreenAllowed(
-        !!(
-          document.fullscreenElement ||
-          (document as any).webkitFullscreenElement ||
-          (document as any).msFullscreenElement
-        )
-      );
-    };
-    document.addEventListener("fullscreenchange", checkFullscreen);
-    document.addEventListener("webkitfullscreenchange", checkFullscreen);
-    document.addEventListener("msfullscreenchange", checkFullscreen);
-    checkFullscreen();
-    return () => {
-      document.removeEventListener("fullscreenchange", checkFullscreen);
-      document.removeEventListener("webkitfullscreenchange", checkFullscreen);
-      document.removeEventListener("msfullscreenchange", checkFullscreen);
+      if (newSocket.current) {
+        newSocket.current.removeAllListeners();
+        newSocket.current.disconnect();
+        newSocket.current = null;
+      }
     };
   }, []);
 
   const captureAndSendFrame = () => {
-    if (!videoRef.current || !canvasRef.current || !socket || !isConnected)
+    if (
+      !videoRef.current ||
+      !canvasRef.current ||
+      !newSocket.current ||
+      !isConnected
+    )
       return;
 
     const video = videoRef.current;
@@ -233,7 +200,11 @@ export default function ThirdEye() {
       (blob) => {
         if (blob) {
           blob.arrayBuffer().then((buffer) => {
-            socket.emit("video", buffer);
+            newSocket.current?.emit("videos", {
+              buffer,
+              userId: userId,
+              examId: examId,
+            });
           });
         }
       },
@@ -243,31 +214,100 @@ export default function ThirdEye() {
   };
 
   const startStreaming = async () => {
-    if (!cameraAllowed || !cameraStream) {
-      toast({
-        title: "Camera Required",
-        description: "Please allow camera before starting surveillance.",
-        variant: "destructive",
-      });
-      return;
-    }
     try {
-      const el = document.documentElement;
-      if (el.requestFullscreen) await el.requestFullscreen();
-      else if ((el as any).webkitRequestFullscreen)
-        await (el as any).webkitRequestFullscreen();
-      else if ((el as any).msRequestFullscreen)
-        await (el as any).msRequestFullscreen();
-      setFullscreenAllowed(true);
+      console.log("Starting surveillance recording ...");
+      newSocket.current?.emit("start-exam", {
+        user_id: userId,
+        exam_id: examId,
+        category: "third_eye",
+      });
 
-      if (videoRef.current && videoRef.current.srcObject !== cameraStream) {
-        videoRef.current.srcObject = cameraStream;
-        await videoRef.current.play();
+      await delay(500);
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+
+      // Add a delay to ensure camera is released
+      await delay(500);
+
+      console.log("FloatingCamera: Requesting camera access...");
+
+      // Try to get camera with retry logic
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          const currentOrientation = getOrientation();
+          streamRef.current = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "user",
+              width: {
+                ideal: currentOrientation === "landscape" ? 640 : 640,
+              },
+              height: {
+                ideal: currentOrientation === "landscape" ? 480 : 480,
+              },
+              frameRate: { ideal: 30 },
+              aspectRatio:
+                currentOrientation === "landscape"
+                  ? { ideal: 16 / 9 }
+                  : { ideal: 4 / 3 },
+            },
+          });
+          break;
+        } catch (err) {
+          const error = err as Error;
+          if (error.name === "NotReadableError" && retries > 1) {
+            console.log(
+              `Camera busy, retrying... (${retries - 1} attempts left)`
+            );
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            retries--;
+          } else {
+            throw err;
+          }
+        }
+      }
+
+      if (videoRef.current && streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+
+      if (streamRef.current) {
+        mediaRecorderRef.current = new MediaRecorder(streamRef.current, {
+          mimeType: "video/webm; codecs=vp8",
+          videoBitsPerSecond: 1000000,
+        });
+      }
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.ondataavailable = (e: any) => {
+          if (e.data.size > 0) {
+            e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
+              const chunkData: any = {
+                user_id: userId,
+                exam_id: examId,
+                category: "third_eye",
+                chunk: buffer,
+              };
+              if (newSocket.current) {
+                console.log("Recording ...");
+                newSocket.current.emit(
+                  "recorder-add-video-stream-chunk",
+                  chunkData
+                );
+              }
+            });
+          }
+        };
+
+        mediaRecorderRef.current.start(500); // send chunks every 500ms
       }
 
       frameIntervalRef.current = setInterval(() => {
         captureAndSendFrame();
       }, 1000 / 30);
+
       setIsStreamingFrames(true);
       toast({
         title: "Third Eye Activated",
@@ -276,174 +316,305 @@ export default function ThirdEye() {
     } catch (error) {
       console.error(error);
       toast({
-        title: "Fullscreen Error",
-        description: "Could not enter fullscreen.",
+        title: "Camera Error",
+        description: "Could not access the camera.",
         variant: "destructive",
       });
     }
   };
 
   const stopStreaming = () => {
+    console.log("Stopping streaming...");
+
+    newSocket.current?.emit("end-exam", {
+      user_id: userId,
+      exam_id: examId,
+      category: "third_eye",
+    });
+
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.ondataavailable = null;
+      mediaRecorderRef.current.onstop = null;
+      if (mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      mediaRecorderRef.current = null;
+    }
+
     if (frameIntervalRef.current) {
       clearInterval(frameIntervalRef.current);
       frameIntervalRef.current = null;
     }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        console.log(
+          `Stopping track: ${track.kind}, state: ${track.readyState}`
+        );
+        track.stop();
+      });
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
     setIsStreamingFrames(false);
     toast({ title: "Streaming Stopped", description: "Camera stream ended." });
   };
 
-  if (!orientationAllowed) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <Eye size={24} className="text-gradient" />
-          <h1>Third Eye Surveillance</h1>
-        </div>
-        <div className={styles.notice}>
-          <RotateCcw className="inline mr-2" size={20} />
-          <span>Landscape mode is required to start surveillance.</span>
-          <button className={styles.button} onClick={requestOrientation}>
-            Allow Landscape
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!cameraAllowed) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <Eye size={24} className="text-gradient" />
-          <h1>Third Eye Surveillance</h1>
-        </div>
-        <div className={styles.notice}>
-          <Video className="inline mr-2" size={20} />
-          <span>Camera access is required to continue.</span>
-          <button className={styles.button} onClick={requestCamera}>
-            Allow Camera
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
-      className={styles.container}
       style={{
         position: "fixed",
         top: 0,
         left: 0,
         width: "100vw",
         height: "100vh",
+        background: "linear-gradient(120deg, #232526 0%, #414345 100%)",
         overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "Inter, sans-serif",
       }}
     >
-      <div style={{ position: "relative", width: "100%", height: "100%" }}>
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className={styles.video}
-          style={{
-            transform: `translate(-50%, -50%)`,
-            objectFit: "contain",
-            width: "100%",
-            height: "100vw",
-            background: "black",
-          }}
-        />
-        <canvas ref={canvasRef} style={{ display: "none" }} />
+      {/* Orientation Message */}
+      {orientation === "portrait" && (
         <div
           style={{
             position: "absolute",
+            top: 0,
             left: 0,
-            right: 0,
-            bottom: 40,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.85)",
+            zIndex: 100,
             display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
             justifyContent: "center",
-            pointerEvents: "none",
+            color: "#fff",
+            fontSize: 22,
+            fontWeight: 700,
+            letterSpacing: 1,
+            textAlign: "center",
+            backdropFilter: "blur(6px)",
           }}
         >
-          <button
-            className={`${styles.button} ${
-              isStreamingFrames ? styles.stopButton : styles.startButton
-            }`}
-            onClick={isStreamingFrames ? stopStreaming : startStreaming}
-            disabled={!isConnected}
-            style={{ pointerEvents: "auto" }}
+          <span style={{ marginBottom: 16 }}>
+            Please rotate your device to{" "}
+            <span style={{ color: "#38bdf8" }}>landscape</span> mode to use
+            Third Eye.
+          </span>
+          <svg
+            width="60"
+            height="60"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#38bdf8"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            {isStreamingFrames ? (
-              <>
-                <Eye className="mr-2 inline" size={18} />
-                Stop Surveillance
-              </>
-            ) : (
-              <>
-                <Maximize2 className="mr-2 inline" size={18} />
-                Start Surveillance
-              </>
-            )}
-          </button>
+            <rect x="7" y="2" width="10" height="20" rx="2" />
+            <path d="m3 8 4-4 4 4" />
+            <path d="m13 16 4 4 4-4" />
+          </svg>
         </div>
+      )}
+      {/* Status Header */}
+      {orientation === "landscape" && (
         <div
           style={{
             position: "absolute",
             top: 20,
             left: 20,
-            minWidth: 220,
-            maxWidth: 320,
-            background: "rgba(0,0,0,0.65)",
-            borderRadius: 12,
-            padding: "14px 18px",
-            zIndex: 10,
-            color: "#fff",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.18)",
+            right: 20,
+            zIndex: 30,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
           <div
-            className={styles.header}
             style={{
-              margin: 0,
-              background: "none",
-              border: "none",
-              animation: "none",
-              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: "rgba(0,0,0,0.7)",
+              padding: "8px 12px",
+              borderRadius: 20,
+              color: "#fff",
+              fontSize: 14,
+              fontWeight: 500,
             }}
           >
-            <Eye size={22} className="text-gradient" />
-            <span style={{ fontWeight: 600, fontSize: 18 }}>Third Eye</span>
-            {isConnected ? (
-              <Wifi size={18} className="text-green-400" />
-            ) : (
-              <WifiOff size={18} className="text-red-400" />
-            )}
+            <Eye size={16} />
+            <span>Third Eye</span>
           </div>
-          {showInitialNotice && (
-            <div
-              className={`${styles.notice} ${styles.initialNotice}`}
-              style={{
-                margin: "8px 0 0 0",
-                background: "rgba(0,162,255,0.12)",
-              }}
-            >
-              <Camera className="inline mr-2" size={16} />
-              <span>Initializing...</span>
-            </div>
-          )}
-          {showSurveillanceNotice && (
-            <div
-              className={`${styles.notice} ${styles.surveillanceNotice}`}
-              style={{ margin: "8px 0 0 0", background: "rgba(255,0,0,0.12)" }}
-            >
-              <Shield className="inline mr-2" size={16} />
-              <span>Surveillance Engaged</span>
-            </div>
-          )}
+
+          <div
+            style={{
+              background: isConnected
+                ? "rgba(34,197,94,0.8)"
+                : "rgba(239,68,68,0.8)",
+              padding: "8px 12px",
+              borderRadius: 20,
+              color: "#fff",
+              fontSize: 12,
+              fontWeight: 500,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            {isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
+            {isConnected ? "Connected" : "Disconnected"}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Camera Feed */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          width: orientation === "landscape" ? "100vh" : "100%",
+          height: orientation === "landscape" ? "100vw" : "100%",
+          objectFit: "cover",
+          transform:
+            orientation === "landscape"
+              ? "translate(-50%, -50%) rotate(90deg)"
+              : "translate(-50%, -50%) rotate(0deg)",
+          objectPosition: "center",
+          background: "rgba(30,41,59,0.7)",
+          zIndex: 1,
+          borderRadius: 0,
+          boxShadow: "0 8px 32px 0 rgba(31,38,135,0.37)",
+          filter:
+            orientation === "portrait" ? "blur(8px) grayscale(0.7)" : "none",
+          transition: "all 0.3s ease",
+        }}
+      />
+
+      <canvas ref={canvasRef} style={{ display: "none" }} />
+
+      {/* Control Button */}
+      {hydrated && orientation === "landscape" && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 40,
+            left: 0,
+            width: "100vw",
+            display: "flex",
+            justifyContent: "center",
+            zIndex: 20,
+          }}
+        >
+          <button
+            onClick={isStreamingFrames ? stopStreaming : startStreaming}
+            disabled={!isConnected}
+            style={{
+              background: isStreamingFrames
+                ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                : "linear-gradient(135deg, #10b981, #059669)",
+              color: "#fff",
+              border: "none",
+              padding: "18px 38px",
+              borderRadius: 60,
+              fontSize: 18,
+              fontWeight: 700,
+              cursor: isConnected ? "pointer" : "not-allowed",
+              opacity: isConnected ? 1 : 0.5,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              boxShadow: "0 8px 32px 0 rgba(31,38,135,0.37)",
+              transition: "all 0.2s cubic-bezier(.4,0,.2,1)",
+              transform: "translateY(0)",
+              letterSpacing: 0.5,
+              backdropFilter: "blur(2px)",
+            }}
+            onTouchStart={(e) => {
+              e.currentTarget.style.transform = "translateY(2px)";
+            }}
+            onTouchEnd={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
+            {isStreamingFrames ? (
+              <>
+                <Eye size={22} />
+                Stop Surveillance
+              </>
+            ) : (
+              <>
+                <Camera size={22} />
+                Start Surveillance
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Status Messages */}
+      {(showInitialNotice || showSurveillanceNotice) &&
+        orientation === "landscape" && (
+          <div
+            style={{
+              position: "absolute",
+              top: 80,
+              left: 20,
+              right: 20,
+              zIndex: 15,
+            }}
+          >
+            {showInitialNotice && (
+              <div
+                style={{
+                  background: "rgba(59,130,246,0.9)",
+                  color: "#fff",
+                  padding: "12px 16px",
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 8,
+                }}
+              >
+                <Camera size={16} />
+                Initializing camera...
+              </div>
+            )}
+            {/* {showSurveillanceNotice && (
+              <div
+                style={{
+                  background: "rgba(239,68,68,0.9)",
+                  color: "#fff",
+                  padding: "12px 16px",
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Shield size={16} />
+                Surveillance Active
+              </div>
+            )} */}
+          </div>
+        )}
     </div>
   );
 }

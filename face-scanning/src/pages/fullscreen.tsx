@@ -1,194 +1,234 @@
-// Fullscreen.tsx
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useState, useRef } from 'react';
 import ExamPage from "@/components/FullScreen";
 import styles from "../styles/ExamPage.module.css";
+import { sleep } from '@/utils/delay';
+import { getExamId, getUserId } from '@/constants/AuthStore';
 import socket from "@/components/socket";
-import { sleep } from "@/utils/delay";
-
-const Fullscreen = () => {
-  const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
-  const [screenSharingStream, setScreenSharingStream] = useState<MediaStream | null>(null);
-  const screenSharingRef = useRef<HTMLVideoElement>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const [recordingStatus, setRecordingStatus] = useState('');
-
-  // Handles what to do after recording completes
-  const handleRecordingComplete = async (blob: Blob) => {
-    try {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `screen-recording-${timestamp}.webm`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      setRecordingStatus(`Recording downloaded as ${filename}`);
-      console.log('Recording downloaded:', filename);
-    } catch (error) {
-      console.error('Error handling recording:', error);
-      setRecordingStatus('Error processing recording');
-    }
-  };
-
-  const requestFullscreenPermissions = async() => {
-      // Now request fullscreen
-      try {
-        const el = document.documentElement;
-        if (el.requestFullscreen) await el.requestFullscreen();
-        else if ((el as any).webkitRequestFullscreen) await (el as any).webkitRequestFullscreen();
-        else if ((el as any).msRequestFullscreen) await (el as any).msRequestFullscreen();
-
-        setFullscreenAllowed(true);
-      }
-      catch(err){
-        console.log("Error While Requesting FullScreen : ", err);
-      }
-  }
-
-  // Requests screen sharing, then requests fullscreen
-  const requestScreenRecordPermissions = async () => {
-    if(isRecording){
-      return ;
-    }
-    try {
-      // Request screen sharing
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { displaySurface: "monitor" },
-        audio: false,
-      });
-
-      stream.getVideoTracks()[0].addEventListener("ended", () => {
-        setScreenSharingStream(null);
-        setFullscreenAllowed(false);
-        setIsRecording(false);
-        setRecordingStatus("");
-      });
-
-      setScreenSharingStream(stream);
+import { useTheme } from "@/contexts/ThemeContext";
+import useMicrophoneDevices from '@/hooks/useMicrophoneDevices';
+import axios from 'axios';
+import { getExamSettings } from '@/constants/examSettingsConsts';
+import { setNumberOfMicrophones } from '@/constants/violationConsts';
 
 
+const userId = getUserId() || "unknown";
+const examId = getExamId();
+const examSettings = getExamSettings();
+console.log("User ID:", userId);
 
-      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-      const chunks: Blob[] = [];
 
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunks.push(event.data);
-      };
+const fullscreen = () => {
+    const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
+    const [rulesAccepted, setRulesAccepted] = useState(false);
+    const { theme } = useTheme();
+    const { getMicrophoneCount } = useMicrophoneDevices();
 
-      recorder.onstop = async () => {
-        if (chunks.length > 0) {
-          const recordedBlob = new Blob(chunks, { type: 'video/webm' });
-          await handleRecordingComplete(recordedBlob);
+    useEffect(() => {
+        const getCount = async() => {
+            let cnt = await getMicrophoneCount();
+            return cnt;
         }
-      };
+        getCount().then(cnt => {
+            setNumberOfMicrophones(cnt);
+        });
+    },[])
 
-      setMediaRecorder(recorder);
+    // const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
+    const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
 
-      setTimeout(() => {
-        if (recorder.state === 'inactive') {
-          recorder.start(1000);
-          setIsRecording(true);
-          setRecordingStatus('Recording started automatically');
-          console.log('Auto-started screen recording');
+
+    const startScreenRecording = async (screenStream: any) => {
+        try {
+            socket.emit("start-exam", {
+                user_id: userId,
+                exam_id: examId,
+                category: "screen_recording"
+            });
+            // const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+            console.log("screenStream : ", screenStream)
+            if (screenStream) {
+                screenRecorderMediaRecorderRef.current = new MediaRecorder(screenStream, {
+                    mimeType: "video/webm; codecs=vp8",
+                    videoBitsPerSecond: 1000000,
+                });
+                // screenRecorderMediaRecorderRef.current.start();
+            }
+            if (screenRecorderMediaRecorderRef.current) {
+                console.log("ondataavailable");
+                screenRecorderMediaRecorderRef.current.ondataavailable = (e: any) => {
+                    if (e.data.size > 0) {
+                        e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
+                            const chunkData: any = {
+                                user_id: userId,
+                                exam_id: examId,
+                                category: "screen_recording",
+                                chunk: buffer,
+                            };
+                            console.log("Sending screen recording chunk");
+                            socket.emit("recorder-add-video-stream-chunk", chunkData);
+                        });
+                    }
+                };
+            }
+            if (screenRecorderMediaRecorderRef.current) {
+                console.log("Starting screen recorder");
+                screenRecorderMediaRecorderRef.current.start(500);
+            }
+            setFullscreenAllowed(true);
+            // requestFullscreen();
+        } catch (error) {
+            console.error("Error starting screen recording:", error);
         }
-      }, 10);
-    } catch (err) {
-      console.error("Error requesting permissions:", err);
-      alert("You must allow screen sharing to continue the exam.");
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.stop();
-      setIsRecording(false);
-      setRecordingStatus('Processing recording...');
-      console.log('Screen recording stopped');
-    }
-  };
-
-  // Clean up only on unmount
-  useEffect(() => {
-    return () => {
-      if (screenSharingStream) {
-        screenSharingStream.getTracks().forEach((track) => track.stop());
-      }
-      if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
-      }
     };
-  }, []); 
 
-  
-  if (!fullscreenAllowed) {
+    const requestFullscreen = async () => {
+        const el = document.documentElement;
+        try {
+            if (el.requestFullscreen) await el.requestFullscreen();
+            else if ((el as any).webkitRequestFullscreen) await (el as any).webkitRequestFullscreen();
+            else if ((el as any).msRequestFullscreen) await (el as any).msRequestFullscreen();
+
+            setFullscreenAllowed(true);
+
+        } catch (err) {
+            alert("You must allow fullscreen to continue the exam.");
+        }
+    };
+
+
+
+    useEffect(() => {
+        const onFsChange = () => {
+            const doc: any = document as any;
+            const active = !!(document.fullscreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement);
+            setFullscreenAllowed(active);
+        };
+        document.addEventListener('fullscreenchange', onFsChange);
+        // @ts-ignore vendor prefixes
+        document.addEventListener('webkitfullscreenchange', onFsChange);
+        // @ts-ignore
+        document.addEventListener('msfullscreenchange', onFsChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', onFsChange);
+            // @ts-ignore
+            document.removeEventListener('webkitfullscreenchange', onFsChange);
+            // @ts-ignore
+            document.removeEventListener('msfullscreenchange', onFsChange);
+        };
+    }, []);
+
+
+    if (!fullscreenAllowed) {
+        return (
+            <div className={`${styles.examGuidelinesContainer} theme-transition`} data-theme={theme}>
+                <div className={`${styles.guidelinesCard} card-theme`}>
+                    <div className={styles.header}>
+                        <h1>Online Exam Guidelines</h1>
+                        <p>Please read carefully and follow all instructions</p>
+                    </div>
+                    
+                    <div className={styles.content}>
+                        <section className={styles.section}>
+                            <h2>🚨 Important Requirements</h2>
+                            <ul>
+                                <li>Ensure you have a stable internet connection</li>
+                                <li>Use a desktop or laptop computer</li>
+                                <li>Close all unnecessary applications and browser tabs</li>
+                                <li>Charge your device or keep it plugged in</li>
+                                <li>Have a backup internet connection ready if possible</li>
+                            </ul>
+                        </section>
+
+                        <section className={styles.section}>
+                            <h2>📹 Camera & Audio Setup</h2>
+                            <ul>
+                                <li>Position your camera to show your face and shoulders clearly</li>
+                                <li>Ensure good lighting - avoid backlighting</li>
+                                <li>Test your microphone and camera before starting</li>
+                                <li>Keep your camera on throughout the entire exam</li>
+                                <li>Do not cover or disable your camera during the exam</li>
+                            </ul>
+                        </section>
+
+                        <section className={styles.section}>
+                            <h2>🏠 Environment Guidelines</h2>
+                            <ul>
+                                <li>Choose a quiet, well-lit room with minimal distractions</li>
+                                <li>Sit at a clean desk with only permitted materials</li>
+                                <li>Inform others not to disturb you during the exam</li>
+                                <li>Remove or cover any notes, books, or electronic devices</li>
+                                <li>Keep your workspace organized and clutter-free</li>
+                            </ul>
+                        </section>
+
+                        <section className={styles.section}>
+                            <h2>📋 During the Exam</h2>
+                            <ul>
+                                <li>Look directly at your screen - avoid looking away frequently</li>
+                                <li>Do not leave your seat</li>
+                                <li>Do not use any unauthorized materials or devices</li>
+                            </ul>
+                        </section>
+
+                        <section className={styles.section}>
+                            <h2>🚫 Prohibited Activities</h2>
+                            <ul>
+                                <li>Using tablets, or smart devices</li>
+                                <li>Communicating with others during the exam</li>
+                                <li>Opening new browser tabs or applications</li>
+                                <li>Taking screenshots or photos of exam content</li>
+                                <li>Using notes, books, or external materials (unless permitted)</li>
+                                <li>Having other people in the room</li>
+                            </ul>
+                        </section>
+
+                        <section className={styles.section}>
+                            <h2>⚠️ Proctoring Notice</h2>
+                            <p className={styles.notice}>
+                                This exam is monitored by AI proctoring software. Your screen activity, 
+                                camera feed, and audio will be recorded and analyzed for any suspicious 
+                                behavior. Any violations may result in immediate exam termination and 
+                                academic consequences.
+                            </p>
+                        </section>
+                    </div>
+
+                    <div className={styles.footer}>
+                        <div className={styles.acknowledgment}>
+                            <label className={styles.checkbox}>
+                                <input 
+                                    type="checkbox" 
+                                    onChange={(e) => setRulesAccepted(e.target.checked)}
+                                />
+                                <span>I have read and understood all the guidelines above</span>
+                            </label>
+                        </div>
+                        <button 
+                            className={`${styles.proceedButton} button-theme`}
+                            disabled={!rulesAccepted}
+                            onClick={async () => {
+                                let screenStream = null;
+                                if(examSettings.screen_sharing_enabled){
+                                    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                                }
+                                startScreenRecording(screenStream)
+                            }}
+                        >
+                            Accept & Start Exam
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+
     return (
-      <div className={styles.blockScreen}>
-        <h2>Screen sharing and fullscreen are required to start the exam</h2>
-        {/* <p style={{ color: '#666', marginBottom: '20px' }}>
-          ⚠️ Recording will start automatically and download when completed
-        </p> */}
-        {!isRecording && (
-          <button onClick={requestScreenRecordPermissions}>
-            Allow Screen Sharing
-          </button>
-        )}
-        {isRecording && (
-          <button
-            onClick={requestFullscreenPermissions}
-          >
-            Enter Exam
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  // UI after permissions granted and recording is running
-  return (
-    <>
-      {fullscreenAllowed && (
         <>
-          <div style={{
-            position: 'fixed',
-            top: '10px',
-            right: '10px',
-            zIndex: 1000,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-            alignItems: 'flex-end'
-          }}>
-            {isRecording && (
-              <div 
-                className="recording-indicator"
-                style={{
-                  padding: '4px 8px',
-                  backgroundColor: '#dc3545',
-                  color: 'white',
-                  borderRadius: '4px',
-                  fontSize: '12px'
-                }}
-              >
-                🔴 REC
-              </div>
-            )}
-          </div>
-
-          <ExamPage
-            screenSharingRef={screenSharingRef}
-            screenSharingStream={screenSharingStream}
-            onStopRecording={stopRecording}
-          />
+            {fullscreenAllowed && <ExamPage screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef} />}
         </>
-      )}
-    </>
-  );
-};
+    );
+}
 
-export default Fullscreen;
+
+export default fullscreen

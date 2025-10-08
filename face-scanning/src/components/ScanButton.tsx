@@ -1,6 +1,17 @@
 import React from "react";
 
-const ScanButton: any = ({ call, isScanning }: any) => {
+const ScanButton: any = ({
+  call,
+  isScanning,
+  currentStep,
+  totalSteps,
+}: any) => {
+  const getButtonText = () => {
+    if (isScanning) return "Capturing...";
+    if (currentStep === totalSteps) return "Complete Scan";
+    return `Capture Step ${currentStep}`;
+  };
+
   return (
     <div
       style={{
@@ -14,12 +25,13 @@ const ScanButton: any = ({ call, isScanning }: any) => {
       <button
         onClick={call}
         disabled={isScanning}
+        className="theme-transition"
         style={{
           backgroundColor: isScanning
-            ? "rgba(255, 255, 255, 0.3)"
-            : "rgba(255, 255, 255, 0.9)",
-          color: isScanning ? "white" : "#000",
-          border: "none",
+            ? "var(--button-bg, rgba(255, 255, 255, 0.3))"
+            : "var(--accent-color, rgba(255, 255, 255, 0.9))",
+          color: isScanning ? "var(--text-secondary, white)" : "white",
+          border: "1px solid var(--border-color, transparent)",
           borderRadius: "25px",
           padding: "15px 30px",
           fontSize: "16px",
@@ -27,9 +39,10 @@ const ScanButton: any = ({ call, isScanning }: any) => {
           cursor: isScanning ? "not-allowed" : "pointer",
           minWidth: "120px",
           transition: "all 0.3s ease",
+          boxShadow: "0 4px 12px var(--shadow, rgba(0, 0, 0, 0.2))",
         }}
       >
-        Capture
+        {getButtonText()}
       </button>
     </div>
   );

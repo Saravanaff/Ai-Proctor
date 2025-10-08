@@ -1,0 +1,370 @@
+import { Request, Response } from "express";
+import express from "express";
+import { Exam } from "../models/Exam";
+import { Attend } from "../models/Attend";
+import { User } from "../models/User";
+import { getUserIdFromToken } from "../utils/jwt";
+
+export const createExam = async (req: Request, res: Response) => {
+  try {
+    console.log(req.body);
+    const {
+      exam_name,
+      third_eye_enabled,
+      multiple_person_detection_enabled,
+      eyeball_detection_enabled,
+      object_detection_enabled,
+      head_direction_enabled,
+      flag_notifications_enabled,
+      video_recording_enabled,
+      tab_switch_detection_enabled,
+      microphone_detection_enabled,
+      safe_browser_enabled,
+      proctor_feed_to_test_taker_enabled,
+      screen_sharing_enabled,
+      screen_count_detection_enabled,
+      control_desktop_apps_enabled,
+      normal_proctoring,
+      ai_powered_proctoring,
+      recorded_manual_proctoring,
+    } = req.body;
+
+    const user_id = getUserIdFromToken(req);
+    console.log(user_id);
+    if (!exam_name || !user_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Some Parameter is Missing",
+      });
+    }
+    const lastExam = await Exam.findOne({
+      order: [["key", "DESC"]],
+    });
+    let nextKey = 100000;
+    if (lastExam && lastExam.key) {
+      nextKey = Number(lastExam.key) + 1;
+      if (nextKey > 999999) nextKey = 100000;
+    }
+
+    const newExam = await Exam.create({
+      user_id,
+      exam_name,
+      third_eye_enabled,
+      multiple_person_detection_enabled,
+      eyeball_detection_enabled,
+      object_detection_enabled,
+      head_direction_enabled,
+      flag_notifications_enabled,
+      video_recording_enabled,
+      tab_switch_detection_enabled,
+      microphone_detection_enabled,
+      safe_browser_enabled,
+      proctor_feed_to_test_taker_enabled,
+      screen_sharing_enabled,
+      screen_count_detection_enabled,
+      control_desktop_apps_enabled,
+      normal_proctoring,
+      ai_powered_proctoring,
+      recorded_manual_proctoring,
+      key: nextKey,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Exam Created Successfully",
+      key: nextKey,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Error Creating exam",
+      error: err.message,
+    });
+  }
+};
+
+export const getExam = async (req: Request, res: Response) => {
+  const user_id = getUserIdFromToken(req);
+  console.log(user_id);
+  if (!user_id) {
+    return res.status(400).json({
+      success: false,
+      message: "User ID is required",
+    });
+  }
+  try {
+    const exams = await Exam.findAll({
+      where: { user_id },
+      attributes: ["id", "exam_name", "key"],
+      include: [
+        {
+          model: Attend,
+          attributes: ["user_id", "exam_id",],
+          include: [
+            {
+              model: User,
+              attributes: ["name", "email"],
+            },
+          ],
+        },
+      ],
+    });
+    res.status(200).json({
+      success: true,
+      message: "Exam names fetched successfully",
+      exams,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching exams",
+      error: err.message,
+    });
+  }
+};
+
+export const getCanditates = async (req: Request, res: Response) => {
+  const { exam_id } = req.body;
+  if (!exam_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Exam ID is required",
+    });
+  }
+  try {
+    const candidates = await Attend.findAll({
+      where: { exam_id },
+      attributes: ["user_id", "user_name"],
+    });
+    res.status(200).json({
+      success: true,
+      message: "Candidates fetched successfully",
+      candidates,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching candidates",
+      error: err.message,
+    });
+  }
+};
+
+export const getSingleExam = async (req: Request, res: Response) => {
+  const { examId } = req.params;
+  const user_id = getUserIdFromToken(req);
+
+  if (!examId || !user_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Exam ID and user authentication required",
+    });
+  }
+
+  try {
+    const exam = await Exam.findOne({
+      where: {
+        id: examId,
+        user_id: user_id,
+      },
+      attributes: [
+        "id",
+        "exam_name",
+        "key",
+        "third_eye_enabled",
+        "multiple_person_detection_enabled",
+        "eyeball_detection_enabled",
+        "object_detection_enabled",
+        "head_direction_enabled",
+        "flag_notifications_enabled",
+        "video_recording_enabled",
+        "tab_switch_detection_enabled",
+        "microphone_detection_enabled",
+        "safe_browser_enabled",
+        "proctor_feed_to_test_taker_enabled",
+        "screen_sharing_enabled",
+        "screen_count_detection_enabled",
+        "control_desktop_apps_enabled",
+        "normal_proctoring",
+        "ai_powered_proctoring",
+        "recorded_manual_proctoring",
+        "createdAt",
+        "updatedAt",
+      ],
+      include: [
+        {
+          model: Attend,
+          attributes: ["user_id","startTime","endTime","createdAt"],
+          include: [
+            {
+              model: User,
+              attributes: ["id", "name", "email"],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!exam) {
+      return res.status(404).json({
+        success: false,
+        message: "Exam not found or you don't have permission to view it",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Exam details fetched successfully",
+      exam,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching exam details",
+      error: err.message,
+    });
+  }
+};
+
+export const updateExam = async (req: Request, res: Response) => {
+  const { examId } = req.params;
+  const user_id = getUserIdFromToken(req);
+  const {
+    exam_name,
+    third_eye_enabled,
+    multiple_person_detection_enabled,
+    eyeball_detection_enabled,
+    object_detection_enabled,
+    head_direction_enabled,
+    flag_notifications_enabled,
+    video_recording_enabled,
+    tab_switch_detection_enabled,
+    microphone_detection_enabled,
+    safe_browser_enabled,
+    proctor_feed_to_test_taker_enabled,
+    screen_sharing_enabled,
+    screen_count_detection_enabled,
+    control_desktop_apps_enabled,
+    normal_proctoring,
+    ai_powered_proctoring,
+    recorded_manual_proctoring,
+  } = req.body;
+
+  if (!examId || !user_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Exam ID and user authentication required",
+    });
+  }
+
+  try {
+    const exam = await Exam.findOne({
+      where: {
+        id: examId,
+        user_id: user_id,
+      },
+    });
+
+    if (!exam) {
+      return res.status(404).json({
+        success: false,
+        message: "Exam not found or you don't have permission to update it",
+      });
+    }
+
+    const updateData: any = {};
+    if (exam_name !== undefined) updateData.exam_name = exam_name;
+    if (third_eye_enabled !== undefined)
+      updateData.third_eye_enabled = third_eye_enabled;
+    if (multiple_person_detection_enabled !== undefined)
+      updateData.multiple_person_detection_enabled =
+        multiple_person_detection_enabled;
+    if (eyeball_detection_enabled !== undefined)
+      updateData.eyeball_detection_enabled = eyeball_detection_enabled;
+    if (object_detection_enabled !== undefined)
+      updateData.object_detection_enabled = object_detection_enabled;
+    if (head_direction_enabled !== undefined)
+      updateData.head_direction_enabled = head_direction_enabled;
+    if (flag_notifications_enabled !== undefined)
+      updateData.flag_notifications_enabled = flag_notifications_enabled;
+    if (video_recording_enabled !== undefined)
+      updateData.video_recording_enabled = video_recording_enabled;
+    if (tab_switch_detection_enabled !== undefined)
+      updateData.tab_switch_detection_enabled = tab_switch_detection_enabled;
+    if (microphone_detection_enabled !== undefined)
+      updateData.microphone_detection_enabled = microphone_detection_enabled;
+    if (safe_browser_enabled !== undefined)
+      updateData.safe_browser_enabled = safe_browser_enabled;
+    if (proctor_feed_to_test_taker_enabled !== undefined)
+      updateData.proctor_feed_to_test_taker_enabled =
+        proctor_feed_to_test_taker_enabled;
+    if (screen_sharing_enabled !== undefined)
+      updateData.screen_sharing_enabled = screen_sharing_enabled;
+    if (screen_count_detection_enabled !== undefined)
+      updateData.screen_count_detection_enabled =
+        screen_count_detection_enabled;
+    if (control_desktop_apps_enabled !== undefined)
+      updateData.control_desktop_apps_enabled = control_desktop_apps_enabled;
+    if (normal_proctoring !== undefined)
+      updateData.normal_proctoring = normal_proctoring;
+    if (ai_powered_proctoring !== undefined)
+      updateData.ai_powered_proctoring = ai_powered_proctoring;
+    if (recorded_manual_proctoring !== undefined)
+      updateData.recorded_manual_proctoring = recorded_manual_proctoring;
+
+    await exam.update(updateData);
+
+    res.status(200).json({
+      success: true,
+      message: "Exam updated successfully",
+      exam: await exam.reload(),
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating exam",
+      error: err.message,
+    });
+  }
+};
+
+export const deleteExam = async (req: Request, res: Response) => {
+  const { examId } = req.params;
+  const user_id = getUserIdFromToken(req);
+
+  if (!examId || !user_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Exam ID and user authentication required",
+    });
+  }
+
+  try {
+    const exam = await Exam.findOne({
+      where: {
+        id: examId,
+        user_id: user_id,
+      },
+    });
+
+    if (!exam) {
+      return res.status(404).json({
+        success: false,
+        message: "Exam not found or you don't have permission to delete it",
+      });
+    }
+
+    await exam.destroy();
+
+    res.status(200).json({
+      success: true,
+      message: "Exam deleted successfully",
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Error deleting exam",
+      error: err.message,
+    });
+  }
+};

@@ -3,24 +3,29 @@
   display: flex;
   height: 100vh;
   width: 100vw;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   position: relative;
-  background-color: #f7f9fc;
+  background-color: var(--background);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .sidebar {
   width: 200px;
-  background-color: #1e293b;
-  color: white;
+  background-color: var(--secondary-bg);
+  color: var(--text-primary);
   padding: 20px;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 5px var(--shadow);
+  border-right: 1px solid var(--border-color);
+  transition: all 0.3s ease;
 }
 
 .sidebar h3 {
   font-size: 18px;
   margin-bottom: 15px;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid var(--border-color);
   padding-bottom: 8px;
+  color: var(--text-primary);
 }
 
 .sidebar ul {
@@ -34,20 +39,24 @@
   cursor: pointer;
   margin-bottom: 5px;
   transition: background 0.3s ease;
+  color: var(--text-primary);
 }
 
 .sidebar li:hover {
-  background-color: #334155;
+  background-color: var(--button-hover);
 }
 
 .mainContent {
   flex: 1;
   padding: 30px;
   overflow-y: auto;
+  background: var(--background);
 }
 
 .questionBlock {
-  background: white;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
   padding: 20px;
   border-radius: 10px;
   margin-bottom: 20px;
@@ -67,24 +76,25 @@
 }
 
 .optionLabel {
-  background: #f1f5f9;
+  background: var(--secondary-bg);
   padding: 10px;
-  color: black;
+  color: var(--text-primary);
   border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: background 0.3s;
+  transition: background 0.3s, color 0.3s ease;
+  border: 1px solid var(--border-color);
 }
 
 .optionLabel:hover {
-  background: #e2e8f0;
+  background: var(--button-hover);
 }
 
 .submitButton {
   margin-top: 30px;
   padding: 12px 24px;
-  background-color: #3b82f6;
+  background-color: var(--accent-color);
   color: white;
   border: none;
   border-radius: 8px;
@@ -111,7 +121,7 @@
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -127,10 +137,16 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #111;
-  color: white;
+  background: var(--background);
+  color: var(--text-primary);
   text-align: center;
   padding: 20px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.blockScreen h2 {
+  color: var(--text-primary);
+  margin-bottom: 20px;
 }
 
 .blockScreen button {
@@ -138,11 +154,17 @@
   margin-top: 20px;
   font-size: 16px;
   font-weight: 600;
-  background-color: #00c853;
-  color: white;
-  border: none;
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.blockScreen button:hover {
+  background: var(--button-hover);
+  transform: translateY(-2px);
 }
 
 .lookAlert {
@@ -187,14 +209,289 @@
 }
 
 @keyframes fadeInOut {
-  0% { opacity: 0; transform: translate(-50%, -10px); }
-  10% { opacity: 1; transform: translate(-50%, 0); }
-  90% { opacity: 1; transform: translate(-50%, 0); }
-  100% { opacity: 0; transform: translate(-50%, -10px); }
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  90% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
 }
 
-@keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0.3; }
+/* Exam Guidelines Styles */
+.examGuidelinesContainer {
+  min-height: 100vh;
+  background: var(--background);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
 }
 
+.guidelinesCard {
+  max-width: 800px;
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px var(--shadow);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--accent-color) 0%, var(--button-bg) 100%);
+  color: var(--button-text);
+  padding: 30px;
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--button-text);
+}
+
+.header p {
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.9;
+  color: var(--button-text);
+}
+
+.content {
+  padding: 30px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--card-bg);
+}
+
+.section {
+  margin-bottom: 30px;
+}
+
+.section h2 {
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.section li {
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.section li::before {
+  content: "•";
+  color: var(--accent-color);
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+.notice {
+  background: var(--warning-bg, #fef5e7);
+  border: 1px solid var(--warning-border, #f6ad55);
+  border-radius: 8px;
+  padding: 16px;
+  color: var(--warning-text, #744210);
+  line-height: 1.6;
+  margin: 0;
+}
+
+[data-theme="dark"] .notice {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+.footer {
+  background: var(--secondary-bg);
+  padding: 25px 30px;
+  border-top: 1px solid var(--border-color);
+}
+
+.acknowledgment {
+  margin-bottom: 20px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-color);
+}
+
+.proceedButton {
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.proceedButton:hover:not(:disabled) {
+  background: var(--button-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px var(--shadow);
+}
+
+.proceedButton:disabled {
+  background: var(--button-disabled, #cbd5e0);
+  color: var(--text-muted, #9ca3af);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .proceedButton:disabled {
+  background: rgba(75, 85, 99, 0.5);
+  color: rgba(156, 163, 175, 0.7);
+}
+
+/* Exam Started Styles */
+.examStartedContainer {
+  min-height: 100vh;
+  background: var(--background);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+.examStartedCard {
+  max-width: 600px;
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px var(--shadow);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.examStartedHeader {
+  background: linear-gradient(135deg, var(--accent-color) 0%, var(--button-bg) 100%);
+  color: var(--button-text);
+  padding: 30px;
+  text-align: center;
+}
+
+.examStartedHeader h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--button-text);
+}
+
+.examStartedHeader p {
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.9;
+  color: var(--button-text);
+}
+
+.examStartedContent {
+  padding: 30px;
+  background: var(--card-bg);
+}
+
+.examInfo {
+  margin-bottom: 30px;
+}
+
+.examInfo h3 {
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.examInfo ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: var(--secondary-bg);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.examInfo li {
+  padding: 8px 0;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.examInfo li:last-child {
+  border-bottom: none;
+}
+
+.examInfo strong {
+  color: var(--text-primary);
+}
+
+.examInstructions {
+  background: var(--info-bg, rgba(59, 130, 246, 0.1));
+  border: 1px solid var(--info-border, rgba(59, 130, 246, 0.3));
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.examInstructions h3 {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  margin-top: 0;
+}
+
+.examInstructions p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+[data-theme="dark"] .examInstructions {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
