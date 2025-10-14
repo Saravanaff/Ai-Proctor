@@ -83,6 +83,7 @@ export const getExamSettings = async (req: Request, res: Response) => {
       normal_proctoring,
       ai_powered_proctoring,
       recorded_manual_proctoring,
+      face_authentication_enabled,
     } = exam;
 
     return res.status(200).json({
@@ -103,6 +104,7 @@ export const getExamSettings = async (req: Request, res: Response) => {
       normal_proctoring,
       ai_powered_proctoring,
       recorded_manual_proctoring,
+      face_authentication_enabled,
     });
   } catch (err) {
     console.log("Error while getExamSettings : ", err);

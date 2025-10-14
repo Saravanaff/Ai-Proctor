@@ -27,6 +27,7 @@ export const createExam = async (req: Request, res: Response) => {
       normal_proctoring,
       ai_powered_proctoring,
       recorded_manual_proctoring,
+      face_authentication_enabled,
     } = req.body;
 
     const user_id = getUserIdFromToken(req);
@@ -66,6 +67,7 @@ export const createExam = async (req: Request, res: Response) => {
       normal_proctoring,
       ai_powered_proctoring,
       recorded_manual_proctoring,
+      face_authentication_enabled,
       key: nextKey,
     });
 
@@ -188,6 +190,7 @@ export const getSingleExam = async (req: Request, res: Response) => {
         "normal_proctoring",
         "ai_powered_proctoring",
         "recorded_manual_proctoring",
+        "face_authentication_enabled",
         "createdAt",
         "updatedAt",
       ],
@@ -248,6 +251,7 @@ export const updateExam = async (req: Request, res: Response) => {
     normal_proctoring,
     ai_powered_proctoring,
     recorded_manual_proctoring,
+    face_authentication_enabled,
   } = req.body;
 
   if (!examId || !user_id) {
@@ -311,6 +315,8 @@ export const updateExam = async (req: Request, res: Response) => {
       updateData.ai_powered_proctoring = ai_powered_proctoring;
     if (recorded_manual_proctoring !== undefined)
       updateData.recorded_manual_proctoring = recorded_manual_proctoring;
+    if (face_authentication_enabled !== undefined)
+      updateData.face_authentication_enabled = face_authentication_enabled;
 
     await exam.update(updateData);
 

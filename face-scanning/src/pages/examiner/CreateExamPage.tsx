@@ -38,6 +38,7 @@ const CreateExam = () => {
   const [aiPoweredProctoring, setAiPoweredProctoring] = useState(true);
   const [recordedManualProctoring, setRecordedManualProctoring] =
     useState(true);
+  const [faceAuthentication, setFaceAuthentication] = useState(true);
 
   // Handler for AI Proctoring toggle that controls related features
   const handleAiProctoringToggle = () => {
@@ -51,6 +52,7 @@ const CreateExam = () => {
       setEyeBall(false);
       setObjectDetect(false);
       setHeadDirection(false);
+      setFaceAuthentication(false);
     } else {
       // When AI proctoring is turned on, turn on all AI-related features (reverse the effect)
       setThirdEye(true);
@@ -58,6 +60,7 @@ const CreateExam = () => {
       setEyeBall(true);
       setObjectDetect(true);
       setHeadDirection(true);
+      setFaceAuthentication(true);
     }
   };
 
@@ -173,6 +176,7 @@ const CreateExam = () => {
         normal_proctoring: normalProctoring,
         ai_powered_proctoring: aiPoweredProctoring,
         recorded_manual_proctoring: recordedManualProctoring,
+        face_authentication_enabled: faceAuthentication,
       };
       const res = await axios.post<Exam>(`${base}/examCreate`, payload);
       console.log("hi", res);
@@ -802,6 +806,12 @@ const CreateExam = () => {
                     label="Head Direction"
                     enabled={headDirection}
                     onToggle={() => setHeadDirection((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                  <Toggle
+                    label="Face Authentication"
+                    enabled={faceAuthentication}
+                    onToggle={() => setFaceAuthentication((v) => !v)}
                     disabled={!aiPoweredProctoring}
                   />
                 </div>

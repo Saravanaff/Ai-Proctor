@@ -100,6 +100,9 @@ export class Exam extends Model{
 
     @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:true })
     recorded_manual_proctoring!:boolean
+
+    @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:false })
+    face_authentication_enabled!:boolean
     
 
     @BelongsTo(() => User)
