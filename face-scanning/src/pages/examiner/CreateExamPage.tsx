@@ -68,18 +68,18 @@ const CreateExam = () => {
 
     // When normal proctoring is turned off, turn off basic monitoring features
     if (!newNormalProctoringState) {
-      setVideoRecording(false);
+      setControlDesktopApps(false);
+      setScreenCountDetection(false);
+      setSafeBrowser(false);
       setTabSwitchDetection(false);
       setMicrophoneDetection(false);
-      setScreenSharing(false);
-      setSafeBrowser(false);
     } else {
       // When normal proctoring is turned on, turn on basic monitoring features (reverse the effect)
-      setVideoRecording(true);
+      setControlDesktopApps(true);
+      setScreenCountDetection(true);
+      setSafeBrowser(true);
       setTabSwitchDetection(true);
       setMicrophoneDetection(true);
-      setScreenSharing(true);
-      setSafeBrowser(true);
     }
   };
 
@@ -561,29 +561,88 @@ const CreateExam = () => {
                 />
               </div>
 
-              {/* Proctoring Modes */}
-              <div style={{ marginBottom: 16 }}>
-                <h4
-                  className="theme-transition"
+              {/* Normal Proctoring Section */}
+              <div
+                style={{
+                  marginBottom: 24,
+                  padding: 16,
+                  border: "2px solid var(--border-color)",
+                  borderRadius: 12,
+                  background: normalProctoring
+                    ? "var(--card-bg)"
+                    : "var(--secondary-bg)",
+                  transition: "all 0.3s ease",
+                }}
+                className="theme-transition"
+              >
+                <div
                   style={{
-                    margin: "0 0 8px",
-                    color: "var(--text-primary)",
-                    fontSize: 14,
-                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 16,
                   }}
                 >
-                  Proctoring Modes
-                </h4>
-                <p
-                  className="theme-transition"
-                  style={{
-                    margin: "0 0 12px",
-                    color: "var(--text-secondary)",
-                    fontSize: 12,
-                  }}
-                >
-                  Select the type of proctoring for this exam.
-                </p>
+                  <div>
+                    <h4
+                      className="theme-transition"
+                      style={{
+                        margin: "0 0 4px",
+                        color: "var(--text-primary)",
+                        fontSize: 16,
+                        fontWeight: 700,
+                      }}
+                    >
+                      Normal Proctoring
+                    </h4>
+                    <p
+                      className="theme-transition"
+                      style={{
+                        margin: 0,
+                        color: "var(--text-secondary)",
+                        fontSize: 12,
+                      }}
+                    >
+                      Basic monitoring and browser control features
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleNormalProctoringToggle}
+                    aria-pressed={normalProctoring}
+                    className="theme-transition"
+                    style={{
+                      position: "relative",
+                      width: 56,
+                      height: 32,
+                      borderRadius: 999,
+                      border: "2px solid var(--border-color)",
+                      background: normalProctoring
+                        ? "var(--accent-color)"
+                        : "var(--secondary-bg)",
+                      boxShadow: normalProctoring
+                        ? "inset 0 0 0 1px rgba(255,255,255,0.2)"
+                        : "none",
+                      cursor: "pointer",
+                      transition: "background 0.2s ease, box-shadow 0.2s ease",
+                    }}
+                  >
+                    <span
+                      aria-hidden
+                      style={{
+                        position: "absolute",
+                        top: 3,
+                        left: normalProctoring ? 28 : 3,
+                        width: 26,
+                        height: 26,
+                        borderRadius: "50%",
+                        background: "#fff",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                        transition: "left 0.2s ease",
+                      }}
+                    />
+                  </button>
+                </div>
                 <div
                   style={{
                     display: "grid",
@@ -593,46 +652,120 @@ const CreateExam = () => {
                   }}
                 >
                   <Toggle
-                    label="Normal Proctoring"
-                    enabled={normalProctoring}
-                    onToggle={handleNormalProctoringToggle}
+                    label="Control Desktop Apps"
+                    enabled={controlDesktopApps}
+                    onToggle={() => setControlDesktopApps((v) => !v)}
+                    disabled={!normalProctoring}
                   />
                   <Toggle
-                    label="AI Powered Proctoring"
-                    enabled={aiPoweredProctoring}
-                    onToggle={handleAiProctoringToggle}
+                    label="Screen Count Detection"
+                    enabled={screenCountDetection}
+                    onToggle={() => setScreenCountDetection((v) => !v)}
+                    disabled={!normalProctoring}
                   />
                   <Toggle
-                    label="Recorded Manual Proctoring"
-                    enabled={recordedManualProctoring}
-                    onToggle={handleManualProctoringToggle}
+                    label="Safe Browser"
+                    enabled={safeBrowser}
+                    onToggle={() => setSafeBrowser((v) => !v)}
+                    disabled={!normalProctoring}
+                  />
+                  <Toggle
+                    label="Tab Switch Detection"
+                    enabled={tabSwitchDetection}
+                    onToggle={() => setTabSwitchDetection((v) => !v)}
+                    disabled={!normalProctoring}
+                  />
+                  <Toggle
+                    label="Microphone Detection"
+                    enabled={microphoneDetection}
+                    onToggle={() => setMicrophoneDetection((v) => !v)}
+                    disabled={!normalProctoring}
                   />
                 </div>
               </div>
 
-              {/* Proctoring Features */}
-              <div style={{ marginBottom: 16 }}>
-                <h4
-                  className="theme-transition"
+              {/* AI Powered Proctoring Section */}
+              <div
+                style={{
+                  marginBottom: 24,
+                  padding: 16,
+                  border: "2px solid var(--border-color)",
+                  borderRadius: 12,
+                  background: aiPoweredProctoring
+                    ? "var(--card-bg)"
+                    : "var(--secondary-bg)",
+                  transition: "all 0.3s ease",
+                }}
+                className="theme-transition"
+              >
+                <div
                   style={{
-                    margin: "0 0 8px",
-                    color: "var(--text-primary)",
-                    fontSize: 14,
-                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 16,
                   }}
                 >
-                  Proctoring Features
-                </h4>
-                <p
-                  className="theme-transition"
-                  style={{
-                    margin: "0 0 12px",
-                    color: "var(--text-secondary)",
-                    fontSize: 12,
-                  }}
-                >
-                  Choose which monitoring features to enable for this exam.
-                </p>
+                  <div>
+                    <h4
+                      className="theme-transition"
+                      style={{
+                        margin: "0 0 4px",
+                        color: "var(--text-primary)",
+                        fontSize: 16,
+                        fontWeight: 700,
+                      }}
+                    >
+                      AI Powered Proctoring
+                    </h4>
+                    <p
+                      className="theme-transition"
+                      style={{
+                        margin: 0,
+                        color: "var(--text-secondary)",
+                        fontSize: 12,
+                      }}
+                    >
+                      Advanced AI-based monitoring and detection
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAiProctoringToggle}
+                    aria-pressed={aiPoweredProctoring}
+                    className="theme-transition"
+                    style={{
+                      position: "relative",
+                      width: 56,
+                      height: 32,
+                      borderRadius: 999,
+                      border: "2px solid var(--border-color)",
+                      background: aiPoweredProctoring
+                        ? "var(--accent-color)"
+                        : "var(--secondary-bg)",
+                      boxShadow: aiPoweredProctoring
+                        ? "inset 0 0 0 1px rgba(255,255,255,0.2)"
+                        : "none",
+                      cursor: "pointer",
+                      transition: "background 0.2s ease, box-shadow 0.2s ease",
+                    }}
+                  >
+                    <span
+                      aria-hidden
+                      style={{
+                        position: "absolute",
+                        top: 3,
+                        left: aiPoweredProctoring ? 28 : 3,
+                        width: 26,
+                        height: 26,
+                        borderRadius: "50%",
+                        background: "#fff",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                        transition: "left 0.2s ease",
+                      }}
+                    />
+                  </button>
+                </div>
                 <div
                   style={{
                     display: "grid",
@@ -671,6 +804,99 @@ const CreateExam = () => {
                     onToggle={() => setHeadDirection((v) => !v)}
                     disabled={!aiPoweredProctoring}
                   />
+                </div>
+              </div>
+
+              {/* Recorded Manual Proctoring Section */}
+              <div
+                style={{
+                  marginBottom: 24,
+                  padding: 16,
+                  border: "2px solid var(--border-color)",
+                  borderRadius: 12,
+                  background: recordedManualProctoring
+                    ? "var(--card-bg)"
+                    : "var(--secondary-bg)",
+                  transition: "all 0.3s ease",
+                }}
+                className="theme-transition"
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 16,
+                  }}
+                >
+                  <div>
+                    <h4
+                      className="theme-transition"
+                      style={{
+                        margin: "0 0 4px",
+                        color: "var(--text-primary)",
+                        fontSize: 16,
+                        fontWeight: 700,
+                      }}
+                    >
+                      Recorded Manual Proctoring
+                    </h4>
+                    <p
+                      className="theme-transition"
+                      style={{
+                        margin: 0,
+                        color: "var(--text-secondary)",
+                        fontSize: 12,
+                      }}
+                    >
+                      Recording and manual review capabilities
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleManualProctoringToggle}
+                    aria-pressed={recordedManualProctoring}
+                    className="theme-transition"
+                    style={{
+                      position: "relative",
+                      width: 56,
+                      height: 32,
+                      borderRadius: 999,
+                      border: "2px solid var(--border-color)",
+                      background: recordedManualProctoring
+                        ? "var(--accent-color)"
+                        : "var(--secondary-bg)",
+                      boxShadow: recordedManualProctoring
+                        ? "inset 0 0 0 1px rgba(255,255,255,0.2)"
+                        : "none",
+                      cursor: "pointer",
+                      transition: "background 0.2s ease, box-shadow 0.2s ease",
+                    }}
+                  >
+                    <span
+                      aria-hidden
+                      style={{
+                        position: "absolute",
+                        top: 3,
+                        left: recordedManualProctoring ? 28 : 3,
+                        width: 26,
+                        height: 26,
+                        borderRadius: "50%",
+                        background: "#fff",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                        transition: "left 0.2s ease",
+                      }}
+                    />
+                  </button>
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(240px, 1fr))",
+                    gap: 12,
+                  }}
+                >
                   <Toggle
                     label="Flag Notifications"
                     enabled={flagNotifications}
@@ -681,47 +907,13 @@ const CreateExam = () => {
                     label="Video Recording"
                     enabled={videoRecording}
                     onToggle={() => setVideoRecording((v) => !v)}
-                    disabled={!normalProctoring && !recordedManualProctoring}
-                  />
-                  <Toggle
-                    label="Tab Switch Detection"
-                    enabled={tabSwitchDetection}
-                    onToggle={() => setTabSwitchDetection((v) => !v)}
-                    disabled={!normalProctoring}
-                  />
-                  <Toggle
-                    label="Microphone Detection"
-                    enabled={microphoneDetection}
-                    onToggle={() => setMicrophoneDetection((v) => !v)}
-                    disabled={!normalProctoring}
-                  />
-                  <Toggle
-                    label="Safe Browser"
-                    enabled={safeBrowser}
-                    onToggle={() => setSafeBrowser((v) => !v)}
-                    disabled={!normalProctoring}
+                    disabled={!recordedManualProctoring}
                   />
                   <Toggle
                     label="Proctor Feed to Test Taker"
                     enabled={proctorFeedToTestTaker}
                     onToggle={() => setProctorFeedToTestTaker((v) => !v)}
                     disabled={!recordedManualProctoring}
-                  />
-                  <Toggle
-                    label="Screen Sharing"
-                    enabled={screenSharing}
-                    onToggle={() => setScreenSharing((v) => !v)}
-                    disabled={!normalProctoring}
-                  />
-                  <Toggle
-                    label="Screen Count Detection"
-                    enabled={screenCountDetection}
-                    onToggle={() => setScreenCountDetection((v) => !v)}
-                  />
-                  <Toggle
-                    label="Control Desktop Apps"
-                    enabled={controlDesktopApps}
-                    onToggle={() => setControlDesktopApps((v) => !v)}
                   />
                 </div>
               </div>
