@@ -5,10 +5,14 @@ import { Exam } from "../backend/models/Exam";;
 import { Attend } from "./models/Attend";
 import {Scores} from "./models/Scores";
 import { ViolationLog } from "./models/ViolationLog";
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 export const sequelize = new Sequelize({
-  database: 'test',
+  database: process.env.DB_NAME ,
   dialect: 'mysql',
-  username: 'root',
-  password: '123',
+  username: process.env.DB_USER ,
+  password: process.env.DB_PASSWORD ,
   models: [User, Exam, Attend,Scores,ViolationLog],
 });
