@@ -9,6 +9,6 @@ export const sequelize = new Sequelize({
   database: 'test',
   dialect: 'mysql',
   username: 'root',
-  password: '',
+  password: '123',
   models: [User, Exam, Attend,Scores,ViolationLog],
 });
