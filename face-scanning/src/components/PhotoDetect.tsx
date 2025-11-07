@@ -2,6 +2,9 @@
 import { useEffect, useState } from "react";
 import styles from "../styles/PhotoDetect.module.css";
 import { useRouter } from "next/router";
+import axios from "axios";
+import { getExamId, getUserId } from "@/constants/AuthStore";
+import { setExamSettings } from "@/constants/examSettingsConsts";
 
 type Status = "pending" | "checking" | "success" | "denied";
 
@@ -245,8 +248,42 @@ export default function PhotoDetect() {
     checkPermissions(true);
   };
 
-  const handleContinue = () => {
-    router.push('/video');
+  const handleContinue = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const userId = getUserId();
+      const examId = getExamId();
+
+      const response = await axios.get(`${baseUrl}/getExamSettings`, {
+        params: {
+          userId: Number(userId),
+          examId: Number(examId),
+        },
+      });
+
+      if (response.data) {
+        setExamSettings(response.data);
+        
+        // Check if face authentication is enabled
+        if (!response.data.face_authentication_enabled) {
+          console.log("Face authentication is disabled, skipping to exam setup");
+          // Skip face scanning and go directly to exam setup or third eye setup
+          if (!response.data.third_eye_enabled) {
+            router.push("/fullscreen");
+          } else {
+            router.push("/SetupThirdEye");
+          }
+        } else {
+          // Face authentication is enabled, proceed to face scanning
+          console.log("Face authentication is enabled, proceeding to face scanning");
+          router.push('/video');
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching exam settings:", error);
+      // On error, default to face scanning
+      router.push('/video');
+    }
   };
 
   const handleKeyPress = (event: React.KeyboardEvent, action: () => void) => {

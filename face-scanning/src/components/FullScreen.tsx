@@ -24,6 +24,7 @@ const baseUrl =
   const userId = getUserId() || "unknown";
 
 type ExamSettings = {
+  face_authentication_enabled?: boolean;
   third_eye_enabled?: boolean;
   multiple_person_detection_enabled?: boolean;
   eyeball_detection_enabled?: boolean;
@@ -40,6 +41,7 @@ const ExamPage = ({
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [blocked, setBlocked] = useState(false);
   const [lookAlert, setlookAlert] = useState(false);
+  const [lookDirection, setLookDirection] = useState<any>(null);
   const [object, setObject] = useState(false);
   const [num, setNum] = useState(false);
   const [authFaceMissing, setAuthFaceMissing] = useState(false);
@@ -49,6 +51,8 @@ const ExamPage = ({
   const [examSubmitted, setExamSubmitted] = useState(false);
   const [headDirection, setHeadDirection] = useState(false);
   const [examSettings, setExamSettings] = useState<ExamSettings>({});
+  const [faceAuthenticationComplete, setFaceAuthenticationComplete] = useState(false);
+  const [examStarted, setExamStarted] = useState(false);
 
   const lastAlertRef = useRef<{[key: string]: number}>({
     lookAlert: 0,
@@ -121,6 +125,42 @@ const ExamPage = ({
     }
   };
 
+  // Handle face authentication success - start exam on first successful auth
+  const handleAuthResume = () => {
+    console.log("✅ Face authenticated - User detected");
+    
+    if (examSettings.face_authentication_enabled) {
+      if (!faceAuthenticationComplete && !examStarted) {
+        console.log("✅ First face authentication detected - Starting exam now");
+        const userId = getUserId() || "unknown";
+        
+        // ✅ ONLY EMIT ONCE
+        socket.emit("start-exam", {
+          user_id: userId,
+          exam_id: examId,
+          timestamp: new Date(),
+          status: "success",
+          message: "Exam Started successfully",
+        });
+        
+        setFaceAuthenticationComplete(true);
+        setExamStarted(true);
+      }
+      
+      setPaused(false);
+    }
+  };
+
+  // Handle face authentication failure - pause exam if enabled
+  const handleAuthPause = () => {
+    console.log("⚠️ Face lost - User not detected");
+    
+    // Only pause if face authentication is enabled and exam has started
+    if (examSettings.face_authentication_enabled && examStarted) {
+      setPaused(true);
+    }
+  };
+
   useEffect(() => {
     try {
       const preventActions: any = (e: any) => {
@@ -146,21 +186,31 @@ const ExamPage = ({
 
       const userId = getUserId() || "unknown";
 
-      socket.emit("start-exam",{
-        user_id: userId,
-        exam_id: examId,
-        timestamp:new Date(),
-        status: "success",
-        message: "Exam Started successfully",
-      })
+      // ✅ SAFETY CHECK: Wait for exam settings to load
+      if (!examSettings || Object.keys(examSettings).length === 0) {
+        console.log("⏳ Waiting for exam settings to load...");
+        return;
+      }
 
-      socket.emit("start-exam", {
-        user_id: userId,
-        exam_id: examId,
-        category: "face_camera",
-        status: "success",
-        message: "Exam Started successfully",
-      });
+      // Check if face authentication is enabled
+      if (examSettings.face_authentication_enabled) {
+        console.log("✅ Face authentication ENABLED - Waiting for first face authentication before exam starts");
+        // Exam will only start after first successful face auth (onAuthResume is called)
+      } else {
+        console.log("⚠️ Face authentication DISABLED - Starting exam immediately");
+        // If face auth is disabled, start exam immediately
+        if (!examStarted) {
+          // ✅ ONLY EMIT ONCE
+          socket.emit("start-exam", {
+            user_id: userId,
+            exam_id: examId,
+            timestamp: new Date(),
+            status: "success",
+            message: "Exam Started successfully",
+          });
+          setExamStarted(true);
+        }
+      }
 
       const fullscreenChangeHandler = () => {
         if (!document.fullscreenElement) {
@@ -193,13 +243,14 @@ const ExamPage = ({
     } catch (e) {
       console.log("Error in useEffect");
     }
-  }, []);
+  }, [examSettings.face_authentication_enabled, examStarted]);
   let s: any;
   const lookingAlert = (side: any) => {
     const now = Date.now();
     if (now - lastAlertRef.current.lookAlert >= ALERT_THROTTLE_MS) {
       console.log("looking away");
-      s = side;
+      // ✅ USE STATE INSTEAD OF LOCAL VARIABLE
+      setLookDirection(side);
       setlookAlert(true);
       setTimeout(() => setlookAlert(false), 3000);
       lastAlertRef.current.lookAlert = now;
@@ -670,10 +721,14 @@ const ExamPage = ({
           <button
             className={`${styles.submitButton} theme-transition`}
             onClick={async () => {
+              // Mark exam as submitted to trigger metrics logging
+              setExamSubmitted(true);
               try {
                 if (onBeforeSubmit) await onBeforeSubmit();
               } catch {}
-              router.push("/end");
+              setTimeout(() => {
+                router.push("/end");
+              }, 500);
             }}
             style={{
               background:
@@ -717,8 +772,8 @@ const ExamPage = ({
           examSubmitted={examSubmitted}
           mediaRecorderRef={frontCameraMediaRecorderRef}
           screenRecorderMediaRecorderRef={(screenRecorderMediaRecorderRef)}
-          onAuthPause={() => setPaused(true)}
-          onAuthResume={() => setPaused(false)}
+          onAuthPause={handleAuthPause}
+          onAuthResume={handleAuthResume}
         />
       )}
 
@@ -737,7 +792,7 @@ const ExamPage = ({
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "20px" }}>👀</span>
             <span style={{ fontWeight: 600 }}>
-              Please stay focused on the screen! You are turning {s}
+              Please stay focused on the screen! You are turning {lookDirection}
             </span>
           </div>
         </div>

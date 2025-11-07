@@ -21,7 +21,7 @@ import { getExamId, getUserId, setExamId } from "@/constants/AuthStore";
 import LeftStepper from "./LeftStepper";
 import axios from "axios";
 import { useTheme } from "@/contexts/ThemeContext";
-import { setExamSettings } from "@/constants/examSettingsConsts";
+import { setExamSettings, getExamSettings } from "@/constants/examSettingsConsts";
 
 interface CircleMetadata {
   x: number;
@@ -159,6 +159,40 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
     const video = videoRef.current;
     let device: mediasoupClient.Device;
     let isMounted = true;
+
+    // Check if face authentication is enabled
+    const checkFaceAuthEnabled = async () => {
+      try {
+        const response = await axios.get(`${baseUrl}/getExamSettings`, {
+          params: {
+            userId: Number(userId),
+            examId: Number(examId),
+          },
+        });
+
+        if (response.data) {
+          setExamSettings(response.data);
+          
+          // If face authentication is disabled, skip to next page
+          if (!response.data.face_authentication_enabled) {
+            console.log("Face authentication is disabled, skipping face scanning");
+            cleanupCamera();
+            
+            // Navigate to appropriate page based on third_eye_enabled
+            if (!response.data.third_eye_enabled) {
+              router.push("/fullscreen");
+            } else {
+              router.push("/SetupThirdEye");
+            }
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching exam settings:", error);
+      }
+    };
+
+    checkFaceAuthEnabled();
 
     if (!video) return;
 
