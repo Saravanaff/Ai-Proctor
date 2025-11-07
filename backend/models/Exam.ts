@@ -2,6 +2,7 @@ import {Table,Model,Column, DataType, ForeignKey, BelongsTo,HasMany} from 'seque
 import {User} from './User';
 import { Attend } from './Attend';
 import { Scores } from './Scores';
+import Question from './Questions';
 
 @Table({
     tableName:"Exam"
@@ -109,8 +110,12 @@ export class Exam extends Model{
     user!: User;
 
     @HasMany(() => Attend)
-    attendances!: Attend[];
+    attendances?: Attend[];
 
     @HasMany(() => Scores)
-    scores!: Scores[];
+    scores?: Scores[];
+
+    @HasMany(()=> Question)
+    questions?:Question[];
+    
 }
