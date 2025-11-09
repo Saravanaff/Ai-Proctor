@@ -149,7 +149,6 @@ const FloatingCamera = ({
     return head;
   }, []);
 
-  // Calculate eye gaze direction
   const calculateEyeGaze = useCallback((landmarks: any[]): string => {
     if (!landmarks || landmarks.length < 478) return 'unknown';
 
@@ -521,26 +520,28 @@ const FloatingCamera = ({
         mediaRecorderRef.current.start(1000);
 
         interRef.current = setInterval(async () => {
-          if (!isMounted) return;
+          if (!isMounted) {
+            clearInterval(interRef.current);
+            return;
+          }
           const video = videoRef.current;
           if (!video || video.readyState < 2) return;
           const width = video.videoWidth;
           const height = video.videoHeight;
 
-          let canvas = document.getElementById(
-            "auth-canvas"
-          ) as HTMLCanvasElement;
+          let canvas = canvasRef.current; // Use ref instead of getElementById
           if (!canvas) {
             canvas = document.createElement("canvas");
             canvas.id = "auth-canvas";
             canvas.style.display = "none";
             document.body.appendChild(canvas);
+            canvasRef.current = canvas;
           }
 
           canvas.width = width;
           canvas.height = height;
 
-          const ctx = canvas.getContext("2d");
+          const ctx = canvas.getContext("2d", { willReadFrequently: true }); // Add performance hint
           if (!ctx) return;
 
           ctx.drawImage(video, 0, 0, width, height);
@@ -612,40 +613,43 @@ const FloatingCamera = ({
             }
           }
 
-          // Detect mobile device on canvas (every 10 frames)
-          if (metricsRef.current.frameCount % 10 === 0) {
+          // Detect mobile device on canvas (every 30 frames instead of 10 to reduce CPU)
+          if (metricsRef.current.frameCount % 30 === 0) {
             detectMobileDevice(canvas);
           }
 
-          canvas.toBlob(
-            (blob) => {
-              if (blob && isMounted) {
-                blob
-                  .arrayBuffer()
-                  .then((buffer) => {
-                    socket.emit("authenticate", {
-                      buffer,
-                      metadata: { width, height },
-                      user_id: userId,
-                      exam_id: examId,
-                      userId: userId,
-                      examId: examId,
-                      settings: settingsRef.current,
-                      examSettings: settingsRef.current,
-                      timestamp: new Date(),
+          // Throttle socket emit to reduce network and processing overhead
+          if (metricsRef.current.frameCount % 2 === 0) { // Send every other frame
+            canvas.toBlob(
+              (blob) => {
+                if (blob && isMounted) {
+                  blob
+                    .arrayBuffer()
+                    .then((buffer) => {
+                      socket.emit("authenticate", {
+                        buffer,
+                        metadata: { width, height },
+                        user_id: userId,
+                        exam_id: examId,
+                        userId: userId,
+                        examId: examId,
+                        settings: settingsRef.current,
+                        examSettings: settingsRef.current,
+                        timestamp: new Date(),
+                      });
+                    })
+                    .catch((error) => {
+                      console.error(
+                        "Error processing authentication frame:",
+                        error
+                      );
                     });
-                  })
-                  .catch((error) => {
-                    console.error(
-                      "Error processing authentication frame:",
-                      error
-                    );
-                  });
-              }
-            },
-            "image/jpeg",
-            0.5
-          );
+                }
+              },
+              "image/jpeg",
+              0.5
+            );
+          }
         }, 1000 / 10);
       } catch (error) {
         console.error("Camera access failed:", error);

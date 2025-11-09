@@ -62,6 +62,8 @@ const ExamPage = ({
     headDirection: 0
   });
 
+  const timeoutRefs = useRef<{[key: string]: NodeJS.Timeout}>({});
+
   const ALERT_THROTTLE_MS = 2000; 
   
   const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
@@ -80,7 +82,14 @@ const ExamPage = ({
     (error) => Promise.reject(error)
   );
 
-
+  // Cleanup all timeouts when component unmounts
+  useEffect(() => {
+    return () => {
+      Object.values(timeoutRefs.current).forEach(timeout => {
+        if (timeout) clearTimeout(timeout);
+      });
+    };
+  }, []);
 
   useEffect(() => {
       const fetchExamSettings = async (payload: any) => {
@@ -100,25 +109,32 @@ const ExamPage = ({
     fetchExamSettings({userId: Number(userId), examId: Number(examId)});
   }, []);
 
-
   const detectObject = () => {
     const now = Date.now();
     if (now - lastAlertRef.current.object >= ALERT_THROTTLE_MS) {
       console.log("Object detected");
       setObject(true);
-      setTimeout(() => setObject(false), 3000);
+      
+      // Clear existing timeout before setting new one
+      if (timeoutRefs.current.object) {
+        clearTimeout(timeoutRefs.current.object);
+      }
+      timeoutRefs.current.object = setTimeout(() => setObject(false), 3000);
       lastAlertRef.current.object = now;
     }
   };
-
-
 
   const number = (a: number) => {
     const now = Date.now();
     if (now - lastAlertRef.current.num >= ALERT_THROTTLE_MS) {
       setFace(a);
-      setNum(true)
-      setTimeout(() => {
+      setNum(true);
+      
+      // Clear existing timeout before setting new one
+      if (timeoutRefs.current.num) {
+        clearTimeout(timeoutRefs.current.num);
+      }
+      timeoutRefs.current.num = setTimeout(() => {
         setNum(false);
       }, 2000);
       lastAlertRef.current.num = now;
@@ -232,7 +248,12 @@ const ExamPage = ({
       // ✅ USE STATE INSTEAD OF LOCAL VARIABLE
       setLookDirection(side);
       setlookAlert(true);
-      setTimeout(() => setlookAlert(false), 3000);
+      
+      // Clear existing timeout before setting new one
+      if (timeoutRefs.current.lookAlert) {
+        clearTimeout(timeoutRefs.current.lookAlert);
+      }
+      timeoutRefs.current.lookAlert = setTimeout(() => setlookAlert(false), 3000);
       lastAlertRef.current.lookAlert = now;
     }
   };
@@ -242,7 +263,12 @@ const ExamPage = ({
     if (now - lastAlertRef.current.authFaceMissing >= ALERT_THROTTLE_MS) {
       console.log("Auth face missing alert triggered");
       setAuthFaceMissing(true);
-      setTimeout(() => setAuthFaceMissing(false), 3000);
+      
+      // Clear existing timeout before setting new one
+      if (timeoutRefs.current.authFaceMissing) {
+        clearTimeout(timeoutRefs.current.authFaceMissing);
+      }
+      timeoutRefs.current.authFaceMissing = setTimeout(() => setAuthFaceMissing(false), 3000);
       lastAlertRef.current.authFaceMissing = now;
     }
   };
@@ -252,7 +278,12 @@ const ExamPage = ({
     if (now - lastAlertRef.current.headDirection >= ALERT_THROTTLE_MS) {
       console.log("Head direction changed:", direction);
       setHeadDirection(true);
-      setTimeout(() => setHeadDirection(false), 3000);
+      
+      // Clear existing timeout before setting new one
+      if (timeoutRefs.current.headDirection) {
+        clearTimeout(timeoutRefs.current.headDirection);
+      }
+      timeoutRefs.current.headDirection = setTimeout(() => setHeadDirection(false), 3000);
       lastAlertRef.current.headDirection = now;
     }
   };

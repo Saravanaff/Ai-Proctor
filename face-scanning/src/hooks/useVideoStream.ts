@@ -2,24 +2,23 @@ import { useEffect, useState, useRef } from "react";
 
 export const useVideoStream = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let stream: MediaStream;
-
     const getVideoStream = async () => {
       try {
         setIsLoading(true);
-        stream = await navigator.mediaDevices.getUserMedia({
+        streamRef.current = await navigator.mediaDevices.getUserMedia({
           video: true,
         });
 
         if (videoRef && videoRef.current) {
-          videoRef.current.srcObject = stream;
+          videoRef.current.srcObject = streamRef.current;
         }
-        setVideoStream(stream);
+        setVideoStream(streamRef.current);
         setError(null);
       } catch (e) {
         console.log("Error While getting Video Stream Object");
@@ -33,10 +32,17 @@ export const useVideoStream = () => {
     getVideoStream();
 
     return () => {
-      if (videoRef?.current?.srcObject instanceof MediaStream) {
-        videoRef?.current?.srcObject.getTracks().forEach((track) => {
+      // Clean up stream from ref
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
           track.stop();
         });
+        streamRef.current = null;
+      }
+      
+      // Clear video element
+      if (videoRef?.current?.srcObject instanceof MediaStream) {
+        videoRef.current.srcObject = null;
       }
     };
   }, []);
