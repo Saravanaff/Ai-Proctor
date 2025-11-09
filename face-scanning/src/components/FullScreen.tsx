@@ -192,26 +192,6 @@ const ExamPage = ({
         return;
       }
 
-      // Check if face authentication is enabled
-      if (examSettings.face_authentication_enabled) {
-        console.log("✅ Face authentication ENABLED - Waiting for first face authentication before exam starts");
-        // Exam will only start after first successful face auth (onAuthResume is called)
-      } else {
-        console.log("⚠️ Face authentication DISABLED - Starting exam immediately");
-        // If face auth is disabled, start exam immediately
-        if (!examStarted) {
-          // ✅ ONLY EMIT ONCE
-          socket.emit("start-exam", {
-            user_id: userId,
-            exam_id: examId,
-            timestamp: new Date(),
-            status: "success",
-            message: "Exam Started successfully",
-          });
-          setExamStarted(true);
-        }
-      }
-
       const fullscreenChangeHandler = () => {
         if (!document.fullscreenElement) {
           setBlocked(true);
