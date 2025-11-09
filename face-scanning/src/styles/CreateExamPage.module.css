@@ -173,15 +173,13 @@
   background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
   border: 1px solid #0ea5e9;
   color: white;
-  box-shadow: 
-    0 4px 14px rgba(14, 165, 233, 0.25),
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 [data-theme="light"] .btnPrimary:hover {
   background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  box-shadow: 
-    0 6px 20px rgba(14, 165, 233, 0.35),
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transform: translateY(-2px);
 }
@@ -196,6 +194,19 @@
   background: var(--button-hover);
 }
 
+/* Light theme ghost button - ensure visibility */
+[data-theme="light"] .btnGhost {
+  border: 1px solid #cbd5e1;
+  background: transparent;
+  color: #1e293b;
+}
+
+[data-theme="light"] .btnGhost:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
 .btnSecondary {
   background: transparent;
   border: 1px solid #e2e8f0;
@@ -207,6 +218,19 @@
   background: #f8fafc;
   color: #374151;
   border-color: #cbd5e1;
+}
+
+/* Light theme secondary button - ensure visibility */
+[data-theme="light"] .btnSecondary {
+  border: 1px solid #cbd5e1;
+  background: transparent;
+  color: #475569;
+}
+
+[data-theme="light"] .btnSecondary:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-color: #94a3b8;
 }
 
 /* Dark theme button styles */
@@ -246,20 +270,16 @@
 [data-theme="light"] .glassPanel {
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 
-    0 10px 30px rgba(15, 23, 42, 0.08),
-    0 4px 12px rgba(15, 23, 42, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08),
+    0 4px 12px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
 [data-theme="light"] .glassPanel:hover {
   transform: translateY(-2px);
-  box-shadow: 
-    0 20px 40px rgba(15, 23, 42, 0.12),
-    0 8px 20px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12),
+    0 8px 20px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .fadeIn {
@@ -334,7 +354,7 @@
 }
 
 .skeletonCard::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -1070,9 +1090,7 @@
 [data-theme="light"] .examCard {
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(226, 232, 240, 0.6);
-  box-shadow: 
-    0 2px 8px rgba(15, 23, 42, 0.06),
-    0 1px 3px rgba(15, 23, 42, 0.04),
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -1080,10 +1098,8 @@
 
 [data-theme="light"] .examCard:hover {
   transform: translateY(-3px);
-  box-shadow: 
-    0 12px 30px rgba(15, 23, 42, 0.1),
-    0 6px 16px rgba(15, 23, 42, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1),
+    0 6px 16px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 /* Enhanced light theme modal styling */
@@ -1097,10 +1113,8 @@
 [data-theme="light"] .theme-transition:has(.modal-overlay) .theme-transition {
   background: rgba(255, 255, 255, 0.98);
   border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 
-    0 25px 50px rgba(15, 23, 42, 0.15),
-    0 10px 30px rgba(15, 23, 42, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 25px 50px rgba(15, 23, 42, 0.15),
+    0 10px 30px rgba(15, 23, 42, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "../../styles/CreateExamPage.module.css";
 import { useRouter } from "next/router";
 import MCQQuestionEditor from "../../components/exam/MCQQuestionEditor";
@@ -9,6 +9,7 @@ import LatexRenderer from "../../components/exam/LatexRenderer";
 
 const NewExam = () => {
   const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1); // 1: Name & Questions, 2: Settings
   const [examName, setExamName] = useState("");
 
   // Section collapse states
@@ -44,6 +45,42 @@ const NewExam = () => {
   const [editingQuestion, setEditingQuestion] = useState<
     MCQQuestion | undefined
   >(undefined);
+
+  // Restore data from sessionStorage when component mounts (for back navigation from preview)
+  useEffect(() => {
+    const storedData = sessionStorage.getItem("examPreviewData");
+    if (storedData) {
+      try {
+        const data = JSON.parse(storedData);
+        setExamName(data.examName || "");
+        setThirdEye(data.thirdEye ?? true);
+        setMultiPerson(data.multiPerson ?? true);
+        setEyeBall(data.eyeBall ?? true);
+        setObjectDetect(data.objectDetect ?? true);
+        setHeadDirection(data.headDirection ?? true);
+        setFlagNotifications(data.flagNotifications ?? true);
+        setVideoRecording(data.videoRecording ?? true);
+        setTabSwitchDetection(data.tabSwitchDetection ?? true);
+        setMicrophoneDetection(data.microphoneDetection ?? true);
+        setSafeBrowser(data.safeBrowser ?? true);
+        setProctorFeedToTestTaker(data.proctorFeedToTestTaker ?? true);
+        setScreenSharing(data.screenSharing ?? true);
+        setScreenCountDetection(data.screenCountDetection ?? false);
+        setControlDesktopApps(data.controlDesktopApps ?? false);
+        setNormalProctoring(data.normalProctoring ?? true);
+        setAiPoweredProctoring(data.aiPoweredProctoring ?? true);
+        setRecordedManualProctoring(data.recordedManualProctoring ?? true);
+        setFaceAuthentication(data.faceAuthentication ?? true);
+        setMcqQuestions(data.mcqQuestions || []);
+
+        // If coming back from preview, set to step 2 (settings)
+        // since they likely want to adjust settings
+        setCurrentStep(2);
+      } catch (error) {
+        console.error("Error restoring exam data:", error);
+      }
+    }
+  }, []);
 
   // Handler for AI Proctoring toggle that controls related features
   const handleAiProctoringToggle = () => {
@@ -127,6 +164,15 @@ const NewExam = () => {
   };
 
   const handlePreview = () => {
+    // Move to step 2 (Settings)
+    setCurrentStep(2);
+  };
+
+  const handleBackToQuestions = () => {
+    setCurrentStep(1);
+  };
+
+  const handleFinalSubmit = () => {
     sessionStorage.setItem(
       "examPreviewData",
       JSON.stringify({
@@ -447,7 +493,7 @@ const NewExam = () => {
                 marginBottom: "4px",
               }}
             >
-              Create New Exam
+              Create New Exam - Step {currentStep} of 2
             </h1>
             <p
               className="theme-transition"
@@ -457,12 +503,33 @@ const NewExam = () => {
                 margin: 0,
               }}
             >
-              Configure exam settings • {mcqQuestions.length} questions •{" "}
-              {getEnabledFeaturesCount()} features enabled
+              {currentStep === 1 && "Setup exam name and questions"}
+              {currentStep === 2 &&
+                `Configure exam settings • ${
+                  mcqQuestions.length
+                } questions • ${getEnabledFeaturesCount()} features enabled`}
             </p>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* Step Indicator */}
+          <div style={{ display: "flex", gap: "8px", marginRight: "16px" }}>
+            {[1, 2].map((step) => (
+              <div
+                key={step}
+                style={{
+                  width: currentStep === step ? "32px" : "10px",
+                  height: "10px",
+                  borderRadius: "5px",
+                  background:
+                    currentStep >= step
+                      ? "var(--accent-color)"
+                      : "var(--border-color)",
+                  transition: "all 0.3s ease",
+                }}
+              />
+            ))}
+          </div>
           <ThemeToggle />
         </div>
       </header>
@@ -485,294 +552,343 @@ const NewExam = () => {
             maxWidth: "100%",
           }}
         >
-          {/* Exam Name */}
-          <div
-            className={`${styles.glassPanel} theme-transition`}
-            style={{
-              padding: "24px",
-              borderRadius: "14px",
-              marginBottom: "16px",
-            }}
-          >
-            <label
-              className="theme-transition"
-              style={{
-                display: "block",
-                marginBottom: "12px",
-                color: "var(--text-primary)",
-                fontWeight: 600,
-                fontSize: "15px",
-              }}
-            >
-              📝 Exam Name *
-            </label>
-            <input
-              type="text"
-              value={examName}
-              onChange={(e) => setExamName(e.target.value)}
-              placeholder="Enter exam name (e.g., Midterm Mathematics Exam)"
-              className="input-theme theme-transition"
-              style={{
-                width: "100%",
-                padding: "14px 16px",
-                borderRadius: "10px",
-                fontSize: "15px",
-                outline: "none",
-                border: "2px solid var(--border-color)",
-                background: "var(--secondary-bg)",
-              }}
-            />
-          </div>
-
-          {/* Proctoring Sections */}
-          <CollapsibleSection
-            title="Normal Proctoring"
-            subtitle="Basic monitoring and browser control features"
-            icon="🖥️"
-            isOpen={normalProctoringOpen}
-            onToggle={() => setNormalProctoringOpen(!normalProctoringOpen)}
-            masterToggle
-            masterEnabled={normalProctoring}
-            onMasterToggle={handleNormalProctoringToggle}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-                gap: 12,
-              }}
-            >
-              <Toggle
-                label="Control Desktop Apps"
-                enabled={controlDesktopApps}
-                onToggle={() => setControlDesktopApps((v) => !v)}
-                disabled={!normalProctoring}
-              />
-              <Toggle
-                label="Screen Count Detection"
-                enabled={screenCountDetection}
-                onToggle={() => setScreenCountDetection((v) => !v)}
-                disabled={!normalProctoring}
-              />
-              <Toggle
-                label="Safe Browser"
-                enabled={safeBrowser}
-                onToggle={() => setSafeBrowser((v) => !v)}
-                disabled={!normalProctoring}
-              />
-              <Toggle
-                label="Tab Switch Detection"
-                enabled={tabSwitchDetection}
-                onToggle={() => setTabSwitchDetection((v) => !v)}
-                disabled={!normalProctoring}
-              />
-              <Toggle
-                label="Microphone Detection"
-                enabled={microphoneDetection}
-                onToggle={() => setMicrophoneDetection((v) => !v)}
-                disabled={!normalProctoring}
-              />
-            </div>
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            title="AI Powered Proctoring"
-            subtitle="Advanced AI-based monitoring and detection"
-            icon="🤖"
-            isOpen={aiProctoringOpen}
-            onToggle={() => setAiProctoringOpen(!aiProctoringOpen)}
-            masterToggle
-            masterEnabled={aiPoweredProctoring}
-            onMasterToggle={handleAiProctoringToggle}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-                gap: 12,
-              }}
-            >
-              <Toggle
-                label="Third Eye"
-                enabled={thirdEye}
-                onToggle={() => setThirdEye((v) => !v)}
-                disabled={!aiPoweredProctoring}
-              />
-              <Toggle
-                label="Multiple Person Detection"
-                enabled={multiPerson}
-                onToggle={() => setMultiPerson((v) => !v)}
-                disabled={!aiPoweredProctoring}
-              />
-              <Toggle
-                label="Eyeball Detection"
-                enabled={eyeBall}
-                onToggle={() => setEyeBall((v) => !v)}
-                disabled={!aiPoweredProctoring}
-              />
-              <Toggle
-                label="Object Detection"
-                enabled={objectDetect}
-                onToggle={() => setObjectDetect((v) => !v)}
-                disabled={!aiPoweredProctoring}
-              />
-              <Toggle
-                label="Head Direction"
-                enabled={headDirection}
-                onToggle={() => setHeadDirection((v) => !v)}
-                disabled={!aiPoweredProctoring}
-              />
-              <Toggle
-                label="Face Authentication"
-                enabled={faceAuthentication}
-                onToggle={() => setFaceAuthentication((v) => !v)}
-                disabled={!aiPoweredProctoring}
-              />
-            </div>
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            title="Recorded Manual Proctoring"
-            subtitle="Recording and manual review capabilities"
-            icon="📹"
-            isOpen={manualProctoringOpen}
-            onToggle={() => setManualProctoringOpen(!manualProctoringOpen)}
-            masterToggle
-            masterEnabled={recordedManualProctoring}
-            onMasterToggle={handleManualProctoringToggle}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-                gap: 12,
-              }}
-            >
-              <Toggle
-                label="Flag Notifications"
-                enabled={flagNotifications}
-                onToggle={() => setFlagNotifications((v) => !v)}
-                disabled={!recordedManualProctoring}
-              />
-              <Toggle
-                label="Video Recording"
-                enabled={videoRecording}
-                onToggle={() => setVideoRecording((v) => !v)}
-                disabled={!recordedManualProctoring}
-              />
-              <Toggle
-                label="Proctor Feed to Test Taker"
-                enabled={proctorFeedToTestTaker}
-                onToggle={() => setProctorFeedToTestTaker((v) => !v)}
-                disabled={!recordedManualProctoring}
-              />
-            </div>
-          </CollapsibleSection>
-
-          {/* MCQ Section */}
-          <CollapsibleSection
-            title="MCQ Questions"
-            subtitle={`Add multiple choice questions (${mcqQuestions.length} questions added)`}
-            icon="❓"
-            isOpen={mcqSectionOpen}
-            onToggle={() => setMcqSectionOpen(!mcqSectionOpen)}
-          >
-            {showQuestionEditor && (
-              <MCQQuestionEditor
-                onSave={handleAddQuestion}
-                onCancel={handleCancelQuestionEditor}
-                initialQuestion={editingQuestion}
-              />
-            )}
-
-            {!showQuestionEditor && mcqQuestions.length > 0 && (
-              <MCQQuestionList
-                questions={mcqQuestions}
-                onEdit={handleEditQuestion}
-                onDelete={handleDeleteQuestion}
-              />
-            )}
-
-            {!showQuestionEditor && mcqQuestions.length === 0 && (
+          {/* STEP 1: Exam Name & Questions */}
+          {currentStep === 1 && (
+            <>
+              {/* Exam Name */}
               <div
-                className="theme-transition"
+                className={`${styles.glassPanel} theme-transition`}
                 style={{
-                  textAlign: "center",
-                  padding: "40px 20px",
-                  color: "var(--text-secondary)",
-                  fontSize: "14px",
+                  padding: "24px",
+                  borderRadius: "14px",
+                  marginBottom: "16px",
                 }}
               >
-                No questions added yet. Click the button below to add your first
-                question.
+                <label
+                  className="theme-transition"
+                  style={{
+                    display: "block",
+                    marginBottom: "12px",
+                    color: "var(--text-primary)",
+                    fontWeight: 600,
+                    fontSize: "15px",
+                  }}
+                >
+                  📝 Exam Name *
+                </label>
+                <input
+                  type="text"
+                  value={examName}
+                  onChange={(e) => setExamName(e.target.value)}
+                  placeholder="Enter exam name (e.g., Midterm Mathematics Exam)"
+                  className="input-theme theme-transition"
+                  style={{
+                    width: "100%",
+                    padding: "14px 16px",
+                    borderRadius: "10px",
+                    fontSize: "15px",
+                    outline: "none",
+                    border: "2px solid var(--border-color)",
+                    background: "var(--secondary-bg)",
+                  }}
+                />
               </div>
-            )}
 
-            {!showQuestionEditor && (
-              <button
-                type="button"
-                onClick={() => setShowQuestionEditor(true)}
-                className="theme-transition"
+              {/* MCQ Section */}
+              <CollapsibleSection
+                title="MCQ Questions"
+                subtitle={`Add multiple choice questions (${mcqQuestions.length} questions added)`}
+                icon="❓"
+                isOpen={mcqSectionOpen}
+                onToggle={() => setMcqSectionOpen(!mcqSectionOpen)}
+              >
+                {showQuestionEditor && (
+                  <MCQQuestionEditor
+                    onSave={handleAddQuestion}
+                    onCancel={handleCancelQuestionEditor}
+                    initialQuestion={editingQuestion}
+                  />
+                )}
+
+                {!showQuestionEditor && mcqQuestions.length > 0 && (
+                  <MCQQuestionList
+                    questions={mcqQuestions}
+                    onEdit={handleEditQuestion}
+                    onDelete={handleDeleteQuestion}
+                  />
+                )}
+
+                {!showQuestionEditor && mcqQuestions.length === 0 && (
+                  <div
+                    className="theme-transition"
+                    style={{
+                      textAlign: "center",
+                      padding: "40px 20px",
+                      color: "var(--text-secondary)",
+                      fontSize: "14px",
+                    }}
+                  >
+                    No questions added yet. Click the button below to add your
+                    first question.
+                  </div>
+                )}
+
+                {!showQuestionEditor && (
+                  <button
+                    type="button"
+                    onClick={() => setShowQuestionEditor(true)}
+                    className="theme-transition"
+                    style={{
+                      padding: "12px 20px",
+                      borderRadius: 10,
+                      border: "2px dashed var(--accent-color)",
+                      background: "transparent",
+                      color: "var(--accent-color)",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      width: "100%",
+                      marginTop: mcqQuestions.length > 0 ? 16 : 0,
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    + Add New Question
+                  </button>
+                )}
+              </CollapsibleSection>
+
+              {/* Action Buttons */}
+              <div
                 style={{
-                  padding: "12px 20px",
-                  borderRadius: 10,
-                  border: "2px dashed var(--accent-color)",
-                  background: "transparent",
-                  color: "var(--accent-color)",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  width: "100%",
-                  marginTop: mcqQuestions.length > 0 ? 16 : 0,
-                  transition: "all 0.2s ease",
+                  display: "flex",
+                  gap: "12px",
+                  marginTop: "24px",
                 }}
               >
-                + Add New Question
-              </button>
-            )}
-          </CollapsibleSection>
+                <button
+                  onClick={() => router.push("/examiner/CreateExamPage")}
+                  className={`${styles.btn} ${styles.btnGhost} theme-transition`}
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePreview}
+                  disabled={!examName.trim() || mcqQuestions.length === 0}
+                  className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    opacity:
+                      !examName.trim() || mcqQuestions.length === 0 ? 0.6 : 1,
+                    cursor:
+                      !examName.trim() || mcqQuestions.length === 0
+                        ? "not-allowed"
+                        : "pointer",
+                  }}
+                >
+                  Next: Settings →
+                </button>
+              </div>
+            </>
+          )}
 
-          {/* Action Buttons */}
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              marginTop: "24px",
-            }}
-          >
-            <button
-              onClick={() => router.push("/examiner/CreateExamPage")}
-              className={`${styles.btn} ${styles.btnGhost} theme-transition`}
-              style={{
-                padding: "14px 24px",
-                borderRadius: "12px",
-                fontSize: "15px",
-                fontWeight: 600,
-                cursor: "pointer",
-                flex: 1,
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handlePreview}
-              disabled={!examName.trim()}
-              className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
-              style={{
-                padding: "14px 32px",
-                borderRadius: "12px",
-                fontSize: "15px",
-                fontWeight: 600,
-                opacity: !examName.trim() ? 0.6 : 1,
-                cursor: !examName.trim() ? "not-allowed" : "pointer",
-                flex: 2,
-              }}
-            >
-              {mcqQuestions.length > 0
-                ? `Preview Exam (${mcqQuestions.length} questions)`
-                : "Create Exam"}
-            </button>
-          </div>
+          {/* STEP 2: Exam Settings */}
+          {currentStep === 2 && (
+            <>
+              {/* Proctoring Sections */}
+              <CollapsibleSection
+                title="Normal Proctoring"
+                subtitle="Basic monitoring and browser control features"
+                icon="🖥️"
+                isOpen={normalProctoringOpen}
+                onToggle={() => setNormalProctoringOpen(!normalProctoringOpen)}
+                masterToggle
+                masterEnabled={normalProctoring}
+                onMasterToggle={handleNormalProctoringToggle}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(250px, 1fr))",
+                    gap: 12,
+                  }}
+                >
+                  <Toggle
+                    label="Control Desktop Apps"
+                    enabled={controlDesktopApps}
+                    onToggle={() => setControlDesktopApps((v) => !v)}
+                    disabled={!normalProctoring}
+                  />
+                  <Toggle
+                    label="Screen Count Detection"
+                    enabled={screenCountDetection}
+                    onToggle={() => setScreenCountDetection((v) => !v)}
+                    disabled={!normalProctoring}
+                  />
+                  <Toggle
+                    label="Safe Browser"
+                    enabled={safeBrowser}
+                    onToggle={() => setSafeBrowser((v) => !v)}
+                    disabled={!normalProctoring}
+                  />
+                  <Toggle
+                    label="Tab Switch Detection"
+                    enabled={tabSwitchDetection}
+                    onToggle={() => setTabSwitchDetection((v) => !v)}
+                    disabled={!normalProctoring}
+                  />
+                  <Toggle
+                    label="Microphone Detection"
+                    enabled={microphoneDetection}
+                    onToggle={() => setMicrophoneDetection((v) => !v)}
+                    disabled={!normalProctoring}
+                  />
+                </div>
+              </CollapsibleSection>
+
+              <CollapsibleSection
+                title="AI Powered Proctoring"
+                subtitle="Advanced AI-based monitoring and detection"
+                icon="🤖"
+                isOpen={aiProctoringOpen}
+                onToggle={() => setAiProctoringOpen(!aiProctoringOpen)}
+                masterToggle
+                masterEnabled={aiPoweredProctoring}
+                onMasterToggle={handleAiProctoringToggle}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(250px, 1fr))",
+                    gap: 12,
+                  }}
+                >
+                  <Toggle
+                    label="Third Eye"
+                    enabled={thirdEye}
+                    onToggle={() => setThirdEye((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                  <Toggle
+                    label="Multiple Person Detection"
+                    enabled={multiPerson}
+                    onToggle={() => setMultiPerson((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                  <Toggle
+                    label="Eyeball Detection"
+                    enabled={eyeBall}
+                    onToggle={() => setEyeBall((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                  <Toggle
+                    label="Object Detection"
+                    enabled={objectDetect}
+                    onToggle={() => setObjectDetect((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                  <Toggle
+                    label="Head Direction"
+                    enabled={headDirection}
+                    onToggle={() => setHeadDirection((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                  <Toggle
+                    label="Face Authentication"
+                    enabled={faceAuthentication}
+                    onToggle={() => setFaceAuthentication((v) => !v)}
+                    disabled={!aiPoweredProctoring}
+                  />
+                </div>
+              </CollapsibleSection>
+
+              <CollapsibleSection
+                title="Recorded Manual Proctoring"
+                subtitle="Recording and manual review capabilities"
+                icon="📹"
+                isOpen={manualProctoringOpen}
+                onToggle={() => setManualProctoringOpen(!manualProctoringOpen)}
+                masterToggle
+                masterEnabled={recordedManualProctoring}
+                onMasterToggle={handleManualProctoringToggle}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(250px, 1fr))",
+                    gap: 12,
+                  }}
+                >
+                  <Toggle
+                    label="Flag Notifications"
+                    enabled={flagNotifications}
+                    onToggle={() => setFlagNotifications((v) => !v)}
+                    disabled={!recordedManualProctoring}
+                  />
+                  <Toggle
+                    label="Video Recording"
+                    enabled={videoRecording}
+                    onToggle={() => setVideoRecording((v) => !v)}
+                    disabled={!recordedManualProctoring}
+                  />
+                  <Toggle
+                    label="Proctor Feed to Test Taker"
+                    enabled={proctorFeedToTestTaker}
+                    onToggle={() => setProctorFeedToTestTaker((v) => !v)}
+                    disabled={!recordedManualProctoring}
+                  />
+                </div>
+              </CollapsibleSection>
+
+              {/* Action Buttons */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  marginTop: "24px",
+                }}
+              >
+                <button
+                  onClick={handleBackToQuestions}
+                  className={`${styles.btn} ${styles.btnGhost} theme-transition`}
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  ← Back to Questions
+                </button>
+                <button
+                  onClick={handleFinalSubmit}
+                  className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Preview & Create Exam →
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>
