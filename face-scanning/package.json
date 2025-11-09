@@ -17,6 +17,7 @@
     "mediasoup-client": "^3.14.0",
     "next": "15.3.5",
     "opencv-ts": "^1.3.6",
+    "pdfjs-dist": "^5.4.394",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

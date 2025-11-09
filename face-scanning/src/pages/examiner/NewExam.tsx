@@ -3,6 +3,7 @@ import styles from "../../styles/CreateExamPage.module.css";
 import { useRouter } from "next/router";
 import MCQQuestionEditor from "../../components/exam/MCQQuestionEditor";
 import MCQQuestionList from "../../components/exam/MCQQuestionList";
+import PDFQuestionUploader from "../../components/exam/PDFQuestionUploader";
 import { MCQQuestion } from "../../types/mcq";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import LatexRenderer from "../../components/exam/LatexRenderer";
@@ -42,6 +43,7 @@ const NewExam = () => {
   // MCQ Questions state
   const [mcqQuestions, setMcqQuestions] = useState<MCQQuestion[]>([]);
   const [showQuestionEditor, setShowQuestionEditor] = useState(false);
+  const [showPDFUploader, setShowPDFUploader] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<
     MCQQuestion | undefined
   >(undefined);
@@ -73,9 +75,8 @@ const NewExam = () => {
         setFaceAuthentication(data.faceAuthentication ?? true);
         setMcqQuestions(data.mcqQuestions || []);
 
-        // If coming back from preview, set to step 2 (settings)
-        // since they likely want to adjust settings
-        setCurrentStep(2);
+        // Always start on step 1 (questions page)
+        setCurrentStep(1);
       } catch (error) {
         console.error("Error restoring exam data:", error);
       }
@@ -161,6 +162,15 @@ const NewExam = () => {
   const handleCancelQuestionEditor = () => {
     setShowQuestionEditor(false);
     setEditingQuestion(undefined);
+  };
+
+  const handlePDFQuestionsExtracted = (questions: MCQQuestion[]) => {
+    setMcqQuestions((prev) => [...prev, ...questions]);
+    setShowPDFUploader(false);
+  };
+
+  const handleCancelPDFUploader = () => {
+    setShowPDFUploader(false);
   };
 
   const handlePreview = () => {
@@ -602,6 +612,13 @@ const NewExam = () => {
                 isOpen={mcqSectionOpen}
                 onToggle={() => setMcqSectionOpen(!mcqSectionOpen)}
               >
+                {showPDFUploader && (
+                  <PDFQuestionUploader
+                    onQuestionsExtracted={handlePDFQuestionsExtracted}
+                    onClose={handleCancelPDFUploader}
+                  />
+                )}
+
                 {showQuestionEditor && (
                   <MCQQuestionEditor
                     onSave={handleAddQuestion}
@@ -610,50 +627,80 @@ const NewExam = () => {
                   />
                 )}
 
-                {!showQuestionEditor && mcqQuestions.length > 0 && (
-                  <MCQQuestionList
-                    questions={mcqQuestions}
-                    onEdit={handleEditQuestion}
-                    onDelete={handleDeleteQuestion}
-                  />
-                )}
+                {!showQuestionEditor &&
+                  !showPDFUploader &&
+                  mcqQuestions.length > 0 && (
+                    <MCQQuestionList
+                      questions={mcqQuestions}
+                      onEdit={handleEditQuestion}
+                      onDelete={handleDeleteQuestion}
+                    />
+                  )}
 
-                {!showQuestionEditor && mcqQuestions.length === 0 && (
+                {!showQuestionEditor &&
+                  !showPDFUploader &&
+                  mcqQuestions.length === 0 && (
+                    <div
+                      className="theme-transition"
+                      style={{
+                        textAlign: "center",
+                        padding: "40px 20px",
+                        color: "var(--text-secondary)",
+                        fontSize: "14px",
+                      }}
+                    >
+                      No questions added yet. Upload a PDF or add questions
+                      manually.
+                    </div>
+                  )}
+
+                {!showQuestionEditor && !showPDFUploader && (
                   <div
-                    className="theme-transition"
                     style={{
-                      textAlign: "center",
-                      padding: "40px 20px",
-                      color: "var(--text-secondary)",
-                      fontSize: "14px",
-                    }}
-                  >
-                    No questions added yet. Click the button below to add your
-                    first question.
-                  </div>
-                )}
-
-                {!showQuestionEditor && (
-                  <button
-                    type="button"
-                    onClick={() => setShowQuestionEditor(true)}
-                    className="theme-transition"
-                    style={{
-                      padding: "12px 20px",
-                      borderRadius: 10,
-                      border: "2px dashed var(--accent-color)",
-                      background: "transparent",
-                      color: "var(--accent-color)",
-                      fontSize: 14,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      width: "100%",
+                      display: "flex",
+                      gap: "12px",
                       marginTop: mcqQuestions.length > 0 ? 16 : 0,
-                      transition: "all 0.2s ease",
                     }}
                   >
-                    + Add New Question
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPDFUploader(true)}
+                      className="theme-transition"
+                      style={{
+                        padding: "12px 20px",
+                        borderRadius: 10,
+                        border: "2px dashed var(--accent-color)",
+                        background: "transparent",
+                        color: "var(--accent-color)",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        flex: 1,
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      📄 Upload PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuestionEditor(true)}
+                      className="theme-transition"
+                      style={{
+                        padding: "12px 20px",
+                        borderRadius: 10,
+                        border: "2px dashed var(--accent-color)",
+                        background: "transparent",
+                        color: "var(--accent-color)",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        flex: 1,
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      ✍️ Add Manually
+                    </button>
+                  </div>
                 )}
               </CollapsibleSection>
 
