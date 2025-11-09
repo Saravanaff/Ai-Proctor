@@ -4,7 +4,6 @@ import { createServer as createHttpsServer } from "https";
 import path from "path";
 import dotenv from "dotenv";
 import cors from "cors";
-import { initMediasoup } from "./mediasoupServer";
 import { sequelize } from "./db";
 import authRoutes from "./routes/authRoutes";
 import authMiddleware from "./middleware/authMiddleware";
@@ -67,7 +66,6 @@ async function startServer() {
 }
 
 (async () => {
-  await initMediasoup();
   await sequelize.authenticate();
   await sequelize.sync();
   await startServer();
