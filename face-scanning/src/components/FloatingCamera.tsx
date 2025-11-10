@@ -74,8 +74,9 @@ const FloatingCamera = ({
   const objectDetectorRef = useRef<ObjectDetector | null>(null);
   const lastVideoTimeRef = useRef<number>(-1);
   const lastObjTimeRef = useRef<number>(-1);
+  const endExamSentRef = useRef(false);
+  const isStoppingRef = useRef(false);
 
-  // Exam metrics tracking
   const metricsRef = useRef<ExamMetrics>({
     headPositions: {},
     eyeMovements: {},
@@ -378,20 +379,72 @@ const FloatingCamera = ({
 
 
   useEffect(() => {
-    if (examSubmitted) {
-      console.log("Exam Submitted");
+    if (examSubmitted && !isStoppingRef.current) {
+      isStoppingRef.current = true;
+      console.log("🛑 Exam Submitted - Stopping all recordings");
+      console.log("⏰ Current timestamp:", new Date().toISOString());
+      console.log("👤 User ID:", userId, "📝 Exam ID:", examId);
       logExamMetrics();
 
-      if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stop();
+      // Stop face camera recording - this will trigger final ondataavailable
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        // First, request any pending data to be flushed
+        try {
+          console.log("📤 Requesting final data from MediaRecorder...");
+          mediaRecorderRef.current.requestData();
+        } catch (e) {
+          console.warn("Could not request data:", e);
+        }
+        
+        // Then stop the recorder (will trigger final ondataavailable)
+        setTimeout(() => {
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+            mediaRecorderRef.current.stop();
+            console.log("✅ Face camera MediaRecorder stopped - waiting for final chunk");
+          }
+        }, 100);
+      } else {
+        // If recorder already stopped, send end-exam immediately
+        if (!endExamSentRef.current) {
+          endExamSentRef.current = true;
+          socket.emit("end-exam", {
+            user_id: userId,
+            exam_id: examId,
+            category: "face_camera",
+            timestamp: new Date(),
+          });
+          console.log("📤 Sent end-exam event to backend (no recorder active)");
+        }
       }
 
-      if (screenRecorderMediaRecorderRef.current) {
+      // Stop screen recording
+      if (screenRecorderMediaRecorderRef.current && screenRecorderMediaRecorderRef.current.state !== "inactive") {
         console.log("Stopped screenRecording...");
         screenRecorderMediaRecorderRef.current.stop();
       }
     }
   }, [examSubmitted]);
+
+  // Handle browser close/refresh/navigation - send end-exam
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!endExamSentRef.current) {
+        endExamSentRef.current = true;
+        socket.emit("end-exam", {
+          user_id: userId,
+          exam_id: examId,
+          category: "face_camera",
+          timestamp: new Date(),
+        });
+        console.log("📤 Sent end-exam event during beforeunload (browser close/refresh)");
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   const { isSoundDetected, audioLevel } = useSoundLevel();
 
@@ -523,8 +576,9 @@ const FloatingCamera = ({
         }
 
         mediaRecorderRef.current.ondataavailable = (e: any) => {
-
-          if (e.data.size > 0 && !examSubmitted) {
+          if (e.data.size > 0) {
+            const isLastChunk = mediaRecorderRef.current?.state === "inactive";
+            
             e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
               const chunkData: VideoChunkData = {
                 user_id: userId,
@@ -536,8 +590,44 @@ const FloatingCamera = ({
                 settings: settingsRef.current,
               };
               socket.emit("recorder-add-video-stream-chunk", chunkData);
+              console.log("📹 Sent face camera chunk:", buffer.byteLength, "bytes", isLastChunk ? "(FINAL CHUNK)" : "");
+              
+              // If this is the final chunk, send end-exam after it's emitted
+              if (isLastChunk && examSubmitted && !endExamSentRef.current) {
+                setTimeout(() => {
+                  if (!endExamSentRef.current) {
+                    endExamSentRef.current = true;
+                    socket.emit("end-exam", {
+                      user_id: userId,
+                      exam_id: examId,
+                      category: "face_camera",
+                      timestamp: new Date(),
+                    });
+                    console.log("📤 Sent end-exam event to backend AFTER final chunk emitted");
+                  }
+                }, 200);
+              }
             });
           }
+        };
+
+        // Backup: Handle when MediaRecorder stops in case ondataavailable doesn't fire
+        mediaRecorderRef.current.onstop = () => {
+          console.log("🎬 MediaRecorder stopped event fired");
+          
+          // Give extra time for any pending chunks to be sent
+          setTimeout(() => {
+            if (!endExamSentRef.current) {
+              endExamSentRef.current = true;
+              socket.emit("end-exam", {
+                user_id: userId,
+                exam_id: examId,
+                category: "face_camera",
+                timestamp: new Date(),
+              });
+              console.log("📤 Sent end-exam event from onstop handler (backup)");
+            }
+          }, 500);
         };
 
         mediaRecorderRef.current.start(1000);
@@ -751,6 +841,19 @@ const FloatingCamera = ({
 
     return () => {
       console.log("FloatingCamera cleanup - stopping recording");
+      
+      // Send end-exam if not already sent
+      if (!endExamSentRef.current) {
+        endExamSentRef.current = true;
+        socket.emit("end-exam", {
+          user_id: userId,
+          exam_id: examId,
+          category: "face_camera",
+          timestamp: new Date(),
+        });
+        console.log("📤 Sent end-exam event during cleanup (unmount/navigation)");
+      }
+      
       isMounted = false;
       isInitialized.current = false;
 
@@ -851,7 +954,7 @@ const FloatingCamera = ({
       }}
       onMouseDown={handleMouseDown}
     >
-      {/* Initial scanning overlay animation - Only show if face authentication is enabled */}
+
       {showInitialScan && examSettings?.face_authentication_enabled && (
         <div className={styles.scanOverlay}>
           <div className={styles.scanLine} />

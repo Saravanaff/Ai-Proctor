@@ -39,11 +39,11 @@ const fullscreen = () => {
 
     const startScreenRecording = async (screenStream: any) => {
         try {
-            socket.emit("start-exam", {
-                user_id: userId,
-                exam_id: examId,
-                category: "screen_recording"
-            });
+            // socket.emit("start-exam", {
+            //     user_id: userId,
+            //     exam_id: examId,
+            //     category: "screen_recording"
+            // });
             // const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
             console.log("screenStream : ", screenStream)
             if (screenStream) {
@@ -65,7 +65,7 @@ const fullscreen = () => {
                                 chunk: buffer,
                             };
                             console.log("Sending screen recording chunk");
-                            socket.emit("recorder-add-video-stream-chunk", chunkData);
+                            // socket.emit("recorder-add-video-stream-chunk", chunkData);
                         });
                     }
                 };

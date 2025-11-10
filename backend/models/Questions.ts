@@ -42,13 +42,6 @@ export class Question extends Model {
     })
     marks!: number;
 
-    @Column({
-        type: DataType.STRING,
-        allowNull: false,
-        defaultValue: 'mcq',
-        comment: 'question types: mcq | short | long | essay | file',
-    })
-    question_type!: string;
 
     @BelongsTo(() => Exam)
     exam!: Exam;

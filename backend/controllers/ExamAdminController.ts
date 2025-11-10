@@ -3,6 +3,8 @@ import express from "express";
 import { Exam } from "../models/Exam";
 import { Attend } from "../models/Attend";
 import { User } from "../models/User";
+import { Question } from "../models/Questions";
+import { QuestionOption } from "../models/QuestionOption";
 import { getUserIdFromToken } from "../utils/jwt";
 
 export const createExam = async (req: Request, res: Response) => {
@@ -28,6 +30,7 @@ export const createExam = async (req: Request, res: Response) => {
       ai_powered_proctoring,
       recorded_manual_proctoring,
       face_authentication_enabled,
+      questions,
     } = req.body;
 
     const user_id = getUserIdFromToken(req);
@@ -70,6 +73,34 @@ export const createExam = async (req: Request, res: Response) => {
       face_authentication_enabled,
       key: nextKey,
     });
+
+    if (questions && Array.isArray(questions) && questions.length > 0) {
+      const questionsData = questions.map((q) => ({
+        exam_id: newExam.id,
+        question_text: q.question,
+        answer: String(q.answer),
+        marks: 1,
+        question_type: 'mcq',
+      }));
+
+      const createdQuestions = await Question.bulkCreate(questionsData);
+
+      const allOptionsData: any[] = [];
+      createdQuestions.forEach((createdQuestion, index) => {
+        const q = questions[index];
+        if (q.options && Array.isArray(q.options)) {
+          const optionsForThisQuestion = q.options.map((optionText: string) => ({
+            question_id: createdQuestion.id,
+            option_text: optionText,
+          }));
+          allOptionsData.push(...optionsForThisQuestion);
+        }
+      });
+
+      if (allOptionsData.length > 0) {
+        await QuestionOption.bulkCreate(allOptionsData as any);
+      }
+    }
 
     res.status(201).json({
       success: true,

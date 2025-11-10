@@ -1,85 +1,56 @@
-import { useRef,useEffect } from "react";
+import { useRef, useEffect } from "react";
 import socket from "@/components/socket";
 import { getExamId, getUserId } from "@/constants/AuthStore";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { getNumberOfMicrophones, getTabSwitchViolations } from "@/constants/violationConsts";
-import { time } from "console";
 
 
 const userId = getUserId() || "unknown";
 const examId = getExamId();
 const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-const EndPage =  () => {
-  const hasReloaded = useRef(false);
-  const hasSavedScore = useRef(false); 
+const EndPage = () => {
+  const hasSavedScore = useRef(false);
 
-  axios.interceptors.request.use(
-    (config) => {
-      const token = getTokenFromCookie();
-      if (token) {
-        config.headers = config.headers || {};
-        config.headers["Authorization"] = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
-
-  const postData = async (endpoint : string, data : any) => {
-    
-    const token = localStorage.getItem("token");
-    console.log(`${baseUrl}${endpoint}`);
+  const postData = async (endpoint: string, data: any) => {
+    const token = getTokenFromCookie();
+    console.log(`Posting to: ${baseUrl}${endpoint}`);
 
     try {
-      await axios.post(`${baseUrl}${endpoint}`, data);
-    } catch (error) {
-      console.error("Error updating data:", error);
+      const response = await axios.post(`${baseUrl}${endpoint}`, data, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+      });
+      console.log("✅ Score saved successfully:", response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Error saving score:", error.response?.data || error.message);
+      throw error;
     }
   };
 
-useEffect(()=>{
+  useEffect(() => {
+    // ✅ NO NEED TO EMIT end-exam here - already sent from FloatingCamera when examSubmitted=true
+    // This prevents duplicate end-exam events that could cause recording issues
 
-  socket.emit("end-exam",{
-    user_id: userId,
-    exam_id: examId,
-    timestamp: new Date(),
-    status: "success",
-    message: "Exam Ended successfully"
-  })
-  socket.emit("end-exam",{
-    user_id: userId,
-    exam_id: examId,
-    category: "face_camera",
-    status: "success",
-    message: "Exam Ended successfully"
-  });
+    console.log("📊 End page mounted - saving final score");
 
-  socket.emit("end-exam",{
-      user_id: userId,
-      exam_id: examId,
-      category: "screen_recording",
-      status: "success",
-      message: "Exam Ended successfully"
-  });
-
-  if (!hasSavedScore.current) {
-    hasSavedScore.current = true;
-    postData("/saveScore", {
-      status: "completed",
-      userId: userId,
-      examId: examId,
-      numberOfMicrophones: getNumberOfMicrophones(),
-      tabSwitchViolations: getTabSwitchViolations(),
-    });
-  }
-
-},[]);
-
-  
-
-
+    if (!hasSavedScore.current) {
+      hasSavedScore.current = true;
+      postData("/saveScore", {
+        status: "completed",
+        userId: Number(userId),
+        examId: Number(examId),
+        numberOfMicrophones: getNumberOfMicrophones() || 0,
+        tabSwitchViolations: getTabSwitchViolations() || 0,
+      }).catch((err) => {
+        console.error("Failed to save score:", err);
+      });
+    }
+  }, []);
 
   return (
     <div style={{ textAlign: "center", paddingTop: "100px" }}>
