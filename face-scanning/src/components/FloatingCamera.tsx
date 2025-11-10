@@ -13,9 +13,10 @@ import { getExamId, getUserId } from "../constants/AuthStore";
 import { delay } from "@/utils/delay";
 import axios from 'axios'
 import { getExamSettings } from "@/constants/examSettingsConsts";
-import { FilesetResolver, FaceLandmarker, FaceLandmarkerResult } from '@mediapipe/tasks-vision';
+import { FilesetResolver, FaceLandmarker, ObjectDetector } from '@mediapipe/tasks-vision';
 import { headPos } from "@/utils/aiModel/headPos";
 import { eye_direction } from "@/utils/aiModel/eyePos";
+import { detector } from "@/utils/aiModel/objDetector";
 
 const userId = getUserId() || "unknown";
 let examId = getExamId();
@@ -70,7 +71,9 @@ const FloatingCamera = ({
   const pausedRef = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
+  const objectDetectorRef = useRef<ObjectDetector | null>(null);
   const lastVideoTimeRef = useRef<number>(-1);
+  const lastObjTimeRef = useRef<number>(-1);
 
   // Exam metrics tracking
   const metricsRef = useRef<ExamMetrics>({
@@ -169,6 +172,11 @@ const FloatingCamera = ({
     metricsRef.current.eyeGazeHistory.push(eyeDir);
 
     return eyeDir;
+  }, []);
+
+  const objdetect = useCallback((result: any) => {
+    let detection = detector(result);
+    return detection;
   }, []);
 
   // Detect mobile device in frame
@@ -460,12 +468,11 @@ const FloatingCamera = ({
         console.log("FloatingCamera: Camera access successful");
 
         try {
+          const vision = await FilesetResolver.forVisionTasks(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+          );
           if (!faceLandmarkerRef.current) {
             // Initialize MediaPipe Face Landmarker with new API
-            const vision = await FilesetResolver.forVisionTasks(
-              "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-            );
-
             const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
               baseOptions: {
                 modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
@@ -483,10 +490,26 @@ const FloatingCamera = ({
             faceLandmarkerRef.current = faceLandmarker;
             console.log("✅ MediaPipe Face Landmarker initialized successfully");
           }
+          if (!objectDetectorRef.current) {
+            let objectDetector = await ObjectDetector.createFromOptions(vision, {
+              baseOptions: {
+                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite`,
+                delegate: "GPU"
+              },
+              scoreThreshold: 0.5,
+              runningMode: "VIDEO",
+            });
+
+            objectDetectorRef.current = objectDetector;
+            console.log(" object detector initinalized successfully");
+          }
         } catch (error) {
-          console.error("❌ Failed to initialize Face Landmarker:", error);
+          console.error("❌ Failed to initialize Model:", error);
+          objectDetectorRef.current = null;
           faceLandmarkerRef.current = null;
         }
+
+
 
         if (videoRef.current && streamRef.current) {
           videoRef.current.srcObject = streamRef.current;
@@ -612,43 +635,64 @@ const FloatingCamera = ({
               // Don't retry - just skip this frame
             }
           }
+          if (objectDetectorRef.current && videoRef.current) {
+            try {
+              const currentTime = videoRef.current.currentTime;
 
-          // Detect mobile device on canvas (every 30 frames instead of 10 to reduce CPU)
-          if (metricsRef.current.frameCount % 30 === 0) {
-            detectMobileDevice(canvas);
-          }
+              // Only detect if this is a new frame
+              if (currentTime !== lastObjTimeRef.current) {
+                lastObjTimeRef.current = currentTime;
 
-          // Throttle socket emit to reduce network and processing overhead
-          if (metricsRef.current.frameCount % 2 === 0) { // Send every other frame
-            canvas.toBlob(
-              (blob) => {
-                if (blob && isMounted) {
-                  blob
-                    .arrayBuffer()
-                    .then((buffer) => {
-                      socket.emit("authenticate", {
-                        buffer,
-                        metadata: { width, height },
-                        user_id: userId,
-                        exam_id: examId,
-                        userId: userId,
-                        examId: examId,
-                        settings: settingsRef.current,
-                        examSettings: settingsRef.current,
-                        timestamp: new Date(),
-                      });
-                    })
-                    .catch((error) => {
-                      console.error(
-                        "Error processing authentication frame:",
-                        error
-                      );
-                    });
+                const startTimeMs = performance.now();
+                const result = objectDetectorRef.current.detectForVideo(video, startTimeMs);
+                console.log(result);
+                if (result) {
+                  const detection = objdetect(result);
+                  console.log(`Person : ${detection.person}, Mobile: ${detection.phone}`);
                 }
-              },
-              "image/jpeg",
-              0.5
-            );
+              }
+            }
+            catch (error) {
+              console.error("Object Detector processing error:", error);
+            }
+
+            // Detect mobile device on canvas (every 30 frames instead of 10 to reduce CPU)
+            if (metricsRef.current.frameCount % 30 === 0) {
+              detectMobileDevice(canvas);
+            }
+
+            // Throttle socket emit to reduce network and processing overhead
+            if (metricsRef.current.frameCount % 2 === 0) { // Send every other frame
+              canvas.toBlob(
+                (blob) => {
+                  if (blob && isMounted) {
+                    blob
+                      .arrayBuffer()
+                      .then((buffer) => {
+                        socket.emit("authenticate", {
+                          buffer,
+                          metadata: { width, height },
+                          user_id: userId,
+                          exam_id: examId,
+                          userId: userId,
+                          examId: examId,
+                          settings: settingsRef.current,
+                          examSettings: settingsRef.current,
+                          timestamp: new Date(),
+                        });
+                      })
+                      .catch((error) => {
+                        console.error(
+                          "Error processing authentication frame:",
+                          error
+                        );
+                      });
+                  }
+                },
+                "image/jpeg",
+                0.5
+              );
+            }
           }
         }, 1000 / 10);
       } catch (error) {

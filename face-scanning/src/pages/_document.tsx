@@ -9,6 +9,10 @@ export default function Document() {
           crossOrigin="anonymous"
           src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js"
         ></script>
+        <script
+          crossOrigin="anonymous"
+          src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js"
+        ></script>
       </Head>
       <body>
         <Main />
