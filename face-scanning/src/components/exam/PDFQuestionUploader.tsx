@@ -38,6 +38,7 @@ const PDFQuestionUploader: React.FC<PDFQuestionUploaderProps> = ({
       const pdfjsLib = await import("pdfjs-dist");
       pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
+      
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
@@ -81,126 +82,7 @@ const PDFQuestionUploader: React.FC<PDFQuestionUploaderProps> = ({
   };
 
   const parseQuestions = (text: string) => {
-    try {
-      if (!text || !text.trim()) {
-        setError("No text content found in PDF.");
-        return;
-      }
-
-      const questions: MCQQuestion[] = [];
-
-      // Split by common question delimiters
-      const lines = text.split(/\n/);
-      let currentQuestion: any = null;
-      let questionCounter = 0;
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]?.trim();
-        if (!line) continue;
-
-        // Check if line starts with a question number pattern
-        const questionMatch = line.match(
-          /^(?:Q|Question)?\s*(\d+)[\.\)]\s*(.+)/i
-        );
-
-        if (questionMatch && questionMatch[2]) {
-          // Save previous question if exists
-          if (
-            currentQuestion &&
-            currentQuestion.options &&
-            currentQuestion.options.length >= 2
-          ) {
-            questions.push({
-              id: `q-${Date.now()}-${questionCounter++}`,
-              question: currentQuestion.question || "",
-              options: currentQuestion.options,
-              correctOptionId:
-                currentQuestion.correctOptionId ||
-                currentQuestion.options[0]?.id ||
-                "",
-            });
-          }
-
-          // Start new question
-          currentQuestion = {
-            question: questionMatch[2].trim(),
-            options: [],
-            correctOptionId: "",
-          };
-        }
-        // Check if line is an option (A), a), 1), etc.
-        else if (currentQuestion && /^[A-Da-d1-4][\.\)]\s*(.+)/.test(line)) {
-          const optionMatch = line.match(/^[A-Da-d1-4][\.\)]\s*(.+)/);
-          if (optionMatch && optionMatch[1]) {
-            const optionId = `opt-${Date.now()}-${
-              currentQuestion.options.length
-            }`;
-            currentQuestion.options.push({
-              id: optionId,
-              text: optionMatch[1].trim(),
-            });
-          }
-        }
-        // Check for answer/correct option indicators
-        else if (
-          currentQuestion &&
-          /^(?:Answer|Correct|Solution)[\:\s]+([A-Da-d1-4])/i.test(line)
-        ) {
-          const answerMatch = line.match(
-            /^(?:Answer|Correct|Solution)[\:\s]+([A-Da-d1-4])/i
-          );
-          if (answerMatch && answerMatch[1]) {
-            const answerIndex = answerMatch[1].toUpperCase().charCodeAt(0) - 65; // A=0, B=1, etc.
-            if (
-              currentQuestion.options &&
-              currentQuestion.options[answerIndex]
-            ) {
-              currentQuestion.correctOptionId =
-                currentQuestion.options[answerIndex].id;
-            }
-          }
-        }
-        // If the line doesn't match any pattern and we have a current question, append to question text
-        else if (
-          currentQuestion &&
-          (!currentQuestion.options || currentQuestion.options.length === 0)
-        ) {
-          currentQuestion.question += " " + line;
-        }
-      }
-
-      // Add last question
-      if (
-        currentQuestion &&
-        currentQuestion.options &&
-        currentQuestion.options.length >= 2
-      ) {
-        questions.push({
-          id: `q-${Date.now()}-${questionCounter++}`,
-          question: currentQuestion.question || "",
-          options: currentQuestion.options,
-          correctOptionId:
-            currentQuestion.correctOptionId ||
-            currentQuestion.options[0]?.id ||
-            "",
-        });
-      }
-
-      if (questions.length === 0) {
-        setError(
-          "No questions found in PDF. Please ensure the PDF follows a standard MCQ format (Q1. Question text? A) Option1 B) Option2...)"
-        );
-      } else {
-        // Store parsed questions for later use
-        setParsedQuestions(questions);
-      }
-    } catch (err: any) {
-      console.error("Error parsing questions:", err);
-      setError(
-        err?.message ||
-          "Failed to parse questions. Please check the PDF format."
-      );
-    }
+    console.log("question: ",text);
   };
 
   const handleUseQuestions = () => {

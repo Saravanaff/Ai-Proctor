@@ -11,13 +11,15 @@ import {
   requireExaminerRole,
   requireStudentRole,
 } from "../middleware/roleMiddleware";
+import { getQuestionsByExam } from "../controllers/QuestionController";
 const router = Router();
 
-router.get("/exam", requireExaminerRole, getExam);
+router.get("/exam", getExam);
 router.get("/getExamSettings", getExamSettings);
-router.get("/exam/:examId", requireExaminerRole, getSingleExam);
-router.post("/examCreate", requireExaminerRole, createExam);
-router.put("/exam/:examId", requireExaminerRole, updateExam);
-router.delete("/exam/:examId", requireExaminerRole, deleteExam);
+router.get("/exam/:examId", getSingleExam);
+router.post("/examCreate", createExam);
+router.put("/exam/:examId", updateExam);
+router.delete("/exam/:examId", deleteExam);
+router.get("/getExamQuestions/:examId", getQuestionsByExam);
 
 export default router;

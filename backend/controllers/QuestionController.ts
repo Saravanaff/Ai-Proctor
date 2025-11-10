@@ -57,16 +57,16 @@ export const createQuestion = async (req: Request, res: Response) => {
 
 export const getQuestionsByExam = async (req: Request, res: Response) => {
 	try {
-		const { exam_id } = req.params;
-		if (!exam_id) return res.status(400).json({ success: false, message: 'exam_id is required' });
+		const { examId } = req.params;
+		if (!examId) return res.status(400).json({ success: false, message: 'exam_id is required' });
 
 		const questions = await Question.findAll({
-			where: { exam_id },
+			where: { exam_id: examId },
 			attributes: ['id', 'exam_id', 'question_text', 'marks', 'createdAt', 'updatedAt'],
 			include: [
 				{
 					model: QuestionOption,
-					attributes: ['id', 'question_id', 'option_text', 'position'],
+					attributes: ['id', 'question_id', 'option_text'],
 				},
 			],
 		});
@@ -84,7 +84,7 @@ export const getOptionsWithAnswer = async (req: Request, res: Response) => {
 
 		const options = await QuestionOption.findAll({
 			where: { question_id },
-			attributes: ['id', 'question_id', 'option_text', 'is_correct'],
+			attributes: ['id', 'question_id', 'option_text'],
 		});
 
 		return res.status(200).json({ success: true, options });
