@@ -5,23 +5,19 @@ import socket from "./socket";
 import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
 import { getExamId, getUserId } from "@/constants/AuthStore";
-import axios from 'axios';
+import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
-import { timeStamp } from "console";
 
-
-const questions = Array.from({ length: 10 }, (_, i) => ({
-  id: i + 1,
-  question: `Sample Question ${i + 1}?`,
-  options: ["Option A", "Option B", "Option C", "Option D"],
-}));
+// const questions = Array.from({ length: 10 }, (_, i) => ({
+//   id: i + 1,
+//   question: `Sample Question ${i + 1}?`,
+//   options: ["Option A", "Option B", "Option C", "Option D"],
+// }));
 
 const examId = getExamId();
 
-
-const baseUrl =
-  process.env.NEXT_PUBLIC_BACKEND_URL;
-  const userId = getUserId() || "unknown";
+const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+const userId = getUserId() || "unknown";
 
 type ExamSettings = {
   face_authentication_enabled?: boolean;
@@ -30,15 +26,23 @@ type ExamSettings = {
   eyeball_detection_enabled?: boolean;
   object_detection_enabled?: boolean;
   head_direction_enabled?: boolean;
-  flag_notifications_enabled?: boolean
+  flag_notifications_enabled?: boolean;
 };
 
+type Question = {
+  id: number;
+  question_text: string;
+  options?: Array<{ id: number; question_id: number; option_text: string }>;
+};
 
-const ExamPage = ({
-  screenRecorderMediaRecorderRef,
-  onBeforeSubmit,
-}: any) => {
-  const [answers, setAnswers] = useState<{ [key: number]: string }>({});
+type Answer = {
+  question_id: number;
+  option_id: number;
+  option_text: string;
+};
+
+const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
+  const [answers, setAnswers] = useState<{ [key: number]: Answer }>({});
   const [blocked, setBlocked] = useState(false);
   const [lookAlert, setlookAlert] = useState(false);
   const [lookDirection, setLookDirection] = useState<any>(null);
@@ -51,21 +55,24 @@ const ExamPage = ({
   const [examSubmitted, setExamSubmitted] = useState(false);
   const [headDirection, setHeadDirection] = useState(false);
   const [examSettings, setExamSettings] = useState<ExamSettings>({});
-  const [faceAuthenticationComplete, setFaceAuthenticationComplete] = useState(false);
+  const [faceAuthenticationComplete, setFaceAuthenticationComplete] =
+    useState(false);
   const [examStarted, setExamStarted] = useState(false);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
 
-  const lastAlertRef = useRef<{[key: string]: number}>({
+  const lastAlertRef = useRef<{ [key: string]: number }>({
     lookAlert: 0,
     object: 0,
     num: 0,
     authFaceMissing: 0,
-    headDirection: 0
+    headDirection: 0,
   });
 
-  const timeoutRefs = useRef<{[key: string]: NodeJS.Timeout}>({});
+  const timeoutRefs = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
-  const ALERT_THROTTLE_MS = 2000; 
-  
+  const ALERT_THROTTLE_MS = 2000;
+
   const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
 
   const router = useRouter();
@@ -85,36 +92,64 @@ const ExamPage = ({
   // Cleanup all timeouts when component unmounts
   useEffect(() => {
     return () => {
-      Object.values(timeoutRefs.current).forEach(timeout => {
+      Object.values(timeoutRefs.current).forEach((timeout) => {
         if (timeout) clearTimeout(timeout);
       });
     };
   }, []);
 
   useEffect(() => {
-      const fetchExamSettings = async (payload: any) => {
+    const fetchExamSettings = async (payload: any) => {
       try {
-
         const response = await axios.get(`${baseUrl}/getExamSettings`, {
-            params: payload,
+          params: payload,
         });
         console.log("Exam settings fetched:", response.data);
         setExamSettings(response.data);
       } catch (error) {
         console.error("Failed to fetch exam settings:", error);
       }
-    }
+    };
 
     const examId = getExamId();
-    fetchExamSettings({userId: Number(userId), examId: Number(examId)});
+    fetchExamSettings({ userId: Number(userId), examId: Number(examId) });
   }, []);
+
+  // Fetch exam questions
+  useEffect(() => {
+    const fetchExamQuestions = async () => {
+      try {
+        setIsLoadingQuestions(true);
+        const examId = getExamId();
+
+        const response = await axios.get(`${baseUrl}/getExamQuestions`, {
+          params: { examId: examId },
+        });
+
+        if (response.data.success && response.data.questions) {
+          setQuestions(response.data.questions);
+        }
+      } catch (error) {
+        console.error("Failed to fetch exam questions:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load exam questions",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
+
+    fetchExamQuestions();
+  }, [toast]);
 
   const detectObject = () => {
     const now = Date.now();
     if (now - lastAlertRef.current.object >= ALERT_THROTTLE_MS) {
       console.log("Object detected");
       setObject(true);
-      
+
       // Clear existing timeout before setting new one
       if (timeoutRefs.current.object) {
         clearTimeout(timeoutRefs.current.object);
@@ -129,7 +164,7 @@ const ExamPage = ({
     if (now - lastAlertRef.current.num >= ALERT_THROTTLE_MS) {
       setFace(a);
       setNum(true);
-      
+
       // Clear existing timeout before setting new one
       if (timeoutRefs.current.num) {
         clearTimeout(timeoutRefs.current.num);
@@ -144,12 +179,14 @@ const ExamPage = ({
   // Handle face authentication success - start exam on first successful auth
   const handleAuthResume = () => {
     console.log("✅ Face authenticated - User detected");
-    
+
     if (examSettings.face_authentication_enabled) {
       if (!faceAuthenticationComplete && !examStarted) {
-        console.log("✅ First face authentication detected - Starting exam now");
+        console.log(
+          "✅ First face authentication detected - Starting exam now"
+        );
         const userId = getUserId() || "unknown";
-        
+
         // ✅ ONLY EMIT ONCE
         socket.emit("start-exam", {
           user_id: userId,
@@ -158,11 +195,11 @@ const ExamPage = ({
           status: "success",
           message: "Exam Started successfully",
         });
-        
+
         setFaceAuthenticationComplete(true);
         setExamStarted(true);
       }
-      
+
       setPaused(false);
     }
   };
@@ -170,7 +207,7 @@ const ExamPage = ({
   // Handle face authentication failure - pause exam if enabled
   const handleAuthPause = () => {
     console.log("⚠️ Face lost - User not detected");
-    
+
     // Only pause if face authentication is enabled and exam has started
     if (examSettings.face_authentication_enabled && examStarted) {
       setPaused(true);
@@ -248,12 +285,15 @@ const ExamPage = ({
       // ✅ USE STATE INSTEAD OF LOCAL VARIABLE
       setLookDirection(side);
       setlookAlert(true);
-      
+
       // Clear existing timeout before setting new one
       if (timeoutRefs.current.lookAlert) {
         clearTimeout(timeoutRefs.current.lookAlert);
       }
-      timeoutRefs.current.lookAlert = setTimeout(() => setlookAlert(false), 3000);
+      timeoutRefs.current.lookAlert = setTimeout(
+        () => setlookAlert(false),
+        3000
+      );
       lastAlertRef.current.lookAlert = now;
     }
   };
@@ -263,12 +303,15 @@ const ExamPage = ({
     if (now - lastAlertRef.current.authFaceMissing >= ALERT_THROTTLE_MS) {
       console.log("Auth face missing alert triggered");
       setAuthFaceMissing(true);
-      
+
       // Clear existing timeout before setting new one
       if (timeoutRefs.current.authFaceMissing) {
         clearTimeout(timeoutRefs.current.authFaceMissing);
       }
-      timeoutRefs.current.authFaceMissing = setTimeout(() => setAuthFaceMissing(false), 3000);
+      timeoutRefs.current.authFaceMissing = setTimeout(
+        () => setAuthFaceMissing(false),
+        3000
+      );
       lastAlertRef.current.authFaceMissing = now;
     }
   };
@@ -278,21 +321,34 @@ const ExamPage = ({
     if (now - lastAlertRef.current.headDirection >= ALERT_THROTTLE_MS) {
       console.log("Head direction changed:", direction);
       setHeadDirection(true);
-      
+
       // Clear existing timeout before setting new one
       if (timeoutRefs.current.headDirection) {
         clearTimeout(timeoutRefs.current.headDirection);
       }
-      timeoutRefs.current.headDirection = setTimeout(() => setHeadDirection(false), 3000);
+      timeoutRefs.current.headDirection = setTimeout(
+        () => setHeadDirection(false),
+        3000
+      );
       lastAlertRef.current.headDirection = now;
     }
   };
 
-  const handleChange = (qId: number, value: string) => {
-    setAnswers((prev) => ({ ...prev, [qId]: value }));
+  const handleChange = (qId: number, optionId: number, optionText: string) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [qId]: {
+        question_id: qId,
+        option_id: optionId,
+        option_text: optionText,
+      },
+    }));
   };
 
-
+  // Helper function to get answers array for submission
+  const getAnswersForSubmission = () => {
+    return Object.values(answers);
+  };
 
   if (blocked) {
     return (
@@ -346,6 +402,60 @@ const ExamPage = ({
               assistance.
             </p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoadingQuestions) {
+    return (
+      <div className={`${styles.overlay} theme-transition`}>
+        <div
+          className="theme-transition"
+          style={{
+            background: "var(--card-bg)",
+            color: "var(--text-primary)",
+            padding: "32px",
+            borderRadius: "16px",
+            boxShadow: "0 20px 50px var(--shadow)",
+            border: "1px solid var(--border-color)",
+            textAlign: "center",
+            maxWidth: "400px",
+            transition: "all 0.3s ease",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "48px",
+              marginBottom: "16px",
+            }}
+          >
+            📝
+          </div>
+          <h3
+            className="theme-transition"
+            style={{
+              marginBottom: "12px",
+              color: "var(--text-primary)",
+              fontSize: "20px",
+              fontWeight: 600,
+              transition: "color 0.3s ease",
+            }}
+          >
+            Loading Exam Questions...
+          </h3>
+          <p
+            className="theme-transition"
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "14px",
+              lineHeight: 1.5,
+              margin: 0,
+              transition: "color 0.3s ease",
+            }}
+          >
+            Please wait while we prepare your exam.
+          </p>
         </div>
       </div>
     );
@@ -590,7 +700,8 @@ const ExamPage = ({
               transition: "color 0.3s ease",
             }}
           >
-            Read each question carefully and select the best answer. This session is proctored for academic integrity.
+            Read each question carefully and select the best answer. This
+            session is proctored for academic integrity.
           </p>
         </div>
 
@@ -645,83 +756,89 @@ const ExamPage = ({
                   transition: "color 0.3s ease",
                 }}
               >
-                {q.question}
+                {q.question_text}
               </h4>
             </div>
             <div className={styles.options}>
-              {q.options.map((opt, idx) => (
-                <label
-                  key={idx}
-                  className={`${styles.optionLabel} theme-transition ${
-                    answers[q.id] === opt ? styles.selected : ""
-                  }`}
-                  style={{
-                    background:
-                      answers[q.id] === opt
-                        ? "var(--accent-color)"
-                        : "var(--secondary-bg)",
-                    color:
-                      answers[q.id] === opt ? "white" : "var(--text-primary)",
-                    border: `2px solid ${
-                      answers[q.id] === opt
-                        ? "var(--accent-color)"
-                        : "var(--border-color)"
-                    }`,
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name={`q-${q.id}`}
-                    value={opt}
-                    checked={answers[q.id] === opt}
-                    onChange={() => handleChange(q.id, opt)}
-                    style={{ display: "none" }}
-                  />
-                  <div
-                    className="theme-transition"
+              {q.options &&
+                q.options.map((opt, idx) => (
+                  <label
+                    key={idx}
+                    className={`${styles.optionLabel} theme-transition ${
+                      answers[q.id]?.option_id === opt.id ? styles.selected : ""
+                    }`}
                     style={{
-                      width: "20px",
-                      height: "20px",
-                      borderRadius: "50%",
-                      border: "2px solid",
-                      borderColor:
-                        answers[q.id] === opt ? "white" : "var(--border-color)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      background:
+                        answers[q.id]?.option_id === opt.id
+                          ? "var(--accent-color)"
+                          : "var(--secondary-bg)",
+                      color:
+                        answers[q.id]?.option_id === opt.id
+                          ? "white"
+                          : "var(--text-primary)",
+                      border: `2px solid ${
+                        answers[q.id]?.option_id === opt.id
+                          ? "var(--accent-color)"
+                          : "var(--border-color)"
+                      }`,
+                      cursor: "pointer",
                       transition: "all 0.3s ease",
                     }}
                   >
-                    {answers[q.id] === opt && (
-                      <div
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          background: "white",
-                        }}
-                      />
-                    )}
-                  </div>
-                  <span
-                    style={{
-                      fontSize: "16px",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {opt}
-                  </span>
-                </label>
-              ))}
+                    <input
+                      type="radio"
+                      name={`q-${q.id}`}
+                      value={opt.id}
+                      checked={answers[q.id]?.option_id === opt.id}
+                      onChange={() =>
+                        handleChange(q.id, opt.id, opt.option_text)
+                      }
+                      style={{ display: "none" }}
+                    />
+                    <div
+                      className="theme-transition"
+                      style={{
+                        width: "20px",
+                        height: "20px",
+                        borderRadius: "50%",
+                        border: "2px solid",
+                        borderColor:
+                          answers[q.id]?.option_id === opt.id
+                            ? "white"
+                            : "var(--border-color)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "all 0.3s ease",
+                      }}
+                    >
+                      {answers[q.id]?.option_id === opt.id && (
+                        <div
+                          style={{
+                            width: "8px",
+                            height: "8px",
+                            borderRadius: "50%",
+                            background: "white",
+                          }}
+                        />
+                      )}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {opt.option_text}
+                    </span>
+                  </label>
+                ))}
             </div>
           </div>
         ))}
 
         <div
           className="theme-transition"
-          
           style={{
             display: "flex",
             justifyContent: "center",
@@ -734,6 +851,16 @@ const ExamPage = ({
             onClick={async () => {
               // Mark exam as submitted to trigger metrics logging
               setExamSubmitted(true);
+
+              // Get answers in array format for submission
+              const submissionAnswers = getAnswersForSubmission();
+              console.log("Submitting answers:", submissionAnswers);
+              console.log("Answers structure:", {
+                totalQuestions: questions.length,
+                answeredQuestions: submissionAnswers.length,
+                answers: submissionAnswers,
+              });
+
               try {
                 if (onBeforeSubmit) await onBeforeSubmit();
               } catch {}
@@ -782,7 +909,7 @@ const ExamPage = ({
           onHeadDirection={handleHeadDirection}
           examSubmitted={examSubmitted}
           mediaRecorderRef={frontCameraMediaRecorderRef}
-          screenRecorderMediaRecorderRef={(screenRecorderMediaRecorderRef)}
+          screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
           onAuthPause={handleAuthPause}
           onAuthResume={handleAuthResume}
         />
@@ -809,7 +936,7 @@ const ExamPage = ({
         </div>
       )}
 
-      {object &&(
+      {object && (
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{
@@ -847,7 +974,7 @@ const ExamPage = ({
         </div>
       )}
 
-      {authFaceMissing &&  (
+      {authFaceMissing && (
         <div
           className={`${styles.alertBox} theme-transition`}
           style={{
