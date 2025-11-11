@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getExamId, getUserId } from "@/constants/AuthStore";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { timeStamp } from "console";
 
 // const questions = Array.from({ length: 10 }, (_, i) => ({
 //   id: i + 1,
@@ -55,8 +56,7 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
   const [examSubmitted, setExamSubmitted] = useState(false);
   const [headDirection, setHeadDirection] = useState(false);
   const [examSettings, setExamSettings] = useState<ExamSettings>({});
-  const [faceAuthenticationComplete, setFaceAuthenticationComplete] =
-    useState(false);
+  const [faceAuthenticationComplete, setFaceAuthenticationComplete] =useState(false);
   const [examStarted, setExamStarted] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
@@ -120,11 +120,9 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     };
 
     fetchExamQuestions();
-  }, []); // ✅ FIX: Empty dependency array - run only once on mount
+  }, []);
 
-  // ✅ REMOVE: Axios interceptor moved out of component to prevent repeated requests
 
-  // Cleanup all timeouts when component unmounts
   useEffect(() => {
     return () => {
       Object.values(timeoutRefs.current).forEach((timeout) => {
@@ -133,7 +131,6 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     };
   }, []);
 
-  // Fetch exam settings - runs once on mount
   useEffect(() => {
     const fetchExamSettings = async () => {
       try {
@@ -161,9 +158,9 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     };
 
     fetchExamSettings();
-  }, []); // ✅ FIX: Empty dependency array - run only once on mount
+  }, []);
 
-  // Start exam automatically if face authentication is disabled
+
   useEffect(() => {
     if (!examSettings || Object.keys(examSettings).length === 0) return;
 
@@ -180,12 +177,26 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
         message: "Exam Started successfully (no face auth required)",
       });
 
+      socket.emit("stream-listener-on", {
+            user_id: userId,
+            exam_id: examId,
+            category: "face_camera",
+            timestamp: new Date(),
+      });
+
+      socket.emit("stream-listener-on", {
+            user_id: userId,
+            exam_id: examId,
+            category: "screen_recording",
+            timestamp: new Date(),
+      });
+      
+
       setExamStarted(true);
       setFaceAuthenticationComplete(true);
     }
   }, [examSettings, examStarted]);
 
-  // Cleanup all timeouts when component unmounts
   useEffect(() => {
     return () => {
       Object.values(timeoutRefs.current).forEach((timeout) => {
@@ -220,7 +231,6 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
           console.error("Failed to log object detection:", error)
         );
 
-      // Clear existing timeout before setting new one
       if (timeoutRefs.current.object) {
         clearTimeout(timeoutRefs.current.object);
       }
@@ -255,7 +265,6 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
           console.error("Failed to log multiple persons:", error)
         );
 
-      // Clear existing timeout before setting new one
       if (timeoutRefs.current.num) {
         clearTimeout(timeoutRefs.current.num);
       }
@@ -266,24 +275,34 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     }
   };
 
-  // Handle face authentication success - start exam on first successful auth
   const handleAuthResume = () => {
-    console.log("✅ Face authenticated - User detected");
+    console.log("Face authenticated - User detected");
 
     if (examSettings.face_authentication_enabled) {
       if (!faceAuthenticationComplete && !examStarted) {
-        console.log(
-          "✅ First face authentication detected - Starting exam now"
-        );
+        console.log(" First face authentication detected - Starting exam now");
         const userId = getUserId() || "unknown";
 
-        // ✅ ONLY EMIT ONCE
         socket.emit("start-exam", {
           user_id: userId,
           exam_id: examId,
           timestamp: new Date(),
           status: "success",
           message: "Exam Started successfully",
+        });
+
+        socket.emit("stream-listener-on", {
+            user_id: userId,
+            exam_id: examId,
+            category: "face_camera",
+            timestamp: new Date(),
+        });
+
+        socket.emit("stream-listener-on", {
+            user_id: userId,
+            exam_id: examId,
+            category: "screen_recording",
+            timestamp: new Date(),
         });
 
         setFaceAuthenticationComplete(true);
@@ -295,8 +314,8 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
   };
 
   const handleAuthPause = () => {
-    console.log("⚠️ Face lost - User not detected");
-
+    console.log(" Face lost - User not detected");
+    
     if (examSettings.face_authentication_enabled && examStarted) {
       setPaused(true);
     }
@@ -369,7 +388,6 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     const now = Date.now();
     if (now - lastAlertRef.current.lookAlert >= ALERT_THROTTLE_MS) {
       console.log("looking away");
-      // ✅ USE STATE INSTEAD OF LOCAL VARIABLE
       setLookDirection(side);
       setlookAlert(true);
 
@@ -393,7 +411,6 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
           console.error("Failed to log eyeball movement:", error)
         );
 
-      // Clear existing timeout before setting new one
       if (timeoutRefs.current.lookAlert) {
         clearTimeout(timeoutRefs.current.lookAlert);
       }
@@ -996,30 +1013,63 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
           <button
             className={`${styles.submitButton} theme-transition`}
             onClick={async () => {
-              console.log(
-                "🚀 Submit button clicked - initiating exam submission"
-              );
-
-              // Mark exam as submitted FIRST to stop all recordings
+              console.log("🚀 Submit button clicked - initiating exam submission");
+              
+              if (screenRecorderMediaRecorderRef && screenRecorderMediaRecorderRef.current) {
+                try {
+                  if (screenRecorderMediaRecorderRef.current.state !== 'inactive') {
+                    console.log("Stopping screen MediaRecorder...");
+                    screenRecorderMediaRecorderRef.current.stop();
+                  }
+                } catch (err) {
+                  console.error("Error stopping screen recorder:", err);
+                }
+              }
+              
               setExamSubmitted(true);
-
+              
               // Wait for recordings to stop and final chunks to be sent
               // MediaRecorder needs time to: stop → fire ondataavailable → convert to ArrayBuffer → emit → send end-exam
               console.log("⏳ Waiting 2.5 seconds for recording cleanup...");
-              await new Promise((resolve) => setTimeout(resolve, 2500));
+              await new Promise(resolve => setTimeout(resolve, 2500));
+              
+              console.log("Sending end-exam events for both streams");
 
-              // Get answers in array format for submission
+              socket.emit("end-exam", {
+                user_id: userId,
+                exam_id: examId,
+                timestamp: new Date(),
+                status: "success",
+                message: "Exam Ended successfully",
+              });
+              console.log("Sent end-exam for screen_recording");
+
+              socket.emit("stream-listener-off", {
+                user_id: userId,
+                exam_id: examId,
+                category: "face_camera",
+                timestamp: new Date(),
+              });
+
+              console.log("Sent end-exam for face_camera");
+              
+              socket.emit("stream-listener-off", {
+                user_id: userId,
+                exam_id: examId,
+                category: "screen_recording",
+                timestamp: new Date(),
+              });
+
               const submissionAnswers = getAnswersForSubmission();
-              console.log("📝 Submitting answers:", submissionAnswers);
+              console.log(" Submitting answers:", submissionAnswers);
               console.log("Answers structure:", {
                 totalQuestions: questions.length,
                 answeredQuestions: submissionAnswers.length,
                 answers: submissionAnswers,
               });
 
-              // Save user answers to database
               try {
-                console.log("💾 Saving user answers to database...");
+                console.log("Saving user answers to database...");
                 const response = await axios.post(
                   `${baseUrl}/saveUserAnswers`,
                   {
@@ -1032,12 +1082,9 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
                     },
                   }
                 );
-                console.log("✅ Answers saved successfully:", response.data);
+                console.log(" Answers saved successfully:", response.data);
               } catch (error: any) {
-                console.error(
-                  "❌ Error saving answers:",
-                  error.response?.data || error.message
-                );
+                console.error(" Error saving answers:", error.response?.data || error.message);
                 toast({
                   title: "Warning",
                   description:
@@ -1051,9 +1098,8 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
               } catch (err) {
                 console.error("Error in onBeforeSubmit:", err);
               }
-
-              // Navigate to end page after cleanup
-              console.log("✅ Navigating to end page");
+              
+              console.log("Navigating to end page");
               router.push("/end");
             }}
             style={{

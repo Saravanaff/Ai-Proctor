@@ -403,18 +403,6 @@ const FloatingCamera = ({
             console.log("✅ Face camera MediaRecorder stopped - waiting for final chunk");
           }
         }, 100);
-      } else {
-        // If recorder already stopped, send end-exam immediately
-        if (!endExamSentRef.current) {
-          endExamSentRef.current = true;
-          socket.emit("end-exam", {
-            user_id: userId,
-            exam_id: examId,
-            category: "face_camera",
-            timestamp: new Date(),
-          });
-          console.log("📤 Sent end-exam event to backend (no recorder active)");
-        }
       }
 
       // Stop screen recording
@@ -425,19 +413,11 @@ const FloatingCamera = ({
     }
   }, [examSubmitted]);
 
-  // Handle browser close/refresh/navigation - send end-exam
+  // Handle browser close/refresh/navigation
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!endExamSentRef.current) {
-        endExamSentRef.current = true;
-        socket.emit("end-exam", {
-          user_id: userId,
-          exam_id: examId,
-          category: "face_camera",
-          timestamp: new Date(),
-        });
-        console.log("📤 Sent end-exam event during beforeunload (browser close/refresh)");
-      }
+      // Cleanup will be handled by FullScreen component
+      console.log("⚠️ Browser closing/refreshing during exam");
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -525,7 +505,6 @@ const FloatingCamera = ({
             "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
           );
           if (!faceLandmarkerRef.current) {
-            // Initialize MediaPipe Face Landmarker with new API
             const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
               baseOptions: {
                 modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
@@ -591,43 +570,13 @@ const FloatingCamera = ({
               };
               socket.emit("recorder-add-video-stream-chunk", chunkData);
               console.log("📹 Sent face camera chunk:", buffer.byteLength, "bytes", isLastChunk ? "(FINAL CHUNK)" : "");
-              
-              // If this is the final chunk, send end-exam after it's emitted
-              if (isLastChunk && examSubmitted && !endExamSentRef.current) {
-                setTimeout(() => {
-                  if (!endExamSentRef.current) {
-                    endExamSentRef.current = true;
-                    socket.emit("end-exam", {
-                      user_id: userId,
-                      exam_id: examId,
-                      category: "face_camera",
-                      timestamp: new Date(),
-                    });
-                    console.log("📤 Sent end-exam event to backend AFTER final chunk emitted");
-                  }
-                }, 200);
-              }
             });
           }
         };
 
-        // Backup: Handle when MediaRecorder stops in case ondataavailable doesn't fire
+        // Handle when MediaRecorder stops
         mediaRecorderRef.current.onstop = () => {
-          console.log("🎬 MediaRecorder stopped event fired");
-          
-          // Give extra time for any pending chunks to be sent
-          setTimeout(() => {
-            if (!endExamSentRef.current) {
-              endExamSentRef.current = true;
-              socket.emit("end-exam", {
-                user_id: userId,
-                exam_id: examId,
-                category: "face_camera",
-                timestamp: new Date(),
-              });
-              console.log("📤 Sent end-exam event from onstop handler (backup)");
-            }
-          }, 500);
+          console.log("🎬 Face camera MediaRecorder stopped event fired");
         };
 
         mediaRecorderRef.current.start(1000);
@@ -711,25 +660,21 @@ const FloatingCamera = ({
                     });
                   }
 
-                  // Calculate head position from landmarks
                   const headPos = calculateHeadPosition(landmarks);
                   console.log(`📍 Head Position: ${headPos}`);
 
-                  // Calculate eye gaze from landmarks
                   const eyeGaze = calculateEyeGaze(landmarks);
                   console.log(`👁️ Eye Gaze: ${eyeGaze}`);
                 }
               }
             } catch (error) {
               console.error("Face Landmarker processing error:", error);
-              // Don't retry - just skip this frame
             }
           }
           if (objectDetectorRef.current && videoRef.current) {
             try {
               const currentTime = videoRef.current.currentTime;
 
-              // Only detect if this is a new frame
               if (currentTime !== lastObjTimeRef.current) {
                 lastObjTimeRef.current = currentTime;
 
@@ -841,18 +786,6 @@ const FloatingCamera = ({
 
     return () => {
       console.log("FloatingCamera cleanup - stopping recording");
-      
-      // Send end-exam if not already sent
-      if (!endExamSentRef.current) {
-        endExamSentRef.current = true;
-        socket.emit("end-exam", {
-          user_id: userId,
-          exam_id: examId,
-          category: "face_camera",
-          timestamp: new Date(),
-        });
-        console.log("📤 Sent end-exam event during cleanup (unmount/navigation)");
-      }
       
       isMounted = false;
       isInitialized.current = false;

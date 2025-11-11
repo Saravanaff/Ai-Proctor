@@ -264,24 +264,20 @@ export default function PhotoDetect() {
       if (response.data) {
         setExamSettings(response.data);
         
-        // Check if face authentication is enabled
         if (!response.data.face_authentication_enabled) {
           console.log("Face authentication is disabled, skipping to exam setup");
-          // Skip face scanning and go directly to exam setup or third eye setup
           if (!response.data.third_eye_enabled) {
             router.push("/fullscreen");
           } else {
             router.push("/SetupThirdEye");
           }
         } else {
-          // Face authentication is enabled, proceed to face scanning
           console.log("Face authentication is enabled, proceeding to face scanning");
           router.push('/video');
         }
       }
     } catch (error) {
       console.error("Error fetching exam settings:", error);
-      // On error, default to face scanning
       router.push('/video');
     }
   };

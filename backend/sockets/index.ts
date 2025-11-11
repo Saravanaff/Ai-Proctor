@@ -120,24 +120,23 @@ export function initSocket(server: HttpServer) {
       });
       
       await examSession.handleExamStart(data);
-      
-      if (storageSocket && storageSocket.connected) {
-        console.log("📹 Emitting start-stream-recording to storage server:", {
-          user_id: data.user_id,
-          exam_id: data.exam_id,
-          category: data.category || 'face_camera'
-        });
-        storageSocket.emit("start-stream-recording", {
-          user_id: data.user_id,
-          exam_id: data.exam_id,
-          category: data.category || 'face_camera'
-        });
-        console.log("✅ start-stream-recording emitted to storage server");
-      } else {
-        console.error(
-          "❌ Cannot start recording - storage socket not connected"
-        );
-      }
+    });
+
+    socket.on("stream-listener-on",async(data)=>{
+      console.log("📹 Emitting start-stream-recording to storage server:", {
+        user_id: data.user_id,
+        exam_id: data.exam_id,
+        category: data.category
+      });
+
+      if(storageSocket && storageSocket.connected){
+            storageSocket.emit("start-stream-recording", {
+              user_id: data.user_id,
+              exam_id: data.exam_id,
+              category: data.category 
+            });
+            console.log("✅ start-stream-recording emitted to storage server");
+          }
     });
     
     socket.on("end-exam", async(data: any) => {
@@ -149,6 +148,9 @@ export function initSocket(server: HttpServer) {
       
       await examSession.handleExamEnd(data);
       
+    });
+
+    socket.on("stream-listener-off",async(data)=>{
       if (storageSocket && storageSocket.connected) {
         console.log("⏹️ Emitting stop-stream-recording to storage server");
         storageSocket.emit("stop-stream-recording", {
@@ -157,12 +159,8 @@ export function initSocket(server: HttpServer) {
           category: data.category || 'face_camera'
         });
         console.log("✅ stop-stream-recording emitted to storage server");
-      } else {
-        console.error(
-          "❌ Cannot stop recording - storage socket not connected"
-        );
       }
-    });
+    })
 
     socket.on("photo-save", (data: any) => {
       console.log(data);

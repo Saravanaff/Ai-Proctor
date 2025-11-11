@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SERVER_URL = "https://localhost:3003";   // change to your server port
-const USERS = 1000;                              // total simulated users
+const USERS = 10;                              // total simulated users
 const CHUNK_SIZE_KB = 64;                      // KB per chunk (realistic chunk size)
 const INTERVAL_MS = 10;                       // send rate per chunk (100ms = 10 chunks/sec)
 const VIDEO_FILE = path.join(__dirname, 'sample.mp4'); // your sample video
@@ -12,7 +12,7 @@ const VIDEO_FILE = path.join(__dirname, 'sample.mp4'); // your sample video
 function simulateUser(userIndex) {
   const socket = io(SERVER_URL, {
     transports: ["websocket"],
-    rejectUnauthorized: false, // allow self-signed cert
+    rejectUnauthorized: false, 
   });
 
   const user_id = `user-${userIndex}`;

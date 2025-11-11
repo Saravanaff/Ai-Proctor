@@ -9,6 +9,7 @@ import useMicrophoneDevices from '@/hooks/useMicrophoneDevices';
 import axios from 'axios';
 import { getExamSettings } from '@/constants/examSettingsConsts';
 import { setNumberOfMicrophones } from '@/constants/violationConsts';
+import { timeStamp } from 'console';
 
 
 const userId = getUserId() || "unknown";
@@ -35,49 +36,94 @@ const fullscreen = () => {
 
     // const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
     const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
+    const screenStreamRef = useRef<MediaStream | null>(null);
 
 
-    const startScreenRecording = async (screenStream: any) => {
+    const startScreenRecording = async () => {
         try {
-            // socket.emit("start-exam", {
-            //     user_id: userId,
-            //     exam_id: examId,
-            //     category: "screen_recording"
-            // });
-            // const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-            console.log("screenStream : ", screenStream)
-            if (screenStream) {
-                screenRecorderMediaRecorderRef.current = new MediaRecorder(screenStream, {
-                    mimeType: "video/webm; codecs=vp8",
-                    videoBitsPerSecond: 1000000,
-                });
-                // screenRecorderMediaRecorderRef.current.start();
+            socket.emit("start-exam", {
+                user_id: userId,
+                exam_id: examId,
+                category: "screen_recording",
+                timestamp: new Date(),
+            });
+
+            const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+            console.log("screenStream : ", screenStream);
+
+            if (!screenStream) {
+                throw new Error("No screen stream obtained");
             }
-            if (screenRecorderMediaRecorderRef.current) {
-                console.log("ondataavailable");
-                screenRecorderMediaRecorderRef.current.ondataavailable = (e: any) => {
-                    if (e.data.size > 0) {
+
+            screenStreamRef.current = screenStream;
+
+            const mimeType = "video/webm; codecs=vp8";
+            const options: any = { videoBitsPerSecond: 1000000 };
+            if (MediaRecorder && typeof (MediaRecorder as any).isTypeSupported === 'function') {
+                if ((MediaRecorder as any).isTypeSupported(mimeType)) {
+                    options.mimeType = mimeType;
+                } else {
+                    console.warn(`MIME type ${mimeType} not supported by this browser. Using default MediaRecorder settings.`);
+                }
+            }
+
+            screenRecorderMediaRecorderRef.current = new MediaRecorder(screenStream, options);
+
+            screenRecorderMediaRecorderRef.current.ondataavailable = (e: any) => {
+                try {
+                    if (e && e.data && e.data.size > 0) {
                         e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
                             const chunkData: any = {
                                 user_id: userId,
                                 exam_id: examId,
                                 category: "screen_recording",
                                 chunk: buffer,
+                                timestamp: Date.now(),
                             };
-                            console.log("Sending screen recording chunk");
-                            // socket.emit("recorder-add-video-stream-chunk", chunkData);
+                            console.log("Sending screen recording chunk (bytes):", buffer.byteLength);
+                            socket.emit("recorder-add-video-stream-chunk", chunkData);
+                        }).catch((err: any) => {
+                            console.error("Failed to convert screen chunk to ArrayBuffer:", err);
                         });
                     }
-                };
-            }
-            if (screenRecorderMediaRecorderRef.current) {
+                } catch (err) {
+                    console.error("Error in ondataavailable for screen recorder:", err);
+                }
+            };
+
+            screenRecorderMediaRecorderRef.current.onstop = () => {
+                console.log("Screen MediaRecorder stopped");
+            };
+
+            screenRecorderMediaRecorderRef.current.onerror = (err: any) => {
+                console.error("Screen MediaRecorder error:", err);
+            };
+
+            try {
                 console.log("Starting screen recorder");
                 screenRecorderMediaRecorderRef.current.start(500);
+            } catch (err) {
+                console.error("Failed to start screen MediaRecorder:", err);
+                if (screenStreamRef.current) {
+                    screenStreamRef.current.getTracks().forEach((t) => t.stop());
+                    screenStreamRef.current = null;
+                }
+                throw err;
             }
+
             setFullscreenAllowed(true);
             // requestFullscreen();
         } catch (error) {
             console.error("Error starting screen recording:", error);
+            // Make sure any partial stream is stopped
+            if (screenStreamRef.current) {
+                try {
+                    screenStreamRef.current.getTracks().forEach((t) => t.stop());
+                } catch (e) {
+                    // ignore
+                }
+                screenStreamRef.current = null;
+            }
         }
     };
 
@@ -104,16 +150,44 @@ const fullscreen = () => {
             setFullscreenAllowed(active);
         };
         document.addEventListener('fullscreenchange', onFsChange);
-        // @ts-ignore vendor prefixes
         document.addEventListener('webkitfullscreenchange', onFsChange);
-        // @ts-ignore
         document.addEventListener('msfullscreenchange', onFsChange);
         return () => {
             document.removeEventListener('fullscreenchange', onFsChange);
-            // @ts-ignore
             document.removeEventListener('webkitfullscreenchange', onFsChange);
-            // @ts-ignore
             document.removeEventListener('msfullscreenchange', onFsChange);
+        };
+    }, []);
+
+    // Cleanup screen recording and tracks when this page unmounts
+    useEffect(() => {
+        return () => {
+            try {
+                if (screenRecorderMediaRecorderRef.current) {
+                    try {
+                        if (screenRecorderMediaRecorderRef.current.state !== 'inactive') {
+                            screenRecorderMediaRecorderRef.current.stop();
+                        }
+                    } catch (e) {
+                        // ignore stop errors
+                    }
+                    screenRecorderMediaRecorderRef.current.ondataavailable = null;
+                    screenRecorderMediaRecorderRef.current.onstop = null;
+                    screenRecorderMediaRecorderRef.current.onerror = null;
+                    screenRecorderMediaRecorderRef.current = null;
+                }
+
+                if (screenStreamRef.current) {
+                    try {
+                        screenStreamRef.current.getTracks().forEach((t) => t.stop());
+                    } catch (e) {
+                        // ignore
+                    }
+                    screenStreamRef.current = null;
+                }
+            } catch (err) {
+                console.warn('Error during screen recording cleanup', err);
+            }
         };
     }, []);
 
@@ -209,9 +283,8 @@ const fullscreen = () => {
                             onClick={async () => {
                                 let screenStream = null;
                                 if(examSettings.screen_sharing_enabled){
-                                    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                                    startScreenRecording();
                                 }
-                                startScreenRecording(screenStream)
                             }}
                         >
                             Accept & Start Exam
