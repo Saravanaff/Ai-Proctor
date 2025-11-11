@@ -5,6 +5,7 @@ import {
   getSingleExam,
   updateExam,
   deleteExam,
+  getExamResults,
 } from "../controllers/ExamAdminController";
 import {
   getExamSettings,
@@ -29,5 +30,8 @@ router.get("/getExamQuestions/:examId", getQuestionsByExam);
 // User answer routes
 router.post("/saveUserAnswers", saveUserAnswers);
 router.get("/getUserAnswers/:exam_id", getUserAnswers);
+
+// Exam results route
+router.get("/exam/:examId/results", getExamResults);
 
 export default router;
