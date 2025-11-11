@@ -1,5 +1,5 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
-import type { Server as HttpServer } from "http";
+import type { Server as HttpServer } from "https";
 import dotenv from "dotenv";
 import { io as ioClient } from "socket.io-client";
 import { getExamScore, addScore, calculateExamScore } from "../utils/calculate";
@@ -92,8 +92,12 @@ export function initSocket(server: HttpServer) {
     });
     socket.on("recorder-add-video-stream-chunk", (data: any) => {
       const userId = data?.user_id;
-      const examSettings = data?.examSettings ?? data?.settings;
-      console.log("Received video chunk from user: .... ", userId);
+      const examId = data?.exam_id;
+      const category = data?.category;
+      const chunkSize = data?.chunk?.byteLength || 0;
+      
+      console.log(`📦 Received video chunk - User: ${userId}, Exam: ${examId}, Category: ${category}, Size: ${chunkSize} bytes`);
+      
       // if (userId && examSettings) {
       //   processVideoChunk(data, userId, examSettings).catch(error => {
       //     console.error('Error processing video chunk for AI analysis:', error);
@@ -102,33 +106,60 @@ export function initSocket(server: HttpServer) {
 
       if (storageSocket && storageSocket.connected) {
         storageSocket.emit("add-video-stream-chunk", data);
+        console.log(`✅ Relayed chunk to storage server for ${userId}_${examId}`);
       } else {
-        console.warn("Storage socket not connected - dropping video chunk");
+        console.warn("⚠️ Storage socket not connected - dropping video chunk");
       }
     });
     
     socket.on("start-exam", async(data: any) => {
+      console.log("🎬 START-EXAM received from frontend:", {
+        user_id: data.user_id,
+        exam_id: data.exam_id,
+        timestamp: data.timestamp
+      });
+      
       await examSession.handleExamStart(data);
       
       if (storageSocket && storageSocket.connected) {
-        console.log("📹 Starting video recording for exam:", data.exam_id);
-        storageSocket.emit("start-stream-recording", data);
+        console.log("📹 Emitting start-stream-recording to storage server:", {
+          user_id: data.user_id,
+          exam_id: data.exam_id,
+          category: data.category || 'face_camera'
+        });
+        storageSocket.emit("start-stream-recording", {
+          user_id: data.user_id,
+          exam_id: data.exam_id,
+          category: data.category || 'face_camera'
+        });
+        console.log("✅ start-stream-recording emitted to storage server");
       } else {
         console.error(
-          "Cannot start recording - storage socket not connected"
+          "❌ Cannot start recording - storage socket not connected"
         );
       }
     });
     
     socket.on("end-exam", async(data: any) => {
+      console.log("🛑 END-EXAM received from frontend:", {
+        user_id: data.user_id,
+        exam_id: data.exam_id,
+        timestamp: data.timestamp
+      });
+      
       await examSession.handleExamEnd(data);
       
       if (storageSocket && storageSocket.connected) {
-        console.log("Stopping video recording for exam:", data.exam_id);
-        storageSocket.emit("stop-stream-recording", data);
+        console.log("⏹️ Emitting stop-stream-recording to storage server");
+        storageSocket.emit("stop-stream-recording", {
+          user_id: data.user_id,
+          exam_id: data.exam_id,
+          category: data.category || 'face_camera'
+        });
+        console.log("✅ stop-stream-recording emitted to storage server");
       } else {
         console.error(
-          "Cannot stop recording - storage socket not connected"
+          "❌ Cannot stop recording - storage socket not connected"
         );
       }
     });

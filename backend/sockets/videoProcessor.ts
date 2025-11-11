@@ -35,14 +35,12 @@ export async function validateVideoFile(filePath: string): Promise<boolean> {
 
 export async function processVideoChunk(data: any, userId: string, examSettings: any, processFrameCallback: Function) {
   return new Promise<void>((resolve, reject) => {
-    // Validate chunk data
     if (!data.chunk || data.chunk.length === 0) {
       console.error('Invalid video chunk: empty or null data');
       reject(new Error('Invalid video chunk data'));
       return;
     }
     
-    // Validate that chunk is a proper Buffer
     if (!Buffer.isBuffer(data.chunk)) {
       console.error('Video chunk is not a Buffer');
       reject(new Error('Invalid video chunk format'));
@@ -51,7 +49,6 @@ export async function processVideoChunk(data: any, userId: string, examSettings:
     
     console.log(`Processing video chunk: ${data.chunk.length} bytes from user ${userId}`);
     
-    // Initialize buffer for this user if it doesn't exist
     if (!videoBuffers.has(userId)) {
       videoBuffers.set(userId, []);
       frameCounters.set(userId, 0);

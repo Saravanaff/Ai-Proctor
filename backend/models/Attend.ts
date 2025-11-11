@@ -31,14 +31,16 @@ export class Attend extends Model {
     exam_id!: number;
 
     @Column({
-        type:DataType.STRING
+        type: DataType.DATE,
+        allowNull: true
     })
-    startTime?:String
+    startTime?: Date;
 
     @Column({
-        type:DataType.STRING
+        type: DataType.DATE,
+        allowNull: true
     })
-    endTime?:String
+    endTime?: Date;
 
     @BelongsTo(() => User)
     user!: User;

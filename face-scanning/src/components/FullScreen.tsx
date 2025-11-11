@@ -115,6 +115,26 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     fetchExamSettings({ userId: Number(userId), examId: Number(examId) });
   }, []);
 
+  // Start exam automatically if face authentication is disabled
+  useEffect(() => {
+    if (!examSettings || Object.keys(examSettings).length === 0) return;
+    
+    if (!examSettings.face_authentication_enabled && !examStarted) {
+      console.log("✅ Face authentication disabled - Starting exam immediately");
+      
+      socket.emit("start-exam", {
+        user_id: userId,
+        exam_id: examId,
+        timestamp: new Date(),
+        status: "success",
+        message: "Exam Started successfully (no face auth required)",
+      });
+      
+      setExamStarted(true);
+      setFaceAuthenticationComplete(true);
+    }
+  }, [examSettings, examStarted]);
+
   // Fetch exam questions
   useEffect(() => {
     const fetchExamQuestions = async () => {
@@ -204,11 +224,9 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     }
   };
 
-  // Handle face authentication failure - pause exam if enabled
   const handleAuthPause = () => {
     console.log("⚠️ Face lost - User not detected");
-
-    // Only pause if face authentication is enabled and exam has started
+    
     if (examSettings.face_authentication_enabled && examStarted) {
       setPaused(true);
     }
@@ -239,7 +257,6 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
 
       const userId = getUserId() || "unknown";
 
-      // ✅ SAFETY CHECK: Wait for exam settings to load
       if (!examSettings || Object.keys(examSettings).length === 0) {
         console.log("⏳ Waiting for exam settings to load...");
         return;
@@ -849,8 +866,16 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
           <button
             className={`${styles.submitButton} theme-transition`}
             onClick={async () => {
-              // Mark exam as submitted to trigger metrics logging
+              console.log("🚀 Submit button clicked - initiating exam submission");
+              
+              // Mark exam as submitted FIRST to stop all recordings
               setExamSubmitted(true);
+              
+              // Wait for recordings to stop and final chunks to be sent
+              // MediaRecorder needs time to: stop → fire ondataavailable → convert to ArrayBuffer → emit → send end-exam
+              console.log("⏳ Waiting 2.5 seconds for recording cleanup...");
+              await new Promise(resolve => setTimeout(resolve, 2500));
+              
 
               // Get answers in array format for submission
               const submissionAnswers = getAnswersForSubmission();
@@ -863,10 +888,13 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
 
               try {
                 if (onBeforeSubmit) await onBeforeSubmit();
-              } catch {}
-              setTimeout(() => {
-                router.push("/end");
-              }, 500);
+              } catch (err) {
+                console.error("Error in onBeforeSubmit:", err);
+              }
+              
+              // Navigate to end page after cleanup
+              console.log("✅ Navigating to end page");
+              router.push("/end");
             }}
             style={{
               background:

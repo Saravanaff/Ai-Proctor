@@ -43,10 +43,12 @@ const startStorageSocketServer = async () => {
     console.log("✅ Client connected:", socket.id);
 
     let recorder: RecorderMap = {};
+    let recordingActive: { [fileName: string]: boolean } = {};
 
     socket.on(
       "start-stream-recording",
       (data: { user_id: string; exam_id: string; category: string }) => {
+        console.log(data);
         const fileName = `${data.user_id}_${data.exam_id}_${data.category}`;
         const outputPath = path.join(
           __dirname,
@@ -57,6 +59,7 @@ const startStorageSocketServer = async () => {
         fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
         recorder[fileName] = fs.createWriteStream(outputPath);
+        recordingActive[fileName] = true;
         console.log("🎬 Recording started:", outputPath);
       }
     );
@@ -72,29 +75,53 @@ const startStorageSocketServer = async () => {
         const fileName = `${data.user_id}_${data.exam_id}_${data.category}`;
 
         if (!recorder[fileName]) {
-          console.log("⚠️ Recorder not found for", fileName);
+          console.log("⚠️ Recorder not found for", fileName, "- chunk will be dropped");
           return;
         }
 
-        if (!data.chunk) return;
+        if (!data.chunk) {
+          console.log("⚠️ Empty chunk received for", fileName);
+          return;
+        }
 
         const buf = Buffer.isBuffer(data.chunk)
           ? data.chunk
           : Buffer.from(new Uint8Array(data.chunk));
 
+        // Always write chunks while recorder exists, even if marked inactive
+        // This ensures the final chunk with WebM footer gets written
         recorder[fileName].write(buf);
+        
+        if (recordingActive[fileName]) {
+          console.log("📹 Written chunk for", fileName, ":", buf.length, "bytes");
+        } else {
+          console.log("📹 Written FINAL chunk for", fileName, ":", buf.length, "bytes (after stop signal)");
+        }
       }
     );
 
     socket.on(
       "stop-stream-recording",
-      (data: { user_id: string; exam_id: string; category: string }) => {
+      (data: { user_id: string; exam_id: string; category:string}) => {
         const fileName = `${data.user_id}_${data.exam_id}_${data.category}`;
 
         if (recorder[fileName]) {
-          recorder[fileName].end();
-          console.log("⏹️ Recording ended:", fileName);
-          delete recorder[fileName];
+          // Mark as inactive to signal we're in closing phase
+          recordingActive[fileName] = false;
+          
+          console.log("⏹️ Stop signal received for:", fileName, "- waiting for final chunk");
+          
+          // Wait 2 seconds for final chunk to arrive (accounts for async buffer conversion + network)
+          setTimeout(() => {
+            if (recorder[fileName]) {
+              recorder[fileName].end();
+              console.log("✅ Recording finalized and closed:", fileName);
+              delete recorder[fileName];
+              delete recordingActive[fileName];
+            }
+          }, 2000);
+        } else {
+          console.log("⚠️ No recorder found to stop for", fileName);
         }
       }
     );
