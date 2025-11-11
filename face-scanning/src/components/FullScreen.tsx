@@ -77,17 +77,49 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
 
   const router = useRouter();
 
-  axios.interceptors.request.use(
-    (config) => {
-      const token = getTokenFromCookie();
-      if (token) {
-        config.headers = config.headers || {};
-        config.headers["Authorization"] = `Bearer ${token}`;
+  // Fetch exam questions - runs once on mount
+  useEffect(() => {
+    const fetchExamQuestions = async () => {
+      try {
+        setIsLoadingQuestions(true);
+        const examId = getExamId();
+        
+        if (!examId) {
+          console.error("No exam ID found");
+          setIsLoadingQuestions(false);
+          return;
+        }
+
+        console.log("📚 Fetching questions for exam:", examId);
+        
+        // ✅ FIX: Use path parameter instead of query parameter
+        const response = await axios.get(`${baseUrl}/getExamQuestions/${examId}`, {
+          headers: {
+            Authorization: `Bearer ${getTokenFromCookie()}`,
+          },
+        });
+
+        console.log("✅ Questions fetched:", response.data);
+
+        if (response.data.success && response.data.questions) {
+          setQuestions(response.data.questions);
+        }
+      } catch (error) {
+        console.error("❌ Failed to fetch exam questions:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load exam questions",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingQuestions(false);
       }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+    };
+
+    fetchExamQuestions();
+  }, []); // ✅ FIX: Empty dependency array - run only once on mount
+
+  // ✅ REMOVE: Axios interceptor moved out of component to prevent repeated requests
 
   // Cleanup all timeouts when component unmounts
   useEffect(() => {
@@ -98,22 +130,35 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     };
   }, []);
 
+  // Fetch exam settings - runs once on mount
   useEffect(() => {
-    const fetchExamSettings = async (payload: any) => {
+    const fetchExamSettings = async () => {
       try {
+        const examId = getExamId();
+        
+        if (!examId) {
+          console.error("No exam ID found");
+          return;
+        }
+        
+        console.log("⚙️ Fetching exam settings for exam:", examId);
+        
         const response = await axios.get(`${baseUrl}/getExamSettings`, {
-          params: payload,
+          params: { userId: Number(userId), examId: Number(examId) },
+          headers: {
+            Authorization: `Bearer ${getTokenFromCookie()}`,
+          },
         });
-        console.log("Exam settings fetched:", response.data);
+        
+        console.log("✅ Exam settings fetched:", response.data);
         setExamSettings(response.data);
       } catch (error) {
-        console.error("Failed to fetch exam settings:", error);
+        console.error("❌ Failed to fetch exam settings:", error);
       }
     };
 
-    const examId = getExamId();
-    fetchExamSettings({ userId: Number(userId), examId: Number(examId) });
-  }, []);
+    fetchExamSettings();
+  }, []); // ✅ FIX: Empty dependency array - run only once on mount
 
   // Start exam automatically if face authentication is disabled
   useEffect(() => {
@@ -135,34 +180,14 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     }
   }, [examSettings, examStarted]);
 
-  // Fetch exam questions
+  // Cleanup all timeouts when component unmounts
   useEffect(() => {
-    const fetchExamQuestions = async () => {
-      try {
-        setIsLoadingQuestions(true);
-        const examId = getExamId();
-
-        const response = await axios.get(`${baseUrl}/getExamQuestions`, {
-          params: { examId: examId },
-        });
-
-        if (response.data.success && response.data.questions) {
-          setQuestions(response.data.questions);
-        }
-      } catch (error) {
-        console.error("Failed to fetch exam questions:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load exam questions",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingQuestions(false);
-      }
+    return () => {
+      Object.values(timeoutRefs.current).forEach((timeout) => {
+        if (timeout) clearTimeout(timeout);
+      });
     };
-
-    fetchExamQuestions();
-  }, [toast]);
+  }, []);
 
   const detectObject = () => {
     const now = Date.now();

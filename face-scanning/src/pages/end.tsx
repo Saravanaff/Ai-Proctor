@@ -24,20 +24,16 @@ const EndPage = () => {
           "Content-Type": "application/json",
         },
       });
-      console.log("✅ Score saved successfully:", response.data);
+      console.log("Score saved successfully:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("❌ Error saving score:", error.response?.data || error.message);
+      console.error("Error saving score:", error.response?.data || error.message);
       throw error;
     }
   };
 
   useEffect(() => {
-    // ✅ NO NEED TO EMIT end-exam here - already sent from FloatingCamera when examSubmitted=true
-    // This prevents duplicate end-exam events that could cause recording issues
-
     console.log("📊 End page mounted - saving final score");
-
     if (!hasSavedScore.current) {
       hasSavedScore.current = true;
       postData("/saveScore", {
