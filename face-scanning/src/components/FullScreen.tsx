@@ -83,7 +83,7 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
       try {
         setIsLoadingQuestions(true);
         const examId = getExamId();
-        
+
         if (!examId) {
           console.error("No exam ID found");
           setIsLoadingQuestions(false);
@@ -91,13 +91,16 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
         }
 
         console.log("📚 Fetching questions for exam:", examId);
-        
+
         // ✅ FIX: Use path parameter instead of query parameter
-        const response = await axios.get(`${baseUrl}/getExamQuestions/${examId}`, {
-          headers: {
-            Authorization: `Bearer ${getTokenFromCookie()}`,
-          },
-        });
+        const response = await axios.get(
+          `${baseUrl}/getExamQuestions/${examId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${getTokenFromCookie()}`,
+            },
+          }
+        );
 
         console.log("✅ Questions fetched:", response.data);
 
@@ -135,21 +138,21 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     const fetchExamSettings = async () => {
       try {
         const examId = getExamId();
-        
+
         if (!examId) {
           console.error("No exam ID found");
           return;
         }
-        
+
         console.log("⚙️ Fetching exam settings for exam:", examId);
-        
+
         const response = await axios.get(`${baseUrl}/getExamSettings`, {
           params: { userId: Number(userId), examId: Number(examId) },
           headers: {
             Authorization: `Bearer ${getTokenFromCookie()}`,
           },
         });
-        
+
         console.log("✅ Exam settings fetched:", response.data);
         setExamSettings(response.data);
       } catch (error) {
@@ -163,10 +166,12 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
   // Start exam automatically if face authentication is disabled
   useEffect(() => {
     if (!examSettings || Object.keys(examSettings).length === 0) return;
-    
+
     if (!examSettings.face_authentication_enabled && !examStarted) {
-      console.log("✅ Face authentication disabled - Starting exam immediately");
-      
+      console.log(
+        "✅ Face authentication disabled - Starting exam immediately"
+      );
+
       socket.emit("start-exam", {
         user_id: userId,
         exam_id: examId,
@@ -174,7 +179,7 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
         status: "success",
         message: "Exam Started successfully (no face auth required)",
       });
-      
+
       setExamStarted(true);
       setFaceAuthenticationComplete(true);
     }
@@ -195,6 +200,26 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
       console.log("Object detected");
       setObject(true);
 
+      // Send violation log to API
+      axios
+        .post(
+          `${baseUrl}/storeLogs`,
+          {
+            userId: Number(userId),
+            examId: Number(examId),
+            violationName: "object_detection_violation",
+            violationTimestamp: new Date(),
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${getTokenFromCookie()}`,
+            },
+          }
+        )
+        .catch((error) =>
+          console.error("Failed to log object detection:", error)
+        );
+
       // Clear existing timeout before setting new one
       if (timeoutRefs.current.object) {
         clearTimeout(timeoutRefs.current.object);
@@ -209,6 +234,26 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     if (now - lastAlertRef.current.num >= ALERT_THROTTLE_MS) {
       setFace(a);
       setNum(true);
+
+      // Send violation log to API
+      axios
+        .post(
+          `${baseUrl}/storeLogs`,
+          {
+            userId: Number(userId),
+            examId: Number(examId),
+            violationName: "multiple_persons_detected",
+            violationTimestamp: new Date(),
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${getTokenFromCookie()}`,
+            },
+          }
+        )
+        .catch((error) =>
+          console.error("Failed to log multiple persons:", error)
+        );
 
       // Clear existing timeout before setting new one
       if (timeoutRefs.current.num) {
@@ -251,7 +296,7 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
 
   const handleAuthPause = () => {
     console.log("⚠️ Face lost - User not detected");
-    
+
     if (examSettings.face_authentication_enabled && examStarted) {
       setPaused(true);
     }
@@ -328,6 +373,26 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
       setLookDirection(side);
       setlookAlert(true);
 
+      // Send violation log to API
+      axios
+        .post(
+          `${baseUrl}/storeLogs`,
+          {
+            userId: Number(userId),
+            examId: Number(examId),
+            violationName: "eye_position_violation",
+            violationTimestamp: new Date(),
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${getTokenFromCookie()}`,
+            },
+          }
+        )
+        .catch((error) =>
+          console.error("Failed to log eyeball movement:", error)
+        );
+
       // Clear existing timeout before setting new one
       if (timeoutRefs.current.lookAlert) {
         clearTimeout(timeoutRefs.current.lookAlert);
@@ -346,6 +411,26 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
       console.log("Auth face missing alert triggered");
       setAuthFaceMissing(true);
 
+      // Send violation log to API
+      axios
+        .post(
+          `${baseUrl}/storeLogs`,
+          {
+            userId: Number(userId),
+            examId: Number(examId),
+            violationName: "face_auth_failed",
+            violationTimestamp: new Date(),
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${getTokenFromCookie()}`,
+            },
+          }
+        )
+        .catch((error) =>
+          console.error("Failed to log auth face missing:", error)
+        );
+
       // Clear existing timeout before setting new one
       if (timeoutRefs.current.authFaceMissing) {
         clearTimeout(timeoutRefs.current.authFaceMissing);
@@ -363,6 +448,26 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     if (now - lastAlertRef.current.headDirection >= ALERT_THROTTLE_MS) {
       console.log("Head direction changed:", direction);
       setHeadDirection(true);
+
+      // Send violation log to API
+      axios
+        .post(
+          `${baseUrl}/storeLogs`,
+          {
+            userId: Number(userId),
+            examId: Number(examId),
+            violationName: "head_position_violation",
+            violationTimestamp: new Date(),
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${getTokenFromCookie()}`,
+            },
+          }
+        )
+        .catch((error) =>
+          console.error("Failed to log head direction:", error)
+        );
 
       // Clear existing timeout before setting new one
       if (timeoutRefs.current.headDirection) {
@@ -891,16 +996,17 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
           <button
             className={`${styles.submitButton} theme-transition`}
             onClick={async () => {
-              console.log("🚀 Submit button clicked - initiating exam submission");
-              
+              console.log(
+                "🚀 Submit button clicked - initiating exam submission"
+              );
+
               // Mark exam as submitted FIRST to stop all recordings
               setExamSubmitted(true);
-              
+
               // Wait for recordings to stop and final chunks to be sent
               // MediaRecorder needs time to: stop → fire ondataavailable → convert to ArrayBuffer → emit → send end-exam
               console.log("⏳ Waiting 2.5 seconds for recording cleanup...");
-              await new Promise(resolve => setTimeout(resolve, 2500));
-              
+              await new Promise((resolve) => setTimeout(resolve, 2500));
 
               // Get answers in array format for submission
               const submissionAnswers = getAnswersForSubmission();
@@ -928,10 +1034,14 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
                 );
                 console.log("✅ Answers saved successfully:", response.data);
               } catch (error: any) {
-                console.error("❌ Error saving answers:", error.response?.data || error.message);
+                console.error(
+                  "❌ Error saving answers:",
+                  error.response?.data || error.message
+                );
                 toast({
                   title: "Warning",
-                  description: "Failed to save some answers. Your exam will still be submitted.",
+                  description:
+                    "Failed to save some answers. Your exam will still be submitted.",
                   variant: "destructive",
                 });
               }
@@ -941,7 +1051,7 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
               } catch (err) {
                 console.error("Error in onBeforeSubmit:", err);
               }
-              
+
               // Navigate to end page after cleanup
               console.log("✅ Navigating to end page");
               router.push("/end");

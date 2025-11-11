@@ -7,7 +7,7 @@ const router = express.Router();
  * POST /logs/store
  * Store a new exam violation log
  */
-router.post("/store", storeExamLog);
+router.post("/storeLogs", storeExamLog);
 
 /**
  * GET /logs/getLogs
