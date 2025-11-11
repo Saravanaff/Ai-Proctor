@@ -27,6 +27,13 @@ export class QuestionOption extends Model<QuestionOption> {
   })
   option_text!: string;
 
+  @Column({
+    type:DataType.STRING,
+    allowNull:false,
+    defaultValue:false
+  })
+  is_correct!:boolean
+
   @BelongsTo(() => Question)
   question!: Question;
 
