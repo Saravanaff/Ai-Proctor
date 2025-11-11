@@ -16,7 +16,10 @@ import {
   requireExaminerRole,
   requireStudentRole,
 } from "../middleware/roleMiddleware";
-import { getQuestionsByExam } from "../controllers/QuestionController";
+import {
+  getQuestionsByExam,
+  updateQuestionsForExam,
+} from "../controllers/QuestionController";
 const router = Router();
 
 router.get("/exam", getExam);
@@ -26,6 +29,7 @@ router.post("/examCreate", createExam);
 router.put("/exam/:examId", updateExam);
 router.delete("/exam/:examId", deleteExam);
 router.get("/getExamQuestions/:examId", getQuestionsByExam);
+router.put("/updateExamQuestions/:exam_id", updateQuestionsForExam);
 
 // User answer routes
 router.post("/saveUserAnswers", saveUserAnswers);

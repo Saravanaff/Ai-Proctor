@@ -20,8 +20,12 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
   };
 
   const handleEdit = (exam: any) => {
-    // Handle edit functionality
-    console.log("Edit exam:", exam);
+    // Navigate to edit questions page with exam ID and name
+    router.push(
+      `/examiner/EditExamQuestions?examId=${
+        exam.id
+      }&examName=${encodeURIComponent(exam.exam_name || exam.name || "Exam")}`
+    );
   };
 
   const handleManageModal = (exam: any) => {

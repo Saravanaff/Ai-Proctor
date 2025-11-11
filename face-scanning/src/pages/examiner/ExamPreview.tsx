@@ -39,17 +39,19 @@ const ExamPreview = () => {
     }));
   };
 
-  const convertQuestionsToSubmitFormat = (
-    questions: MCQQuestion[]
-  ): MCQQuestionSubmit[] => {
+  const convertQuestionsToSubmitFormat = (questions: MCQQuestion[]) => {
     return questions.map((q) => {
       const correctIndex = q.options.findIndex(
         (opt) => opt.id === q.correctOptionId
       );
       return {
-        question: q.question,
-        options: q.options.map((opt) => opt.text),
-        answer: correctIndex,
+        question_text: q.question,
+        answer: correctIndex.toString(),
+        marks: 1,
+        options: q.options.map((opt) => ({
+          option_text: opt.text,
+          is_correct: opt.id === q.correctOptionId,
+        })),
       };
     });
   };
@@ -87,14 +89,11 @@ const ExamPreview = () => {
         questions: formattedQuestions,
       };
 
-      console.log("Exam payload with questions:", payload);
       const res = await axios.post(`${base}/examCreate`, payload, {
         headers: {
           Authorization: `Bearer ${getTokenFromCookie()}`,
         },
       });
-
-      console.log("Exam created:", res);
 
       // Clear session storage
       sessionStorage.removeItem("examPreviewData");

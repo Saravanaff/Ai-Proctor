@@ -10,7 +10,6 @@ import { getUserIdFromToken } from "../utils/jwt";
 
 export const createExam = async (req: Request, res: Response) => {
   try {
-    console.log(req.body);
     const {
       exam_name,
       third_eye_enabled,
@@ -35,7 +34,6 @@ export const createExam = async (req: Request, res: Response) => {
     } = req.body;
 
     const user_id = getUserIdFromToken(req);
-    console.log(user_id);
     if (!exam_name || !user_id) {
       return res.status(400).json({
         success: false,
@@ -76,30 +74,24 @@ export const createExam = async (req: Request, res: Response) => {
     });
 
     if (questions && Array.isArray(questions) && questions.length > 0) {
-      const questionsData = questions.map((q) => ({
-        exam_id: newExam.id,
-        question_text: q.question,
-        answer: String(q.answer),
-        marks: 1,
-        question_type: 'mcq',
-      }));
+      for (const q of questions) {
+        const createdQuestion = await Question.create({
+          exam_id: newExam.id,
+          question_text: q.question_text || q.question,
+          answer: String(q.answer),
+          marks: q.marks || 1,
+        });
 
-      const createdQuestions = await Question.bulkCreate(questionsData);
-
-      const allOptionsData: any[] = [];
-      createdQuestions.forEach((createdQuestion, index) => {
-        const q = questions[index];
         if (q.options && Array.isArray(q.options)) {
-          const optionsForThisQuestion = q.options.map((optionText: string) => ({
+          const optionsData = q.options.map((opt: any) => ({
             question_id: createdQuestion.id,
-            option_text: optionText,
+            option_text:
+              typeof opt === "string" ? opt : opt.option_text || opt.text,
+            is_correct: typeof opt === "object" ? !!opt.is_correct : false,
           }));
-          allOptionsData.push(...optionsForThisQuestion);
-        }
-      });
 
-      if (allOptionsData.length > 0) {
-        await QuestionOption.bulkCreate(allOptionsData as any);
+          await QuestionOption.bulkCreate(optionsData);
+        }
       }
     }
 
@@ -119,7 +111,6 @@ export const createExam = async (req: Request, res: Response) => {
 
 export const getExam = async (req: Request, res: Response) => {
   const user_id = getUserIdFromToken(req);
-  console.log(user_id);
   if (!user_id) {
     return res.status(400).json({
       success: false,
@@ -133,7 +124,7 @@ export const getExam = async (req: Request, res: Response) => {
       include: [
         {
           model: Attend,
-          attributes: ["user_id", "exam_id",],
+          attributes: ["user_id", "exam_id"],
           include: [
             {
               model: User,
@@ -229,7 +220,7 @@ export const getSingleExam = async (req: Request, res: Response) => {
       include: [
         {
           model: Attend,
-          attributes: ["user_id","startTime","endTime","createdAt"],
+          attributes: ["user_id", "startTime", "endTime", "createdAt"],
           include: [
             {
               model: User,
@@ -489,7 +480,10 @@ export const getExamResults = async (req: Request, res: Response) => {
           email: candidate.user?.email || "",
           total_answered: totalAnswered,
           correct_answers: correctAnswers,
-          score_percentage: totalAnswered > 0 ? ((correctAnswers / totalAnswered) * 100).toFixed(2) : "0.00",
+          score_percentage:
+            totalAnswered > 0
+              ? ((correctAnswers / totalAnswered) * 100).toFixed(2)
+              : "0.00",
         };
       })
     );
@@ -511,4 +505,3 @@ export const getExamResults = async (req: Request, res: Response) => {
     });
   }
 };
-

@@ -25,6 +25,7 @@ export class Question extends Model {
     @Column({
         type: DataType.TEXT,
         allowNull: false,
+        defaultValue:""
     })
     question_text!: string;
 

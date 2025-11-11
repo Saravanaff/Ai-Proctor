@@ -1,8 +1,17 @@
-import { Table, Column, Model, DataType, ForeignKey, BelongsTo, Index, HasMany } from 'sequelize-typescript';
-import { Question } from './Questions';
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
+  ForeignKey,
+  BelongsTo,
+  Index,
+  HasMany,
+} from "sequelize-typescript";
+import { Question } from "./Questions";
 
 @Table({
-  tableName: 'QuestionOption',
+  tableName: "QuestionOption",
   timestamps: true,
 })
 export class QuestionOption extends Model<QuestionOption> {
@@ -28,15 +37,14 @@ export class QuestionOption extends Model<QuestionOption> {
   option_text!: string;
 
   @Column({
-    type:DataType.STRING,
-    allowNull:false,
-    defaultValue:false
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
   })
-  is_correct!:boolean
+  is_correct!: boolean;
 
   @BelongsTo(() => Question)
   question!: Question;
-
 }
 
 export default QuestionOption;
