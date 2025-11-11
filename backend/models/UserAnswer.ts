@@ -22,7 +22,7 @@ export class UserAnswer extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column(DataType.INTEGER)
-  answer_id!: number;
+  id!: number;
 
   @ForeignKey(() => User)
   @Column({
@@ -50,7 +50,7 @@ export class UserAnswer extends Model {
     type: DataType.INTEGER,
     allowNull: true,
   })
-  selected_option_id?: number | null;
+  option_id?: number | null;
 
   @Column({
     type: DataType.TEXT,

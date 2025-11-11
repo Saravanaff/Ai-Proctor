@@ -904,12 +904,37 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
 
               // Get answers in array format for submission
               const submissionAnswers = getAnswersForSubmission();
-              console.log("Submitting answers:", submissionAnswers);
+              console.log("📝 Submitting answers:", submissionAnswers);
               console.log("Answers structure:", {
                 totalQuestions: questions.length,
                 answeredQuestions: submissionAnswers.length,
                 answers: submissionAnswers,
               });
+
+              // Save user answers to database
+              try {
+                console.log("💾 Saving user answers to database...");
+                const response = await axios.post(
+                  `${baseUrl}/saveUserAnswers`,
+                  {
+                    exam_id: Number(examId),
+                    answers: submissionAnswers,
+                  },
+                  {
+                    headers: {
+                      Authorization: `Bearer ${getTokenFromCookie()}`,
+                    },
+                  }
+                );
+                console.log("✅ Answers saved successfully:", response.data);
+              } catch (error: any) {
+                console.error("❌ Error saving answers:", error.response?.data || error.message);
+                toast({
+                  title: "Warning",
+                  description: "Failed to save some answers. Your exam will still be submitted.",
+                  variant: "destructive",
+                });
+              }
 
               try {
                 if (onBeforeSubmit) await onBeforeSubmit();

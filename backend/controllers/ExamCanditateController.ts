@@ -1,6 +1,8 @@
 import { Attend } from "../models/Attend";
 import { Exam } from "../models/Exam";
+import { UserAnswer } from "../models/UserAnswer";
 import { Request, Response } from "express";
+import { getUserIdFromToken } from "../utils/jwt";
 
 export const validateExam = async (req: Request, res: Response) => {
   const { key, user_id, user_name } = req.body;
@@ -114,3 +116,140 @@ export const getExamSettings = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const saveUserAnswers = async (req: Request, res: Response) => {
+  try {
+    const { exam_id, answers } = req.body;
+    const user_id = getUserIdFromToken(req);
+
+    console.log("📝 Saving user answers:", {
+      user_id,
+      exam_id,
+      answersCount: answers?.length,
+    });
+
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        message: "User authentication required",
+      });
+    }
+
+    if (!exam_id) {
+      return res.status(400).json({
+        success: false,
+        message: "exam_id is required",
+      });
+    }
+
+    if (!answers || !Array.isArray(answers) || answers.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "answers array is required and must not be empty",
+      });
+    }
+
+    const exam = await Exam.findByPk(exam_id);
+    if (!exam) {
+      return res.status(404).json({
+        success: false,
+        message: "Exam not found",
+      });
+    }
+
+    await UserAnswer.destroy({
+      where: {
+        user_id: Number(user_id),
+        exam_id: Number(exam_id),
+      },
+    });
+
+    console.log("Cleared previous answers for user");
+
+    const answersData = answers.map((answer: any) => ({
+      user_id: Number(user_id),
+      exam_id: Number(exam_id),
+      question_id: Number(answer.question_id),
+      option_id: answer.option_id ? Number(answer.option_id) : null,
+      written_answer: answer.option_text || null,
+      answered_at: new Date(),
+    }));
+
+    const savedAnswers = await UserAnswer.bulkCreate(answersData);
+
+    console.log("Successfully saved answers:", {
+      user_id,
+      exam_id,
+      totalAnswers: savedAnswers.length,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Answers saved successfully",
+      data: {
+        user_id,
+        exam_id,
+        totalAnswers: savedAnswers.length,
+        savedAt: new Date(),
+      },
+    });
+  } catch (err: any) {
+    console.error("Error saving user answers:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Error saving user answers",
+      error: err.message,
+    });
+  }
+};
+
+export const getUserAnswers = async (req: Request, res: Response) => {
+  try {
+    const { exam_id } = req.params;
+    const user_id = getUserIdFromToken(req);
+
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        message: "User authentication required",
+      });
+    }
+
+    if (!exam_id) {
+      return res.status(400).json({
+        success: false,
+        message: "exam_id is required",
+      });
+    }
+
+    const answers = await UserAnswer.findAll({
+      where: {
+        user_id: Number(user_id),
+        exam_id: Number(exam_id),
+      },
+      order: [["question_id", "ASC"]],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "User answers retrieved successfully",
+      data: {
+        user_id,
+        exam_id,
+        totalAnswers: answers.length,
+        answers,
+      },
+    });
+  } catch (err: any) {
+    console.error("Error retrieving user answers:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Error retrieving user answers",
+      error: err.message,
+    });
+  }
+};
+
+
+
+

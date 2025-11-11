@@ -6,7 +6,11 @@ import {
   updateExam,
   deleteExam,
 } from "../controllers/ExamAdminController";
-import { getExamSettings } from "../controllers/ExamCanditateController";
+import {
+  getExamSettings,
+  saveUserAnswers,
+  getUserAnswers,
+} from "../controllers/ExamCanditateController";
 import {
   requireExaminerRole,
   requireStudentRole,
@@ -21,5 +25,9 @@ router.post("/examCreate", createExam);
 router.put("/exam/:examId", updateExam);
 router.delete("/exam/:examId", deleteExam);
 router.get("/getExamQuestions/:examId", getQuestionsByExam);
+
+// User answer routes
+router.post("/saveUserAnswers", saveUserAnswers);
+router.get("/getUserAnswers/:exam_id", getUserAnswers);
 
 export default router;
