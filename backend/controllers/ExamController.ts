@@ -9,6 +9,9 @@ import { getUserIdFromToken } from "../utils/jwt";
 
 export const createExam = async (req: Request, res: Response) => {
   try {
+    console.log("📨 Received exam creation request");
+    console.log("📋 Request body:", JSON.stringify(req.body, null, 2));
+    
     const {
       exam_name,
       third_eye_enabled,
@@ -77,18 +80,23 @@ export const createExam = async (req: Request, res: Response) => {
     if (questions && Array.isArray(questions) && questions.length > 0) {
       const allOptionsData: any[] = [];
 
+      console.log(" Creating questions:", questions);
+      console.log(" First question options:", questions[0]?.options);
+
       for (const q of questions) {
         const createdQuestion = await Question.create({
           exam_id: newExam.id,
-          question_text: q.question,
+          question_text: q.question_text || q.question,
+          answer: q.answer,
+          marks: q.marks || 1,
         });
 
         if (q.options && Array.isArray(q.options)) {
           for (const opt of q.options) {
             allOptionsData.push({
               question_id: createdQuestion.id,
-              option_text: opt.text,
-              is_correct: opt.isCorrect || false,
+              option_text: opt.option_text || opt.text,
+              is_correct: opt.is_correct || opt.isCorrect,
             });
           }
         }
@@ -105,10 +113,16 @@ export const createExam = async (req: Request, res: Response) => {
       key: nextKey,
     });
   } catch (err: any) {
+    console.error("Error creating exam:", err);
+    console.error("Error details:", {
+      message: err.message,
+      stack: err.stack,
+    });
     res.status(500).json({
       success: false,
       message: "Error Creating exam",
       error: err.message,
+      details: err.toString(),
     });
   }
 };
