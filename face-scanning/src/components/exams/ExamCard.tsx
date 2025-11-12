@@ -8,6 +8,7 @@ interface Props {
   onViewDetails?: (exam: Exam) => void;
   onEdit?: (exam: Exam) => void;
   onManage?: (exam: Exam) => void;
+  onViewResults?: (exam: Exam) => void;
 }
 
 const ExamCard: React.FC<Props> = ({
@@ -16,6 +17,7 @@ const ExamCard: React.FC<Props> = ({
   onViewDetails,
   onEdit,
   onManage,
+  onViewResults,
 }) => {
   const [copied, setCopied] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
@@ -456,6 +458,29 @@ const ExamCard: React.FC<Props> = ({
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
               </svg>
               Edit
+            </button>
+          )}
+
+          {onViewResults && (
+            <button
+              className={`${styles.button} ${styles.resultsButton}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewResults(exam);
+              }}
+            >
+              <svg
+                className={styles.buttonIcon}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="9" x2="15" y2="9"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+              View Results
             </button>
           )}
         </div>

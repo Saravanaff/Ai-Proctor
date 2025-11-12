@@ -1,0 +1,517 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modalContent {
+  background: var(--card-bg, #1a1d24);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 1400px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modalHeader {
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin: 0 0 4px 0;
+}
+
+.examName {
+  font-size: 14px;
+  color: var(--text-secondary, #999);
+  margin: 0;
+}
+
+.closeButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: var(--button-secondary-bg, rgba(255, 255, 255, 0.05));
+  color: var(--text-primary, #ffffff);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: var(--button-secondary-hover, rgba(255, 255, 255, 0.1));
+  transform: scale(1.05);
+}
+
+.modalBody {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 1px;
+  background: var(--border-color, rgba(255, 255, 255, 0.05));
+}
+
+.studentListPanel {
+  width: 380px;
+  background: var(--card-bg, #1a1d24);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.searchContainer {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+  background: var(--input-bg, rgba(0, 0, 0, 0.2));
+  color: var(--text-primary, #ffffff);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+  border-color: var(--accent-color, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.searchInput::placeholder {
+  color: var(--text-secondary, #999);
+}
+
+.studentList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.studentCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  margin-bottom: 8px;
+  background: var(--button-secondary-bg, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.05));
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.studentCard:hover {
+  background: var(--button-secondary-hover, rgba(255, 255, 255, 0.05));
+  border-color: var(--accent-color, #6366f1);
+  transform: translateX(4px);
+}
+
+.studentCard.selected {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.15) 0%,
+    rgba(99, 102, 241, 0.05) 100%
+  );
+  border-color: var(--accent-color, #6366f1);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.studentInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.studentAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--accent-color, #6366f1) 0%,
+    #8b5cf6 100%
+  );
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.studentDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.studentName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.studentEmail {
+  font-size: 13px;
+  color: var(--text-secondary, #999);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.studentScore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.scoreCircle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  border: 3px solid;
+}
+
+.scoreHigh {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+.scoreMedium {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+.scoreLow {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.scoreDetails {
+  font-size: 11px;
+  color: var(--text-secondary, #999);
+  font-weight: 500;
+}
+
+.detailPanel {
+  flex: 1;
+  background: var(--card-bg, #1a1d24);
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.noSelectionState,
+.loadingState,
+.errorState,
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary, #999);
+  text-align: center;
+}
+
+.noSelectionIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.detailContent {
+  animation: fadeIn 0.3s ease-in;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  background: var(--button-secondary-bg, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.05));
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--text-secondary, #999);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+}
+
+.statValue.correct {
+  color: #22c55e;
+}
+
+.statValue.wrong {
+  color: #ef4444;
+}
+
+.statValue.unanswered {
+  color: #fbbf24;
+}
+
+.questionsContainer {
+  background: var(--button-secondary-bg, rgba(255, 255, 255, 0.02));
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.questionsTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin: 0 0 20px 0;
+}
+
+.questionCard {
+  background: var(--card-bg, #1a1d24);
+  border: 2px solid;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.questionCard.correctAnswer {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.03);
+}
+
+.questionCard.wrongAnswer {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.questionCard.notAnswered {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.03);
+}
+
+.questionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.questionNumber {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent-color, #6366f1);
+}
+
+.questionStatus {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+}
+
+.statusCorrect {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.statusWrong {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.statusUnanswered {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}
+
+.questionText {
+  font-size: 15px;
+  color: var(--text-primary, #ffffff);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.optionItem {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--button-secondary-bg, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.05));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.optionItem.correctOption {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+}
+
+.optionItem.selectedOption {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}
+
+.optionText {
+  font-size: 14px;
+  color: var(--text-primary, #ffffff);
+}
+
+.correctBadge,
+.selectedBadge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.correctBadge {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.selectedBadge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* Scrollbar styles */
+.studentList::-webkit-scrollbar,
+.detailPanel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.studentList::-webkit-scrollbar-track,
+.detailPanel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.studentList::-webkit-scrollbar-thumb,
+.detailPanel::-webkit-scrollbar-thumb {
+  background: var(--border-color, rgba(255, 255, 255, 0.1));
+  border-radius: 4px;
+}
+
+.studentList::-webkit-scrollbar-thumb:hover,
+.detailPanel::-webkit-scrollbar-thumb:hover {
+  background: var(--border-color, rgba(255, 255, 255, 0.2));
+}
+
+@media (max-width: 1200px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .modalContent {
+    max-height: 95vh;
+    margin: 10px;
+  }
+
+  .modalBody {
+    flex-direction: column;
+  }
+
+  .studentListPanel {
+    width: 100%;
+    max-height: 300px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .statCard {
+    padding: 16px;
+  }
+
+  .statValue {
+    font-size: 24px;
+  }
+}

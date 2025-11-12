@@ -6,6 +6,7 @@ import {
   updateExam,
   deleteExam,
   getCandidates,
+  getStudentAnswers,
 } from "../controllers/ExamController";
 import {
   getExamSettings,
@@ -49,5 +50,6 @@ router.get("/exam/:examId/candidate/:candidateUserId/answers", getUserAnswersByA
 
 // Results routes
 router.get("/exam/:examId/results", getExamResults);
+router.get("/exam/:examId/student/:userId/answers", getStudentAnswers);
 
 export default router;

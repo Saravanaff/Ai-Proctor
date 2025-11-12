@@ -4,6 +4,7 @@ import { Attend } from "../models/Attend";
 import { User } from "../models/User";
 import { Question } from "../models/Questions";
 import { QuestionOption } from "../models/QuestionOption";
+import { UserAnswer } from "../models/UserAnswer";
 import { getUserIdFromToken } from "../utils/jwt";
 
 export const createExam = async (req: Request, res: Response) => {
@@ -396,6 +397,69 @@ export const getCandidates = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Error fetching candidates",
+      error: err.message,
+    });
+  }
+};
+
+export const getStudentAnswers = async (req: Request, res: Response) => {
+  const { examId, userId } = req.params;
+  const examiner_id = getUserIdFromToken(req);
+
+  if (!examId || !userId || !examiner_id) {
+    return res.status(400).json({
+      success: false,
+      message: "Exam ID, User ID and authentication required",
+    });
+  }
+
+  try {
+    // Verify exam belongs to the examiner
+    const exam = await Exam.findOne({
+      where: {
+        id: examId,
+        user_id: examiner_id,
+      },
+    });
+
+    if (!exam) {
+      return res.status(404).json({
+        success: false,
+        message: "Exam not found or you don't have permission to view it",
+      });
+    }
+
+    // Get student's answers
+    const answers = await UserAnswer.findAll({
+      where: {
+        user_id: Number(userId),
+        exam_id: Number(examId),
+      },
+      include: [
+        {
+          model: QuestionOption,
+          as: "selected_option",
+          attributes: ["id", "option_text", "is_correct"],
+        },
+      ],
+      order: [["question_id", "ASC"]],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Student answers retrieved successfully",
+      data: {
+        user_id: userId,
+        exam_id: examId,
+        totalAnswers: answers.length,
+        answers,
+      },
+    });
+  } catch (err: any) {
+    console.error("Error retrieving student answers:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Error retrieving student answers",
       error: err.message,
     });
   }

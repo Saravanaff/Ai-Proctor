@@ -7,9 +7,14 @@ import styles from "./ExamsGrid.module.css";
 interface ExamsGridProps {
   exams: Exam[];
   formatRange: (start?: string, end?: string) => string;
+  onViewResults?: (exam: Exam) => void;
 }
 
-const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
+const ExamsGrid: React.FC<ExamsGridProps> = ({
+  exams,
+  formatRange,
+  onViewResults,
+}) => {
   const router = useRouter();
   const [selectedExam, setSelectedExam] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
@@ -81,6 +86,7 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({ exams, formatRange }) => {
             onViewDetails={handleViewDetails}
             onEdit={handleEdit}
             onManage={handleManageModal}
+            onViewResults={onViewResults}
           />
         ))}
       </div>

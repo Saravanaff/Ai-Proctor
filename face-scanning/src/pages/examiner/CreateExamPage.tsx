@@ -4,6 +4,7 @@ import { Exam } from "../../types/exam";
 import SearchBar from "../../components/exams/SearchBar";
 import ExamStats from "../../components/exams/ExamStats";
 import ExamsGrid from "../../components/exams/ExamsGrid";
+import ExamResultsModal from "../../components/exams/ExamResultsModal";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import axios from "axios";
 import { getUserId, getTokenFromCookie } from "@/constants/AuthStore";
@@ -18,6 +19,10 @@ const CreateExam = () => {
   const [connectionError, setConnectionError] = useState("");
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileInitials, setProfileInitials] = useState<string>("U");
+  const [selectedExamForResults, setSelectedExamForResults] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
 
   axios.interceptors.request.use(
     (config) => {
@@ -138,6 +143,18 @@ const CreateExam = () => {
       }
     } catch (err) {}
   }, []);
+
+  const handleViewResults = (exam: Exam) => {
+    const examName = (exam as any).exam_name || (exam as any).name || "Exam";
+    setSelectedExamForResults({
+      id: Number(exam.id),
+      name: examName,
+    });
+  };
+
+  const handleCloseResultsModal = () => {
+    setSelectedExamForResults(null);
+  };
 
   return (
     <div
@@ -309,9 +326,22 @@ const CreateExam = () => {
           </div>
         )}
         {!loading && filteredExams.length > 0 && (
-          <ExamsGrid exams={filteredExams} formatRange={formatRange} />
+          <ExamsGrid
+            exams={filteredExams}
+            formatRange={formatRange}
+            onViewResults={handleViewResults}
+          />
         )}
       </section>
+
+      {/* Exam Results Modal */}
+      {selectedExamForResults && (
+        <ExamResultsModal
+          examId={selectedExamForResults.id}
+          examName={selectedExamForResults.name}
+          onClose={handleCloseResultsModal}
+        />
+      )}
 
       {/* Floating controls: Theme toggle in bottom-right (avatar removed) */}
       <div
