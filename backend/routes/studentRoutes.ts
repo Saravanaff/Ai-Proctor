@@ -1,11 +1,10 @@
 import { Router } from 'express';
-import { joinExam, validateExam } from '../controllers/CandidateController';
+import { joinExam } from '../controllers/StudentController';
 import { requireRole } from '../middleware/roleMiddleware';
 
 const router = Router();
 
-// Student/Candidate routes
-router.post('/validateExam', validateExam);
+// Student can join exam using exam key
 router.post('/joinExam', requireRole('student'), joinExam);
 
 export default router;

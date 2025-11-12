@@ -1,23 +1,16 @@
 import { Router } from "express";
 import {
   createExam,
-  getExams,
+  getExam,
   getSingleExam,
   updateExam,
   deleteExam,
-  getCandidates,
-  getStudentAnswers,
-} from "../controllers/ExamController";
+  getExamResults,
+} from "../controllers/ExamAdminController";
 import {
   getExamSettings,
-} from "../controllers/CandidateController";
-import {
   saveUserAnswers,
-  getUserAnswersByAdmin,
-} from "../controllers/AnswerController";
-import {
-  getExamResults,
-} from "../controllers/ResultsController";
+} from "../controllers/ExamCanditateController";
 import {
   requireExaminerRole,
   requireStudentRole,
@@ -26,29 +19,21 @@ import {
   getQuestionsByExam,
   updateQuestionsForExam,
 } from "../controllers/QuestionController";
-
 const router = Router();
 
-// Exam routes
-router.get("/exam", getExams);
+router.get("/exam", getExam);
+router.get("/getExamSettings", getExamSettings);
 router.get("/exam/:examId", getSingleExam);
 router.post("/examCreate", createExam);
 router.put("/exam/:examId", updateExam);
 router.delete("/exam/:examId", deleteExam);
-router.post("/getCandidates", getCandidates);
-
-// Candidate routes
-router.get("/getExamSettings", getExamSettings);
-
-// Question routes
 router.get("/getExamQuestions/:examId", getQuestionsByExam);
 router.put("/updateExamQuestions/:exam_id", updateQuestionsForExam);
 
-// Answer routes
+// User answer routes
 router.post("/saveUserAnswers", saveUserAnswers);
-router.get("/exam/:examId/candidate/:candidateUserId/answers", getUserAnswersByAdmin);
 
-// Results routes
+// Exam results route
 router.get("/exam/:examId/results", getExamResults);
 router.get("/exam/:examId/student/:userId/answers", getStudentAnswers);
 
