@@ -896,6 +896,12 @@ const NewExam = () => {
                     onToggle={() => setProctorFeedToTestTaker((v) => !v)}
                     disabled={!recordedManualProctoring}
                   />
+                  <Toggle
+                    label="Screen Sharing"
+                    enabled={screenSharing}
+                    onToggle={() => setScreenSharing((v) => !v)}
+                    disabled={!recordedManualProctoring}
+                  />
                 </div>
               </CollapsibleSection>
 
