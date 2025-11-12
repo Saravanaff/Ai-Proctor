@@ -9,11 +9,19 @@ import styles from "../styles/FloatingCamera.module.css";
 import { useToast } from "@/hooks/use-toast";
 import * as mediasoupClient from "mediasoup-client";
 import useSoundLevel from "@/hooks/useSoundLevel";
-import { getExamId, getUserId } from "../constants/AuthStore";
+import {
+  getExamId,
+  getUserId,
+  getTokenFromCookie,
+} from "../constants/AuthStore";
 import { delay } from "@/utils/delay";
-import axios from 'axios'
+import axios from "axios";
 import { getExamSettings } from "@/constants/examSettingsConsts";
-import { FilesetResolver, FaceLandmarker, ObjectDetector } from '@mediapipe/tasks-vision';
+import {
+  FilesetResolver,
+  FaceLandmarker,
+  ObjectDetector,
+} from "@mediapipe/tasks-vision";
 import { headPos } from "@/utils/aiModel/headPos";
 import { eye_direction } from "@/utils/aiModel/eyePos";
 import { detector } from "@/utils/aiModel/objDetector";
@@ -21,6 +29,29 @@ import { detector } from "@/utils/aiModel/objDetector";
 const userId = getUserId() || "unknown";
 let examId = getExamId();
 const examSettings = getExamSettings();
+const baseUrlGlobal = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+// Helper function to log violations to API
+const logViolation = async (violationName: string) => {
+  try {
+    await axios.post(
+      `${baseUrlGlobal}/storeLogs`,
+      {
+        userId: Number(userId),
+        examId: Number(examId),
+        violationName,
+        violationTimestamp: new Date(),
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${getTokenFromCookie()}`,
+        },
+      }
+    );
+  } catch (error) {
+    console.error(`Failed to log ${violationName}:`, error);
+  }
+};
 
 interface VideoChunkData {
   user_id: string;
@@ -31,7 +62,6 @@ interface VideoChunkData {
   examSettings: any;
   settings: any;
 }
-
 
 const FloatingCamera = ({
   socket,
@@ -64,7 +94,6 @@ const FloatingCamera = ({
   const endExamSentRef = useRef(false);
   const isStoppingRef = useRef(false);
 
-
   const countersRef = useRef({
     look: 0,
     person: 0,
@@ -85,14 +114,15 @@ const FloatingCamera = ({
     multiplePersons: 0,
     soundDetected: 0,
     noLaptop: 0,
-    noCandidate: 0
+    noCandidate: 0,
   });
 
   const NOTIFICATION_THROTTLE_MS = 2000; // 2 seconds gap
 
   const settingsRef = useRef<any>({});
   useEffect(() => {
-    settingsRef.current = (settings && typeof settings === 'object') ? settings : {};
+    settingsRef.current =
+      settings && typeof settings === "object" ? settings : {};
   }, [settings]);
 
   const [position, setPosition] = useState({ x: 20, y: 20 });
@@ -124,17 +154,32 @@ const FloatingCamera = ({
   }, []);
 
   const calculateEyeGaze = useCallback((landmarks: any[]): string => {
-    if (!landmarks || landmarks.length < 478) return 'unknown';
+    if (!landmarks || landmarks.length < 478) return "unknown";
 
-    let r_eye_direction = eye_direction(landmarks[163], landmarks[157], landmarks[471], landmarks[469], "right", 480, 480);
-    let l_eye_direction = eye_direction(landmarks[390], landmarks[384], landmarks[474], landmarks[476], "left", 480, 480);
+    let r_eye_direction = eye_direction(
+      landmarks[163],
+      landmarks[157],
+      landmarks[471],
+      landmarks[469],
+      "right",
+      480,
+      480
+    );
+    let l_eye_direction = eye_direction(
+      landmarks[390],
+      landmarks[384],
+      landmarks[474],
+      landmarks[476],
+      "left",
+      480,
+      480
+    );
 
     let eyeDir = "center";
 
     if (r_eye_direction == "left" && l_eye_direction == "left") {
       eyeDir = "left";
-    }
-    else if (r_eye_direction == "right" && l_eye_direction == "right") {
+    } else if (r_eye_direction == "right" && l_eye_direction == "right") {
       eyeDir = "right";
     }
     return eyeDir;
@@ -145,9 +190,7 @@ const FloatingCamera = ({
     return detection;
   }, []);
 
-
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BACKEND_URL;
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   useEffect(() => {
     if (!initialAuthDoneRef.current && onAuthPause) {
@@ -155,129 +198,161 @@ const FloatingCamera = ({
     }
   }, [onAuthPause]);
 
-  const handleUserAlert = useCallback((data: any, socketName: string) => {
-    console.log("Alert Data:", data, "from", socketName)
-    const now = Date.now();
+  const handleUserAlert = useCallback(
+    (data: any, socketName: string) => {
+      console.log("Alert Data:", data, "from", socketName);
+      const now = Date.now();
 
-    if (socketName === "faceAuthRes-client") {
-      if (data.auth === true && !initialAuthDoneRef.current) {
-        initialAuthDoneRef.current = true;
-        setShowInitialScan(false);
-        // ✅ ONLY RESUME IF FACE AUTHENTICATION IS ENABLED IN EXAM SETTINGS
-        if (examSettings?.face_authentication_enabled && onAuthResume) {
-          console.log("✅ Face authenticated - Calling onAuthResume (face_auth enabled)");
-          onAuthResume();
+      if (socketName === "faceAuthRes-client") {
+        if (data.auth === true && !initialAuthDoneRef.current) {
+          initialAuthDoneRef.current = true;
+          setShowInitialScan(false);
+          // ✅ ONLY RESUME IF FACE AUTHENTICATION IS ENABLED IN EXAM SETTINGS
+          if (examSettings?.face_authentication_enabled && onAuthResume) {
+            console.log(
+              "✅ Face authenticated - Calling onAuthResume (face_auth enabled)"
+            );
+            onAuthResume();
+          }
+          return;
         }
-        return;
-      }
-      if (!initialAuthDoneRef.current) {
-        return;
-      }
-      if (data.auth === false) {
-        // ✅ ONLY PAUSE IF FACE AUTHENTICATION IS ENABLED IN EXAM SETTINGS
-        if (examSettings?.face_authentication_enabled &&
-          Date.now() - lastNotificationRef.current.faceAuth >= NOTIFICATION_THROTTLE_MS) {
-          console.log("⚠️ Face lost - Calling onAuthFaceMissing (face_auth enabled)");
-          onAuthFaceMissing();
-          lastNotificationRef.current.faceAuth = Date.now();
+        if (!initialAuthDoneRef.current) {
+          return;
+        }
+        if (data.auth === false) {
+          // ✅ ONLY PAUSE IF FACE AUTHENTICATION IS ENABLED IN EXAM SETTINGS
+          if (
+            examSettings?.face_authentication_enabled &&
+            Date.now() - lastNotificationRef.current.faceAuth >=
+              NOTIFICATION_THROTTLE_MS
+          ) {
+            console.log(
+              "⚠️ Face lost - Calling onAuthFaceMissing (face_auth enabled)"
+            );
+            onAuthFaceMissing();
+            lastNotificationRef.current.faceAuth = Date.now();
+          }
         }
       }
-    }
-    if (!initialAuthDoneRef.current) return;
+      if (!initialAuthDoneRef.current) return;
 
-    if (socketName === "headPositionRes-client") {
-      if (data.data.headPos !== "Forward" && data.data.headPos !== "Down") {
-        if (now - lastNotificationRef.current.headDirection >= NOTIFICATION_THROTTLE_MS) {
-          onHeadDirection(data.data.headPos);
-          lastNotificationRef.current.headDirection = now;
-        }
-      }
-    }
-
-    if (socketName === "eyePositionRes-client") {
-      if (
-        data?.data?.leftEye !== "Center" &&
-        data?.data?.rightEye !== "Center"
-      ) {
-        if (now - lastNotificationRef.current.eyePosition >= NOTIFICATION_THROTTLE_MS) {
-          onLookingAway(data.data.leftEye);
-          lastNotificationRef.current.eyePosition = now;
-        }
-      }
-    }
-
-    if (socketName === "webDetectRes-client") {
-      if (data.data["Mobile"] !== 0 || data.data["Laptop"] !== 0) {
-        if (now - lastNotificationRef.current.deviceDetected >= NOTIFICATION_THROTTLE_MS) {
-          detect();
-          changeColor();
-          lastNotificationRef.current.deviceDetected = now;
-        }
-      }
-      if (data.data.Person > 1) {
-        if (now - lastNotificationRef.current.multiplePersons >= NOTIFICATION_THROTTLE_MS) {
-          number(data.data.Person);
-          changeColor();
-          lastNotificationRef.current.multiplePersons = now;
-        }
-      }
-    }
-
-    if (socketName === "mobileDetectRes-client") {
-      if (data.data["Mobile"] !== 0 || data.data.Laptop > 1) {
-        if (now - lastNotificationRef.current.deviceDetected >= NOTIFICATION_THROTTLE_MS) {
-          toast({
-            title: "Unauthorized Device Detected",
-            description: "Dont keep Gadgets Nearby",
-            variant: "destructive",
-          });
-          lastNotificationRef.current.deviceDetected = now;
+      if (socketName === "headPositionRes-client") {
+        if (data.data.headPos !== "Forward" && data.data.headPos !== "Down") {
+          if (
+            now - lastNotificationRef.current.headDirection >=
+            NOTIFICATION_THROTTLE_MS
+          ) {
+            onHeadDirection(data.data.headPos);
+            lastNotificationRef.current.headDirection = now;
+          }
         }
       }
 
-      if (data.data.Laptop === 0) {
-        if (now - lastNotificationRef.current.noLaptop >= NOTIFICATION_THROTTLE_MS) {
-          toast({
-            title: "Canditate Laptop is not present",
-            description: "No laptop is present",
-            variant: "destructive",
-          });
-          lastNotificationRef.current.noLaptop = now;
+      if (socketName === "eyePositionRes-client") {
+        if (
+          data?.data?.leftEye !== "Center" &&
+          data?.data?.rightEye !== "Center"
+        ) {
+          if (
+            now - lastNotificationRef.current.eyePosition >=
+            NOTIFICATION_THROTTLE_MS
+          ) {
+            onLookingAway(data.data.leftEye);
+            lastNotificationRef.current.eyePosition = now;
+          }
         }
       }
 
-      if (data.data.Person === 0) {
-        if (now - lastNotificationRef.current.noCandidate >= NOTIFICATION_THROTTLE_MS) {
-          toast({
-            title: "Canditate is not present",
-            description: "No persons are there",
-            variant: "destructive",
-          });
-          lastNotificationRef.current.noCandidate = now;
+      if (socketName === "webDetectRes-client") {
+        if (data.data["Mobile"] !== 0 || data.data["Laptop"] !== 0) {
+          if (
+            now - lastNotificationRef.current.deviceDetected >=
+            NOTIFICATION_THROTTLE_MS
+          ) {
+            detect();
+            changeColor();
+            lastNotificationRef.current.deviceDetected = now;
+          }
+        }
+        if (data.data.Person > 1) {
+          if (
+            now - lastNotificationRef.current.multiplePersons >=
+            NOTIFICATION_THROTTLE_MS
+          ) {
+            number(data.data.Person);
+            changeColor();
+            lastNotificationRef.current.multiplePersons = now;
+          }
         }
       }
-      else if (data.data.Person > 1) {
-        if (now - lastNotificationRef.current.multiplePersons >= NOTIFICATION_THROTTLE_MS) {
-          toast({
-            title: "More number of persons are present",
-            description: "Please ensure candidate is present in isolated area",
-            variant: "destructive",
-          });
-          lastNotificationRef.current.multiplePersons = now;
+
+      if (socketName === "mobileDetectRes-client") {
+        if (data.data["Mobile"] !== 0 || data.data.Laptop > 1) {
+          if (
+            now - lastNotificationRef.current.deviceDetected >=
+            NOTIFICATION_THROTTLE_MS
+          ) {
+            toast({
+              title: "Unauthorized Device Detected",
+              description: "Dont keep Gadgets Nearby",
+              variant: "destructive",
+            });
+            lastNotificationRef.current.deviceDetected = now;
+          }
+        }
+
+        if (data.data.Laptop === 0) {
+          if (
+            now - lastNotificationRef.current.noLaptop >=
+            NOTIFICATION_THROTTLE_MS
+          ) {
+            toast({
+              title: "Canditate Laptop is not present",
+              description: "No laptop is present",
+              variant: "destructive",
+            });
+            lastNotificationRef.current.noLaptop = now;
+          }
+        }
+
+        if (data.data.Person === 0) {
+          if (
+            now - lastNotificationRef.current.noCandidate >=
+            NOTIFICATION_THROTTLE_MS
+          ) {
+            toast({
+              title: "Canditate is not present",
+              description: "No persons are there",
+              variant: "destructive",
+            });
+            lastNotificationRef.current.noCandidate = now;
+          }
+        } else if (data.data.Person > 1) {
+          if (
+            now - lastNotificationRef.current.multiplePersons >=
+            NOTIFICATION_THROTTLE_MS
+          ) {
+            toast({
+              title: "More number of persons are present",
+              description:
+                "Please ensure candidate is present in isolated area",
+              variant: "destructive",
+            });
+            lastNotificationRef.current.multiplePersons = now;
+          }
         }
       }
-    }
-
-  }, [
-    toast,
-    onLookingAway,
-    changeColor,
-    detect,
-    number,
-    onAuthResume,
-    onAuthFaceMissing
-  ]);
-
+    },
+    [
+      toast,
+      onLookingAway,
+      changeColor,
+      detect,
+      number,
+      onAuthResume,
+      onAuthFaceMissing,
+    ]
+  );
 
   useEffect(() => {
     if (examSubmitted && !isStoppingRef.current) {
@@ -287,7 +362,10 @@ const FloatingCamera = ({
       console.log("👤 User ID:", userId, "📝 Exam ID:", examId);
 
       // Stop face camera recording - this will trigger final ondataavailable
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state !== "inactive"
+      ) {
         // First, request any pending data to be flushed
         try {
           console.log("📤 Requesting final data from MediaRecorder...");
@@ -298,15 +376,23 @@ const FloatingCamera = ({
 
         // Then stop the recorder (will trigger final ondataavailable)
         setTimeout(() => {
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+          if (
+            mediaRecorderRef.current &&
+            mediaRecorderRef.current.state !== "inactive"
+          ) {
             mediaRecorderRef.current.stop();
-            console.log("✅ Face camera MediaRecorder stopped - waiting for final chunk");
+            console.log(
+              "✅ Face camera MediaRecorder stopped - waiting for final chunk"
+            );
           }
         }, 100);
       }
 
       // Stop screen recording
-      if (screenRecorderMediaRecorderRef.current && screenRecorderMediaRecorderRef.current.state !== "inactive") {
+      if (
+        screenRecorderMediaRecorderRef.current &&
+        screenRecorderMediaRecorderRef.current.state !== "inactive"
+      ) {
         console.log("Stopped screenRecording...");
         screenRecorderMediaRecorderRef.current.stop();
       }
@@ -331,7 +417,10 @@ const FloatingCamera = ({
   const handleSoundDetection = useCallback(() => {
     const now = Date.now();
     if (isSoundDetected && !prevSoundDetected) {
-      if (now - lastNotificationRef.current.soundDetected >= NOTIFICATION_THROTTLE_MS) {
+      if (
+        now - lastNotificationRef.current.soundDetected >=
+        NOTIFICATION_THROTTLE_MS
+      ) {
         toast({
           title: "Sound Detected",
           description: "Audio detected during exam",
@@ -405,32 +494,41 @@ const FloatingCamera = ({
             "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
           );
           if (!faceLandmarkerRef.current) {
-            const faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
-              baseOptions: {
-                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-                delegate: "GPU"
-              },
-              runningMode: "VIDEO",
-              numFaces: 1,
-              minFaceDetectionConfidence: 0.5,
-              minFacePresenceConfidence: 0.5,
-              minTrackingConfidence: 0.5,
-              outputFaceBlendshapes: false,
-              outputFacialTransformationMatrixes: false
-            });
+            const faceLandmarker = await FaceLandmarker.createFromOptions(
+              vision,
+              {
+                baseOptions: {
+                  modelAssetPath:
+                    "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+                  delegate: "GPU",
+                },
+                runningMode: "VIDEO",
+                numFaces: 1,
+                minFaceDetectionConfidence: 0.5,
+                minFacePresenceConfidence: 0.5,
+                minTrackingConfidence: 0.5,
+                outputFaceBlendshapes: false,
+                outputFacialTransformationMatrixes: false,
+              }
+            );
 
             faceLandmarkerRef.current = faceLandmarker;
-            console.log("✅ MediaPipe Face Landmarker initialized successfully");
+            console.log(
+              "✅ MediaPipe Face Landmarker initialized successfully"
+            );
           }
           if (!objectDetectorRef.current) {
-            let objectDetector = await ObjectDetector.createFromOptions(vision, {
-              baseOptions: {
-                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite`,
-                delegate: "GPU"
-              },
-              scoreThreshold: 0.5,
-              runningMode: "VIDEO",
-            });
+            let objectDetector = await ObjectDetector.createFromOptions(
+              vision,
+              {
+                baseOptions: {
+                  modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite`,
+                  delegate: "GPU",
+                },
+                scoreThreshold: 0.5,
+                runningMode: "VIDEO",
+              }
+            );
 
             objectDetectorRef.current = objectDetector;
             console.log(" object detector initinalized successfully");
@@ -440,8 +538,6 @@ const FloatingCamera = ({
           objectDetectorRef.current = null;
           faceLandmarkerRef.current = null;
         }
-
-
 
         if (videoRef.current && streamRef.current) {
           videoRef.current.srcObject = streamRef.current;
@@ -469,7 +565,12 @@ const FloatingCamera = ({
                 settings: settingsRef.current,
               };
               socket.emit("recorder-add-video-stream-chunk", chunkData);
-              console.log("📹 Sent face camera chunk:", buffer.byteLength, "bytes", isLastChunk ? "(FINAL CHUNK)" : "");
+              console.log(
+                "📹 Sent face camera chunk:",
+                buffer.byteLength,
+                "bytes",
+                isLastChunk ? "(FINAL CHUNK)" : ""
+              );
             });
           }
         };
@@ -509,7 +610,11 @@ const FloatingCamera = ({
           ctx.drawImage(video, 0, 0, width, height);
 
           // Process with MediaPipe Face Landmarker if available
-          if (faceLandmarkerRef.current && videoRef.current && canvasRef.current) {
+          if (
+            faceLandmarkerRef.current &&
+            videoRef.current &&
+            canvasRef.current
+          ) {
             try {
               const currentTime = videoRef.current.currentTime;
 
@@ -518,19 +623,31 @@ const FloatingCamera = ({
                 lastVideoTimeRef.current = currentTime;
 
                 const startTimeMs = performance.now();
-                const results = faceLandmarkerRef.current.detectForVideo(videoRef.current, startTimeMs);
+                const results = faceLandmarkerRef.current.detectForVideo(
+                  videoRef.current,
+                  startTimeMs
+                );
 
-                if (results && results.faceLandmarks && results.faceLandmarks.length > 0) {
+                if (
+                  results &&
+                  results.faceLandmarks &&
+                  results.faceLandmarks.length > 0
+                ) {
                   const landmarks = results.faceLandmarks[0];
 
                   // Draw landmarks on visible overlay canvas
-                  const overlayCtx = canvasRef.current.getContext('2d');
+                  const overlayCtx = canvasRef.current.getContext("2d");
                   if (overlayCtx) {
                     // Clear previous landmarks
-                    overlayCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+                    overlayCtx.clearRect(
+                      0,
+                      0,
+                      canvasRef.current.width,
+                      canvasRef.current.height
+                    );
 
                     // Draw all face landmarks
-                    overlayCtx.fillStyle = '#00FF00';
+                    overlayCtx.fillStyle = "#00FF00";
                     landmarks.forEach((landmark: any, index: number) => {
                       const x = landmark.x * canvasRef.current!.width;
                       const y = landmark.y * canvasRef.current!.height;
@@ -541,18 +658,20 @@ const FloatingCamera = ({
                       overlayCtx.fill();
 
                       // Highlight specific landmarks with different colors
-                      if (index === 1) { // Nose tip
-                        overlayCtx.fillStyle = '#FF0000';
+                      if (index === 1) {
+                        // Nose tip
+                        overlayCtx.fillStyle = "#FF0000";
                         overlayCtx.beginPath();
                         overlayCtx.arc(x, y, 4, 0, 2 * Math.PI);
                         overlayCtx.fill();
-                        overlayCtx.fillStyle = '#00FF00';
-                      } else if (index === 468 || index === 473) { // Iris centers
-                        overlayCtx.fillStyle = '#FFFF00'; // Yellow for iris
+                        overlayCtx.fillStyle = "#00FF00";
+                      } else if (index === 468 || index === 473) {
+                        // Iris centers
+                        overlayCtx.fillStyle = "#FFFF00"; // Yellow for iris
                         overlayCtx.beginPath();
                         overlayCtx.arc(x, y, 4, 0, 2 * Math.PI);
                         overlayCtx.fill();
-                        overlayCtx.fillStyle = '#00FF00';
+                        overlayCtx.fillStyle = "#00FF00";
                       }
                     });
                   }
@@ -560,8 +679,35 @@ const FloatingCamera = ({
                   const headPos = calculateHeadPosition(landmarks);
                   console.log(`📍 Head Position: ${headPos}`);
 
+                  // Log head position violation if not forward or down
+                  if (
+                    headPos.toLowerCase() !== "forward" &&
+                    headPos.toLowerCase() !== "down"
+                  ) {
+                    const now = Date.now();
+                    if (
+                      now - lastNotificationRef.current.headDirection >=
+                      NOTIFICATION_THROTTLE_MS
+                    ) {
+                      logViolation("head_position_violation");
+                      lastNotificationRef.current.headDirection = now;
+                    }
+                  }
+
                   const eyeGaze = calculateEyeGaze(landmarks);
                   console.log(`👁️ Eye Gaze: ${eyeGaze}`);
+
+                  // Log eye position violation if not center
+                  if (eyeGaze.toLowerCase() !== "center") {
+                    const now = Date.now();
+                    if (
+                      now - lastNotificationRef.current.eyePosition >=
+                      NOTIFICATION_THROTTLE_MS
+                    ) {
+                      logViolation("eye_position_violation");
+                      lastNotificationRef.current.eyePosition = now;
+                    }
+                  }
                 }
               }
             } catch (error) {
@@ -576,18 +722,57 @@ const FloatingCamera = ({
                 lastObjTimeRef.current = currentTime;
 
                 const startTimeMs = performance.now();
-                const result = objectDetectorRef.current.detectForVideo(video, startTimeMs);
+                const result = objectDetectorRef.current.detectForVideo(
+                  video,
+                  startTimeMs
+                );
                 console.log(result);
                 if (result) {
                   const detection = objdetect(result);
-                  console.log(`Person : ${detection.person}, Mobile: ${detection.phone}`);
+                  console.log(
+                    `Person : ${detection.person}, Mobile: ${detection.phone}`
+                  );
+
+                  // Log object detection violation if phone detected
+                  if (detection.phone > 0) {
+                    const now = Date.now();
+                    if (
+                      now - lastNotificationRef.current.deviceDetected >=
+                      NOTIFICATION_THROTTLE_MS
+                    ) {
+                      logViolation("object_detection_violation");
+                      lastNotificationRef.current.deviceDetected = now;
+                    }
+                  }
+
+                  // Log multiple persons violation
+                  if (detection.person > 1) {
+                    const now = Date.now();
+                    if (
+                      now - lastNotificationRef.current.multiplePersons >=
+                      NOTIFICATION_THROTTLE_MS
+                    ) {
+                      logViolation("multiple_persons_detected");
+                      lastNotificationRef.current.multiplePersons = now;
+                    }
+                  }
+
+                  // Log no person violation
+                  if (detection.person === 0) {
+                    const now = Date.now();
+                    if (
+                      now - lastNotificationRef.current.noCandidate >=
+                      NOTIFICATION_THROTTLE_MS
+                    ) {
+                      logViolation("no_person_detected");
+                      lastNotificationRef.current.noCandidate = now;
+                    }
+                  }
                 }
               }
-            }
-            catch (error) {
+            } catch (error) {
               console.error("Object Detector processing error:", error);
             }
-
           }
         }, 1000 / 10);
       } catch (error) {
@@ -747,51 +932,59 @@ const FloatingCamera = ({
       }}
       onMouseDown={handleMouseDown}
     >
-
       {showInitialScan && examSettings?.face_authentication_enabled && (
         <div className={styles.scanOverlay}>
           <div className={styles.scanLine} />
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'column',
-            zIndex: 2,
-            background: 'linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.6) 100%)',
-            color: 'white',
-            fontWeight: 600,
-            fontSize: 16,
-            gap: 12,
-            padding: '16px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              fontSize: 24,
-              animation: 'pulse 2s ease-in-out infinite'
-            }}>
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "column",
+              zIndex: 2,
+              background:
+                "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.6) 100%)",
+              color: "white",
+              fontWeight: 600,
+              fontSize: 16,
+              gap: 12,
+              padding: "16px",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 24,
+                animation: "pulse 2s ease-in-out infinite",
+              }}
+            >
               ✓
             </div>
-            <span style={{
-              fontSize: 14,
-              fontWeight: 600,
-              letterSpacing: '0.5px',
-              textTransform: 'uppercase',
-              color: '#00ff88',
-              textShadow: '0 0 8px rgba(0, 255, 136, 0.5)'
-            }}>
+            <span
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                letterSpacing: "0.5px",
+                textTransform: "uppercase",
+                color: "#00ff88",
+                textShadow: "0 0 8px rgba(0, 255, 136, 0.5)",
+              }}
+            >
               Authenticating
             </span>
-            <span style={{
-              fontSize: 11,
-              fontWeight: 400,
-              color: 'rgba(255,255,255,0.8)',
-              letterSpacing: '0.3px'
-            }}>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 400,
+                color: "rgba(255,255,255,0.8)",
+                letterSpacing: "0.3px",
+              }}
+            >
               Keep steady and centered
             </span>
           </div>
@@ -799,7 +992,8 @@ const FloatingCamera = ({
       )}
       <style jsx>{`
         @keyframes pulse {
-          0%, 100% {
+          0%,
+          100% {
             opacity: 0.6;
             transform: scale(1);
           }
@@ -823,13 +1017,13 @@ const FloatingCamera = ({
         width={400}
         height={300}
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 0,
           left: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-          zIndex: 10
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+          zIndex: 10,
         }}
       />
     </div>

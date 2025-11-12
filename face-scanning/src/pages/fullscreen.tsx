@@ -9,7 +9,6 @@ import useMicrophoneDevices from '@/hooks/useMicrophoneDevices';
 import axios from 'axios';
 import { getExamSettings } from '@/constants/examSettingsConsts';
 import { setNumberOfMicrophones } from '@/constants/violationConsts';
-import { timeStamp } from 'console';
 
 
 const userId = getUserId() || "unknown";
