@@ -1,11 +1,9 @@
 import { Request, Response } from "express";
-import express from "express";
 import { Exam } from "../models/Exam";
 import { Attend } from "../models/Attend";
 import { User } from "../models/User";
 import { Question } from "../models/Questions";
 import { QuestionOption } from "../models/QuestionOption";
-import { UserAnswer } from "../models/UserAnswer";
 import { getUserIdFromToken } from "../utils/jwt";
 
 export const createExam = async (req: Request, res: Response) => {
@@ -50,48 +48,53 @@ export const createExam = async (req: Request, res: Response) => {
     }
 
     const newExam = await Exam.create({
-      user_id,
       exam_name,
-      third_eye_enabled,
-      multiple_person_detection_enabled,
-      eyeball_detection_enabled,
-      object_detection_enabled,
-      head_direction_enabled,
-      flag_notifications_enabled,
-      video_recording_enabled,
-      tab_switch_detection_enabled,
-      microphone_detection_enabled,
-      safe_browser_enabled,
-      proctor_feed_to_test_taker_enabled,
-      screen_sharing_enabled,
-      screen_count_detection_enabled,
-      control_desktop_apps_enabled,
-      normal_proctoring,
-      ai_powered_proctoring,
-      recorded_manual_proctoring,
-      face_authentication_enabled,
+      user_id,
       key: nextKey,
+      third_eye_enabled: third_eye_enabled || false,
+      multiple_person_detection_enabled:
+        multiple_person_detection_enabled || false,
+      eyeball_detection_enabled: eyeball_detection_enabled || false,
+      object_detection_enabled: object_detection_enabled || false,
+      head_direction_enabled: head_direction_enabled || false,
+      flag_notifications_enabled: flag_notifications_enabled || false,
+      video_recording_enabled: video_recording_enabled || false,
+      tab_switch_detection_enabled: tab_switch_detection_enabled || false,
+      microphone_detection_enabled: microphone_detection_enabled || false,
+      safe_browser_enabled: safe_browser_enabled || false,
+      proctor_feed_to_test_taker_enabled:
+        proctor_feed_to_test_taker_enabled || false,
+      screen_sharing_enabled: screen_sharing_enabled || false,
+      screen_count_detection_enabled: screen_count_detection_enabled || false,
+      control_desktop_apps_enabled: control_desktop_apps_enabled || false,
+      normal_proctoring: normal_proctoring || false,
+      ai_powered_proctoring: ai_powered_proctoring || false,
+      recorded_manual_proctoring: recorded_manual_proctoring || false,
+      face_authentication_enabled: face_authentication_enabled || false,
     });
 
     if (questions && Array.isArray(questions) && questions.length > 0) {
+      const allOptionsData: any[] = [];
+
       for (const q of questions) {
         const createdQuestion = await Question.create({
           exam_id: newExam.id,
-          question_text: q.question_text || q.question,
-          answer: String(q.answer),
-          marks: q.marks || 1,
+          question_text: q.question,
         });
 
         if (q.options && Array.isArray(q.options)) {
-          const optionsData = q.options.map((opt: any) => ({
-            question_id: createdQuestion.id,
-            option_text:
-              typeof opt === "string" ? opt : opt.option_text || opt.text,
-            is_correct: typeof opt === "object" ? !!opt.is_correct : false,
-          }));
-
-          await QuestionOption.bulkCreate(optionsData);
+          for (const opt of q.options) {
+            allOptionsData.push({
+              question_id: createdQuestion.id,
+              option_text: opt.text,
+              is_correct: opt.isCorrect || false,
+            });
+          }
         }
+      }
+
+      if (allOptionsData.length > 0) {
+        await QuestionOption.bulkCreate(allOptionsData as any);
       }
     }
 
@@ -109,7 +112,7 @@ export const createExam = async (req: Request, res: Response) => {
   }
 };
 
-export const getExam = async (req: Request, res: Response) => {
+export const getExams = async (req: Request, res: Response) => {
   const user_id = getUserIdFromToken(req);
   if (!user_id) {
     return res.status(400).json({
@@ -143,33 +146,6 @@ export const getExam = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Error fetching exams",
-      error: err.message,
-    });
-  }
-};
-
-export const getCanditates = async (req: Request, res: Response) => {
-  const { exam_id } = req.body;
-  if (!exam_id) {
-    return res.status(400).json({
-      success: false,
-      message: "Exam ID is required",
-    });
-  }
-  try {
-    const candidates = await Attend.findAll({
-      where: { exam_id },
-      attributes: ["user_id", "user_name"],
-    });
-    res.status(200).json({
-      success: true,
-      message: "Candidates fetched successfully",
-      candidates,
-    });
-  } catch (err: any) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching candidates",
       error: err.message,
     });
   }
@@ -398,104 +374,28 @@ export const deleteExam = async (req: Request, res: Response) => {
   }
 };
 
-export const getExamResults = async (req: Request, res: Response) => {
-  const { examId } = req.params;
-  const user_id = getUserIdFromToken(req);
-
-  if (!examId || !user_id) {
+export const getCandidates = async (req: Request, res: Response) => {
+  const { exam_id } = req.body;
+  if (!exam_id) {
     return res.status(400).json({
       success: false,
-      message: "Exam ID and user authentication required",
+      message: "Exam ID is required",
     });
   }
-
   try {
-    const exam = await Exam.findOne({
-      where: {
-        id: examId,
-        user_id: user_id,
-      },
-    });
-
-    if (!exam) {
-      return res.status(404).json({
-        success: false,
-        message: "Exam not found or you don't have permission to view it",
-      });
-    }
-
     const candidates = await Attend.findAll({
-      where: { exam_id: examId },
-      include: [
-        {
-          model: User,
-          attributes: ["id", "name", "email"],
-        },
-      ],
+      where: { exam_id },
+      attributes: ["user_id", "user_name"],
     });
-
-    if (!candidates || candidates.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "No candidates found for this exam",
-        results: [],
-      });
-    }
-
-    const results = await Promise.all(
-      candidates.map(async (candidate) => {
-        const userId = candidate.user_id;
-
-        const userAnswers = await UserAnswer.findAll({
-          where: {
-            user_id: userId,
-            exam_id: examId,
-          },
-          include: [
-            {
-              model: QuestionOption,
-              as: "selected_option",
-              attributes: ["id", "option_text", "is_correct"],
-            },
-          ],
-        });
-
-        let correctAnswers = 0;
-        let totalAnswered = userAnswers.length;
-
-        userAnswers.forEach((answer) => {
-          if (answer.selected_option && answer.selected_option.is_correct) {
-            correctAnswers++;
-          }
-        });
-
-        return {
-          user_id: userId,
-          name: candidate.user?.name || "Unknown",
-          email: candidate.user?.email || "",
-          total_answered: totalAnswered,
-          correct_answers: correctAnswers,
-          score_percentage:
-            totalAnswered > 0
-              ? ((correctAnswers / totalAnswered) * 100).toFixed(2)
-              : "0.00",
-        };
-      })
-    );
-
     res.status(200).json({
       success: true,
-      message: "Exam results fetched successfully",
-      exam_id: examId,
-      exam_name: exam.exam_name,
-      total_candidates: results.length,
-      results: results,
+      message: "Candidates fetched successfully",
+      candidates,
     });
   } catch (err: any) {
-    console.error("Error fetching exam results:", err);
     res.status(500).json({
       success: false,
-      message: "Error fetching exam results",
+      message: "Error fetching candidates",
       error: err.message,
     });
   }

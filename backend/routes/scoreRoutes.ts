@@ -1,6 +1,8 @@
 import { Router } from "express";
 import {
   getScoreInPercent,
+} from "../controllers/ResultsController";
+import {
   putScoreInPercent,
   setMicrophoneCount,
   updateTabSwitch,
@@ -13,9 +15,10 @@ import {
 
 const router = Router();
 
-router.get("/getScore", requireExaminerRole, getScoreInPercent);
+// Get score for a specific user and exam
+router.get("/score/:userId/:examId", requireExaminerRole, getScoreInPercent);
 
-router.post("/saveScore",  putScoreInPercent);
+router.post("/saveScore", putScoreInPercent);
 
 // router.post("/setMicrophone", requireStudentRole, setMicrophoneCount);
 

@@ -309,7 +309,7 @@ export default function PhotoDetect() {
 
         <ResultCard isVerified={isVerified} allDone={allDone} />
 
-        {allDone && (
+        {(allDone || permissions.some(p => p.status === "denied")) && (
           <div className={styles.actionContainer}>
             <button
               className={`${styles.actionButton} ${isVerified ? styles.primaryButton : styles.secondaryButton}`}
