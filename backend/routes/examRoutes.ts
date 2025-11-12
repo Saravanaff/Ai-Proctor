@@ -6,6 +6,7 @@ import {
   updateExam,
   deleteExam,
   getExamResults,
+  getStudentAnswers
 } from "../controllers/ExamAdminController";
 import {
   getExamSettings,
