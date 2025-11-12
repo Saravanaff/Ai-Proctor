@@ -32,19 +32,6 @@ interface VideoChunkData {
   settings: any;
 }
 
-interface ExamMetrics {
-  headPositions: { [key: string]: number };
-  eyeMovements: { [key: string]: number };
-  mobileDetections: number;
-  frameCount: number;
-  startTime: number;
-  endTime: number;
-  totalDuration: number;
-  headPitch: number[];
-  headYaw: number[];
-  headRoll: number[];
-  eyeGazeHistory: string[];
-}
 
 const FloatingCamera = ({
   socket,
@@ -77,19 +64,6 @@ const FloatingCamera = ({
   const endExamSentRef = useRef(false);
   const isStoppingRef = useRef(false);
 
-  const metricsRef = useRef<ExamMetrics>({
-    headPositions: {},
-    eyeMovements: {},
-    mobileDetections: 0,
-    frameCount: 0,
-    startTime: Date.now(),
-    endTime: 0,
-    totalDuration: 0,
-    headPitch: [],
-    headYaw: [],
-    headRoll: [],
-    eyeGazeHistory: [],
-  });
 
   const countersRef = useRef({
     look: 0,
@@ -145,11 +119,7 @@ const FloatingCamera = ({
 
   // Calculate head position from landmarks
   const calculateHeadPosition = useCallback((landmarks: any[]): string => {
-
-
     let head = headPos(landmarks);
-
-    metricsRef.current.headPositions[head] = (metricsRef.current.headPositions[head] || 0) + 1;
     return head;
   }, []);
 
@@ -167,11 +137,6 @@ const FloatingCamera = ({
     else if (r_eye_direction == "right" && l_eye_direction == "right") {
       eyeDir = "right";
     }
-
-
-    metricsRef.current.eyeMovements[eyeDir] = (metricsRef.current.eyeMovements[eyeDir] || 0) + 1;
-    metricsRef.current.eyeGazeHistory.push(eyeDir);
-
     return eyeDir;
   }, []);
 
@@ -180,70 +145,6 @@ const FloatingCamera = ({
     return detection;
   }, []);
 
-  // Detect mobile device in frame
-  const detectMobileDevice = useCallback((canvas: HTMLCanvasElement): boolean => {
-    try {
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return false;
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-
-      let edgeCount = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-
-        if (Math.abs(r - g) > 50 || Math.abs(g - b) > 50) {
-          edgeCount++;
-        }
-      }
-
-      const isMobileDetected = edgeCount > data.length * 0.15;
-      if (isMobileDetected) {
-        metricsRef.current.mobileDetections++;
-      }
-      return isMobileDetected;
-    } catch (error) {
-      return false;
-    }
-  }, []);
-
-  // Log exam completion metrics
-  const logExamMetrics = () => {
-    metricsRef.current.endTime = Date.now();
-    metricsRef.current.totalDuration = metricsRef.current.endTime - metricsRef.current.startTime;
-
-    console.log('======= EXAM COMPLETION METRICS =======');
-    console.log('User ID:', userId);
-    console.log('Exam ID:', examId);
-    console.log('');
-
-    console.log('📊 HEAD POSITION TRACKING:');
-    console.log('  - Head Positions:', metricsRef.current.headPositions);
-    console.log('  - Most Common Position:', Object.keys(metricsRef.current.headPositions).reduce((a, b) =>
-      metricsRef.current.headPositions[a] > metricsRef.current.headPositions[b] ? a : b, 'unknown'));
-    console.log('');
-
-    console.log('👁️ EYE MOVEMENT TRACKING:');
-    console.log('  - Eye Movements:', metricsRef.current.eyeMovements);
-    console.log('  - Gaze History (last 20):', metricsRef.current.eyeGazeHistory.slice(-20));
-    console.log('');
-
-    console.log('📱 MOBILE DETECTION:');
-    console.log('  - Times Mobile Detected:', metricsRef.current.mobileDetections);
-    console.log('');
-
-    console.log('📈 FRAME STATISTICS:');
-    console.log('  - Total Frames Processed:', metricsRef.current.frameCount);
-    console.log('  - Total Duration (ms):', metricsRef.current.totalDuration);
-    console.log('  - Duration (seconds):', Math.round(metricsRef.current.totalDuration / 1000));
-    console.log('  - Average FPS:', Math.round((metricsRef.current.frameCount / metricsRef.current.totalDuration) * 1000));
-    console.log('');
-
-    console.log('======= END METRICS =======');
-  };
 
   const baseUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -384,7 +285,6 @@ const FloatingCamera = ({
       console.log("🛑 Exam Submitted - Stopping all recordings");
       console.log("⏰ Current timestamp:", new Date().toISOString());
       console.log("👤 User ID:", userId, "📝 Exam ID:", examId);
-      logExamMetrics();
 
       // Stop face camera recording - this will trigger final ondataavailable
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
@@ -395,7 +295,7 @@ const FloatingCamera = ({
         } catch (e) {
           console.warn("Could not request data:", e);
         }
-        
+
         // Then stop the recorder (will trigger final ondataavailable)
         setTimeout(() => {
           if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
@@ -557,7 +457,7 @@ const FloatingCamera = ({
         mediaRecorderRef.current.ondataavailable = (e: any) => {
           if (e.data.size > 0) {
             const isLastChunk = mediaRecorderRef.current?.state === "inactive";
-            
+
             e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
               const chunkData: VideoChunkData = {
                 user_id: userId,
@@ -607,9 +507,6 @@ const FloatingCamera = ({
           if (!ctx) return;
 
           ctx.drawImage(video, 0, 0, width, height);
-
-          // Track frame metrics
-          metricsRef.current.frameCount++;
 
           // Process with MediaPipe Face Landmarker if available
           if (faceLandmarkerRef.current && videoRef.current && canvasRef.current) {
@@ -691,43 +588,6 @@ const FloatingCamera = ({
               console.error("Object Detector processing error:", error);
             }
 
-            // Detect mobile device on canvas (every 30 frames instead of 10 to reduce CPU)
-            if (metricsRef.current.frameCount % 30 === 0) {
-              detectMobileDevice(canvas);
-            }
-
-            // Throttle socket emit to reduce network and processing overhead
-            if (metricsRef.current.frameCount % 2 === 0) { // Send every other frame
-              canvas.toBlob(
-                (blob) => {
-                  if (blob && isMounted) {
-                    blob
-                      .arrayBuffer()
-                      .then((buffer) => {
-                        socket.emit("authenticate", {
-                          buffer,
-                          metadata: { width, height },
-                          user_id: userId,
-                          exam_id: examId,
-                          userId: userId,
-                          examId: examId,
-                          settings: settingsRef.current,
-                          examSettings: settingsRef.current,
-                          timestamp: new Date(),
-                        });
-                      })
-                      .catch((error) => {
-                        console.error(
-                          "Error processing authentication frame:",
-                          error
-                        );
-                      });
-                  }
-                },
-                "image/jpeg",
-                0.5
-              );
-            }
           }
         }, 1000 / 10);
       } catch (error) {
@@ -786,7 +646,7 @@ const FloatingCamera = ({
 
     return () => {
       console.log("FloatingCamera cleanup - stopping recording");
-      
+
       isMounted = false;
       isInitialized.current = false;
 
