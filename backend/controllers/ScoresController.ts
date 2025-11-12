@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { calculateExamScore, getExamScore } from "../utils/calculate";
 import Scores from "../models/Scores";
 import { ViolationLog } from "../models/ViolationLog";
+import { Attend } from "../models/Attend";
 import { getUserIdFromToken } from "../utils/jwt";
 
 export const getScoreInPercent = async (req: Request, res: Response) => {
@@ -62,23 +63,9 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
   const { examId, userId, numberOfMicrophones, tabSwitchViolations } = req.body;
 
   try {
-    console.log("exam", req.body);
+    console.log("Processing score for exam:", req.body);
 
-    console.log(userId);
-    const flaggedScore = getExamScore(userId, examId);
-
-    console.log("Getting Exam Score :", flaggedScore);
-
-    if (!flaggedScore) {
-      return res.status(404).json({
-        success: false,
-        error: "No score data found for the given user and exam",
-      });
-    }
-
-    const calculatedScore = await calculateExamScore(flaggedScore);
-    console.log(calculatedScore);
-
+    // Validate userId and examId
     if (userId === null || userId === undefined) {
       return res.status(400).json({
         success: false,
@@ -86,22 +73,181 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       });
     }
 
+    if (examId === null || examId === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid examId",
+      });
+    }
+
+    // Fetch exam attendance record to get start and end time
+    const attendRecord = await Attend.findOne({
+      where: {
+        user_id: userId,
+        exam_id: examId,
+      },
+    });
+
+    if (!attendRecord || !attendRecord.startTime || !attendRecord.endTime) {
+      return res.status(404).json({
+        success: false,
+        error: "Attendance record not found or exam time not recorded",
+      });
+    }
+
+    // Calculate exam duration in minutes
+    const examDurationMs =
+      new Date(attendRecord.endTime).getTime() -
+      new Date(attendRecord.startTime).getTime();
+    const examDurationMinutes = examDurationMs / (1000 * 60);
+
+    console.log(`Exam duration: ${examDurationMinutes} minutes`);
+
+    // Fetch all violation logs for this user and exam
+    const violationLogs = await ViolationLog.findAll({
+      where: {
+        user_id: userId,
+        exam_id: examId,
+      },
+    });
+
+    console.log(
+      `Found ${violationLogs.length} violation logs for user ${userId}, exam ${examId}`
+    );
+
+    // Define violation weights (higher weight = more severe violation)
+    const violationWeights = {
+      multiple_persons_detected: 10, // Critical: Multiple people helping
+      face_auth_failed: 9, // Critical: Wrong person taking exam
+      object_detection_violation: 8, // High: Using unauthorized materials/devices
+      no_person_detected: 5, // Medium: Leaving exam area
+      head_position_violation: 3, // Low: Looking away from screen
+      eye_position_violation: 3, // Low: Eye movement away from screen
+    };
+
+    // Initialize violation counters
+    const violationCounts = {
+      no_of_person_flagged: 0,
+      no_person_flagged: 0,
+      auth_face_flagged: 0,
+      head_position_flagged: 0,
+      eyes_flagged: 0,
+      object_detected_flagged: 0,
+      sound_flagged: 0,
+    };
+
+    // Count violations by type and calculate weighted score
+    let weightedViolationScore = 0;
+
+    violationLogs.forEach((log) => {
+      const violationType = log.violation_name;
+
+      switch (violationType) {
+        case "multiple_persons_detected":
+          violationCounts.no_of_person_flagged++;
+          weightedViolationScore += violationWeights.multiple_persons_detected;
+          break;
+        case "no_person_detected":
+          violationCounts.no_person_flagged++;
+          weightedViolationScore += violationWeights.no_person_detected;
+          break;
+        case "face_auth_failed":
+          violationCounts.auth_face_flagged++;
+          weightedViolationScore += violationWeights.face_auth_failed;
+          break;
+        case "head_position_violation":
+          violationCounts.head_position_flagged++;
+          weightedViolationScore += violationWeights.head_position_violation;
+          break;
+        case "eye_position_violation":
+          violationCounts.eyes_flagged++;
+          weightedViolationScore += violationWeights.eye_position_violation;
+          break;
+        case "object_detection_violation":
+          violationCounts.object_detected_flagged++;
+          weightedViolationScore += violationWeights.object_detection_violation;
+          break;
+        default:
+          // Log unknown violation types for debugging
+          console.log(`Unknown violation type: ${violationType}`);
+          break;
+      }
+    });
+
+    // Add weighted scores for tab switches and microphone violations
+    const tabSwitchWeight = 7; // High severity
+    const microphoneWeight = 4; // Medium severity
+
+    weightedViolationScore += (tabSwitchViolations || 0) * tabSwitchWeight;
+    weightedViolationScore += (numberOfMicrophones || 0) * microphoneWeight;
+
+    // Calculate cheating percentage based on:
+    // 1. Weighted violation score
+    // 2. Exam duration (normalize violations per hour)
+    // 3. Total violation count
+
+    const totalViolations =
+      Object.values(violationCounts).reduce((sum, count) => sum + count, 0) +
+      (tabSwitchViolations || 0);
+
+    // Calculate violations per hour to normalize across different exam durations
+    const violationsPerHour =
+      examDurationMinutes > 0
+        ? (totalViolations / examDurationMinutes) * 60
+        : 0;
+
+    // Calculate weighted score per hour
+    const weightedScorePerHour =
+      examDurationMinutes > 0
+        ? (weightedViolationScore / examDurationMinutes) * 60
+        : 0;
+
+    // Calculate cheating percentage (0-100 scale)
+    // Formula: Consider both frequency and severity
+    // Normalize to 100 scale: assume 20 weighted violations per hour = 100% cheating
+    const maxWeightedScorePerHour = 20;
+    let cheatingPercentage = Math.min(
+      Math.round((weightedScorePerHour / maxWeightedScorePerHour) * 100),
+      100
+    );
+
+    // If there are critical violations (multiple persons, face auth failed), ensure minimum 50% cheating score
+    if (
+      violationCounts.no_of_person_flagged > 0 ||
+      violationCounts.auth_face_flagged > 0
+    ) {
+      cheatingPercentage = Math.max(cheatingPercentage, 50);
+    }
+
+    console.log({
+      totalViolations,
+      weightedViolationScore,
+      examDurationMinutes,
+      violationsPerHour: violationsPerHour.toFixed(2),
+      weightedScorePerHour: weightedScorePerHour.toFixed(2),
+      cheatingPercentage,
+    });
+
+    // Prepare score data for database
     const scoreData = {
       user_id: userId,
       exam_id: examId,
-      no_of_person_flagged: flaggedScore.noOfPersonFlagged || 0,
-      no_person_flagged: flaggedScore.noPersonFlagged || 0,
-      auth_face_flagged: flaggedScore.authFaceFlagged || 0,
-      head_position_flagged: flaggedScore.headPositionFlagged || 0,
-      eyes_flagged: flaggedScore.eyesFlagged || 0,
-      object_detected_flagged: flaggedScore.objectDetectedFlagged || 0,
-      total_images_processed: flaggedScore.totalImagesProcessed || 0,
-      sound_flagged: flaggedScore.soundFlagged || 0,
+      no_of_person_flagged: violationCounts.no_of_person_flagged,
+      no_person_flagged: violationCounts.no_person_flagged,
+      auth_face_flagged: violationCounts.auth_face_flagged,
+      head_position_flagged: violationCounts.head_position_flagged,
+      eyes_flagged: violationCounts.eyes_flagged,
+      object_detected_flagged: violationCounts.object_detected_flagged,
+      total_images_processed: violationLogs.length,
+      sound_flagged: violationCounts.sound_flagged,
       number_of_microphone: numberOfMicrophones || 0,
       tab_switch_violation: tabSwitchViolations || 0,
-      total_score: calculatedScore.cheatingPercentage || 0,
+      total_score: cheatingPercentage,
     };
 
+    console.log("Calculated score data:", scoreData);
+
+    // Check if score record already exists
     const existingScore = await Scores.findOne({
       where: {
         user_id: userId,
@@ -110,100 +256,45 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
     });
 
     if (!existingScore) {
+      // Create new score record
       await Scores.create(scoreData as any);
+      console.log("Created new score record");
     } else {
+      // Update existing score record
       await existingScore.update(scoreData);
-    }
-
-    const violationLogs = calculatedScore.violationFrames;
-    console.log(
-      "Violation Logs of webdetect: ",
-      violationLogs.webDetectViolations
-    );
-
-    for (const log of violationLogs.faceAuthViolations) {
-      console.log(
-        "faceAuth log timestamp:",
-        log?.timestamp,
-        "type:",
-        typeof log?.timestamp
-      );
-      const timestamp = log?.timestamp ? new Date(log.timestamp) : null;
-      console.log("converted timestamp:", timestamp);
-
-      await ViolationLog.create({
-        user_id: userId,
-        exam_id: examId,
-        violation_name: log?.frameData?.violationType,
-        violation_timestamp: timestamp,
-      });
-    }
-    for (const log of violationLogs.headPositionViolations) {
-      const timestamp = log?.timestamp ? new Date(log.timestamp) : null;
-
-      await ViolationLog.create({
-        user_id: userId,
-        exam_id: examId,
-        violation_name: log?.frameData?.violationType,
-        violation_timestamp: timestamp,
-      });
-    }
-    for (const log of violationLogs.eyePositionViolations) {
-      const timestamp = log?.timestamp ? new Date(log.timestamp) : null;
-
-      await ViolationLog.create({
-        user_id: userId,
-        exam_id: examId,
-        violation_name: log?.frameData?.violationType,
-        violation_timestamp: timestamp,
-      });
-    }
-    for (const log of violationLogs.webDetectViolations) {
-      const timestamp = log?.timestamp ? new Date(log.timestamp) : null;
-
-      console.log(
-        "webDetect log timestamp:",
-        log?.timestamp,
-        "type:",
-        typeof log?.timestamp
-      );
-
-      await ViolationLog.create({
-        user_id: userId,
-        exam_id: examId,
-        violation_name: log?.frameData?.violationType,
-        violation_timestamp: timestamp,
-      });
-    }
-    for (const log of violationLogs.personViolations) {
-      const timestamp = log?.timestamp ? new Date(log.timestamp) : null;
-
-      await ViolationLog.create({
-        user_id: userId,
-        exam_id: examId,
-        violation_name: log?.frameData?.violationType,
-        violation_timestamp: timestamp,
-      });
+      console.log("Updated existing score record");
     }
 
     res.status(200).json({
       success: true,
-      message: "Score saved successfully",
+      message: "Score calculated and saved successfully",
       timestamp: new Date().toISOString(),
       data: {
         userId,
         examId,
-        flaggedData: flaggedScore,
-        calculatedScore: calculatedScore,
+        examDuration: {
+          startTime: attendRecord.startTime,
+          endTime: attendRecord.endTime,
+          durationMinutes: Math.round(examDurationMinutes),
+        },
+        violationCounts,
+        violationWeights,
+        analytics: {
+          totalViolations,
+          weightedViolationScore,
+          violationsPerHour: parseFloat(violationsPerHour.toFixed(2)),
+          weightedScorePerHour: parseFloat(weightedScorePerHour.toFixed(2)),
+        },
+        cheatingPercentage,
         savedScore: scoreData,
       },
     });
   } catch (error) {
-    console.error("Error saving score:", error);
+    console.error("Error calculating and saving score:", error);
     res.status(500).json({
       success: false,
-      error: "Failed to save score Error Occured",
-      err: error,
+      error: "Failed to calculate and save score",
+      details: error instanceof Error ? error.message : "Unknown error",
     });
   }
 };
