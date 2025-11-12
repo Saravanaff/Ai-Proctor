@@ -410,7 +410,6 @@ export const getExamResults = async (req: Request, res: Response) => {
   }
 
   try {
-    // Verify exam belongs to the user
     const exam = await Exam.findOne({
       where: {
         id: examId,
@@ -425,7 +424,6 @@ export const getExamResults = async (req: Request, res: Response) => {
       });
     }
 
-    // Get all candidates who attended the exam with their answers
     const candidates = await Attend.findAll({
       where: { exam_id: examId },
       include: [
@@ -444,12 +442,10 @@ export const getExamResults = async (req: Request, res: Response) => {
       });
     }
 
-    // Calculate results for each candidate
     const results = await Promise.all(
       candidates.map(async (candidate) => {
         const userId = candidate.user_id;
 
-        // Get all answers by this user for this exam
         const userAnswers = await UserAnswer.findAll({
           where: {
             user_id: userId,
@@ -464,7 +460,6 @@ export const getExamResults = async (req: Request, res: Response) => {
           ],
         });
 
-        // Count correct answers
         let correctAnswers = 0;
         let totalAnswered = userAnswers.length;
 

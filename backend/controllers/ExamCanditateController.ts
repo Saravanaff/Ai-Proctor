@@ -1,6 +1,9 @@
 import { Attend } from "../models/Attend";
 import { Exam } from "../models/Exam";
 import { UserAnswer } from "../models/UserAnswer";
+import { User } from "../models/User";
+import { Question } from "../models/Questions";
+import { QuestionOption } from "../models/QuestionOption";
 import { Request, Response } from "express";
 import { getUserIdFromToken } from "../utils/jwt";
 
@@ -203,52 +206,151 @@ export const saveUserAnswers = async (req: Request, res: Response) => {
   }
 };
 
-export const getUserAnswers = async (req: Request, res: Response) => {
+export const getUserAnswersByAdmin = async (req: Request, res: Response) => {
   try {
-    const { exam_id } = req.params;
-    const user_id = getUserIdFromToken(req);
+    const { examId, candidateUserId } = req.params;
+    const adminUserId = getUserIdFromToken(req);
 
-    if (!user_id) {
+    console.log("📊 Fetching user answers for admin:", {
+      adminUserId,
+      examId,
+      candidateUserId,
+    });
+
+    if (!adminUserId) {
       return res.status(401).json({
         success: false,
-        message: "User authentication required",
+        message: "Admin authentication required",
       });
     }
 
-    if (!exam_id) {
+    if (!examId || !candidateUserId) {
       return res.status(400).json({
         success: false,
-        message: "exam_id is required",
+        message: "examId and candidateUserId are required",
       });
     }
 
-    const answers = await UserAnswer.findAll({
+    const exam = await Exam.findOne({
       where: {
-        user_id: Number(user_id),
-        exam_id: Number(exam_id),
+        id: Number(examId),
+        user_id: adminUserId,
       },
+    });
+
+    if (!exam) {
+      return res.status(404).json({
+        success: false,
+        message: "Exam not found or you don't have permission to view it",
+      });
+    }
+
+    const attendance = await Attend.findOne({
+      where: {
+        exam_id: Number(examId),
+        user_id: Number(candidateUserId),
+      },
+      include: [
+        {
+          model: User,
+          attributes: ["id", "name", "email"],
+        },
+      ],
+    });
+
+    if (!attendance) {
+      return res.status(404).json({
+        success: false,
+        message: "Candidate did not attend this exam",
+      });
+    }
+
+    const userAnswers = await UserAnswer.findAll({
+      where: {
+        user_id: Number(candidateUserId),
+        exam_id: Number(examId),
+      },
+      include: [
+        {
+          model: Question,
+          attributes: ["id", "question_text"],
+          include: [
+            {
+              model: QuestionOption,
+              as: "options",
+              attributes: ["id", "option_text", "is_correct"],
+            },
+          ],
+        },
+        {
+          model: QuestionOption,
+          as: "selected_option",
+          attributes: ["id", "option_text", "is_correct"],
+        },
+      ],
       order: [["question_id", "ASC"]],
+    });
+
+    let correctAnswers = 0;
+    let totalAnswered = userAnswers.length;
+
+    const answersWithDetails = userAnswers.map((answer) => {
+      const isCorrect = answer.selected_option?.is_correct || false;
+      if (isCorrect) correctAnswers++;
+
+      return {
+        question_id: answer.question_id,
+        question_text: answer.question?.question_text,
+        all_options: answer.question?.options || [],
+        selected_option_id: answer.option_id,
+        selected_option_text: answer.selected_option?.option_text,
+        is_correct: isCorrect,
+        written_answer: answer.written_answer,
+        answered_at: answer.answered_at,
+      };
+    });
+
+    console.log("Successfully fetched user answers:", {
+      totalAnswered,
+      correctAnswers,
     });
 
     return res.status(200).json({
       success: true,
-      message: "User answers retrieved successfully",
+      message: "User answers fetched successfully",
       data: {
-        user_id,
-        exam_id,
-        totalAnswers: answers.length,
-        answers,
+        exam: {
+          id: exam.id,
+          name: exam.exam_name,
+        },
+        candidate: {
+          user_id: attendance.user_id,
+          name: attendance.user?.name,
+          email: attendance.user?.email,
+        },
+        statistics: {
+          total_answered: totalAnswered,
+          correct_answers: correctAnswers,
+          incorrect_answers: totalAnswered - correctAnswers,
+          score_percentage:
+            totalAnswered > 0
+              ? ((correctAnswers / totalAnswered) * 100).toFixed(2)
+              : "0.00",
+        },
+        answers: answersWithDetails,
       },
     });
   } catch (err: any) {
-    console.error("Error retrieving user answers:", err);
+    console.error("Error fetching user answers:", err);
     return res.status(500).json({
       success: false,
-      message: "Error retrieving user answers",
+      message: "Error fetching user answers",
       error: err.message,
     });
   }
 };
+
+
 
 
 

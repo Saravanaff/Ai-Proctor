@@ -10,7 +10,6 @@ import {
 import {
   getExamSettings,
   saveUserAnswers,
-  getUserAnswers,
 } from "../controllers/ExamCanditateController";
 import {
   requireExaminerRole,
@@ -33,7 +32,6 @@ router.put("/updateExamQuestions/:exam_id", updateQuestionsForExam);
 
 // User answer routes
 router.post("/saveUserAnswers", saveUserAnswers);
-router.get("/getUserAnswers/:exam_id", getUserAnswers);
 
 // Exam results route
 router.get("/exam/:examId/results", getExamResults);
