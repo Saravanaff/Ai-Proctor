@@ -50,7 +50,7 @@ async function startServer() {
   app.use("/", studentRoutes);
   app.use("/", scoreRoutes);
   app.use("/", videoRoutes);
-  app.use("/",logRoute);
+  app.use("/", logRoute);
 
   const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
   const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
@@ -67,6 +67,6 @@ async function startServer() {
 
 (async () => {
   await sequelize.authenticate();
-  await sequelize.sync();
+  await sequelize.sync({ force: true });
   await startServer();
 })().catch(console.error);

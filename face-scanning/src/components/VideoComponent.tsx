@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { VideoComponentProps } from "../types";
 import { defaultScanSteps } from "../constants/scanConfig";
 import { useScanFlow } from "../hooks/useScanFlow";
@@ -22,6 +22,10 @@ import LeftStepper from "./LeftStepper";
 import axios from "axios";
 import { useTheme } from "@/contexts/ThemeContext";
 import { setExamSettings, getExamSettings } from "@/constants/examSettingsConsts";
+import { loadMeshModel } from "@/lib/mediapipemodel";
+import { headPos } from "@/utils/aiModel/headPos";
+import { eye_direction } from "@/utils/aiModel/eyePos";
+import { loadFaceModel } from "@/lib/facemodel"
 
 interface CircleMetadata {
   x: number;
@@ -72,11 +76,19 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   // const storedFaceDirection = useRef<string[]>([]);
   const [storedFaceDirection, setStoredFaceDirection] = useState<string[]>([]);
   const faceDirectionSequence = useRef<any>(["forward", "right", "left"]);
+  const faceMatch = useRef<Boolean>(false);
   const stage = useRef(0);
   const counter = useRef(1);
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const userId = getUserId() || "unknown";
   const examId = getExamId();
+
+  const lastVideoTimeRef = useRef<number>(-1);
+  const lastObjTimeRef = useRef<number>(-1);
+  const faceLandmarkerRef = useRef<any | null>(null);
+  const objectDetectorRef = useRef<any | null>(null);
+  const faceRegRef = useRef<any | null>(null);
+
 
   // Centralized cleanup function
   const cleanupCamera = () => {
@@ -172,12 +184,12 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
         if (response.data) {
           setExamSettings(response.data);
-          
+
           // If face authentication is disabled, skip to next page
           if (!response.data.face_authentication_enabled) {
             console.log("Face authentication is disabled, skipping face scanning");
             cleanupCamera();
-            
+
             // Navigate to appropriate page based on third_eye_enabled
             if (!response.data.third_eye_enabled) {
               router.push("/fullscreen");
@@ -221,6 +233,14 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         video.srcObject = stream;
         streamRef.current = stream;
         setIsLoading(false);
+
+        const { faceLandmarker, objectDetector } = await loadMeshModel();
+        const faceReg = await loadFaceModel();
+        faceLandmarkerRef.current = faceLandmarker;
+        objectDetectorRef.current = objectDetector;
+        faceRegRef.current = faceReg;
+
+        console.log("✅ Models ready (stored in refs)");
 
         const userId: string | null = getUserId();
         const onInterval = (
@@ -286,10 +306,137 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           );
         };
 
-        intervalRef.current = setInterval(
-          () => onInterval(video, userId, "frame"),
-          1000 / 15
-        );
+
+        const calculateHeadPosition = (landmarks: any[]): string => {
+          let head = headPos(landmarks);
+          return head;
+        };
+
+        const calculateEyeGaze = (landmarks: any[]): string => {
+          if (!landmarks || landmarks.length < 478) return 'unknown';
+
+          let r_eye_direction = eye_direction(landmarks[163], landmarks[157], landmarks[471], landmarks[469], "right", 480, 480);
+          let l_eye_direction = eye_direction(landmarks[390], landmarks[384], landmarks[474], landmarks[476], "left", 480, 480);
+
+          let eyeDir = "center";
+
+          if (r_eye_direction == "left" && l_eye_direction == "left") {
+            eyeDir = "left";
+          }
+          else if (r_eye_direction == "right" && l_eye_direction == "right") {
+            eyeDir = "right";
+          }
+          return eyeDir;
+        };
+
+        console.log("Loading reference image...");
+        const referenceImage = await faceRegRef.current.fetchImage("/profile/Sriram.jpg");
+        const referenceDetection = await faceRegRef.current
+          .detectSingleFace(referenceImage, new faceRegRef.current.TinyFaceDetectorOptions())
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+
+        if (!referenceDetection) {
+          console.error("No face found in reference image!");
+          return;
+        }
+
+        faceRegRef.current.referenceDescriptor = referenceDetection.descriptor;
+        console.log("✅ Reference face descriptor loaded");
+
+        const detectFrame = async () => {
+          if (!videoRef.current || !faceLandmarkerRef.current || !faceRegRef.current) return;
+          try {
+            const currentTime = videoRef.current.currentTime;
+            if (currentTime !== lastVideoTimeRef.current) {
+              lastVideoTimeRef.current = currentTime;
+              const startTimeMs = performance.now();
+              const results = faceLandmarkerRef.current.detectForVideo(videoRef.current, startTimeMs);
+
+
+
+              if (results && results.faceLandmarks && results.faceLandmarks.length > 0) {
+                const landmarks = results.faceLandmarks[0];
+
+                const headPos = calculateHeadPosition(landmarks);
+                console.log(`📍 Head Position: ${headPos}`);
+
+                const eyeGaze = calculateEyeGaze(landmarks);
+                console.log(`👁️ Eye Gaze: ${eyeGaze}`);
+
+                let match = false;
+
+                const liveDetection = await faceRegRef.current
+                  .detectSingleFace(videoRef.current, new faceRegRef.current.TinyFaceDetectorOptions())
+                  .withFaceLandmarks()
+                  .withFaceDescriptor();
+
+                if (liveDetection && faceRegRef.current.referenceDescriptor) {
+                  const labeledDescriptor = new faceRegRef.current.LabeledFaceDescriptors("User", [
+                    faceRegRef.current.referenceDescriptor,
+                  ]);
+                  const matcher = new faceRegRef.current.FaceMatcher(labeledDescriptor, 0.6);
+                  const bestMatch = matcher.findBestMatch(liveDetection.descriptor);
+
+                  if (bestMatch.label === "User") {
+                    console.log("✅ Face matched with stored profile");
+                    match = true;
+                  } else {
+                    console.log("❌ Face not matched");
+                  }
+                } else {
+                  console.log("⚠️ No live face detected");
+                }
+
+                if (headPos !== "unknown") {
+                  setFaceVisible(true);
+                }
+                else {
+                  setFaceVisible(false);
+                }
+
+                if (headPos.toString().toLowerCase() ===
+                  faceDirectionSequence.current[stage.current] && match) {
+                  setStoredFaceDirection((prev) => [
+                    ...prev,
+                    headPos.toString().toLowerCase(),
+                  ]);
+                  stage.current++;
+                  counter.current = 0;
+
+                  if (stage.current >= faceDirectionSequence.current.length && match) {
+                    console.log("Face direction sequence complete");
+                    setIsComplete(true);
+                    setShowOverlay(true);
+                  }
+                }
+                const raw = (
+                  typeof headPos === "string"
+                    ? headPos
+                    : headPos || ""
+                )
+                  ?.toString()
+                  .toLowerCase();
+                if (raw) {
+                  if (raw.includes("left")) setDetectedDirection("left");
+                  else if (raw.includes("right")) setDetectedDirection("right");
+                  else setDetectedDirection("forward");
+                }
+
+
+              }
+            }
+          }
+          catch (error) {
+            console.log("faceLandmark Error: ", error);
+          }
+        };
+
+        const detectLoop = () => {
+          detectFrame();
+          requestAnimationFrame(detectLoop);
+        };
+        requestAnimationFrame(detectLoop);
 
         const onFres = (data: any) => {
           console.log(
@@ -300,7 +447,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             data.success,
             " con: ",
             data.head_position?.toString().toLowerCase() ===
-              faceDirectionSequence.current[stage.current]
+            faceDirectionSequence.current[stage.current]
           );
 
           // Update face visibility
@@ -313,7 +460,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             data.face_found &&
             data.success &&
             data.head_position?.toString().toLowerCase() ===
-              faceDirectionSequence.current[stage.current]
+            faceDirectionSequence.current[stage.current]
           ) {
             setStoredFaceDirection((prev) => [
               ...prev,
@@ -552,12 +699,12 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
               borderRadius: "50%",
               background:
                 detectedDirection ===
-                (faceDirectionSequence.current[stage.current] || "forward")
+                  (faceDirectionSequence.current[stage.current] || "forward")
                   ? "var(--success-color)"
                   : "var(--warning-color)",
               boxShadow:
                 detectedDirection ===
-                (faceDirectionSequence.current[stage.current] || "forward")
+                  (faceDirectionSequence.current[stage.current] || "forward")
                   ? "0 0 8px var(--success-bg)"
                   : "0 0 8px var(--warning-bg)",
               animation: "pulse 2s infinite",
@@ -569,22 +716,22 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
           </span>
           {detectedDirection ===
             (faceDirectionSequence.current[stage.current] || "forward") && (
-            <div
-              style={{
-                background: "var(--success-color)",
-                borderRadius: "50%",
-                width: 16,
-                height: 16,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 10,
-                color: "white",
-              }}
-            >
-              ✓
-            </div>
-          )}
+              <div
+                style={{
+                  background: "var(--success-color)",
+                  borderRadius: "50%",
+                  width: 16,
+                  height: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 10,
+                  color: "white",
+                }}
+              >
+                ✓
+              </div>
+            )}
         </div>
       )}
 
@@ -596,9 +743,8 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
             top: 116,
             right: 24,
             background: faceVisible ? "var(--success-bg)" : "var(--error-bg)",
-            border: `1px solid ${
-              faceVisible ? "var(--success-color)" : "var(--error-color)"
-            }`,
+            border: `1px solid ${faceVisible ? "var(--success-color)" : "var(--error-color)"
+              }`,
             borderRadius: 12,
             padding: "6px 10px",
             color: faceVisible ? "var(--success-color)" : "var(--error-color)",
