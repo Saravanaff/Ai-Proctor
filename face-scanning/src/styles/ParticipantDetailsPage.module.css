@@ -1932,3 +1932,223 @@
     transform: translateY(0);
   }
 }
+
+/* Exam Results Tab Styles */
+.examResultsTab {
+  padding: 24px;
+  background: var(--card-bg);
+  border-radius: 12px;
+}
+
+.examResultsContent {
+  animation: fadeIn 0.3s ease-in;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  background: var(--button-secondary-bg, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.05));
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--text-secondary, #999);
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+}
+
+.statValue.correct {
+  color: #22c55e;
+}
+
+.statValue.wrong {
+  color: #ef4444;
+}
+
+.statValue.unanswered {
+  color: #fbbf24;
+}
+
+.questionsContainer {
+  margin-top: 24px;
+}
+
+.questionsTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin: 0 0 20px 0;
+}
+
+.questionCard {
+  background: var(--button-secondary-bg, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.05));
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.questionCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.questionCard.correctAnswer {
+  border-left: 4px solid #22c55e;
+}
+
+.questionCard.wrongAnswer {
+  border-left: 4px solid #ef4444;
+}
+
+.questionCard.notAnswered {
+  border-left: 4px solid #fbbf24;
+}
+
+.questionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.05));
+}
+
+.questionNumber {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary, #999);
+  background: var(--button-secondary-bg, rgba(255, 255, 255, 0.05));
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.questionStatus {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.questionStatus.statusCorrect {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+}
+
+.questionStatus.statusWrong {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.questionStatus.statusUnanswered {
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+}
+
+.questionText {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary, #ffffff);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.optionItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--button-secondary-bg, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.05));
+  transition: all 0.2s ease;
+}
+
+.optionItem.correctOption {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+}
+
+.optionItem.selectedOption {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}
+
+.optionText {
+  color: var(--text-primary, #ffffff);
+  font-size: 14px;
+  flex: 1;
+}
+
+.correctBadge,
+.selectedBadge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-left: 12px;
+}
+
+.correctBadge {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.selectedBadge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-secondary, #999);
+}
+
+.emptyStateIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  font-size: 16px;
+  color: var(--text-secondary, #999);
+}

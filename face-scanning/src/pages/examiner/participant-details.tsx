@@ -188,8 +188,28 @@ const ParticipantDetailsPage: React.FC = () => {
   const [scoreDetails, setScoreDetails] = useState<ScoreDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "timeline" | "review"
+    "overview" | "timeline" | "review" | "examResults"
   >("overview");
+
+  // Exam Results states
+  const [examResultsLoading, setExamResultsLoading] = useState(false);
+  const [examResults, setExamResults] = useState<{
+    answers: {
+      question: any;
+      userAnswer: any;
+      selectedOption: any;
+      correctOption: any;
+      isCorrect: boolean;
+    }[];
+    stats: {
+      totalQuestions: number;
+      answered: number;
+      correct: number;
+      wrong: number;
+      unanswered: number;
+      score: string;
+    };
+  } | null>(null);
 
   const [violations, setViolations] = useState<ViolationEvent[]>([]);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
@@ -435,6 +455,79 @@ const ParticipantDetailsPage: React.FC = () => {
       console.log("Error fetching logs in participant-details.tsx: ", err);
     } finally {
       setLogsLoading(false);
+    }
+  };
+
+  // Fetch exam results for the student
+  const fetchExamResults = async () => {
+    if (!user || !examDetails) return;
+
+    try {
+      setExamResultsLoading(true);
+      const token = getTokenFromCookie();
+      const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+      // Fetch questions
+      const questionsRes = await axios.get(
+        `${base}/getExamQuestions/${examDetails.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Fetch user answers using the new endpoint for examiners
+      const answersRes = await axios.get(
+        `${base}/exam/${examDetails.id}/student/${user.id}/answers`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const questions = questionsRes.data.questions || [];
+      const userAnswers = answersRes.data.data?.answers || [];
+
+      // Map questions with user answers
+      const detailedAnswers = questions.map((question: any) => {
+        const userAnswer = userAnswers.find(
+          (ans: any) => ans.question_id === question.id
+        );
+        const selectedOption = userAnswer
+          ? question.QuestionOptions.find(
+              (opt: any) => opt.id === userAnswer.option_id
+            )
+          : null;
+        const correctOption = question.QuestionOptions.find(
+          (opt: any) => opt.is_correct
+        );
+        const isCorrect = selectedOption?.is_correct || false;
+
+        return {
+          question,
+          userAnswer: userAnswer || null,
+          selectedOption,
+          correctOption,
+          isCorrect,
+        };
+      });
+
+      const stats = {
+        totalQuestions: questions.length,
+        answered: userAnswers.length,
+        correct: detailedAnswers.filter((a: any) => a.isCorrect).length,
+        wrong: detailedAnswers.filter((a: any) => a.userAnswer && !a.isCorrect)
+          .length,
+        unanswered: questions.length - userAnswers.length,
+        score: scoreDetails?.data ? `${scoreDetails.data}` : "0",
+      };
+
+      setExamResults({
+        answers: detailedAnswers,
+        stats,
+      });
+    } catch (err: any) {
+      console.error("Error fetching exam results:", err);
+    } finally {
+      setExamResultsLoading(false);
     }
   };
 
@@ -692,6 +785,13 @@ const ParticipantDetailsPage: React.FC = () => {
     document.addEventListener("keydown", handleKeyPress);
     return () => document.removeEventListener("keydown", handleKeyPress);
   }, [modalImage, tooltip.visible]);
+
+  // Fetch exam results when exam results tab is activated
+  useEffect(() => {
+    if (activeTab === "examResults" && !examResults && user && examDetails) {
+      fetchExamResults();
+    }
+  }, [activeTab, user, examDetails]);
 
   // Calculate total violations
   const getTotalViolations = () => {
@@ -1774,6 +1874,14 @@ const ParticipantDetailsPage: React.FC = () => {
           onClick={() => setActiveTab("review")}
         >
           Review Session
+        </button>
+        <button
+          className={`${styles.tab} ${
+            activeTab === "examResults" ? styles.activeTab : ""
+          }`}
+          onClick={() => setActiveTab("examResults")}
+        >
+          Exam Results
         </button>
       </div>
 
@@ -2859,6 +2967,122 @@ const ParticipantDetailsPage: React.FC = () => {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Exam Results Tab */}
+        {activeTab === "examResults" && (
+          <div className={styles.examResultsTab}>
+            {examResultsLoading ? (
+              <div className={styles.loadingState}>Loading exam results...</div>
+            ) : examResults ? (
+              <div className={styles.examResultsContent}>
+                {/* Stats summary */}
+                <div className={styles.statsGrid}>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>Total Questions</div>
+                    <div className={styles.statValue}>
+                      {examResults.stats.totalQuestions}
+                    </div>
+                  </div>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>Correct</div>
+                    <div className={`${styles.statValue} ${styles.correct}`}>
+                      {examResults.stats.correct}
+                    </div>
+                  </div>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>Wrong</div>
+                    <div className={`${styles.statValue} ${styles.wrong}`}>
+                      {examResults.stats.wrong}
+                    </div>
+                  </div>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>Unanswered</div>
+                    <div className={`${styles.statValue} ${styles.unanswered}`}>
+                      {examResults.stats.unanswered}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Questions list */}
+                <div className={styles.questionsContainer}>
+                  <h3 className={styles.questionsTitle}>Question Details</h3>
+                  {examResults.answers.map((item, index) => (
+                    <div
+                      key={item.question.id}
+                      className={`${styles.questionCard} ${
+                        item.isCorrect
+                          ? styles.correctAnswer
+                          : item.userAnswer
+                          ? styles.wrongAnswer
+                          : styles.notAnswered
+                      } theme-transition`}
+                    >
+                      <div className={styles.questionHeader}>
+                        <span className={styles.questionNumber}>
+                          Q{index + 1}
+                        </span>
+                        <span
+                          className={`${styles.questionStatus} ${
+                            item.isCorrect
+                              ? styles.statusCorrect
+                              : item.userAnswer
+                              ? styles.statusWrong
+                              : styles.statusUnanswered
+                          }`}
+                        >
+                          {item.isCorrect
+                            ? "✓ Correct"
+                            : item.userAnswer
+                            ? "✗ Wrong"
+                            : "— Not Answered"}
+                        </span>
+                      </div>
+
+                      <div className={styles.questionText}>
+                        {item.question.question_text}
+                      </div>
+
+                      <div className={styles.optionsList}>
+                        {item.question.QuestionOptions.map((option: any) => (
+                          <div
+                            key={option.id}
+                            className={`${styles.optionItem} ${
+                              option.is_correct
+                                ? styles.correctOption
+                                : option.id === item.userAnswer?.option_id
+                                ? styles.selectedOption
+                                : ""
+                            }`}
+                          >
+                            <span className={styles.optionText}>
+                              {option.option_text}
+                            </span>
+                            {option.is_correct && (
+                              <span className={styles.correctBadge}>
+                                ✓ Correct Answer
+                              </span>
+                            )}
+                            {!option.is_correct &&
+                              option.id === item.userAnswer?.option_id && (
+                                <span className={styles.selectedBadge}>
+                                  Your Answer
+                                </span>
+                              )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyStateIcon}>📝</div>
+                <p>No exam results available for this participant</p>
+              </div>
+            )}
           </div>
         )}
       </div>
