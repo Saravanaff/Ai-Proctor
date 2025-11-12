@@ -13,6 +13,7 @@ import studentRoutes from "./routes/studentRoutes";
 import scoreRoutes from "./routes/scoreRoutes";
 import videoRoutes from "./routes/videoRoutes";
 import logRoute from "./routes/logRoute";
+import generatorRoute from "./routes/generatorRoutes";
 import fs from "fs";
 
 dotenv.config({ path: path.join(__dirname, ".env") });
@@ -51,6 +52,7 @@ async function startServer() {
   app.use("/", scoreRoutes);
   app.use("/", videoRoutes);
   app.use("/", logRoute);
+  app.use("/",generatorRoute);
 
   const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
   const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));

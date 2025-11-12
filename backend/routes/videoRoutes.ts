@@ -1,12 +1,15 @@
 import { Router } from "express";
-import { downloadVideo, streamVideo } from "../controllers/VideoController";
+import { 
+  downloadVideo, 
+  streamVideo, 
+  getCandidateVideos, 
+  getExamVideos 
+} from "../controllers/VideoController";
 import authMiddleware from "../middleware/authMiddleware";
-import { requireExaminerRole } from "../middleware/roleMiddleware";
 
 const router = Router();
 
-// Handle preflight requests for CORS
-router.options("/stream-video/:user_id/:exam_id/:category", (req, res) => {
+router.options("/stream/:user_id/:exam_id/:category", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
   res.setHeader(
@@ -21,20 +24,32 @@ router.options("/stream-video/:user_id/:exam_id/:category", (req, res) => {
   res.status(200).end();
 });
 
-// HEAD request for video availability check
-router.head(
-  "/stream-video/:user_id/:exam_id/:category",
-  authMiddleware,
-  streamVideo
-);
-
-// Stream video route - requires authentication
 router.get(
-  "/stream-video/:user_id/:exam_id/:category",
+  "/candidate/:user_id/:exam_id",
+  authMiddleware,
+  getCandidateVideos
+);
+
+router.get(
+  "/exam/:exam_id",
+  authMiddleware,
+  getExamVideos
+);
+
+router.head(
+  "/stream/:user_id/:exam_id/:category",
   streamVideo
 );
 
-// Download video route - requires authentication and examiner role
-router.get("/download-video/:user_id/:exam_id/:category", downloadVideo);
+router.get(
+  "/stream/:user_id/:exam_id/:category",
+  streamVideo
+);
+
+router.get(
+  "/download/:user_id/:exam_id/:category",
+  authMiddleware,
+  downloadVideo
+);
 
 export default router;

@@ -26,9 +26,8 @@ interface LLMResponse {
 
 export const generateQuestionsFromText = async (req: Request, res: Response) => {
   try {
-    const { text, exam_id, question_count = 10, question_types = ["mcq"] } = req.body;
-
-    // Validate input
+    const { text, exam_id, question_count } = req.body;
+    console.log(req.body);
     if (!text || typeof text !== "string") {
       return res.status(400).json({
         success: false,
@@ -48,7 +47,6 @@ export const generateQuestionsFromText = async (req: Request, res: Response) => 
     const generatedQuestions = await callLLMForQuestions(
       text,
       question_count,
-      question_types
     );
 
     return res.status(200).json({
@@ -73,13 +71,12 @@ export const generateQuestionsFromText = async (req: Request, res: Response) => 
 async function callLLMForQuestions(
   text: string,
   questionCount: number,
-  questionTypes: string[]
 ): Promise<GeneratedQuestion[]> {
   const systemPrompt = `You are an expert exam question generator. Your task is to analyze the provided text and generate high-quality exam questions.
 
 IMPORTANT: Return ONLY valid JSON, no markdown, no code blocks, no explanations.
 
-Generate ${questionCount} questions of types: ${questionTypes.join(", ")}.
+Generate ${questionCount}}.
 
 For each question, follow this exact JSON structure:
 {
@@ -87,7 +84,7 @@ For each question, follow this exact JSON structure:
     {
       "question_text": "The question text here?",
       "question_type": "mcq",
-      "answer": "correct answer for non-MCQ, or null for MCQ",
+      "answer": " The correct answer for Question Here",
       "marks": 1,
       "options": [
         {
@@ -107,7 +104,7 @@ For each question, follow this exact JSON structure:
 }
 
 Rules:
-- For MCQ: provide 4 options, mark exactly one as correct, set answer to null
+- For MCQ: provide 4 options, mark exactly one as correct
 - For short/long/essay: provide answer text, set options to empty array or null
 - Ensure questions are clear, unambiguous, and directly related to the text
 - Number questions using position field (0-indexed)
@@ -214,6 +211,7 @@ export const testLLMConnection = async (req: Request, res: Response) => {
         message: "LLM_API_KEY not configured in environment variables",
       });
     }
+    console.log(LLM_API_KEY);
 
     const testPrompt = "Generate a simple JSON object with one MCQ question about programming.";
     

@@ -1,129 +1,256 @@
 import { Request, Response } from "express";
-import axios from "axios";
-import https from "https";
+import path from "path";
+import fs from "fs";
+import dotenv from "dotenv";
+import { spawn } from "child_process";
+
+dotenv.config();
+
+const STORAGE_RECORDINGS_PATH = path.join(
+  __dirname,
+  "..", 
+  "..", 
+  "storage", 
+  "src", 
+  "recordings"
+);
+
+const CONVERTED_VIDEOS_PATH = path.join(
+  __dirname,
+  "..", 
+  "..", 
+  "storage", 
+  "src", 
+  "converted"
+);
+
+if (!fs.existsSync(CONVERTED_VIDEOS_PATH)) {
+  fs.mkdirSync(CONVERTED_VIDEOS_PATH, { recursive: true });
+}
+
+const findVideoFile = (baseFileName: string, directory: string): string | null => {
+  const supportedExtensions = ['.webm', '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv', '.m4v', '.mpeg', '.mpg'];
+  
+  for (const ext of supportedExtensions) {
+    const filePath = path.join(directory, baseFileName + ext);
+    if (fs.existsSync(filePath)) {
+      return filePath;
+    }
+  }
+  
+  return null;
+};
+
+const getFileExtension = (filePath: string): string => {
+  return path.extname(filePath).toLowerCase();
+};
+
+const convertToMP4 = (inputPath: string, outputPath: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (fs.existsSync(outputPath)) {
+      const inputStats = fs.statSync(inputPath);
+      const outputStats = fs.statSync(outputPath);
+      
+      if (outputStats.mtime > inputStats.mtime) {
+        console.log(`MP4 already exists and is up to date: ${outputPath}`);
+        return resolve();
+      }
+    }
+
+    const inputExt = getFileExtension(inputPath);
+    console.log(`🔄 Converting ${inputExt} to MP4: ${path.basename(inputPath)}`);
+
+    const ffmpeg = spawn("ffmpeg", [
+      "-i", inputPath,
+      "-c:v", "libx264",
+      "-preset", "fast",
+      "-crf", "23",
+      "-c:a", "aac",
+      "-b:a", "128k",
+      "-movflags", "+faststart",
+      "-y",
+      outputPath
+    ]);
+
+    ffmpeg.stderr.on("data", (data) => {
+      const output = data.toString();
+      if (output.includes("time=")) {
+        process.stdout.write(`\r${output.trim()}`);
+      }
+    });
+
+    ffmpeg.on("close", (code) => {
+      if (code === 0) {
+        console.log(`\nConversion complete: ${path.basename(outputPath)}`);
+        resolve();
+      } else {
+        reject(new Error(`ffmpeg exited with code ${code}`));
+      }
+    });
+
+    ffmpeg.on("error", (error) => {
+      reject(error);
+    });
+  });
+};
+
+export const getCandidateVideos = async (req: Request, res: Response) => {
+  try {
+    const { user_id, exam_id } = req.params;
+
+    if (!user_id || !exam_id) {
+      return res.status(400).json({
+        success: false,
+        message: "user_id and exam_id are required",
+      });
+    }
+
+    const faceCameraBaseName = `${user_id}_${exam_id}_face_camera`;
+    const screenRecordingBaseName = `${user_id}_${exam_id}_screen_recording`;
+
+    const faceCameraPath = findVideoFile(faceCameraBaseName, STORAGE_RECORDINGS_PATH);
+    const screenRecordingPath = findVideoFile(screenRecordingBaseName, STORAGE_RECORDINGS_PATH);
+
+    const faceCameraExists = faceCameraPath !== null;
+    const screenRecordingExists = screenRecordingPath !== null;
+
+    let faceCameraStats = null;
+    let screenRecordingStats = null;
+    let faceCameraFileName = null;
+    let screenRecordingFileName = null;
+
+    if (faceCameraExists && faceCameraPath) {
+      faceCameraStats = fs.statSync(faceCameraPath);
+      faceCameraFileName = path.basename(faceCameraPath);
+    }
+
+    if (screenRecordingExists && screenRecordingPath) {
+      screenRecordingStats = fs.statSync(screenRecordingPath);
+      screenRecordingFileName = path.basename(screenRecordingPath);
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        user_id,
+        exam_id,
+        face_camera: {
+          available: faceCameraExists,
+          fileName: faceCameraFileName,
+          mp4_fileName: `${faceCameraBaseName}.mp4`,
+          size: faceCameraStats ? faceCameraStats.size : 0,
+          created_at: faceCameraStats ? faceCameraStats.birthtime : null,
+          stream_url: faceCameraExists 
+            ? `/api/video/stream/${user_id}/${exam_id}/face_camera` 
+            : null,
+          download_url: faceCameraExists 
+            ? `/api/video/download/${user_id}/${exam_id}/face_camera` 
+            : null,
+        },
+        screen_recording: {
+          available: screenRecordingExists,
+          fileName: screenRecordingFileName,
+          mp4_fileName: `${screenRecordingBaseName}.mp4`,
+          size: screenRecordingStats ? screenRecordingStats.size : 0,
+          created_at: screenRecordingStats ? screenRecordingStats.birthtime : null,
+          stream_url: screenRecordingExists 
+            ? `/api/video/stream/${user_id}/${exam_id}/screen_recording` 
+            : null,
+          download_url: screenRecordingExists 
+            ? `/api/video/download/${user_id}/${exam_id}/screen_recording` 
+            : null,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error("Error getting candidate videos:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error retrieving videos",
+      error: error.message,
+    });
+  }
+};
 
 export const streamVideo = async (req: Request, res: Response) => {
   try {
     const { user_id, exam_id, category } = req.params;
 
-    console.log(
-      `Video stream request: user_id=${user_id}, exam_id=${exam_id}, category=${category}`
-    );
-    console.log(`Request headers:`, req.headers);
-    console.log(`Request query:`, req.query);
-
     if (!user_id || !exam_id || !category) {
       return res.status(400).json({
         success: false,
-        message: "Missing required parameters: user_id, exam_id, and category",
+        message: "user_id, exam_id, and category are required",
       });
     }
 
-    // Get storage server URL from environment variables
-    const storageServerUrl =
-      process.env.STORAGE_SERVER_URL || "https://localhost:3003";
-    const streamUrl = `${storageServerUrl}/stream/${user_id}/${exam_id}/${category}`;
+    if (category !== "face_camera" && category !== "screen_recording") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category. Must be 'face_camera' or 'screen_recording'",
+      });
+    }
+
+    const baseFileName = `${user_id}_${exam_id}_${category}`;
+    const mp4fileName = `${baseFileName}.mp4`;
+    const mp4Path = path.join(CONVERTED_VIDEOS_PATH, mp4fileName);
+
+    const videoPath = findVideoFile(baseFileName, STORAGE_RECORDINGS_PATH);
+
+    if (!videoPath) {
+      return res.status(404).json({
+        success: false,
+        message: "Video not found",
+      });
+    }
 
     try {
-      // Handle range requests for video seeking
-      const rangeHeader = req.headers.range;
-
-      // Make request to storage server with range header if present
-      const response = await axios({
-        method: "GET",
-        url: streamUrl,
-        responseType: "stream",
-        timeout: 30000, // 30 seconds timeout
-        headers: rangeHeader ? { Range: rangeHeader } : {},
-        httpsAgent: new https.Agent({
-          rejectUnauthorized: false, // for development, should be removed in production
-        }),
-      });
-
-      // Forward the headers from storage server
-      const contentType = response.headers["content-type"];
-      // Clean up content type - remove any problematic codec specifications
-      let cleanContentType = contentType || "video/mp4";
-
-      // If the content type has codec specification that might be problematic, simplify it
-      if (cleanContentType.includes("codecs=")) {
-        if (cleanContentType.includes("video/mp4")) {
-          cleanContentType = "video/mp4";
-        } else if (cleanContentType.includes("video/webm")) {
-          cleanContentType = "video/webm";
-        }
-      }
-
-      res.setHeader("Content-Type", cleanContentType);
-
-      // Handle range responses for video seeking
-      if (response.status === 206) {
-        res.status(206);
-        res.setHeader("Content-Range", response.headers["content-range"]);
-        res.setHeader("Content-Length", response.headers["content-length"]);
-      } else {
-        res.setHeader("Content-Length", response.headers["content-length"]);
-      }
-
-      res.setHeader(
-        "Accept-Ranges",
-        response.headers["accept-ranges"] || "bytes"
-      );
-      res.setHeader("Cache-Control", "public, max-age=3600");
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-      res.setHeader(
-        "Access-Control-Allow-Headers",
-        "Range, Content-Type, Authorization"
-      );
-      res.setHeader(
-        "Access-Control-Expose-Headers",
-        "Content-Range, Content-Length, Accept-Ranges"
-      );
-
-      // Pipe the video stream from storage server to client
-      response.data.pipe(res);
-
-      // Handle stream errors
-      response.data.on("error", (error: any) => {
-        console.error("Error streaming video from storage server:", error);
-        if (!res.headersSent) {
-          res.status(500).json({
-            success: false,
-            message: "Error streaming video file",
-          });
-        }
-      });
-    } catch (storageError: any) {
-      console.error("Storage server request failed:", storageError.message);
-
-      if (storageError.response?.status === 404) {
-        return res.status(404).json({
-          success: false,
-          message: "Video file not found",
-          detail:
-            "The requested video may not have been recorded for this exam session",
-        });
-      }
-
-      if (storageError.code === "ECONNREFUSED") {
-        return res.status(503).json({
-          success: false,
-          message: "Storage server is unavailable",
-        });
-      }
-
+      await convertToMP4(videoPath, mp4Path);
+    } catch (conversionError: any) {
+      console.error("Conversion error:", conversionError);
       return res.status(500).json({
         success: false,
-        message: "Failed to retrieve video from storage server",
-        detail: storageError.message,
+        message: "Error converting video",
+        error: conversionError.message,
       });
     }
-  } catch (error) {
-    console.error("Stream video controller error:", error);
-    res.status(500).json({
+
+    const stat = fs.statSync(mp4Path);
+    const fileSize = stat.size;
+    const range = req.headers.range;
+
+    if (range) {
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunkSize = end - start + 1;
+
+      const stream = fs.createReadStream(mp4Path, { start, end });
+
+      res.writeHead(206, {
+        "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+        "Accept-Ranges": "bytes",
+        "Content-Length": chunkSize,
+        "Content-Type": "video/mp4",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges",
+      });
+
+      stream.pipe(res);
+    } else {
+      res.writeHead(200, {
+        "Content-Length": fileSize,
+        "Content-Type": "video/mp4",
+        "Access-Control-Allow-Origin": "*",
+      });
+
+      fs.createReadStream(mp4Path).pipe(res);
+    }
+  } catch (error: any) {
+    console.error("Error streaming video:", error);
+    return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Error streaming video",
+      error: error.message,
     });
   }
 };
@@ -135,84 +262,151 @@ export const downloadVideo = async (req: Request, res: Response) => {
     if (!user_id || !exam_id || !category) {
       return res.status(400).json({
         success: false,
-        message: "Missing required parameters: user_id, exam_id, and category",
+        message: "user_id, exam_id, and category are required",
       });
     }
 
-    // Get storage server URL from environment variables
-    const storageServerUrl =
-      process.env.STORAGE_SERVER_URL || "https://localhost:3003";
-    const downloadUrl = `${storageServerUrl}/download/${user_id}/${exam_id}/${category}`;
+    if (category !== "face_camera" && category !== "screen_recording") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category. Must be 'face_camera' or 'screen_recording'",
+      });
+    }
+
+    const baseFileName = `${user_id}_${exam_id}_${category}`;
+    const mp4fileName = `${baseFileName}.mp4`;
+    const mp4Path = path.join(CONVERTED_VIDEOS_PATH, mp4fileName);
+
+    const videoPath = findVideoFile(baseFileName, STORAGE_RECORDINGS_PATH);
+
+    if (!videoPath) {
+      return res.status(404).json({
+        success: false,
+        message: "Video not found",
+      });
+    }
 
     try {
-      // Make request to storage server
-      const response = await axios({
-        method: "GET",
-        url: downloadUrl,
-        responseType: "stream",
-        timeout: 30000, // 30 seconds timeout
-        httpsAgent: new https.Agent({
-          rejectUnauthorized: false, // for development should be removed in production
-        }),
-      });
-
-      // Forward the headers from storage server
-      res.setHeader(
-        "Content-Type",
-        response.headers["content-type"] || "video/mp4"
-      );
-      res.setHeader("Content-Length", response.headers["content-length"]);
-      res.setHeader(
-        "Content-Disposition",
-        response.headers["content-disposition"] ||
-          `attachment; filename="video_${user_id}_${exam_id}_${category}.mp4"`
-      );
-      res.setHeader(
-        "Accept-Ranges",
-        response.headers["accept-ranges"] || "bytes"
-      );
-
-      // Pipe the video stream from storage server to client
-      response.data.pipe(res);
-
-      // Handle stream errors
-      response.data.on("error", (error: any) => {
-        console.error("Error streaming video from storage server:", error);
-        if (!res.headersSent) {
-          res.status(500).json({
-            success: false,
-            message: "Error streaming video file",
-          });
-        }
-      });
-    } catch (storageError: any) {
-      console.error("Storage server request failed:", storageError.message);
-
-      if (storageError.response?.status === 404) {
-        return res.status(404).json({
-          success: false,
-          message: "Video file not found",
-        });
-      }
-
-      if (storageError.code === "ECONNREFUSED") {
-        return res.status(503).json({
-          success: false,
-          message: "Storage server is unavailable",
-        });
-      }
-
+      await convertToMP4(videoPath, mp4Path);
+    } catch (conversionError: any) {
+      console.error("Conversion error:", conversionError);
       return res.status(500).json({
         success: false,
-        message: "Failed to retrieve video from storage server",
-        err: storageError,
+        message: "Error converting video",
+        error: conversionError.message,
       });
     }
-  } catch (error) {
-    console.error("Download video controller error:", error);
-    res.status(500).json({
+
+    const stat = fs.statSync(mp4Path);
+
+    res.setHeader("Content-Type", "video/mp4");
+    res.setHeader("Content-Length", stat.size);
+    res.setHeader("Content-Disposition", `attachment; filename="${mp4fileName}"`);
+    res.setHeader("Access-Control-Allow-Origin", "*");
+
+    const stream = fs.createReadStream(mp4Path);
+    stream.pipe(res);
+
+    stream.on("error", (error) => {
+      console.error("Error reading video file:", error);
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: "Error downloading video",
+        });
+      }
+    });
+  } catch (error: any) {
+    console.error("Error downloading video:", error);
+    return res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: "Error downloading video",
+      error: error.message,
+    });
+  }
+};
+
+export const getExamVideos = async (req: Request, res: Response) => {
+  try {
+    const { exam_id } = req.params;
+
+    if (!exam_id) {
+      return res.status(400).json({
+        success: false,
+        message: "exam_id is required",
+      });
+    }
+
+    if (!fs.existsSync(STORAGE_RECORDINGS_PATH)) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          exam_id,
+          videos: [],
+          message: "No recordings found",
+        },
+      });
+    }
+
+    const files = fs.readdirSync(STORAGE_RECORDINGS_PATH);
+
+    const videoExtensions = '(webm|mp4|avi|mov|mkv|flv|wmv|m4v|mpeg|mpg)';
+    const examVideos = files
+      .filter((file) => {
+        const pattern = new RegExp(`^\\d+_${exam_id}_(face_camera|screen_recording)\\.${videoExtensions}$`, 'i');
+        return pattern.test(file);
+      })
+      .map((file) => {
+        const filePath = path.join(STORAGE_RECORDINGS_PATH, file);
+        const stats = fs.statSync(filePath);
+        const fileExt = getFileExtension(file);
+        const baseName = file.replace(fileExt, '');
+        const parts = baseName.split("_");
+        const user_id = parts[0];
+        const category = parts.slice(2).join("_");
+
+        return {
+          user_id,
+          exam_id,
+          category,
+          fileName: file,
+          fileFormat: fileExt.replace('.', '').toLowerCase(),
+          mp4_fileName: `${baseName}.mp4`,
+          size: stats.size,
+          created_at: stats.birthtime,
+          stream_url: `/api/video/stream/${user_id}/${exam_id}/${category}`,
+          download_url: `/api/video/download/${user_id}/${exam_id}/${category}`,
+        };
+      });
+
+    const groupedByUser: any = {};
+    examVideos.forEach((video) => {
+      if (!groupedByUser[video.user_id]) {
+        groupedByUser[video.user_id] = {
+          user_id: video.user_id,
+          exam_id: video.exam_id,
+          face_camera: null,
+          screen_recording: null,
+        };
+      }
+      groupedByUser[video.user_id][video.category] = video;
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        exam_id,
+        total_candidates: Object.keys(groupedByUser).length,
+        total_videos: examVideos.length,
+        candidates: Object.values(groupedByUser),
+      },
+    });
+  } catch (error: any) {
+    console.error("Error getting exam videos:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error retrieving exam videos",
+      error: error.message,
     });
   }
 };
