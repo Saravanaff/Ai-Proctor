@@ -151,14 +151,26 @@ export function initSocket(server: HttpServer) {
     });
 
     socket.on("stream-listener-off",async(data)=>{
+      console.log("⏹️ Received stream-listener-off from frontend:", {
+        user_id: data.user_id,
+        exam_id: data.exam_id,
+        category: data.category,
+        isFinal: data.isFinal,
+        totalChunks: data.totalChunks
+      });
+      
       if (storageSocket && storageSocket.connected) {
-        console.log("⏹️ Emitting stop-stream-recording to storage server");
+        console.log("📤 Relaying stop-stream-recording to storage server");
         storageSocket.emit("stop-stream-recording", {
           user_id: data.user_id,
           exam_id: data.exam_id,
-          category: data.category || 'face_camera'
+          category: data.category || 'face_camera',
+          isFinal: data.isFinal,
+          totalChunks: data.totalChunks
         });
-        console.log("✅ stop-stream-recording emitted to storage server");
+        console.log("✅ stop-stream-recording relayed to storage server");
+      } else {
+        console.warn("⚠️ Storage socket not connected - cannot stop recording");
       }
     })
 

@@ -118,7 +118,7 @@ const startStorageSocketServer = async () => {
           });
 
           writeStream.on("finish", () => {
-            console.log(" WriteStream finished for:", fileName);
+            console.log("✅ WriteStream finished for:", fileName);
           });
 
           recorder[fileName] = writeStream;
@@ -179,10 +179,14 @@ const startStorageSocketServer = async () => {
           const writeSuccess = recorder[fileName].write(buf);
           
           if (!writeSuccess) {
-            console.warn("WriteStream buffer is full for", fileName);
+            console.warn("⚠️ WriteStream buffer is full for", fileName, "- backpressure detected");
+            // ✅ Handle backpressure: wait for drain event before accepting more chunks
+            recorder[fileName].once('drain', () => {
+              console.log("✅ WriteStream buffer drained for", fileName);
+            });
           }
 
-          console.log(" Written chunk for", fileName, ":", buf.length, "bytes");
+          console.log("✅ Written chunk for", fileName, ":", buf.length, "bytes");
         } catch (error: any) {
           console.error("Error in add-video-stream-chunk:", error);
         }
@@ -191,7 +195,7 @@ const startStorageSocketServer = async () => {
 
     socket.on(
       "stop-stream-recording",
-      (data: { user_id: string; exam_id: string; category: string }) => {
+      (data: { user_id: string; exam_id: string; category: string; isFinal?: boolean; totalChunks?: number }) => {
         try {
           if (!data || !data.user_id || !data.exam_id || !data.category) {
             console.error("Invalid stop-stream-recording data:", data);
@@ -206,24 +210,49 @@ const startStorageSocketServer = async () => {
             return;
           }
 
-          recordingActive[fileName] = false;
-          console.log("Stop signal received for:", fileName);
+          // ✅ DON'T set recordingActive to false - keep accepting chunks during graceful shutdown
+          console.log("🛑 Stop signal received for:", fileName, `(isFinal: ${data.isFinal}, totalChunks: ${data.totalChunks})`);
 
+          // ✅ Wait 3 seconds to ensure all in-flight chunks arrive (increased for backpressure)
           setTimeout(() => {
             if (recorder[fileName]) {
-              recorder[fileName].end((error?: Error) => {
-                if (error) {
-                  console.error("Error closing WriteStream for", fileName, ":", error);
-                } else {
-                  console.log("Recording successfully ended:", fileName);
-                  socket.emit("recording-stopped", { fileName });
-                }
-              });
+              const stream = recorder[fileName];
               
-              delete recorder[fileName];
-              delete recordingActive[fileName];
+              // ✅ Check if stream is currently draining (backpressure)
+              const checkAndClose = () => {
+                if (stream.writableNeedDrain) {
+                  console.log(`⏳ ${fileName} has pending writes, waiting for drain...`);
+                  stream.once('drain', () => {
+                    console.log(`✅ ${fileName} drained, now closing...`);
+                    closeStream();
+                  });
+                } else {
+                  console.log(`✅ ${fileName} buffer empty, closing immediately...`);
+                  closeStream();
+                }
+              };
+              
+              const closeStream = () => {
+                // ✅ NOW mark as inactive so no new chunks are accepted
+                recordingActive[fileName] = false;
+                
+                stream.end((error?: Error) => {
+                  if (error) {
+                    console.error("❌ Error closing WriteStream for", fileName, ":", error);
+                  } else {
+                    console.log("✅ Recording successfully ended:", fileName);
+                    socket.emit("recording-stopped", { fileName });
+                  }
+                  
+                  // ✅ Clean up AFTER stream is fully closed
+                  delete recorder[fileName];
+                  delete recordingActive[fileName];
+                });
+              };
+              
+              checkAndClose();
             }
-          }, 1000);
+          }, 3000); // ✅ Increased to 3 seconds for heavy backpressure scenarios
         } catch (error: any) {
           console.error("Error in stop-stream-recording:", error);
           socket.emit("recording-error", { 

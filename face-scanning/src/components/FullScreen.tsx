@@ -41,7 +41,13 @@ type Answer = {
   option_text: string;
 };
 
-const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStreamRef }: any) => {
+const ExamPage = ({ 
+  screenRecorderMediaRecorderRef, 
+  onBeforeSubmit, 
+  screenStreamRef,
+  pendingScreenChunksRef,
+  pendingFaceChunksRef
+}: any) => {
   const [answers, setAnswers] = useState<{ [key: number]: Answer }>({});
   const [blocked, setBlocked] = useState(false);
   const [lookAlert, setlookAlert] = useState(false);
@@ -918,6 +924,7 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
             className={`${styles.submitButton} theme-transition`}
             onClick={async () => {
               console.log("🚀 Submit button clicked - initiating exam submission");
+              console.log(`📊 Current examSubmitted state: ${examSubmitted}`);
               
               // ✅ STOP SCREEN STREAM TRACKS FIRST (Turn off screen sharing IMMEDIATELY)
               if (screenStreamRef && screenStreamRef.current) {
@@ -947,12 +954,39 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
               }
               
               // ✅ SET EXAM SUBMITTED (This will trigger FloatingCamera cleanup - stops camera tracks immediately)
+              console.log("🎯 Setting examSubmitted to TRUE");
               setExamSubmitted(true);
+              console.log("✅ examSubmitted state updated");
 
-              // Wait for recordings to stop and final chunks to be sent
-              // MediaRecorder onstop handlers will emit stream-listener-off and end-exam events
-              console.log("⏳ Waiting 2.5 seconds for recording cleanup and chunk transmission...");
-              await new Promise((resolve) => setTimeout(resolve, 2500));
+              // ✅ Wait for ALL pending chunks from BOTH recorders to complete
+              const waitForAllChunks = async () => {
+                const maxWaitTime = 10000; // 10 seconds max
+                const startTime = Date.now();
+                
+                console.log("⏳ Waiting for all chunks to complete...");
+                
+                while (Date.now() - startTime < maxWaitTime) {
+                  const screenPending = pendingScreenChunksRef?.current?.size || 0;
+                  const facePending = pendingFaceChunksRef?.current?.size || 0;
+                  const totalPending = screenPending + facePending;
+                  
+                  if (totalPending === 0) {
+                    console.log("✅ All chunks completed!");
+                    return;
+                  }
+                  
+                  console.log(`📊 Pending chunks - Screen: ${screenPending}, Face: ${facePending}, Total: ${totalPending}`);
+                  await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                console.warn("⚠️ Timeout waiting for chunks - proceeding anyway");
+              };
+              
+              await waitForAllChunks();
+              
+              // Additional safety delay
+              console.log("⏳ Additional 1 second safety delay...");
+              await new Promise((resolve) => setTimeout(resolve, 1000));
 
               console.log("✅ All recordings stopped and events emitted from onstop handlers");
 
@@ -1033,7 +1067,8 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
         </div>
       </main>
 
-      {!examSubmitted && (
+      {/* ✅ Keep FloatingCamera mounted even after submission - just hide it */}
+      <div style={{ display: examSubmitted ? 'none' : 'block' }}>
         <FloatingCamera
           settings={examSettings}
           socket={socket}
@@ -1047,8 +1082,9 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
           screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
           onAuthPause={handleAuthPause}
           onAuthResume={handleAuthResume}
+          pendingChunksRef={pendingFaceChunksRef}
         />
-      )}
+      </div>
 
       {/* Conditionally render alerts based on exam settings */}
       {lookAlert && (

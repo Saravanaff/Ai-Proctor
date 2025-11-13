@@ -60,6 +60,27 @@ const logViolation = async (violationName: string) => {
   }
 };
 
+// ✅ Helper function to wait for all pending face camera chunks to complete
+const waitForPendingFaceChunks = (pendingChunksRef: React.MutableRefObject<Set<number>>): Promise<void> => {
+  return new Promise((resolve) => {
+    const checkInterval = setInterval(() => {
+      if (pendingChunksRef.current.size === 0) {
+        clearInterval(checkInterval);
+        resolve();
+      }
+    }, 100); // Check every 100ms
+    
+    // Safety timeout (10 seconds max)
+    setTimeout(() => {
+      if (pendingChunksRef.current.size > 0) {
+        console.warn(`⚠️ Timeout waiting for face chunks. ${pendingChunksRef.current.size} chunks still pending.`);
+      }
+      clearInterval(checkInterval);
+      resolve();
+    }, 10000);
+  });
+};
+
 interface VideoChunkData {
   user_id: string;
   exam_id: string | null;
@@ -83,6 +104,7 @@ const FloatingCamera = ({
   onAuthResume,
   screenRecorderMediaRecorderRef,
   settings = {},
+  pendingChunksRef,
 }: any) => {
   const isInitialized = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -100,6 +122,9 @@ const FloatingCamera = ({
   const lastObjTimeRef = useRef<number>(-1);
   const endExamSentRef = useRef(false);
   const isStoppingRef = useRef(false);
+  const pendingFaceChunksRef = useRef<Set<number>>(new Set());
+  const faceChunkCounterRef = useRef<number>(0);
+  const examSubmittedRef = useRef(false); // ✅ Ref to track examSubmitted state for onstop handler
 
   const countersRef = useRef({
     look: 0,
@@ -225,11 +250,17 @@ const FloatingCamera = ({
   }, [onAuthPause]);
 
   useEffect(() => {
+    console.log(`📊 FloatingCamera: examSubmitted changed to: ${examSubmitted}`);
+    
+    // ✅ Update ref immediately when examSubmitted changes
+    examSubmittedRef.current = examSubmitted;
+    
     if (examSubmitted && !isStoppingRef.current) {
       isStoppingRef.current = true;
       console.log("🛑 Exam Submitted - Stopping all recordings");
       console.log("⏰ Current timestamp:", new Date().toISOString());
       console.log("👤 User ID:", userId, "📝 Exam ID:", examId);
+      console.log(`📊 MediaRecorder current state: ${mediaRecorderRef.current?.state || 'null'}`);
 
       if (streamRef.current) {
         try {
@@ -269,12 +300,17 @@ const FloatingCamera = ({
             mediaRecorderRef.current &&
             mediaRecorderRef.current.state !== "inactive"
           ) {
+            console.log(`🛑 Calling mediaRecorder.stop() - current state: ${mediaRecorderRef.current.state}`);
             mediaRecorderRef.current.stop();
             console.log(
-              "✅ Face camera MediaRecorder stopped - waiting for final chunk"
+              "✅ Face camera MediaRecorder.stop() called - waiting for onstop event"
             );
+          } else {
+            console.warn(`⚠️ Cannot stop MediaRecorder - state is: ${mediaRecorderRef.current?.state || 'null'}`);
           }
         }, 100);
+      } else {
+        console.warn(`⚠️ MediaRecorder not available or already inactive - state: ${mediaRecorderRef.current?.state || 'null'}`);
       }
 
       // Stop screen recording (already handled in FullScreen.tsx, but as backup)
@@ -343,7 +379,6 @@ const FloatingCamera = ({
 
         console.log("FloatingCamera: Requesting camera access...");
 
-        // ✅ START CAMERA IMMEDIATELY - Don't wait for models
         let retries = 3;
         while (retries > 0) {
           try {
@@ -377,19 +412,16 @@ const FloatingCamera = ({
         }
         console.log("FloatingCamera: Camera access successful");
 
-        // ✅ SHOW CAMERA IMMEDIATELY
         if (videoRef.current && streamRef.current) {
           videoRef.current.srcObject = streamRef.current;
         }
 
-        // ✅ LOAD MODELS IN PARALLEL (NOT BLOCKING CAMERA DISPLAY)
         const loadModels = async () => {
           try {
             const vision = await FilesetResolver.forVisionTasks(
               "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
             );
 
-            // Load both models in parallel
             const [faceLandmarker, objectDetector] = await Promise.all([
               !faceLandmarkerRef.current
                 ? FaceLandmarker.createFromOptions(vision, {
@@ -434,58 +466,93 @@ const FloatingCamera = ({
           }
         };
 
-        // ✅ Load models in background (non-blocking)
         loadModels();
 
+        // ✅ FIX: Create MediaRecorder only if stream exists, and guard all subsequent operations
         if (streamRef.current) {
           mediaRecorderRef.current = new MediaRecorder(streamRef.current, {
             mimeType: "video/webm; codecs=vp8",
-            videoBitsPerSecond: 1000000,
+            videoBitsPerSecond: 500000,  // ✅ Reduced from 1Mbps to 500Kbps to reduce chunk size
           });
-        }
 
-        mediaRecorderRef.current.ondataavailable = (e: any) => {
-          if (e.data.size > 0) {
-            const isLastChunk = mediaRecorderRef.current?.state === "inactive";
+          mediaRecorderRef.current.ondataavailable = (e: any) => {
+            if (e.data.size > 0) {
+              const chunkNum = faceChunkCounterRef.current++;
+              
+              // ✅ Track this chunk as pending (both internal and external refs)
+              pendingFaceChunksRef.current.add(chunkNum);
+              if (pendingChunksRef?.current) {
+                pendingChunksRef.current.add(chunkNum);
+              }
 
-            e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
-              const chunkData: VideoChunkData = {
+              e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
+                const chunkData: VideoChunkData = {
+                  user_id: userId,
+                  exam_id: examId,
+                  category: "face_camera",
+                  chunk: buffer,
+                  timestamps: Date.now(),
+                  examSettings: settingsRef.current,
+                  settings: settingsRef.current,
+                };
+                socket.emit("recorder-add-video-stream-chunk", chunkData);
+                console.log(`📹 Sent face camera chunk #${chunkNum} (${buffer.byteLength} bytes)`);
+                
+                // ✅ Remove from pending after successful emit (both refs)
+                pendingFaceChunksRef.current.delete(chunkNum);
+                if (pendingChunksRef?.current) {
+                  pendingChunksRef.current.delete(chunkNum);
+                }
+                console.log(`✅ Face chunk #${chunkNum} sent, ${pendingFaceChunksRef.current.size} pending`);
+              }).catch((err: any) => {
+                console.error(`Failed to send face chunk #${chunkNum}:`, err);
+                // ✅ Remove from pending even on error (both refs)
+                pendingFaceChunksRef.current.delete(chunkNum);
+                if (pendingChunksRef?.current) {
+                  pendingChunksRef.current.delete(chunkNum);
+                }
+              });
+            }
+          };
+
+          mediaRecorderRef.current.onstop = async () => {
+            console.log("🎬 Face camera MediaRecorder stopped event fired");
+            console.log(`📊 examSubmitted state value: ${examSubmitted}`);
+            console.log(`📊 examSubmittedRef.current: ${examSubmittedRef.current}`); // ✅ Use ref instead
+            console.log(`📊 Current pending face chunks: ${pendingFaceChunksRef.current.size}`);
+
+            // ✅ Use ref instead of state to avoid stale closure
+            if (examSubmittedRef.current) {
+              // ✅ Wait for all pending chunks to finish uploading
+              console.log(`⏳ Waiting for ${pendingFaceChunksRef.current.size} pending face chunks...`);
+              await waitForPendingFaceChunks(pendingFaceChunksRef);
+              console.log("✅ All face chunks sent!");
+              
+              // ✅ Additional 500ms delay to ensure chunks are transmitted over network
+              console.log("⏳ Additional 500ms network safety delay for face camera...");
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              // ✅ NOW emit stream-listener-off AFTER all chunks are sent
+              console.log("📤 Emitting stream-listener-off for face_camera");
+              socket.emit("stream-listener-off", {
                 user_id: userId,
                 exam_id: examId,
                 category: "face_camera",
-                chunk: buffer,
-                timestamps: Date.now(),
-                examSettings: settingsRef.current,
-                settings: settingsRef.current,
-              };
-              socket.emit("recorder-add-video-stream-chunk", chunkData);
-              console.log(
-                "📹 Sent face camera chunk:",
-                buffer.byteLength,
-                "bytes",
-                isLastChunk ? "(FINAL CHUNK)" : ""
-              );
-            });
-          }
-        };
+                timestamp: new Date(),
+                totalChunks: faceChunkCounterRef.current,
+                isFinal: true,
+              });
+              
+              console.log(`✅ Face camera recording complete - ${faceChunkCounterRef.current} chunks sent`);
+            } else {
+              console.warn("⚠️ Face camera stopped but examSubmittedRef.current is false - not emitting stream-listener-off");
+            }
+          };
 
-        // Handle when MediaRecorder stops
-        mediaRecorderRef.current.onstop = () => {
-          console.log("🎬 Face camera MediaRecorder stopped event fired");
-
-          // ✅ Emit stream-listener-off AFTER final chunk is sent
-          if (examSubmitted) {
-            console.log("📤 Emitting stream-listener-off for face_camera");
-            socket.emit("stream-listener-off", {
-              user_id: userId,
-              exam_id: examId,
-              category: "face_camera",
-              timestamp: new Date(),
-            });
-          }
-        };
-
-        mediaRecorderRef.current.start(1000);
+          mediaRecorderRef.current.start(1000);
+        } else {
+          console.error("❌ Cannot create MediaRecorder: No stream available");
+        }
 
         interRef.current = setInterval(async () => {
           if (!isMounted) {
@@ -514,7 +581,6 @@ const FloatingCamera = ({
 
           ctx.drawImage(video, 0, 0, width, height);
 
-          // Process with MediaPipe Face Landmarker if available
           if (
             faceLandmarkerRef.current &&
             videoRef.current &&
@@ -523,7 +589,6 @@ const FloatingCamera = ({
             try {
               const currentTime = videoRef.current.currentTime;
 
-              // Only detect if this is a new frame
               if (currentTime !== lastVideoTimeRef.current) {
                 lastVideoTimeRef.current = currentTime;
 
@@ -540,8 +605,6 @@ const FloatingCamera = ({
                 ) {
                   const landmarks = results.faceLandmarks[0];
 
-                  // ✅ REMOVED: Don't draw landmarks on overlay (causes flickering)
-                  // Just process the data without visualization
 
                   const headPos = calculateHeadPosition(landmarks);
                   console.log(`📍 Head Position: ${headPos}`);
@@ -628,7 +691,6 @@ const FloatingCamera = ({
                       }
                     }
                   } else {
-                    // ✅ Reset tracking when violation stops
                     if (violationStartTimeRef.current.eyePosition !== null) {
                       console.log("✅ Eye position violation ended");
                       violationStartTimeRef.current.eyePosition = null;
@@ -825,11 +887,10 @@ const FloatingCamera = ({
       isMounted = false;
       isInitialized.current = false;
 
-      // Clean up Face Landmarker
       if (faceLandmarkerRef.current) {
         faceLandmarkerRef.current.close();
         faceLandmarkerRef.current = null;
-        console.log("✅ Face Landmarker cleaned up");
+        console.log("Face Landmarker cleaned up");
       }
 
       if (mediaRecorderRef.current) {
@@ -839,6 +900,9 @@ const FloatingCamera = ({
         if (mediaRecorderRef.current.state !== "inactive") {
           mediaRecorderRef.current.stop();
         }
+        
+        // ✅ FIX: Set to null to prevent memory leaks
+        mediaRecorderRef.current = null;
       }
 
       if (interRef.current) {

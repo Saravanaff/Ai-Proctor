@@ -36,7 +36,30 @@ const fullscreen = () => {
 
     const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
     const screenStreamRef = useRef<MediaStream | null>(null);
+    const pendingScreenChunksRef = useRef<Set<number>>(new Set());
+    const screenChunkCounterRef = useRef<number>(0);
+    const pendingFaceChunksRef = useRef<Set<number>>(new Set());
 
+    // ✅ Helper function to wait for all pending chunks to complete
+    const waitForPendingScreenChunks = (): Promise<void> => {
+        return new Promise((resolve) => {
+            const checkInterval = setInterval(() => {
+                if (pendingScreenChunksRef.current.size === 0) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100); // Check every 100ms
+            
+            // Safety timeout (10 seconds max)
+            setTimeout(() => {
+                if (pendingScreenChunksRef.current.size > 0) {
+                    console.warn(`⚠️ Timeout waiting for screen chunks. ${pendingScreenChunksRef.current.size} chunks still pending.`);
+                }
+                clearInterval(checkInterval);
+                resolve();
+            }, 10000);
+        });
+    };
 
     const startScreenRecording = async () => {
         try {
@@ -57,7 +80,7 @@ const fullscreen = () => {
             screenStreamRef.current = screenStream;
 
             const mimeType = "video/webm; codecs=vp8";
-            const options: any = { videoBitsPerSecond: 1000000 };
+            const options: any = { videoBitsPerSecond: 500000 };  // ✅ Reduced from 1Mbps to 500Kbps
             if (MediaRecorder && typeof (MediaRecorder as any).isTypeSupported === 'function') {
                 if ((MediaRecorder as any).isTypeSupported(mimeType)) {
                     options.mimeType = mimeType;
@@ -71,6 +94,11 @@ const fullscreen = () => {
             screenRecorderMediaRecorderRef.current.ondataavailable = (e: any) => {
                 try {
                     if (e && e.data && e.data.size > 0) {
+                        const chunkNum = screenChunkCounterRef.current++;
+                        
+                        // ✅ Track this chunk as pending
+                        pendingScreenChunksRef.current.add(chunkNum);
+                        
                         e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
                             const chunkData: any = {
                                 user_id: userId,
@@ -79,10 +107,16 @@ const fullscreen = () => {
                                 chunk: buffer,
                                 timestamp: Date.now(),
                             };
-                            console.log("Sending screen recording chunk (bytes):", buffer.byteLength);
+                            console.log(`📹 Sending screen chunk #${chunkNum} (${buffer.byteLength} bytes)`);
                             socket.emit("recorder-add-video-stream-chunk", chunkData);
+                            
+                            // ✅ Remove from pending after successful emit
+                            pendingScreenChunksRef.current.delete(chunkNum);
+                            console.log(`✅ Screen chunk #${chunkNum} sent, ${pendingScreenChunksRef.current.size} pending`);
                         }).catch((err: any) => {
-                            console.error("Failed to convert screen chunk to ArrayBuffer:", err);
+                            console.error(`Failed to convert screen chunk #${chunkNum}:`, err);
+                            // ✅ Remove from pending even on error
+                            pendingScreenChunksRef.current.delete(chunkNum);
                         });
                     }
                 } catch (err) {
@@ -90,18 +124,34 @@ const fullscreen = () => {
                 }
             };
 
-            screenRecorderMediaRecorderRef.current.onstop = () => {
+            screenRecorderMediaRecorderRef.current.onstop = async () => {
                 console.log("🎬 Screen MediaRecorder stopped event fired");
                 
-                // ✅ Emit stream-listener-off and end-exam AFTER final chunk is sent
+                // ✅ Wait for all pending chunks to finish uploading
+                console.log(`⏳ Waiting for ${pendingScreenChunksRef.current.size} pending screen chunks...`);
+                await waitForPendingScreenChunks();
+                console.log("✅ All screen chunks sent!");
+                
+                // ✅ Wait additional 500ms to ensure chunks are fully transmitted over network
+                console.log("⏳ Additional 500ms network safety delay...");
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // ✅ NOW emit stream-listener-off AFTER all chunks are sent
                 console.log("📤 Emitting stream-listener-off for screen_recording");
                 socket.emit("stream-listener-off", {
                     user_id: userId,
                     exam_id: examId,
                     category: "screen_recording",
                     timestamp: new Date(),
+                    totalChunks: screenChunkCounterRef.current,
+                    isFinal: true,
                 });
                 
+                // ✅ Wait 3.5 seconds to ensure face camera completes and storage server drains all buffers
+                console.log("⏳ Waiting 3.5 seconds for face camera to complete and buffers to drain...");
+                await new Promise(resolve => setTimeout(resolve, 3500));
+                
+                // ✅ NOW emit end-exam AFTER ensuring both recordings are complete
                 console.log("📤 Emitting end-exam event");
                 socket.emit("end-exam", {
                     user_id: userId,
@@ -362,6 +412,8 @@ const fullscreen = () => {
                 <ExamPage 
                     screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
                     screenStreamRef={screenStreamRef}
+                    pendingScreenChunksRef={pendingScreenChunksRef}
+                    pendingFaceChunksRef={pendingFaceChunksRef}
                 />
             )}
         </>
