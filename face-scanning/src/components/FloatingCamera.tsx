@@ -385,7 +385,6 @@ const FloatingCamera = ({
       console.log("⏰ Current timestamp:", new Date().toISOString());
       console.log("👤 User ID:", userId, "📝 Exam ID:", examId);
 
-      // ✅ STOP CAMERA STREAM TRACKS IMMEDIATELY (Turn off camera)
       if (streamRef.current) {
         try {
           console.log("📷 Stopping camera stream tracks...");
@@ -395,7 +394,6 @@ const FloatingCamera = ({
           });
           streamRef.current = null;
           
-          // Clear video element srcObject to fully release camera
           if (videoRef.current) {
             videoRef.current.srcObject = null;
           }
@@ -406,12 +404,10 @@ const FloatingCamera = ({
         }
       }
 
-      // Stop face camera recording - this will trigger final ondataavailable
       if (
         mediaRecorderRef.current &&
         mediaRecorderRef.current.state !== "inactive"
       ) {
-        // First, request any pending data to be flushed
         try {
           console.log("📤 Requesting final data from MediaRecorder...");
           mediaRecorderRef.current.requestData();

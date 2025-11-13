@@ -228,7 +228,6 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       cheatingPercentage,
     });
 
-    // Prepare score data for database
     const scoreData = {
       user_id: userId,
       exam_id: examId,
@@ -247,7 +246,6 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
 
     console.log("Calculated score data:", scoreData);
 
-    // Check if score record already exists
     const existingScore = await Scores.findOne({
       where: {
         user_id: userId,
@@ -256,11 +254,9 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
     });
 
     if (!existingScore) {
-      // Create new score record
       await Scores.create(scoreData as any);
       console.log("Created new score record");
     } else {
-      // Update existing score record
       await existingScore.update(scoreData);
       console.log("Updated existing score record");
     }
@@ -316,7 +312,6 @@ export const setMicrophoneCount = async (req: Request, res: Response) => {
       });
     }
 
-    // Find existing score record
     const existingScore = await Scores.findOne({
       where: {
         user_id: Number(userId),
@@ -325,7 +320,6 @@ export const setMicrophoneCount = async (req: Request, res: Response) => {
     });
 
     if (existingScore) {
-      // Update existing record
       await existingScore.update({
         number_of_microphone: microphoneCount,
       });
@@ -340,7 +334,6 @@ export const setMicrophoneCount = async (req: Request, res: Response) => {
         },
       });
     } else {
-      // Create new score record with microphone count
       const newScore = await Scores.create({
         user_id: Number(userId),
         exam_id: Number(examId),
@@ -379,7 +372,6 @@ export const updateTabSwitch = async (req: Request, res: Response) => {
   const { userId, examId, tabSwitchCount } = req.body;
 
   try {
-    // Validate required parameters
     if (
       !userId ||
       !examId ||
@@ -392,7 +384,6 @@ export const updateTabSwitch = async (req: Request, res: Response) => {
       });
     }
 
-    // Find existing score record
     const existingScore = await Scores.findOne({
       where: {
         user_id: Number(userId),
@@ -401,7 +392,6 @@ export const updateTabSwitch = async (req: Request, res: Response) => {
     });
 
     if (existingScore) {
-      // Update existing record
       await existingScore.update({
         tab_switch_violation: Number(tabSwitchCount),
       });
@@ -416,7 +406,6 @@ export const updateTabSwitch = async (req: Request, res: Response) => {
         },
       });
     } else {
-      // Create new score record with tab switch count
       const newScore = await Scores.create({
         user_id: Number(userId),
         exam_id: Number(examId),

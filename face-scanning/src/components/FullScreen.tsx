@@ -61,17 +61,10 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
 
-  const lastAlertRef = useRef<{ [key: string]: number }>({
-    lookAlert: 0,
-    object: 0,
-    num: 0,
-    authFaceMissing: 0,
-    headDirection: 0,
-  });
+  // ✅ REMOVED: lastAlertRef - No longer needed (throttling handled in FloatingCamera)
+  // ✅ REMOVED: ALERT_THROTTLE_MS - No longer needed (throttling handled in FloatingCamera)
 
   const timeoutRefs = useRef<{ [key: string]: NodeJS.Timeout }>({});
-
-  const ALERT_THROTTLE_MS = 2000;
 
   const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
 
@@ -210,75 +203,36 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
   }, []);
 
   const detectObject = () => {
-    const now = Date.now();
-    if (now - lastAlertRef.current.object >= ALERT_THROTTLE_MS) {
-      console.log("Object detected");
-      setObject(true);
+    console.log("Object detected - showing notification");
+    setObject(true);
 
-      // Send violation log to API
-      axios
-        .post(
-          `${baseUrl}/storeLogs`,
-          {
-            userId: Number(userId),
-            examId: Number(examId),
-            violationName: "object_detection_violation",
-            violationTimestamp: new Date(),
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${getTokenFromCookie()}`,
-            },
-          }
-        )
-        .catch((error) =>
-          console.error("Failed to log object detection:", error)
-        );
+    // ✅ REMOVED: Duplicate API logging (already handled in FloatingCamera.tsx)
+    // ✅ REMOVED: Time throttling check (already handled in FloatingCamera.tsx)
+    // Violation is logged in FloatingCamera after 4 seconds of continuous detection
 
-      // Clear existing timeout before setting new one
-      if (timeoutRefs.current.object) {
-        clearTimeout(timeoutRefs.current.object);
-      }
-      timeoutRefs.current.object = setTimeout(() => setObject(false), 3000);
-      lastAlertRef.current.object = now;
+    // Clear existing timeout before setting new one
+    if (timeoutRefs.current.object) {
+      clearTimeout(timeoutRefs.current.object);
     }
+    timeoutRefs.current.object = setTimeout(() => setObject(false), 3000);
   };
 
   const number = (a: number) => {
-    const now = Date.now();
-    if (now - lastAlertRef.current.num >= ALERT_THROTTLE_MS) {
-      setFace(a);
-      setNum(true);
+    console.log("Multiple persons detected - showing notification");
+    setFace(a);
+    setNum(true);
 
-      // Send violation log to API
-      axios
-        .post(
-          `${baseUrl}/storeLogs`,
-          {
-            userId: Number(userId),
-            examId: Number(examId),
-            violationName: "multiple_persons_detected",
-            violationTimestamp: new Date(),
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${getTokenFromCookie()}`,
-            },
-          }
-        )
-        .catch((error) =>
-          console.error("Failed to log multiple persons:", error)
-        );
+    // ✅ REMOVED: Duplicate API logging (already handled in FloatingCamera.tsx)
+    // ✅ REMOVED: Time throttling check (already handled in FloatingCamera.tsx)
+    // Violation is logged in FloatingCamera after 4 seconds of continuous detection
 
-      // Clear existing timeout before setting new one
-      if (timeoutRefs.current.num) {
-        clearTimeout(timeoutRefs.current.num);
-      }
-      timeoutRefs.current.num = setTimeout(() => {
-        setNum(false);
-      }, 2000);
-      lastAlertRef.current.num = now;
+    // Clear existing timeout before setting new one
+    if (timeoutRefs.current.num) {
+      clearTimeout(timeoutRefs.current.num);
     }
+    timeoutRefs.current.num = setTimeout(() => {
+      setNum(false);
+    }, 2000);
   };
 
   // Handle face authentication success - start exam on first successful auth
@@ -395,119 +349,58 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
   }, [examSettings.face_authentication_enabled, examStarted]);
   let s: any;
   const lookingAlert = (side: any) => {
-    const now = Date.now();
-    if (now - lastAlertRef.current.lookAlert >= ALERT_THROTTLE_MS) {
-      console.log("looking away");
-      // ✅ USE STATE INSTEAD OF LOCAL VARIABLE
-      setLookDirection(side);
-      setlookAlert(true);
+    console.log("Looking away detected - showing notification");
+    setLookDirection(side);
+    setlookAlert(true);
 
-      // Send violation log to API
-      axios
-        .post(
-          `${baseUrl}/storeLogs`,
-          {
-            userId: Number(userId),
-            examId: Number(examId),
-            violationName: "eye_position_violation",
-            violationTimestamp: new Date(),
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${getTokenFromCookie()}`,
-            },
-          }
-        )
-        .catch((error) =>
-          console.error("Failed to log eyeball movement:", error)
-        );
+    // ✅ REMOVED: Duplicate API logging (already handled in FloatingCamera.tsx)
+    // ✅ REMOVED: Time throttling check (already handled in FloatingCamera.tsx)
+    // Violation is logged in FloatingCamera after 4 seconds of continuous detection
 
-      // Clear existing timeout before setting new one
-      if (timeoutRefs.current.lookAlert) {
-        clearTimeout(timeoutRefs.current.lookAlert);
-      }
-      timeoutRefs.current.lookAlert = setTimeout(
-        () => setlookAlert(false),
-        3000
-      );
-      lastAlertRef.current.lookAlert = now;
+    // Clear existing timeout before setting new one
+    if (timeoutRefs.current.lookAlert) {
+      clearTimeout(timeoutRefs.current.lookAlert);
     }
+    timeoutRefs.current.lookAlert = setTimeout(
+      () => setlookAlert(false),
+      3000
+    );
   };
 
   const handleAuthFaceMissing = () => {
-    const now = Date.now();
-    if (now - lastAlertRef.current.authFaceMissing >= ALERT_THROTTLE_MS) {
-      console.log("Auth face missing alert triggered");
-      setAuthFaceMissing(true);
+    console.log("Auth face missing - showing notification");
+    setAuthFaceMissing(true);
 
-      // Send violation log to API
-      axios
-        .post(
-          `${baseUrl}/storeLogs`,
-          {
-            userId: Number(userId),
-            examId: Number(examId),
-            violationName: "face_auth_failed",
-            violationTimestamp: new Date(),
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${getTokenFromCookie()}`,
-            },
-          }
-        )
-        .catch((error) =>
-          console.error("Failed to log auth face missing:", error)
-        );
+    // ✅ REMOVED: Duplicate API logging (already handled in FloatingCamera.tsx)
+    // ✅ REMOVED: Time throttling check (already handled in FloatingCamera.tsx)
+    // Violation is logged in FloatingCamera after 4 seconds of continuous detection
 
-      // Clear existing timeout before setting new one
-      if (timeoutRefs.current.authFaceMissing) {
-        clearTimeout(timeoutRefs.current.authFaceMissing);
-      }
-      timeoutRefs.current.authFaceMissing = setTimeout(
-        () => setAuthFaceMissing(false),
-        3000
-      );
-      lastAlertRef.current.authFaceMissing = now;
+    // Clear existing timeout before setting new one
+    if (timeoutRefs.current.authFaceMissing) {
+      clearTimeout(timeoutRefs.current.authFaceMissing);
     }
+    timeoutRefs.current.authFaceMissing = setTimeout(
+      () => setAuthFaceMissing(false),
+      3000
+    );
   };
 
   const handleHeadDirection = (direction: string) => {
-    const now = Date.now();
-    if (now - lastAlertRef.current.headDirection >= ALERT_THROTTLE_MS) {
-      console.log("Head direction changed:", direction);
-      setHeadDirection(true);
+    console.log("Head direction changed - showing notification:", direction);
+    setHeadDirection(true);
 
-      // Send violation log to API
-      axios
-        .post(
-          `${baseUrl}/storeLogs`,
-          {
-            userId: Number(userId),
-            examId: Number(examId),
-            violationName: "head_position_violation",
-            violationTimestamp: new Date(),
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${getTokenFromCookie()}`,
-            },
-          }
-        )
-        .catch((error) =>
-          console.error("Failed to log head direction:", error)
-        );
+    // ✅ REMOVED: Duplicate API logging (already handled in FloatingCamera.tsx)
+    // ✅ REMOVED: Time throttling check (already handled in FloatingCamera.tsx)
+    // Violation is logged in FloatingCamera after 4 seconds of continuous detection
 
-      // Clear existing timeout before setting new one
-      if (timeoutRefs.current.headDirection) {
-        clearTimeout(timeoutRefs.current.headDirection);
-      }
-      timeoutRefs.current.headDirection = setTimeout(
-        () => setHeadDirection(false),
-        3000
-      );
-      lastAlertRef.current.headDirection = now;
+    // Clear existing timeout before setting new one
+    if (timeoutRefs.current.headDirection) {
+      clearTimeout(timeoutRefs.current.headDirection);
     }
+    timeoutRefs.current.headDirection = setTimeout(
+      () => setHeadDirection(false),
+      3000
+    );
   };
 
   const handleChange = (qId: number, optionId: number, optionText: string) => {
