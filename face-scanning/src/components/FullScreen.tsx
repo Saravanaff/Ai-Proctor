@@ -41,7 +41,11 @@ type Answer = {
   option_text: string;
 };
 
-const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStreamRef }: any) => {
+const ExamPage = ({
+  screenRecorderMediaRecorderRef,
+  onBeforeSubmit,
+  screenStreamRef,
+}: any) => {
   const [answers, setAnswers] = useState<{ [key: number]: Answer }>({});
   const [blocked, setBlocked] = useState(false);
   const [lookAlert, setlookAlert] = useState(false);
@@ -181,19 +185,18 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
       });
 
       socket.emit("stream-listener-on", {
-            user_id: userId,
-            exam_id: examId,
-            category: "face_camera",
-            timestamp: new Date(),
+        user_id: userId,
+        exam_id: examId,
+        category: "face_camera",
+        timestamp: new Date(),
       });
 
       socket.emit("stream-listener-on", {
-            user_id: userId,
-            exam_id: examId,
-            category: "screen_recording",
-            timestamp: new Date(),
+        user_id: userId,
+        exam_id: examId,
+        category: "screen_recording",
+        timestamp: new Date(),
       });
-      
 
       setExamStarted(true);
       setFaceAuthenticationComplete(true);
@@ -302,17 +305,17 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
         });
 
         socket.emit("stream-listener-on", {
-            user_id: userId,
-            exam_id: examId,
-            category: "face_camera",
-            timestamp: new Date(),
+          user_id: userId,
+          exam_id: examId,
+          category: "face_camera",
+          timestamp: new Date(),
         });
 
         socket.emit("stream-listener-on", {
-            user_id: userId,
-            exam_id: examId,
-            category: "screen_recording",
-            timestamp: new Date(),
+          user_id: userId,
+          exam_id: examId,
+          category: "screen_recording",
+          timestamp: new Date(),
         });
 
         setFaceAuthenticationComplete(true);
@@ -1024,91 +1027,124 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
           <button
             className={`${styles.submitButton} theme-transition`}
             onClick={async () => {
-              console.log("🚀 Submit button clicked - initiating exam submission");
-              
-              // ✅ STOP SCREEN STREAM TRACKS FIRST (Turn off screen sharing IMMEDIATELY)
-              if (screenStreamRef && screenStreamRef.current) {
-                try {
-                  console.log("🖥️ Stopping screen stream tracks...");
-                  screenStreamRef.current.getTracks().forEach((track: MediaStreamTrack) => {
-                    console.log(`  Stopping screen track: ${track.kind}, state: ${track.readyState}`);
-                    track.stop();
-                  });
-                  screenStreamRef.current = null;
-                  console.log("✅ Screen sharing turned OFF");
-                } catch (err) {
-                  console.error("Error stopping screen stream tracks:", err);
-                }
-              }
+              console.log("🚀 Submitting exam...");
 
-              // ✅ STOP SCREEN RECORDING MEDIARECORDER
-              if (screenRecorderMediaRecorderRef && screenRecorderMediaRecorderRef.current) {
-                try {
-                  if (screenRecorderMediaRecorderRef.current.state !== 'inactive') {
-                    console.log("📹 Stopping screen MediaRecorder...");
-                    screenRecorderMediaRecorderRef.current.stop();
-                  }
-                } catch (err) {
-                  console.error("Error stopping screen recorder:", err);
-                }
-              }
-              
-              // ✅ SET EXAM SUBMITTED (This will trigger FloatingCamera cleanup - stops camera tracks immediately)
-              setExamSubmitted(true);
-
-              // Wait for recordings to stop and final chunks to be sent
-              // MediaRecorder onstop handlers will emit stream-listener-off and end-exam events
-              console.log("⏳ Waiting 2.5 seconds for recording cleanup and chunk transmission...");
-              await new Promise((resolve) => setTimeout(resolve, 2500));
-
-              console.log("✅ All recordings stopped and events emitted from onstop handlers");
-
-              const submissionAnswers = getAnswersForSubmission();
-              console.log("📝 Submitting answers:", submissionAnswers);
-              console.log("Answers structure:", {
-                totalQuestions: questions.length,
-                answeredQuestions: submissionAnswers.length,
-                answers: submissionAnswers,
-              });
-
-              // Save user answers to database
               try {
-                console.log("💾 Saving user answers to database...");
-                const response = await axios.post(
-                  `${baseUrl}/saveUserAnswers`,
-                  {
-                    exam_id: Number(examId),
-                    answers: submissionAnswers,
-                  },
-                  {
-                    headers: {
-                      Authorization: `Bearer ${getTokenFromCookie()}`,
-                    },
+                // Stop screen stream tracks
+                if (screenStreamRef && screenStreamRef.current) {
+                  try {
+                    const tracks = screenStreamRef.current.getTracks();
+                    tracks.forEach((track: MediaStreamTrack) => track.stop());
+                    screenStreamRef.current = null;
+                  } catch (err) {
+                    console.error("Error stopping screen stream:", err);
                   }
-                );
-                console.log("✅ Answers saved successfully:", response.data);
-              } catch (error: any) {
-                console.error(
-                  "❌ Error saving answers:",
-                  error.response?.data || error.message
-                );
+                }
+
+                // Stop screen recording MediaRecorder
+                if (
+                  screenRecorderMediaRecorderRef &&
+                  screenRecorderMediaRecorderRef.current
+                ) {
+                  try {
+                    const recorder = screenRecorderMediaRecorderRef.current;
+                    if (recorder.state !== "inactive") {
+                      recorder.stop();
+                    }
+                  } catch (err) {
+                    console.error("Error stopping screen recorder:", err);
+                  }
+                }
+
+                // Stop front camera MediaRecorder
+                if (
+                  frontCameraMediaRecorderRef &&
+                  frontCameraMediaRecorderRef.current
+                ) {
+                  try {
+                    const recorder = frontCameraMediaRecorderRef.current;
+                    if (recorder.state !== "inactive") {
+                      try {
+                        recorder.requestData();
+                      } catch (e) {
+                        // Ignore
+                      }
+                      recorder.stop();
+                    }
+                  } catch (err) {
+                    console.error("Error stopping front camera recorder:", err);
+                  }
+                }
+
+                // Set exam submitted flag (triggers FloatingCamera cleanup)
+                setExamSubmitted(true);
+
+                // Wait for recording cleanup and final chunks
+                await new Promise((resolve) => setTimeout(resolve, 3000));
+
+                // Double-check screen stream is stopped
+                if (screenStreamRef && screenStreamRef.current) {
+                  screenStreamRef.current
+                    .getTracks()
+                    .forEach((track: MediaStreamTrack) => {
+                      if (track.readyState === "live") {
+                        track.stop();
+                      }
+                    });
+                  screenStreamRef.current = null;
+                }
+
+                // Submit answers
+                const submissionAnswers = getAnswersForSubmission();
+
+                try {
+                  const response = await axios.post(
+                    `${baseUrl}/saveUserAnswers`,
+                    {
+                      exam_id: Number(examId),
+                      answers: submissionAnswers,
+                    },
+                    {
+                      headers: {
+                        Authorization: `Bearer ${getTokenFromCookie()}`,
+                      },
+                    }
+                  );
+                  console.log("✅ Answers saved successfully");
+                } catch (error: any) {
+                  console.error(
+                    "Error saving answers:",
+                    error.response?.data || error.message
+                  );
+                  toast({
+                    title: "Warning",
+                    description:
+                      "Failed to save some answers. Your exam will still be submitted.",
+                    variant: "destructive",
+                  });
+                }
+
+                // Run additional cleanup
+                try {
+                  if (onBeforeSubmit) await onBeforeSubmit();
+                } catch (err) {
+                  console.error("Error in onBeforeSubmit:", err);
+                }
+
+                // Final delay to ensure browser releases all media resources
+                await new Promise((resolve) => setTimeout(resolve, 500));
+
+                // Navigate to end page
+                router.push("/end");
+              } catch (error) {
+                console.error("Critical error during exam submission:", error);
                 toast({
-                  title: "Warning",
+                  title: "Error",
                   description:
-                    "Failed to save some answers. Your exam will still be submitted.",
+                    "An error occurred during submission. Please contact support.",
                   variant: "destructive",
                 });
               }
-
-              try {
-                if (onBeforeSubmit) await onBeforeSubmit();
-              } catch (err) {
-                console.error("Error in onBeforeSubmit:", err);
-              }
-
-              // Navigate to end page after cleanup
-              console.log("✅ Navigating to end page");
-              router.push("/end");
             }}
             style={{
               background:

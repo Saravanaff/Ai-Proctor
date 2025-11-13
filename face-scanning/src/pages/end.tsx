@@ -3,8 +3,10 @@ import socket from "@/components/socket";
 import { getExamId, getUserId } from "@/constants/AuthStore";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
-import { getNumberOfMicrophones, getTabSwitchViolations } from "@/constants/violationConsts";
-
+import {
+  getNumberOfMicrophones,
+  getTabSwitchViolations,
+} from "@/constants/violationConsts";
 
 const userId = getUserId() || "unknown";
 const examId = getExamId();
@@ -12,6 +14,7 @@ const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const EndPage = () => {
   const hasSavedScore = useRef(false);
+  const hasCleanedMedia = useRef(false);
 
   const postData = async (endpoint: string, data: any) => {
     const token = getTokenFromCookie();
@@ -27,10 +30,45 @@ const EndPage = () => {
       console.log("Score saved successfully:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error("Error saving score:", error.response?.data || error.message);
+      console.error(
+        "Error saving score:",
+        error.response?.data || error.message
+      );
       throw error;
     }
   };
+
+  // ✅ CRITICAL: Safety cleanup - Stop any lingering media tracks
+  useEffect(() => {
+    if (!hasCleanedMedia.current) {
+      hasCleanedMedia.current = true;
+      console.log(
+        "🛑 End page: Performing safety cleanup of all media resources"
+      );
+
+      try {
+        // Stop all video elements on the page
+        const videoElements = document.querySelectorAll("video");
+        videoElements.forEach((video) => {
+          if (video.srcObject && video.srcObject instanceof MediaStream) {
+            video.srcObject.getTracks().forEach((track) => {
+              console.log(
+                `Stopping track from video element: ${track.kind}, state: ${track.readyState}`
+              );
+              track.stop();
+            });
+            video.srcObject = null;
+          }
+        });
+
+        // Check for any MediaStream tracks that might still be active
+        // This is a safety check in case cleanup didn't complete before navigation
+        console.log("✅ End page: All video elements cleaned up");
+      } catch (error) {
+        console.error("Error during end page media cleanup:", error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     console.log("📊 End page mounted - saving final score");

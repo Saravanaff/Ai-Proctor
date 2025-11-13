@@ -37,7 +37,7 @@ const logViolation = async (violationName: string) => {
     // ✅ Subtract 4 seconds (4000ms) because violation was detected after 4 seconds of continuous occurrence
     // This gives us the actual time when the violation STARTED, not when it was logged
     const actualViolationTime = new Date(Date.now() - 4000);
-    
+
     await axios.post(
       `${baseUrlGlobal}/storeLogs`,
       {
@@ -52,7 +52,9 @@ const logViolation = async (violationName: string) => {
         },
       }
     );
-    console.log(`📝 Logged ${violationName} at ${actualViolationTime.toISOString()} (4s before detection)`);
+    console.log(
+      `📝 Logged ${violationName} at ${actualViolationTime.toISOString()} (4s before detection)`
+    );
   } catch (error) {
     console.error(`Failed to log ${violationName}:`, error);
   }
@@ -222,162 +224,6 @@ const FloatingCamera = ({
     }
   }, [onAuthPause]);
 
-  const handleUserAlert = useCallback(
-    (data: any, socketName: string) => {
-      console.log("Alert Data:", data, "from", socketName);
-      const now = Date.now();
-
-      if (socketName === "faceAuthRes-client") {
-        if (data.auth === true && !initialAuthDoneRef.current) {
-          initialAuthDoneRef.current = true;
-          setShowInitialScan(false);
-          // ✅ ONLY RESUME IF FACE AUTHENTICATION IS ENABLED IN EXAM SETTINGS
-          if (examSettings?.face_authentication_enabled && onAuthResume) {
-            console.log(
-              "✅ Face authenticated - Calling onAuthResume (face_auth enabled)"
-            );
-            onAuthResume();
-          }
-          return;
-        }
-        if (!initialAuthDoneRef.current) {
-          return;
-        }
-        if (data.auth === false) {
-          // ✅ ONLY PAUSE IF FACE AUTHENTICATION IS ENABLED IN EXAM SETTINGS
-          if (
-            examSettings?.face_authentication_enabled &&
-            Date.now() - lastNotificationRef.current.faceAuth >=
-              NOTIFICATION_THROTTLE_MS
-          ) {
-            console.log(
-              "⚠️ Face lost - Calling onAuthFaceMissing (face_auth enabled)"
-            );
-            onAuthFaceMissing();
-            lastNotificationRef.current.faceAuth = Date.now();
-          }
-        }
-      }
-      if (!initialAuthDoneRef.current) return;
-
-      if (socketName === "headPositionRes-client") {
-        if (data.data.headPos !== "Forward" && data.data.headPos !== "Down") {
-          if (
-            now - lastNotificationRef.current.headDirection >=
-            NOTIFICATION_THROTTLE_MS
-          ) {
-            onHeadDirection(data.data.headPos);
-            lastNotificationRef.current.headDirection = now;
-          }
-        }
-      }
-
-      if (socketName === "eyePositionRes-client") {
-        if (
-          data?.data?.leftEye !== "Center" &&
-          data?.data?.rightEye !== "Center"
-        ) {
-          if (
-            now - lastNotificationRef.current.eyePosition >=
-            NOTIFICATION_THROTTLE_MS
-          ) {
-            onLookingAway(data.data.leftEye);
-            lastNotificationRef.current.eyePosition = now;
-          }
-        }
-      }
-
-      if (socketName === "webDetectRes-client") {
-        if (data.data["Mobile"] !== 0 || data.data["Laptop"] !== 0) {
-          if (
-            now - lastNotificationRef.current.deviceDetected >=
-            NOTIFICATION_THROTTLE_MS
-          ) {
-            detect();
-            changeColor();
-            lastNotificationRef.current.deviceDetected = now;
-          }
-        }
-        if (data.data.Person > 1) {
-          if (
-            now - lastNotificationRef.current.multiplePersons >=
-            NOTIFICATION_THROTTLE_MS
-          ) {
-            number(data.data.Person);
-            changeColor();
-            lastNotificationRef.current.multiplePersons = now;
-          }
-        }
-      }
-
-      if (socketName === "mobileDetectRes-client") {
-        if (data.data["Mobile"] !== 0 || data.data.Laptop > 1) {
-          if (
-            now - lastNotificationRef.current.deviceDetected >=
-            NOTIFICATION_THROTTLE_MS
-          ) {
-            toast({
-              title: "Unauthorized Device Detected",
-              description: "Dont keep Gadgets Nearby",
-              variant: "destructive",
-            });
-            lastNotificationRef.current.deviceDetected = now;
-          }
-        }
-
-        if (data.data.Laptop === 0) {
-          if (
-            now - lastNotificationRef.current.noLaptop >=
-            NOTIFICATION_THROTTLE_MS
-          ) {
-            toast({
-              title: "Canditate Laptop is not present",
-              description: "No laptop is present",
-              variant: "destructive",
-            });
-            lastNotificationRef.current.noLaptop = now;
-          }
-        }
-
-        if (data.data.Person === 0) {
-          if (
-            now - lastNotificationRef.current.noCandidate >=
-            NOTIFICATION_THROTTLE_MS
-          ) {
-            toast({
-              title: "Canditate is not present",
-              description: "No persons are there",
-              variant: "destructive",
-            });
-            lastNotificationRef.current.noCandidate = now;
-          }
-        } else if (data.data.Person > 1) {
-          if (
-            now - lastNotificationRef.current.multiplePersons >=
-            NOTIFICATION_THROTTLE_MS
-          ) {
-            toast({
-              title: "More number of persons are present",
-              description:
-                "Please ensure candidate is present in isolated area",
-              variant: "destructive",
-            });
-            lastNotificationRef.current.multiplePersons = now;
-          }
-        }
-      }
-    },
-    [
-      toast,
-      onLookingAway,
-      changeColor,
-      detect,
-      number,
-      onAuthResume,
-      onAuthFaceMissing,
-    ]
-  );
-
   useEffect(() => {
     if (examSubmitted && !isStoppingRef.current) {
       isStoppingRef.current = true;
@@ -390,16 +236,18 @@ const FloatingCamera = ({
         try {
           console.log("📷 Stopping camera stream tracks...");
           streamRef.current.getTracks().forEach((track) => {
-            console.log(`  Stopping camera track: ${track.kind}, state: ${track.readyState}`);
+            console.log(
+              `  Stopping camera track: ${track.kind}, state: ${track.readyState}`
+            );
             track.stop();
           });
           streamRef.current = null;
-          
+
           // Clear video element srcObject to fully release camera
           if (videoRef.current) {
             videoRef.current.srcObject = null;
           }
-          
+
           console.log("✅ Camera turned OFF");
         } catch (e) {
           console.warn("Error stopping camera stream:", e);
@@ -544,7 +392,7 @@ const FloatingCamera = ({
             const vision = await FilesetResolver.forVisionTasks(
               "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
             );
-            
+
             // Load both models in parallel
             const [faceLandmarker, objectDetector] = await Promise.all([
               !faceLandmarkerRef.current
@@ -628,7 +476,7 @@ const FloatingCamera = ({
         // Handle when MediaRecorder stops
         mediaRecorderRef.current.onstop = () => {
           console.log("🎬 Face camera MediaRecorder stopped event fired");
-          
+
           // ✅ Emit stream-listener-off AFTER final chunk is sent
           if (examSubmitted) {
             console.log("📤 Emitting stream-listener-off for face_camera");
@@ -708,24 +556,27 @@ const FloatingCamera = ({
                     headPos.toLowerCase() !== "down"
                   ) {
                     const now = Date.now();
-                    
+
                     // Start tracking if not already tracking
                     if (violationStartTimeRef.current.headDirection === null) {
                       violationStartTimeRef.current.headDirection = now;
                       violationLoggedRef.current.headDirection = false;
                       console.log("⚠️ Head direction violation started");
                     }
-                    
+
                     // Check if violation has been continuous for 4 seconds
-                    const violationDuration = now - violationStartTimeRef.current.headDirection;
+                    const violationDuration =
+                      now - violationStartTimeRef.current.headDirection;
                     if (
                       violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
                       !violationLoggedRef.current.headDirection
                     ) {
-                      console.log(`🚨 Head direction violation continuous for ${violationDuration}ms - Logging`);
+                      console.log(
+                        `🚨 Head direction violation continuous for ${violationDuration}ms - Logging`
+                      );
                       logViolation("head_position_violation");
                       violationLoggedRef.current.headDirection = true;
-                      
+
                       // Trigger UI notification
                       if (
                         now - lastNotificationRef.current.headDirection >=
@@ -750,24 +601,27 @@ const FloatingCamera = ({
                   // ✅ NEW: Track continuous eye position violation
                   if (eyeGaze.toLowerCase() !== "center") {
                     const now = Date.now();
-                    
+
                     // Start tracking if not already tracking
                     if (violationStartTimeRef.current.eyePosition === null) {
                       violationStartTimeRef.current.eyePosition = now;
                       violationLoggedRef.current.eyePosition = false;
                       console.log("⚠️ Eye position violation started");
                     }
-                    
+
                     // Check if violation has been continuous for 4 seconds
-                    const violationDuration = now - violationStartTimeRef.current.eyePosition;
+                    const violationDuration =
+                      now - violationStartTimeRef.current.eyePosition;
                     if (
                       violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
                       !violationLoggedRef.current.eyePosition
                     ) {
-                      console.log(`🚨 Eye position violation continuous for ${violationDuration}ms - Logging`);
+                      console.log(
+                        `🚨 Eye position violation continuous for ${violationDuration}ms - Logging`
+                      );
                       logViolation("eye_position_violation");
                       violationLoggedRef.current.eyePosition = true;
-                      
+
                       // Trigger UI notification
                       if (
                         now - lastNotificationRef.current.eyePosition >=
@@ -820,17 +674,20 @@ const FloatingCamera = ({
                       violationLoggedRef.current.deviceDetected = false;
                       console.log("⚠️ Phone detection violation started");
                     }
-                    
+
                     // Check if violation has been continuous for 4 seconds
-                    const violationDuration = now - violationStartTimeRef.current.deviceDetected;
+                    const violationDuration =
+                      now - violationStartTimeRef.current.deviceDetected;
                     if (
                       violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
                       !violationLoggedRef.current.deviceDetected
                     ) {
-                      console.log(`🚨 Phone detection violation continuous for ${violationDuration}ms - Logging`);
+                      console.log(
+                        `🚨 Phone detection violation continuous for ${violationDuration}ms - Logging`
+                      );
                       logViolation("object_detection_violation");
                       violationLoggedRef.current.deviceDetected = true;
-                      
+
                       // Trigger UI notification
                       if (
                         now - lastNotificationRef.current.deviceDetected >=
@@ -853,22 +710,27 @@ const FloatingCamera = ({
                   // ✅ NEW: Track continuous multiple persons violation
                   if (detection.person > 1) {
                     // Start tracking if not already tracking
-                    if (violationStartTimeRef.current.multiplePersons === null) {
+                    if (
+                      violationStartTimeRef.current.multiplePersons === null
+                    ) {
                       violationStartTimeRef.current.multiplePersons = now;
                       violationLoggedRef.current.multiplePersons = false;
                       console.log("⚠️ Multiple persons violation started");
                     }
-                    
+
                     // Check if violation has been continuous for 4 seconds
-                    const violationDuration = now - violationStartTimeRef.current.multiplePersons;
+                    const violationDuration =
+                      now - violationStartTimeRef.current.multiplePersons;
                     if (
                       violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
                       !violationLoggedRef.current.multiplePersons
                     ) {
-                      console.log(`🚨 Multiple persons violation continuous for ${violationDuration}ms - Logging`);
+                      console.log(
+                        `🚨 Multiple persons violation continuous for ${violationDuration}ms - Logging`
+                      );
                       logViolation("multiple_persons_detected");
                       violationLoggedRef.current.multiplePersons = true;
-                      
+
                       // Trigger UI notification
                       if (
                         now - lastNotificationRef.current.multiplePersons >=
@@ -881,7 +743,9 @@ const FloatingCamera = ({
                     }
                   } else {
                     // ✅ Reset tracking when multiple persons are no longer detected
-                    if (violationStartTimeRef.current.multiplePersons !== null) {
+                    if (
+                      violationStartTimeRef.current.multiplePersons !== null
+                    ) {
                       console.log("✅ Multiple persons violation ended");
                       violationStartTimeRef.current.multiplePersons = null;
                       violationLoggedRef.current.multiplePersons = false;
@@ -896,14 +760,17 @@ const FloatingCamera = ({
                       violationLoggedRef.current.noCandidate = false;
                       console.log("⚠️ No person violation started");
                     }
-                    
+
                     // Check if violation has been continuous for 4 seconds
-                    const violationDuration = now - violationStartTimeRef.current.noCandidate;
+                    const violationDuration =
+                      now - violationStartTimeRef.current.noCandidate;
                     if (
                       violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
                       !violationLoggedRef.current.noCandidate
                     ) {
-                      console.log(`🚨 No person violation continuous for ${violationDuration}ms - Logging`);
+                      console.log(
+                        `🚨 No person violation continuous for ${violationDuration}ms - Logging`
+                      );
                       logViolation("no_person_detected");
                       violationLoggedRef.current.noCandidate = true;
                     }
@@ -953,29 +820,6 @@ const FloatingCamera = ({
 
     startCamera();
 
-    // socket.on("thirdeye_alert", handleThirdEyeAlert);
-    // socket.on("alert", handleAlert);
-
-    socket.on("faceAuthRes-client", (data: any) => {
-      handleUserAlert(data, "faceAuthRes-client");
-    });
-
-    socket.on("headPositionRes-client", (data: any) => {
-      handleUserAlert(data, "headPositionRes-client");
-    });
-
-    socket.on("eyePositionRes-client", (data: any) => {
-      handleUserAlert(data, "eyePositionRes-client");
-    });
-
-    socket.on("webDetectRes-client", (data: any) => {
-      handleUserAlert(data, "webDetectRes-client");
-    });
-
-    socket.on("mobileDetectRes-client", (data: any) => {
-      handleUserAlert(data, "mobileDetectRes-client");
-    });
-
     return () => {
       console.log("FloatingCamera cleanup - stopping recording");
 
@@ -1023,11 +867,6 @@ const FloatingCamera = ({
       }
 
       // ✅ REMOVE ALL SOCKET EVENT LISTENERS (PREVENT MEMORY LEAKS)
-      socket.off("faceAuthRes-client");
-      socket.off("headPositionRes-client");
-      socket.off("eyePositionRes-client");
-      socket.off("webDetectRes-client");
-      socket.off("mobileDetectRes-client");
       socket.off("thirdeye_alert");
       socket.off("alert");
     };
