@@ -20,6 +20,7 @@ console.log("User ID:", userId);
 const fullscreen = () => {
     const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
     const [rulesAccepted, setRulesAccepted] = useState(false);
+    const [screenShareError, setScreenShareError] = useState(false);
     const { theme } = useTheme();
     const { getMicrophoneCount } = useMicrophoneDevices();
 
@@ -33,7 +34,6 @@ const fullscreen = () => {
         });
     },[])
 
-    // const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
     const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
     const screenStreamRef = useRef<MediaStream | null>(null);
 
@@ -130,8 +130,12 @@ const fullscreen = () => {
 
             setFullscreenAllowed(true);
             // requestFullscreen();
-        } catch (error) {
-            console.error("Error starting screen recording:", error);
+        } catch (error: any) {
+            console.log("Screen sharing permission denied or cancelled:", error);
+            // User denied screen sharing permission or cancelled
+            setScreenShareError(true);
+            setFullscreenAllowed(false);
+            
             // Make sure any partial stream is stopped
             if (screenStreamRef.current) {
                 try {
@@ -218,6 +222,27 @@ const fullscreen = () => {
                         <p>Please read carefully and follow all instructions</p>
                     </div>
                     
+                    {screenShareError && (
+                        <div className={styles.content}>
+                            <section className={styles.section}>
+                                <h2 style={{ color: '#ff4444' }}>🚫 Screen Sharing Required</h2>
+                                <p className={styles.notice} style={{ backgroundColor: '#fff3cd', color: '#856404', padding: '15px', borderRadius: '8px', marginTop: '10px' }}>
+                                    <strong>You cannot start the exam without enabling screen sharing.</strong>
+                                    <br /><br />
+                                    Screen sharing is mandatory for this exam to ensure academic integrity. 
+                                    Please click "Try Again" and allow screen sharing permission when prompted.
+                                </p>
+                                <ul style={{ marginTop: '15px' }}>
+                                    <li>Click the "Try Again" button below</li>
+                                    <li>Select the screen/window you want to share</li>
+                                    <li>Click "Share" in the browser permission dialog</li>
+                                    <li>Do not cancel or deny the screen sharing request</li>
+                                </ul>
+                            </section>
+                        </div>
+                    )}
+                    
+                    {!screenShareError && (
                     <div className={styles.content}>
                         <section className={styles.section}>
                             <h2>🚨 Important Requirements</h2>
@@ -283,29 +308,47 @@ const fullscreen = () => {
                             </p>
                         </section>
                     </div>
+                    )}
 
                     <div className={styles.footer}>
-                        <div className={styles.acknowledgment}>
-                            <label className={styles.checkbox}>
-                                <input 
-                                    type="checkbox" 
-                                    onChange={(e) => setRulesAccepted(e.target.checked)}
-                                />
-                                <span>I have read and understood all the guidelines above</span>
-                            </label>
-                        </div>
-                        <button 
-                            className={`${styles.proceedButton} button-theme`}
-                            disabled={!rulesAccepted}
-                            onClick={async () => {
-                                let screenStream = null;
-                                if(examSettings.screen_sharing_enabled){
-                                    startScreenRecording();
-                                }
-                            }}
-                        >
-                            Accept & Start Exam
-                        </button>
+                        {screenShareError ? (
+                            <button 
+                                className={`${styles.proceedButton} button-theme`}
+                                onClick={async () => {
+                                    setScreenShareError(false);
+                                    setRulesAccepted(false);
+                                    if(examSettings.screen_sharing_enabled){
+                                        startScreenRecording();
+                                    }
+                                }}
+                            >
+                                Try Again
+                            </button>
+                        ) : (
+                            <>
+                                <div className={styles.acknowledgment}>
+                                    <label className={styles.checkbox}>
+                                        <input 
+                                            type="checkbox" 
+                                            onChange={(e) => setRulesAccepted(e.target.checked)}
+                                        />
+                                        <span>I have read and understood all the guidelines above</span>
+                                    </label>
+                                </div>
+                                <button 
+                                    className={`${styles.proceedButton} button-theme`}
+                                    disabled={!rulesAccepted}
+                                    onClick={async () => {
+                                        let screenStream = null;
+                                        if(examSettings.screen_sharing_enabled){
+                                            startScreenRecording();
+                                        }
+                                    }}
+                                >
+                                    Accept & Start Exam
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
