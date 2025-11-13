@@ -323,7 +323,8 @@ const ParticipantDetailsPage: React.FC = () => {
     }
 
     try {
-      const videoUrl = `${baseUrl}/stream-video/${user.id}/${examDetails.id}/${category}`;
+      // Use the video controller endpoint for checking availability
+      const videoUrl = `${baseUrl}/api/video/stream/${user.id}/${examDetails.id}/${category}`;
       console.log(`Checking video availability for: ${videoUrl}`);
 
       const response = await axios.head(videoUrl);
@@ -488,21 +489,29 @@ const ParticipantDetailsPage: React.FC = () => {
 
       // Map questions with user answers
       const detailedAnswers = questions.map((question: any) => {
+        // Ensure QuestionOptions is always an array
+        const questionOptions = Array.isArray(question.QuestionOptions)
+          ? question.QuestionOptions
+          : [];
+
         const userAnswer = userAnswers.find(
           (ans: any) => ans.question_id === question.id
         );
         const selectedOption = userAnswer
-          ? question.QuestionOptions.find(
+          ? questionOptions.find(
               (opt: any) => opt.id === userAnswer.option_id
             )
           : null;
-        const correctOption = question.QuestionOptions.find(
+        const correctOption = questionOptions.find(
           (opt: any) => opt.is_correct
         );
         const isCorrect = selectedOption?.is_correct || false;
 
         return {
-          question,
+          question: {
+            ...question,
+            QuestionOptions: questionOptions, // Ensure it's always an array
+          },
           userAnswer: userAnswer || null,
           selectedOption,
           correctOption,
@@ -982,7 +991,8 @@ const ParticipantDetailsPage: React.FC = () => {
 
     try {
       const token = getTokenFromCookie();
-      const downloadUrl = `${baseUrl}/download-video/${user.id}/${examDetails.id}/${category}`;
+      // Use the video controller download endpoint
+      const downloadUrl = `${baseUrl}/api/video/download/${user.id}/${examDetails.id}/${category}`;
 
       // Create a temporary link to trigger download
       const link = document.createElement("a");
@@ -1606,8 +1616,7 @@ const ParticipantDetailsPage: React.FC = () => {
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "16px 0 8px 0",
-                      background:
-                        "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
+                      background: "#f8f9fa",
                       borderRadius: "8px",
                       paddingLeft: "16px",
                       paddingRight: "16px",
@@ -1804,7 +1813,7 @@ const ParticipantDetailsPage: React.FC = () => {
           onClick={handleGeneratePDF}
           className={styles.generatePdfButton}
           style={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            background: "#6366f1",
             border: "none",
             borderRadius: "8px",
             color: "white",
@@ -1812,7 +1821,7 @@ const ParticipantDetailsPage: React.FC = () => {
             fontSize: "14px",
             fontWeight: "600",
             cursor: "pointer",
-            boxShadow: "0 4px 15px rgba(102, 126, 234, 0.3)",
+            boxShadow: "0 4px 15px rgba(99, 102, 241, 0.3)",
             transition: "all 0.3s ease",
             display: "flex",
             alignItems: "center",
@@ -1823,12 +1832,14 @@ const ParticipantDetailsPage: React.FC = () => {
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "translateY(-2px)";
             e.currentTarget.style.boxShadow =
-              "0 6px 20px rgba(102, 126, 234, 0.4)";
+              "0 6px 20px rgba(99, 102, 241, 0.4)";
+            e.currentTarget.style.background = "#4f46e5";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "translateY(0)";
             e.currentTarget.style.boxShadow =
-              "0 4px 15px rgba(102, 126, 234, 0.3)";
+              "0 4px 15px rgba(99, 102, 241, 0.3)";
+            e.currentTarget.style.background = "#6366f1";
           }}
         >
           <svg
@@ -1849,7 +1860,6 @@ const ParticipantDetailsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Tab Navigation */}
       <div className={styles.tabNavigation}>
         <button
           className={`${styles.tab} ${
@@ -1885,9 +1895,7 @@ const ParticipantDetailsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Tab Content */}
       <div className={styles.tabContent}>
-        {/* Overview Tab */}
         {activeTab === "overview" && (
           <div className={styles.overviewTab}>
             {scoreDetails?.success ? (
@@ -2076,7 +2084,6 @@ const ParticipantDetailsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Timeline Tab */}
         {activeTab === "timeline" && (
           <div className={styles.timelineTab}>
             <h3 className={styles.sectionTitle} style={{ marginBottom: 8 }}>
@@ -2111,7 +2118,6 @@ const ParticipantDetailsPage: React.FC = () => {
             <div className={styles.timeline}>
               {timelineEvents.length > 0 ? (
                 timelineEvents.map((event, index) => {
-                  // Get detailed date information for the violation
                   const violationDate = violations.find((v) => {
                     const violationTime = new Date(v.timestamp);
                     const violationTimeStr = violationTime.toLocaleTimeString(
@@ -2125,7 +2131,6 @@ const ParticipantDetailsPage: React.FC = () => {
                     return violationTimeStr === event.timestamp;
                   });
 
-                  // Parse the date correctly - format is YYYY-DD-MM (Year-Day-Month)
                   const fullDate = violationDate
                     ? new Date(violationDate.timestamp)
                     : new Date();
@@ -2133,7 +2138,6 @@ const ParticipantDetailsPage: React.FC = () => {
                     ? violationDate.severity
                     : "low";
 
-                  // Handle the custom date format YYYY-DD-MM
                   const formatDate = (dateStr: string) => {
                     try {
                       if (!dateStr) {

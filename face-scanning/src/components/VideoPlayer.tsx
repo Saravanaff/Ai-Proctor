@@ -70,7 +70,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return null;
   }
 
-  const videoStreamUrl = `${baseUrl}/stream-video/${user.id}/${examDetails.id}/${category}`;
+  // Use the video controller endpoint
+  const videoStreamUrl = `${baseUrl}/api/video/stream/${user.id}/${examDetails.id}/${category}`;
   const isVideoAvailable = videosAvailability[category];
 
   // Enhanced error handling

@@ -97,6 +97,7 @@ const ExamResultsModal: React.FC<ExamResultsModalProps> = ({
     try {
       setDetailLoading(true);
       setSelectedStudent(student);
+      setError(null); // Clear previous errors
       const token = getTokenFromCookie();
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -116,26 +117,38 @@ const ExamResultsModal: React.FC<ExamResultsModalProps> = ({
         }
       );
 
+      console.log("📋 Questions response:", questionsRes.data);
+      console.log("📝 Answers response:", answersRes.data);
+
       const questions: QuestionDetail[] = questionsRes.data.questions || [];
       const userAnswers: UserAnswer[] = answersRes.data.data?.answers || [];
 
+      console.log(`✅ Loaded ${questions.length} questions, ${userAnswers.length} answers`);
+
       // Map questions with user answers
       const detailedAnswers = questions.map((question) => {
+        // Ensure QuestionOptions exists and is an array
+        const options = Array.isArray(question.QuestionOptions) 
+          ? question.QuestionOptions 
+          : [];
+        
         const userAnswer = userAnswers.find(
           (ans) => ans.question_id === question.id
         );
+        
         const selectedOption = userAnswer
-          ? question.QuestionOptions.find(
-              (opt) => opt.id === userAnswer.option_id
-            )
+          ? options.find((opt) => opt.id === userAnswer.option_id)
           : null;
-        const correctOption = question.QuestionOptions.find(
-          (opt) => opt.is_correct
-        );
+        
+        const correctOption = options.find((opt) => opt.is_correct);
+        
         const isCorrect = selectedOption?.is_correct || false;
 
         return {
-          question,
+          question: {
+            ...question,
+            QuestionOptions: options, // Ensure it's always an array
+          },
           userAnswer: userAnswer || null,
           selectedOption,
           correctOption,
@@ -157,9 +170,23 @@ const ExamResultsModal: React.FC<ExamResultsModalProps> = ({
         answers: detailedAnswers,
         stats,
       });
+      
+      console.log("✅ Student details loaded successfully");
     } catch (err: any) {
-      console.error("Error fetching student details:", err);
-      setError("Failed to load student details");
+      console.error("❌ Error fetching student details:", err);
+      console.error("Error details:", {
+        message: err?.message,
+        response: err?.response?.data,
+        status: err?.response?.status,
+      });
+      
+      const errorMessage = 
+        err?.response?.data?.message || 
+        err?.message || 
+        "Failed to load student details";
+      
+      setError(errorMessage);
+      setStudentDetail(null); // Clear any partial data
     } finally {
       setDetailLoading(false);
     }
@@ -333,33 +360,34 @@ const ExamResultsModal: React.FC<ExamResultsModalProps> = ({
                       </div>
 
                       <div className={styles.optionsList}>
-                        {item.question.QuestionOptions.map((option) => (
-                          <div
-                            key={option.id}
-                            className={`${styles.optionItem} ${
-                              option.is_correct
-                                ? styles.correctOption
-                                : option.id === item.userAnswer?.option_id
-                                ? styles.selectedOption
-                                : ""
-                            }`}
-                          >
-                            <span className={styles.optionText}>
-                              {option.option_text}
-                            </span>
-                            {option.is_correct && (
-                              <span className={styles.correctBadge}>
-                                ✓ Correct Answer
+                        {Array.isArray(item.question.QuestionOptions) && 
+                          item.question.QuestionOptions.map((option) => (
+                            <div
+                              key={option.id}
+                              className={`${styles.optionItem} ${
+                                option.is_correct
+                                  ? styles.correctOption
+                                  : option.id === item.userAnswer?.option_id
+                                  ? styles.selectedOption
+                                  : ""
+                              }`}
+                            >
+                              <span className={styles.optionText}>
+                                {option.option_text}
                               </span>
-                            )}
-                            {!option.is_correct &&
-                              option.id === item.userAnswer?.option_id && (
-                                <span className={styles.selectedBadge}>
-                                  Your Answer
+                              {option.is_correct && (
+                                <span className={styles.correctBadge}>
+                                  ✓ Correct Answer
                                 </span>
                               )}
-                          </div>
-                        ))}
+                              {!option.is_correct &&
+                                option.id === item.userAnswer?.option_id && (
+                                  <span className={styles.selectedBadge}>
+                                    Your Answer
+                                  </span>
+                                )}
+                            </div>
+                          ))}
                       </div>
                     </div>
                   ))}

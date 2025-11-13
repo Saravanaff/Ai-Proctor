@@ -43,20 +43,6 @@ const ExamDetailsPage: React.FC = () => {
   const [participantStats, setParticipantStats] = useState<{ [key: number]: ParticipantStats }>({});
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  //   const { execute: fetchScore } = usePost("/getScore");
-
-  axios.interceptors.request.use(
-    (config) => {
-      const token = getTokenFromCookie();
-      if (token) {
-        config.headers = config.headers || {};
-        config.headers["Authorization"] = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
-
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   // Get risk label based on score (same logic as participant-details.tsx)
@@ -129,8 +115,10 @@ const ExamDetailsPage: React.FC = () => {
 
   const fetchParticipantScore = async (userId: number, examId: number) => {
     try {
+      const token = getTokenFromCookie();
       const response = await axios.get(`${baseUrl}/getScore`, {
-        params: { userId, examId }
+        params: { userId, examId },
+        headers: { Authorization: `Bearer ${token}` }
       });
       // Return the actual total_score from backend, not score_percentage
       return response.data.data || 0;
@@ -142,8 +130,10 @@ const ExamDetailsPage: React.FC = () => {
 
   const fetchParticipantViolations = async (userId: number, examId: number) => {
     try {
+      const token = getTokenFromCookie();
       const response = await axios.get(`${baseUrl}/getLogs`, {
-        params: { examId,userId }
+        params: { examId, userId },
+        headers: { Authorization: `Bearer ${token}` }
       });
       return response.data.count || 0;
     } catch (error) {
@@ -178,9 +168,11 @@ const ExamDetailsPage: React.FC = () => {
 
       try {
         setLoadingExam(true);
-        const token = localStorage.getItem("token");
+        const token = getTokenFromCookie();
 
-        const response = await axios.get(`${baseUrl}/exam/${examId}`, {});
+        const response = await axios.get(`${baseUrl}/exam/${examId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
         console.log("Exam details response:", response.data);
 

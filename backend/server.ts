@@ -50,7 +50,7 @@ async function startServer() {
   app.use("/", examRoutes);
   app.use("/", studentRoutes);
   app.use("/", scoreRoutes);
-  app.use("/", videoRoutes);
+  app.use("/api/video", videoRoutes);
   app.use("/", logRoute);
   app.use("/",generatorRoute);
 

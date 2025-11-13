@@ -303,7 +303,6 @@ export const setMicrophoneCount = async (req: Request, res: Response) => {
   const { userId, examId, microphoneCount } = req.body;
 
   try {
-    // Validate required parameters
     if (
       !userId ||
       !examId ||
