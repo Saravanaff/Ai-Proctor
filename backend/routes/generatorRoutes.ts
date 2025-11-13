@@ -1,12 +1,12 @@
 import express from "express";
 import { generateQuestionsFromText, testLLMConnection } from "../controllers/GeneratorController";
+import { requireAdminRole } from "../middleware/roleMiddleware";
+import { requireExaminerRole } from "../middleware/roleMiddleware";
 
 const router = express.Router();
 
-// Generate questions from PDF text
-router.post("/generate-questions", generateQuestionsFromText);
+router.post("/generate-questions",requireExaminerRole,generateQuestionsFromText);
 
-// Test LLM connection
 router.get("/test-llm", testLLMConnection);
 
 export default router;

@@ -20,21 +20,20 @@ import {
   getQuestionsByExam,
   updateQuestionsForExam,
 } from "../controllers/QuestionController";
+import { requireAdminRole } from "../middleware/roleMiddleware";
 const router = Router();
 
-router.get("/exam", getExam);
-router.get("/getExamSettings", getExamSettings);
+router.get("/exam",requireExaminerRole,getExam);
+router.get("/getExamSettings",getExamSettings);
 router.get("/exam/:examId", getSingleExam);
-router.post("/examCreate", createExam);
-router.put("/exam/:examId", updateExam);
-router.delete("/exam/:examId", deleteExam);
-router.get("/getExamQuestions/:examId", getQuestionsByExam);
-router.put("/updateExamQuestions/:exam_id", updateQuestionsForExam);
+router.post("/examCreate",requireExaminerRole,createExam);
+router.put("/exam/:examId",requireExaminerRole,updateExam);
+router.delete("/exam/:examId",requireExaminerRole,deleteExam);
+router.get("/getExamQuestions/:examId",getQuestionsByExam);
+router.put("/updateExamQuestions/:exam_id",requireExaminerRole,updateQuestionsForExam);
 
-// User answer routes
 router.post("/saveUserAnswers", saveUserAnswers);
 
-// Exam results route
 router.get("/exam/:examId/results", getExamResults);
 router.get("/exam/:examId/student/:userId/answers", getStudentAnswers);
 

@@ -4,7 +4,6 @@ import { requireRole } from '../middleware/roleMiddleware';
 
 const router = Router();
 
-// Student can join exam using exam key
 router.post('/joinExam', requireRole('student'), joinExam);
 
 export default router;
