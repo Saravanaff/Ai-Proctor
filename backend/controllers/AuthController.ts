@@ -11,39 +11,55 @@ export const register = async (req: Request, res: Response) => {
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: "name, email, password and role are required" });
     }
-    
-    
-    const existing = await User.findOne({ 
-      where: { 
-        email: email.toLowerCase() 
-      } 
+
+    if (role === "student" && !req.file) {
+      return res.status(400).json({ message: "Profile photo is required for student role" });
+    }
+
+    const existing = await User.findOne({
+      where: {
+        email: email.toLowerCase()
+      }
     });
-    
-    
+
+
     if (existing) {
       return res.status(409).json({ message: "Email already registered" });
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    
-    const user = await User.create({ 
-      name, 
-      email: email.toLowerCase(), 
-      password: hashed, 
-      role: role 
+
+    const user = await User.create({
+      name,
+      email: email.toLowerCase(),
+      password: hashed,
+      role: role
     } as any);
 
+    if (req.file) {
+      const fs = require('fs');
+      const path = require('path');
 
-    const token = jwt.sign({ 
-      sub: user.id, 
-      id: user.id, 
-      name: user.name, 
-      email: user.email, 
-      role: user.role 
+      const ext = path.extname(req.file.originalname).toLowerCase(); // .jpg/.png
+      const newFilename = user.id + ext;
+      const newFilePath = path.join(
+        path.join(process.cwd(), "..", "uploads", "profile_pics"),
+        newFilename
+      );
+
+      fs.renameSync(req.file.path, newFilePath);
+    }
+
+    const token = jwt.sign({
+      sub: user.id,
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
     }, JWT_SECRET, {
       expiresIn: "2h",
     });
-    
+
     res.cookie("authToken", token, {
       httpOnly: true,
       sameSite: "lax",
@@ -70,36 +86,36 @@ export const login = async (req: Request, res: Response) => {
     }
 
     console.log("Login attempt for email:", email);
-    
-    const user = await User.findOne({ 
-      where: { 
-        email: email.toLowerCase() 
-      } 
+
+    const user = await User.findOne({
+      where: {
+        email: email.toLowerCase()
+      }
     });
-    
+
     console.log("User found:", user ? { id: user.id, email: user.email, role: user.role } : "No user found");
-    
+
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const ok = await bcrypt.compare(password, user.password);
     console.log("Password comparison result:", ok);
-    
+
     if (!ok) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-    
-    const token = jwt.sign({ 
-      sub: user.id, 
-      id: user.id, 
-      name: user.name, 
+
+    const token = jwt.sign({
+      sub: user.id,
+      id: user.id,
+      name: user.name,
       email: user.email,
-      role: user.role 
+      role: user.role
     }, JWT_SECRET, {
       expiresIn: "2h",
     });
-    
+
     res.cookie("authToken", token, {
       httpOnly: true,
       sameSite: "lax",
@@ -108,14 +124,14 @@ export const login = async (req: Request, res: Response) => {
       maxAge: 2 * 60 * 60 * 1000,
     } as any);
 
-    return res.json({ 
-      token, 
-      user: { 
-        id: user.id, 
-        name: user.name, 
-        email: user.email, 
-        role: user.role 
-      } 
+    return res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
     });
   } catch (err: any) {
     console.error("Login error:", err);
