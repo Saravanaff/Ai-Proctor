@@ -40,6 +40,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const videoElementRef = useRef<HTMLVideoElement | null>(null);
 
+  // Debug logging
+  useEffect(() => {
+    console.log(`[VideoPlayer ${category}] Props changed:`, {
+      isSelected,
+      isAvailable: videosAvailability[category],
+      user: user?.id,
+      exam: examDetails?.id,
+    });
+  }, [category, isSelected, videosAvailability, user, examDetails]);
+
   // Reset states when category changes or becomes unselected
   useEffect(() => {
     if (!isSelected) {
@@ -282,6 +292,74 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           )}
         </div>
       </div>
+
+      {/* Video Preview - Show when NOT selected */}
+      {!isSelected && isVideoAvailable && (
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            height: "200px",
+            backgroundColor: "#000",
+            borderRadius: "8px",
+            overflow: "hidden",
+            cursor: "pointer",
+          }}
+          onClick={() => onSelect?.()}
+        >
+          <video
+            src={videoStreamUrl}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+            preload="metadata"
+            muted
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7))",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.3s ease",
+            }}
+          >
+            <div
+              style={{
+                textAlign: "center",
+                color: "white",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "3rem",
+                  marginBottom: "8px",
+                  opacity: 0.9,
+                }}
+              >
+                ▶️
+              </div>
+              <div
+                style={{
+                  fontSize: "0.9rem",
+                  fontWeight: "500",
+                  opacity: 0.9,
+                }}
+              >
+                Click to play
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Video Container */}
       {isSelected && isVideoAvailable && (

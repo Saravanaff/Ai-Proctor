@@ -272,15 +272,12 @@ const ParticipantDetailsPage: React.FC = () => {
       return;
     }
 
-    const testUrl = `${baseUrl}/stream-video/${user.id}/${examDetails.id}/${category}`;
+    const testUrl = `${baseUrl}/api/video/stream/${user.id}/${examDetails.id}/${category}`;
     console.log(`Testing URL: ${testUrl}`);
 
     try {
       const response = await fetch(testUrl, {
         method: "HEAD",
-        headers: {
-          Authorization: `Bearer ${getTokenFromCookie()}`,
-        },
       });
       if (response.status === 404) {
         console.log(
@@ -300,6 +297,15 @@ const ParticipantDetailsPage: React.FC = () => {
   if (typeof window !== "undefined") {
     (window as any).testVideoUrl = testVideoUrl;
     (window as any).checkVideoAvailability = () => checkAllVideosAvailability();
+    (window as any).debugVideoState = () => {
+      console.log("=== VIDEO DEBUG INFO ===");
+      console.log("User:", user);
+      console.log("Exam Details:", examDetails);
+      console.log("Videos Availability:", videosAvailability);
+      console.log("Selected Category:", selectedVideoCategory);
+      console.log("Checking:", checkingVideoAvailability);
+      console.log("=======================");
+    };
     (window as any).debugVideoStreaming = () => {
       console.log("=== Video Streaming Debug Info ===");
       console.log("Base URL:", baseUrl);
@@ -375,6 +381,10 @@ const ParticipantDetailsPage: React.FC = () => {
     }
 
     console.log("Final video availability:", availability);
+    console.log("✅ Video Availability Summary:");
+    console.log(`  - face_camera: ${availability.face_camera}`);
+    console.log(`  - screen_recording: ${availability.screen_recording}`);
+    console.log(`  - third_eye: ${availability.third_eye}`);
     setVideosAvailability(availability);
     setCheckingVideoAvailability(false);
 
