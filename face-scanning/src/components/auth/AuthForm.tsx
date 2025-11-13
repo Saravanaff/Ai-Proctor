@@ -31,6 +31,9 @@ const AuthForm = ({
   const [loading, setLoading] = useState(false);
   const [showPasswordReqs, setShowPasswordReqs] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
 
   const router = useRouter();
 
@@ -45,6 +48,27 @@ const AuthForm = ({
     setExamId(examId || "unknown");
     router.push(redirect);
   }
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    // Validate format
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      setError("Only JPG or PNG format is allowed.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Image size must be less than 2 MB.");
+      return;
+    }
+
+    setPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +91,10 @@ const AuthForm = ({
           passwordChecks.number &&
           passwordChecks.special;
 
+        if (role === 'student' && !photo) {
+          throw new Error("Photo must be uploaded.");
+        }
+
         if (!isPasswordStrong) {
           throw new Error(
             "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
@@ -75,16 +103,34 @@ const AuthForm = ({
       }
 
       const baseURL =
-        process.env.NEXT_PUBLIC_BACKEND_URL ;
-      
-      const endpoint = isRegister ? `${baseURL}/register` : `${baseURL}/login`;
-      const payload = isRegister
-        ? { name, email, password, role }
-        : { email, password };
+        process.env.NEXT_PUBLIC_BACKEND_URL;
 
-      const { data } = await axios.post(endpoint, payload, {
+      const endpoint = isRegister ? `${baseURL}/register` : `${baseURL}/login`;
+      let payload: any;
+      if (isRegister) {
+        payload = new FormData();
+        payload.append("name", name);
+        payload.append("email", email);
+        payload.append("password", password);
+        payload.append("role", role);
+
+        if (role === "student" && photo) {
+          payload.append("photo", photo);
+        }
+      }
+      else {
+        payload = { email, password };
+      }
+
+      const config = {
+        headers: isRegister
+          ? { "Content-Type": "multipart/form-data" }
+          : { "Content-Type": "application/json" },
         withCredentials: false,
-      });
+      };
+
+      const { data } = await axios.post(endpoint, payload, config);
+
       const token: string | undefined = data?.token;
       const user = data?.user;
 
@@ -103,9 +149,8 @@ const AuthForm = ({
       }
 
       if (typeof window !== "undefined") {
-        document.cookie = `authToken=${token}; Path=/; Max-Age=${
-          60 * 60 * 2
-        }; SameSite=Lax`;
+        document.cookie = `authToken=${token}; Path=/; Max-Age=${60 * 60 * 2
+          }; SameSite=Lax`;
         setGlobalIdentity(user.name, user.email, user.id);
       }
 
@@ -159,6 +204,56 @@ const AuthForm = ({
 
         <div className={styles.formCard}>
           <form onSubmit={handleSubmit} className={styles.form}>
+
+            {isRegister && role === "student" && (
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Upload Formal Photo</label>
+
+                {/* Frame */}
+                <div
+                  style={{
+                    width: 150,
+                    height: 180,
+                    border: "2px dashed var(--border-color)",
+                    borderRadius: 8,
+                    marginBottom: 10,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                    background: "#f7f7f7",
+                  }}
+                >
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <span style={{ color: "#666" }}>No Photo</span>
+                  )}
+                </div>
+
+                {/* File Input */}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  onChange={handlePhotoChange}
+                  className={styles.input}
+                  required={role === "student"}
+                />
+
+                {role === "student" && !photo && (
+                  <p style={{ color: "red", fontSize: 12 }}>Photo is required for students</p>
+                )}
+              </div>
+            )}
+
             {isRegister && (
               <div className={styles.inputGroup}>
                 <label className={styles.label}>Full Name</label>
@@ -201,7 +296,7 @@ const AuthForm = ({
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(p=>!p)}
+                  onClick={() => setShowPassword(p => !p)}
                   style={{
                     position: 'absolute',
                     right: 8,
