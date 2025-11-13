@@ -41,7 +41,7 @@ type Answer = {
   option_text: string;
 };
 
-const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
+const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStreamRef }: any) => {
   const [answers, setAnswers] = useState<{ [key: number]: Answer }>({});
   const [blocked, setBlocked] = useState(false);
   const [lookAlert, setlookAlert] = useState(false);
@@ -521,7 +521,6 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
     }));
   };
 
-  // Helper function to get answers array for submission
   const getAnswersForSubmission = () => {
     return Object.values(answers);
   };
@@ -1027,50 +1026,42 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit }: any) => {
             onClick={async () => {
               console.log("🚀 Submit button clicked - initiating exam submission");
               
+              // ✅ STOP SCREEN RECORDING MEDIARECORDER
               if (screenRecorderMediaRecorderRef && screenRecorderMediaRecorderRef.current) {
                 try {
                   if (screenRecorderMediaRecorderRef.current.state !== 'inactive') {
-                    console.log("Stopping screen MediaRecorder...");
+                    console.log("📹 Stopping screen MediaRecorder...");
                     screenRecorderMediaRecorderRef.current.stop();
                   }
                 } catch (err) {
                   console.error("Error stopping screen recorder:", err);
                 }
               }
+
+              // ✅ STOP SCREEN STREAM TRACKS (Turn off screen sharing)
+              if (screenStreamRef && screenStreamRef.current) {
+                try {
+                  console.log("🖥️ Stopping screen stream tracks...");
+                  screenStreamRef.current.getTracks().forEach((track: MediaStreamTrack) => {
+                    console.log(`  Stopping screen track: ${track.kind}, state: ${track.readyState}`);
+                    track.stop();
+                  });
+                  screenStreamRef.current = null;
+                  console.log("✅ Screen sharing turned OFF");
+                } catch (err) {
+                  console.error("Error stopping screen stream tracks:", err);
+                }
+              }
               
+              // ✅ SET EXAM SUBMITTED (This will trigger FloatingCamera cleanup)
               setExamSubmitted(true);
 
               // Wait for recordings to stop and final chunks to be sent
-              // MediaRecorder needs time to: stop → fire ondataavailable → convert to ArrayBuffer → emit → send end-exam
-              console.log("⏳ Waiting 2.5 seconds for recording cleanup...");
+              // MediaRecorder onstop handlers will emit stream-listener-off and end-exam events
+              console.log("⏳ Waiting 2.5 seconds for recording cleanup and chunk transmission...");
               await new Promise((resolve) => setTimeout(resolve, 2500));
 
-              console.log("Sending end-exam events for both streams");
-
-              socket.emit("end-exam", {
-                user_id: userId,
-                exam_id: examId,
-                timestamp: new Date(),
-                status: "success",
-                message: "Exam Ended successfully",
-              });
-              console.log("Sent end-exam for screen_recording");
-
-              socket.emit("stream-listener-off", {
-                user_id: userId,
-                exam_id: examId,
-                category: "face_camera",
-                timestamp: new Date(),
-              });
-
-              console.log("Sent end-exam for face_camera");
-              
-              socket.emit("stream-listener-off", {
-                user_id: userId,
-                exam_id: examId,
-                category: "screen_recording",
-                timestamp: new Date(),
-              });
+              console.log("✅ All recordings stopped and events emitted from onstop handlers");
 
               const submissionAnswers = getAnswersForSubmission();
               console.log("📝 Submitting answers:", submissionAnswers);

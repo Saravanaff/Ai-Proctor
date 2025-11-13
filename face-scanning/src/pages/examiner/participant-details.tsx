@@ -410,7 +410,7 @@ const ParticipantDetailsPage: React.FC = () => {
     }
   };
 
-  const fetchLogs = async (examId: number) => {
+  const fetchLogs = async (examId: number, attendanceData?: any) => {
     try {
       setLogsLoading(true);
       const response = await axios.get<ViolationLogResponse>(
@@ -444,19 +444,29 @@ const ParticipantDetailsPage: React.FC = () => {
         setViolations(transformedViolations);
         setTimelineEvents(timelineEvents);
 
-        // Set exam start time from exam creation time (most accurate)
-        if (examDetails) {
+        // Set exam start time from attendance startTime (when user actually started exam)
+        const attendanceToUse = attendanceData || attendance;
+        
+        if (attendanceToUse?.startTime) {
+          const examStartFromAttendance = new Date(attendanceToUse.startTime);
+          console.log(
+            "Setting exam start time from attendance.startTime (fetchLogs):",
+            examStartFromAttendance.toISOString()
+          );
+          setExamStartTime(examStartFromAttendance);
+        } else if (examDetails?.createdAt) {
+          // Fallback: use exam creation time if attendance startTime not available
           const examStartFromCreation = new Date(examDetails.createdAt);
           console.log(
-            "Setting exam start time from examDetails.createdAt:",
+            "Setting exam start time from examDetails.createdAt (fallback):",
             examStartFromCreation.toISOString()
           );
           setExamStartTime(examStartFromCreation);
         } else if (logs.length > 0) {
-          // Fallback: use first violation time if exam details not available
+          // Last resort fallback: use first violation time
           const firstViolationTime = new Date(logs[0].violation_timestamp);
           console.log(
-            "Setting exam start time from first violation (fallback):",
+            "Setting exam start time from first violation (last resort fallback):",
             firstViolationTime.toISOString()
           );
           setExamStartTime(firstViolationTime);
@@ -654,18 +664,6 @@ const ParticipantDetailsPage: React.FC = () => {
         const examResponse = await axios.get(`${baseUrl}/exam/${examId}`);
         setExamDetails(examResponse.data.exam);
 
-        // Set exam start time as fallback
-        if (examResponse.data.exam.createdAt) {
-          const examStartFromCreation = new Date(
-            examResponse.data.exam.createdAt
-          );
-          console.log(
-            "Setting exam start time from exam creation (fetchUserDetails):",
-            examStartFromCreation.toISOString()
-          );
-          setExamStartTime(examStartFromCreation);
-        }
-
         // Find the specific user from exam attendances
         const attendance = examResponse.data.exam.attendances?.find(
           (att: any) => att.user.id === parseInt(userId as string)
@@ -675,6 +673,26 @@ const ParticipantDetailsPage: React.FC = () => {
           setUser(attendance.user);
           setAttendance(attendance);
 
+          // Set exam start time from attendance startTime (when user actually started)
+          if (attendance.startTime) {
+            const examStartFromAttendance = new Date(attendance.startTime);
+            console.log(
+              "Setting exam start time from attendance startTime:",
+              examStartFromAttendance.toISOString()
+            );
+            setExamStartTime(examStartFromAttendance);
+          } else if (examResponse.data.exam.createdAt) {
+            // Fallback to exam creation time if attendance startTime not available
+            const examStartFromCreation = new Date(
+              examResponse.data.exam.createdAt
+            );
+            console.log(
+              "Setting exam start time from exam creation (fallback):",
+              examStartFromCreation.toISOString()
+            );
+            setExamStartTime(examStartFromCreation);
+          }
+
           // Fetch score details
           const scoreData = await fetchScore({
             userId: attendance.user.id,
@@ -682,8 +700,8 @@ const ParticipantDetailsPage: React.FC = () => {
           });
           setScoreDetails(scoreData);
 
-          // Fetch violation logs
-          await fetchLogs(examResponse.data.exam.id);
+          // Fetch violation logs - pass attendance data for accurate exam start time
+          await fetchLogs(examResponse.data.exam.id, attendance);
 
           // Check video availability after user and exam details are set
           console.log("About to check video availability...");

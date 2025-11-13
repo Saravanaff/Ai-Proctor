@@ -91,7 +91,25 @@ const fullscreen = () => {
             };
 
             screenRecorderMediaRecorderRef.current.onstop = () => {
-                console.log("Screen MediaRecorder stopped");
+                console.log("🎬 Screen MediaRecorder stopped event fired");
+                
+                // ✅ Emit stream-listener-off and end-exam AFTER final chunk is sent
+                console.log("📤 Emitting stream-listener-off for screen_recording");
+                socket.emit("stream-listener-off", {
+                    user_id: userId,
+                    exam_id: examId,
+                    category: "screen_recording",
+                    timestamp: new Date(),
+                });
+                
+                console.log("📤 Emitting end-exam event");
+                socket.emit("end-exam", {
+                    user_id: userId,
+                    exam_id: examId,
+                    timestamp: new Date(),
+                    status: "success",
+                    message: "Exam Ended successfully",
+                });
             };
 
             screenRecorderMediaRecorderRef.current.onerror = (err: any) => {
@@ -297,7 +315,12 @@ const fullscreen = () => {
 
     return (
         <>
-            {fullscreenAllowed && <ExamPage screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef} />}
+            {fullscreenAllowed && (
+                <ExamPage 
+                    screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
+                    screenStreamRef={screenStreamRef}
+                />
+            )}
         </>
     );
 }
