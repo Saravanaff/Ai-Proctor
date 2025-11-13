@@ -1,4 +1,4 @@
- /* Container and Layout */
+/* Container and Layout */
 .container {
   min-height: 100vh;
   background: var(--background);
@@ -179,7 +179,10 @@
 }
 
 .errorIcon {
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 /* Buttons */
@@ -204,13 +207,14 @@
 }
 
 .buttonIcon {
-  font-size: 18px;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: transform 0.2s ease;
 }
 
 .submitButton:hover:not(:disabled) .buttonIcon {
-  transform: translateX(2px);
+  transform: translateX(3px);
 }
 
 .submitButton:hover:not(:disabled) {

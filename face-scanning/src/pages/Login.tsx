@@ -1,5 +1,7 @@
-import AuthForm from "@/components/auth/AuthForm";
+import LoginForm from "@/components/auth/LoginForm";
 import { useRouter } from "next/router";
+import { setExamId, setGlobalIdentity } from "@/constants/AuthStore";
+import { useEffect } from "react";
 
 export default function AuthPage() {
   const router = useRouter();
@@ -8,5 +10,24 @@ export default function AuthPage() {
   const examId = router.query.examId as string;
   const email = router.query.email as string;
   const name = router.query.name as string;
-  return <AuthForm defaultMode="login" redirect={redirect} userId={userId} userEmail={email} userName={name} examId={examId} />;
+
+  useEffect(() => {
+    // Auto-login if all parameters are provided
+    if (
+      typeof userId === "string" &&
+      typeof name === "string" &&
+      typeof email === "string"
+    ) {
+      setGlobalIdentity(name, email, userId);
+
+      if (examId) {
+        localStorage.setItem("examId", examId);
+        setExamId(examId);
+      }
+
+      router.push(redirect || "/");
+    }
+  }, [userId, name, email, examId, redirect, router]);
+
+  return <LoginForm redirect={redirect} />;
 }

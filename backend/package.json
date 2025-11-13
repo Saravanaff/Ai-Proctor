@@ -13,6 +13,7 @@
   "dependencies": {
     "@types/express": "^5.0.3",
     "@types/fluent-ffmpeg": "^2.1.27",
+    "@types/multer": "^2.0.0",
     "@types/socket.io": "^3.0.1",
     "axios": "^1.11.0",
     "bcrypt": "^5.1.1",
@@ -26,6 +27,8 @@
     "mkcert": "^3.2.0",
     "multer": "^2.0.2",
     "mysql2": "^3.9.7",
+    "nodemailer": "^7.0.10",
+    "otp-generator": "^4.0.1",
     "reflect-metadata": "^0.1.13",
     "sequelize": "^6.37.3",
     "sequelize-typescript": "^2.1.6",
@@ -38,8 +41,7 @@
     "@types/cors": "^2.8.17",
     "@types/http-proxy-middleware": "^0.19.3",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/multer": "^2.0.0",
-    "@types/node": "^20.19.25",
+    "@types/node": "^20.0.0",
     "jsonwebtoken": "^9.0.2",
     "nodemon": "^3.0.0",
     "typescript": "^5.8.3"

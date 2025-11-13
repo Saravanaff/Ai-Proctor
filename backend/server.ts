@@ -14,6 +14,7 @@ import scoreRoutes from "./routes/scoreRoutes";
 import videoRoutes from "./routes/videoRoutes";
 import logRoute from "./routes/logRoute";
 import generatorRoute from "./routes/generatorRoutes";
+import otpRoutes from "./routes/otpRoutes";
 import fs from "fs";
 
 dotenv.config({ path: path.join(__dirname, ".env") });
@@ -23,12 +24,14 @@ const serverPort = 3001;
 async function startServer() {
   const app = express();
 
-  app.use(cors({
-    origin: "*",
-    credentials: false,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  }));
+  app.use(
+    cors({
+      origin: "*",
+      credentials: false,
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  );
 
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -42,9 +45,9 @@ async function startServer() {
     res.setHeader("Content-Type", "application/x-pem-file");
     res.download(caPath, "rootCA.pem");
   });
-
   app.use("/uploads", express.static(path.join(process.cwd(), "..", "uploads")));
   app.use("/", authRoutes);
+  app.use("/otp", otpRoutes); // OTP routes don't need authentication
   app.use(authMiddleware);
   app.use("/", examRoutes);
   app.use("/", studentRoutes);
