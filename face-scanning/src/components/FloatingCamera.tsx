@@ -385,6 +385,27 @@ const FloatingCamera = ({
       console.log("⏰ Current timestamp:", new Date().toISOString());
       console.log("👤 User ID:", userId, "📝 Exam ID:", examId);
 
+      // ✅ STOP CAMERA STREAM TRACKS IMMEDIATELY (Turn off camera)
+      if (streamRef.current) {
+        try {
+          console.log("📷 Stopping camera stream tracks...");
+          streamRef.current.getTracks().forEach((track) => {
+            console.log(`  Stopping camera track: ${track.kind}, state: ${track.readyState}`);
+            track.stop();
+          });
+          streamRef.current = null;
+          
+          // Clear video element srcObject to fully release camera
+          if (videoRef.current) {
+            videoRef.current.srcObject = null;
+          }
+          
+          console.log("✅ Camera turned OFF");
+        } catch (e) {
+          console.warn("Error stopping camera stream:", e);
+        }
+      }
+
       // Stop face camera recording - this will trigger final ondataavailable
       if (
         mediaRecorderRef.current &&
@@ -410,21 +431,6 @@ const FloatingCamera = ({
             );
           }
         }, 100);
-      }
-
-      // ✅ STOP CAMERA STREAM TRACKS (Turn off camera)
-      if (streamRef.current) {
-        try {
-          console.log("📷 Stopping camera stream tracks...");
-          streamRef.current.getTracks().forEach((track) => {
-            console.log(`  Stopping camera track: ${track.kind}, state: ${track.readyState}`);
-            track.stop();
-          });
-          streamRef.current = null;
-          console.log("✅ Camera turned OFF");
-        } catch (e) {
-          console.warn("Error stopping camera stream:", e);
-        }
       }
 
       // Stop screen recording (already handled in FullScreen.tsx, but as backup)

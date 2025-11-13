@@ -1026,19 +1026,7 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
             onClick={async () => {
               console.log("🚀 Submit button clicked - initiating exam submission");
               
-              // ✅ STOP SCREEN RECORDING MEDIARECORDER
-              if (screenRecorderMediaRecorderRef && screenRecorderMediaRecorderRef.current) {
-                try {
-                  if (screenRecorderMediaRecorderRef.current.state !== 'inactive') {
-                    console.log("📹 Stopping screen MediaRecorder...");
-                    screenRecorderMediaRecorderRef.current.stop();
-                  }
-                } catch (err) {
-                  console.error("Error stopping screen recorder:", err);
-                }
-              }
-
-              // ✅ STOP SCREEN STREAM TRACKS (Turn off screen sharing)
+              // ✅ STOP SCREEN STREAM TRACKS FIRST (Turn off screen sharing IMMEDIATELY)
               if (screenStreamRef && screenStreamRef.current) {
                 try {
                   console.log("🖥️ Stopping screen stream tracks...");
@@ -1052,8 +1040,20 @@ const ExamPage = ({ screenRecorderMediaRecorderRef, onBeforeSubmit, screenStream
                   console.error("Error stopping screen stream tracks:", err);
                 }
               }
+
+              // ✅ STOP SCREEN RECORDING MEDIARECORDER
+              if (screenRecorderMediaRecorderRef && screenRecorderMediaRecorderRef.current) {
+                try {
+                  if (screenRecorderMediaRecorderRef.current.state !== 'inactive') {
+                    console.log("📹 Stopping screen MediaRecorder...");
+                    screenRecorderMediaRecorderRef.current.stop();
+                  }
+                } catch (err) {
+                  console.error("Error stopping screen recorder:", err);
+                }
+              }
               
-              // ✅ SET EXAM SUBMITTED (This will trigger FloatingCamera cleanup)
+              // ✅ SET EXAM SUBMITTED (This will trigger FloatingCamera cleanup - stops camera tracks immediately)
               setExamSubmitted(true);
 
               // Wait for recordings to stop and final chunks to be sent
