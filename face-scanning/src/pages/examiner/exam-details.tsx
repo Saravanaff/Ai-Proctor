@@ -118,12 +118,22 @@ const ExamDetailsPage: React.FC = () => {
       const token = getTokenFromCookie();
       const response = await axios.get(`${baseUrl}/getScore`, {
         params: { userId, examId },
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        validateStatus: (status) => status < 500, // Don't throw on 404, etc.
       });
-      // Return the actual total_score from backend, not score_percentage
-      return response.data.data || 0;
+      
+      // Handle different response statuses
+      if (response.status === 200 && response.data?.data !== undefined) {
+        return response.data.data;
+      }
+      
+      // Score not found or not yet calculated
+      return null;
     } catch (error) {
-      console.error(`Error fetching score for user ${userId}:`, error);
+      // Only log actual network errors, not expected missing data
+      if (axios.isAxiosError(error) && !error.response) {
+        console.error(`Network error fetching score for user ${userId}:`, error.message);
+      }
       return null;
     }
   };
@@ -133,11 +143,22 @@ const ExamDetailsPage: React.FC = () => {
       const token = getTokenFromCookie();
       const response = await axios.get(`${baseUrl}/getLogs`, {
         params: { examId, userId },
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        validateStatus: (status) => status < 500, // Don't throw on 404, etc.
       });
-      return response.data.count || 0;
+      
+      // Handle different response statuses
+      if (response.status === 200 && response.data?.count !== undefined) {
+        return response.data.count;
+      }
+      
+      // No violations found or not yet available
+      return 0;
     } catch (error) {
-      console.error(`Error fetching violations for user ${userId}:`, error);
+      // Only log actual network errors, not expected missing data
+      if (axios.isAxiosError(error) && !error.response) {
+        console.error(`Network error fetching violations for user ${userId}:`, error.message);
+      }
       return 0;
     }
   };

@@ -15,12 +15,41 @@ export interface PdfReportData {
     value: number;
     breakdown?: Record<string, number | boolean>;
   };
+  examResults?: {
+    stats: {
+      totalQuestions: number;
+      answered: number;
+      correct: number;
+      wrong: number;
+      unanswered: number;
+      score: string;
+    };
+  };
 }
 
 export function generateParticipantPdf(data: PdfReportData) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
+  const marginBottom = 30; // Reserve space for footer
+
+  // Debug: Log exam results data
+  console.log("📄 Generating PDF with data:", {
+    userName: data.user.name,
+    examName: data.exam.name,
+    hasExamResults: !!data.examResults,
+    examResultsStats: data.examResults?.stats,
+  });
+
+  // Helper function to check if we need a new page
+  const checkPageBreak = (requiredSpace: number) => {
+    if (currentY + requiredSpace > pageHeight - marginBottom) {
+      doc.addPage();
+      currentY = 20; // Reset to top of new page
+      return true;
+    }
+    return false;
+  };
 
   // Professional gradient header
   doc.setFillColor(59, 130, 246);
@@ -56,14 +85,14 @@ export function generateParticipantPdf(data: PdfReportData) {
 
   currentY += 12;
 
-  // Card with rounded effect (simulated)
+  // Card with rounded effect (simulated) - Taller to fit email
   doc.setFillColor(248, 250, 252);
-  doc.rect(15, currentY, pageWidth - 30, 28, "F");
+  doc.rect(15, currentY, pageWidth - 30, 40, "F");
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.5);
-  doc.rect(15, currentY, pageWidth - 30, 28, "S");
+  doc.rect(15, currentY, pageWidth - 30, 40, "S");
 
-  // Two-column layout
+  // Two-column layout for participant info
   doc.setTextColor(31, 41, 55);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
@@ -72,16 +101,21 @@ export function generateParticipantPdf(data: PdfReportData) {
   doc.text(data.user.name, 25, currentY + 15);
 
   doc.setFont("helvetica", "bold");
-  doc.text("Email Address:", 25, currentY + 22);
+  doc.text("User ID:", pageWidth / 2, currentY + 8);
   doc.setFont("helvetica", "normal");
-  doc.text(data.user.email, 70, currentY + 22);
+  doc.text(String(data.user.id), pageWidth / 2, currentY + 15);
 
   doc.setFont("helvetica", "bold");
-  doc.text("User ID:", pageWidth - 80, currentY + 8);
+  doc.text("Email Address:", 25, currentY + 24);
   doc.setFont("helvetica", "normal");
-  doc.text(String(data.user.id), pageWidth - 80, currentY + 15);
+  // Use splitTextToSize to handle long emails
+  const emailLines = doc.splitTextToSize(data.user.email, pageWidth - 60);
+  doc.text(emailLines, 25, currentY + 31);
 
-  currentY += 40;
+  currentY += 52;
+
+  // Check if we need a new page before Examination Details
+  checkPageBreak(60);
 
   // Examination Details Card
   doc.setTextColor(31, 41, 55);
@@ -96,29 +130,100 @@ export function generateParticipantPdf(data: PdfReportData) {
   currentY += 12;
 
   doc.setFillColor(255, 255, 255);
-  doc.rect(15, currentY, pageWidth - 30, 28, "F");
+  doc.rect(15, currentY, pageWidth - 30, 35, "F");
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.5);
-  doc.rect(15, currentY, pageWidth - 30, 28, "S");
+  doc.rect(15, currentY, pageWidth - 30, 35, "S");
 
   doc.setTextColor(31, 41, 55);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("Examination Name:", 25, currentY + 8);
+  doc.text("Examination Name:", 25, currentY + 10);
   doc.setFont("helvetica", "normal");
-  doc.text(data.exam.name, 25, currentY + 15);
+  doc.text(data.exam.name, 25, currentY + 17);
 
   doc.setFont("helvetica", "bold");
-  doc.text("Exam ID:", 25, currentY + 22);
+  doc.text("Exam ID:", 25, currentY + 27);
   doc.setFont("helvetica", "normal");
-  doc.text(String(data.exam.id), 70, currentY + 22);
+  doc.text(String(data.exam.id), 70, currentY + 27);
 
   doc.setFont("helvetica", "bold");
-  doc.text("Assessment Date:", pageWidth - 80, currentY + 8);
+  doc.text("Assessment Date:", pageWidth / 2, currentY + 10);
   doc.setFont("helvetica", "normal");
-  doc.text(data.exam.date, pageWidth - 80, currentY + 15);
+  doc.text(data.exam.date, pageWidth / 2, currentY + 17);
 
-  currentY += 40;
+  currentY += 47;
+
+  // Check if we need a new page before Exam Performance
+  checkPageBreak(80);
+
+  // Exam Performance Summary
+  if (data.examResults) {
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("EXAM PERFORMANCE", 20, currentY);
+
+    // Stylish underline
+    doc.setFillColor(59, 130, 246);
+    doc.rect(20, currentY + 2, 70, 2, "F");
+
+    currentY += 12;
+
+    // Performance card - larger to fit all content
+    doc.setFillColor(248, 250, 252);
+    doc.rect(15, currentY, pageWidth - 30, 55, "F");
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.rect(15, currentY, pageWidth - 30, 55, "S");
+
+    doc.setTextColor(31, 41, 55);
+    doc.setFontSize(10);
+    
+    // Row 1 - Correct Answers and Total Marks
+    doc.setFont("helvetica", "bold");
+    doc.text("Questions Answered Correctly:", 25, currentY + 12);
+    doc.setTextColor(34, 197, 94); // Green
+    doc.setFont("helvetica", "bold");
+    doc.text(`${data.examResults.stats.correct} out of ${data.examResults.stats.totalQuestions}`, 25, currentY + 20);
+
+    doc.setTextColor(31, 41, 55);
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Marks:", pageWidth / 2 + 10, currentY + 12);
+    doc.setTextColor(59, 130, 246); // Blue
+    doc.setFont("helvetica", "bold");
+    doc.text(`${data.examResults.stats.correct} / ${data.examResults.stats.totalQuestions}`, pageWidth / 2 + 10, currentY + 20);
+
+    // Row 2 - Wrong Answers and Unanswered
+    doc.setTextColor(31, 41, 55);
+    doc.setFont("helvetica", "bold");
+    doc.text("Wrong Answers:", 25, currentY + 32);
+    doc.setTextColor(239, 68, 68); // Red
+    doc.setFont("helvetica", "bold");
+    doc.text(String(data.examResults.stats.wrong), 25, currentY + 40);
+
+    doc.setTextColor(31, 41, 55);
+    doc.setFont("helvetica", "bold");
+    doc.text("Unanswered Questions:", pageWidth / 2 + 10, currentY + 32);
+    doc.setTextColor(156, 163, 175); // Gray
+    doc.setFont("helvetica", "normal");
+    doc.text(String(data.examResults.stats.unanswered), pageWidth / 2 + 10, currentY + 40);
+
+    // Row 3 - Score Percentage (centered at bottom)
+    const percentage = ((data.examResults.stats.correct / data.examResults.stats.totalQuestions) * 100).toFixed(1);
+    doc.setTextColor(31, 41, 55);
+    doc.setFont("helvetica", "bold");
+    doc.text("Score Percentage:", pageWidth / 2 - 35, currentY + 50);
+    doc.setTextColor(59, 130, 246); // Blue
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${percentage}%`, pageWidth / 2 + 15, currentY + 50);
+
+    currentY += 67;
+  }
+
+  // Check if we need a new page before Assessment Results
+  checkPageBreak(100);
 
   // Assessment Results - Better visibility
   if (data.score) {
@@ -178,6 +283,9 @@ export function generateParticipantPdf(data: PdfReportData) {
     doc.text(scoreLabel, 25, currentY + 22);
 
     currentY += 45;
+
+    // Check if we need a new page before Violations Analysis
+    checkPageBreak(150);
 
     // Violations Analysis
     if (data.score.breakdown) {
@@ -374,28 +482,33 @@ export function generateParticipantPdf(data: PdfReportData) {
     }
   }
 
-  // Professional footer - positioned at bottom
-  const footerY = pageHeight - 20;
-  doc.setFillColor(249, 250, 251);
-  doc.rect(0, footerY, pageWidth, 20, "F");
-  doc.setDrawColor(229, 231, 235);
-  doc.line(0, footerY, pageWidth, footerY);
+  // Add footer to all pages
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    const footerY = pageHeight - 20;
+    
+    doc.setFillColor(249, 250, 251);
+    doc.rect(0, footerY, pageWidth, 20, "F");
+    doc.setDrawColor(229, 231, 235);
+    doc.line(0, footerY, pageWidth, footerY);
 
-  doc.setTextColor(107, 114, 128);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.text(
-    "Generated by AI-Proctor Assessment System",
-    pageWidth / 2,
-    footerY + 8,
-    { align: "center" }
-  );
-  doc.text(
-    `Report Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`,
-    pageWidth / 2,
-    footerY + 15,
-    { align: "center" }
-  );
+    doc.setTextColor(107, 114, 128);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      "Generated by AI-Proctor Assessment System",
+      pageWidth / 2,
+      footerY + 8,
+      { align: "center" }
+    );
+    doc.text(
+      `Report Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()} | Page ${i} of ${totalPages}`,
+      pageWidth / 2,
+      footerY + 15,
+      { align: "center" }
+    );
+  }
 
   doc.save(`participant_report_${data.user.name.replace(/\s+/g, "_")}.pdf`);
 }

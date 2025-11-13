@@ -83,8 +83,73 @@ interface ViolationLogResponse {
 
 const ParticipantDetailsPage: React.FC = () => {
   // PDF generation handler
-  const handleGeneratePDF = () => {
+  const handleGeneratePDF = async () => {
     if (!user || !examDetails) return;
+
+    // Fetch exam results if not already loaded
+    let results = examResults;
+    if (!results) {
+      try {
+        setExamResultsLoading(true);
+        
+        const token = getTokenFromCookie();
+        const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+        const examRes = await axios.get(`${base}/exam/${examDetails.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const questions = examRes.data.questions || [];
+        
+        const answersRes = await axios.get(
+          `${base}/exam/${examDetails.id}/student/${user.id}/answers`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const userAnswers = answersRes.data.data?.answers || [];
+        
+        const detailedAnswers = questions.map((question: any) => {
+          const userAnswer = userAnswers.find(
+            (ans: any) => ans.question_id === question.id
+          );
+          
+          const questionOptions = Array.isArray(question.QuestionOptions)
+            ? question.QuestionOptions
+            : [];
+
+          const selectedOption = questionOptions.find(
+            (opt: any) => opt.id === userAnswer?.option_id
+          );
+          const correctOption = questionOptions.find((opt: any) => opt.is_correct);
+          const isCorrect = userAnswer ? selectedOption?.is_correct || false : false;
+
+          return {
+            question,
+            userAnswer,
+            selectedOption,
+            correctOption,
+            isCorrect,
+          };
+        });
+
+        const stats = {
+          totalQuestions: questions.length,
+          answered: userAnswers.length,
+          correct: detailedAnswers.filter((a: any) => a.isCorrect).length,
+          wrong: detailedAnswers.filter((a: any) => a.userAnswer && !a.isCorrect).length,
+          unanswered: questions.length - userAnswers.length,
+          score: scoreDetails?.data ? `${scoreDetails.data}` : "0",
+        };
+
+        results = { answers: detailedAnswers, stats };
+        setExamResults(results);
+      } catch (err) {
+        console.error("Error fetching exam results for PDF:", err);
+      } finally {
+        setExamResultsLoading(false);
+      }
+    }
+
     generateParticipantPdf({
       user: {
         id: user.id,
@@ -111,6 +176,9 @@ const ParticipantDetailsPage: React.FC = () => {
             },
           }
         : undefined,
+      examResults: results ? {
+        stats: results.stats,
+      } : undefined,
     });
   };
   const router = useRouter();
