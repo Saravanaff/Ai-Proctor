@@ -165,12 +165,16 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
     }, 2000);
   };
 
+
+
+
   useEffect(() => {
     console.log("Video component mounting...");
     let stream: MediaStream;
     const video = videoRef.current;
     let device: mediasoupClient.Device;
     let isMounted = true;
+
 
     // Check if face authentication is enabled
     const checkFaceAuthEnabled = async () => {
@@ -330,7 +334,17 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         };
 
         console.log("Loading reference image...");
-        const referenceImage = await faceRegRef.current.fetchImage("/profile/Sriram.jpg");
+
+        let profilePhotoUrl = `${baseUrl}/uploads/profile_pics/${userId}.jpg`
+
+        if (!profilePhotoUrl) {
+          console.error("No profile photo URL available");
+          return;
+        }
+        console.log("Profile photo URL:", profilePhotoUrl);
+
+        const referenceImage = await faceRegRef.current.fetchImage(profilePhotoUrl);
+
         const referenceDetection = await faceRegRef.current
           .detectSingleFace(referenceImage, new faceRegRef.current.TinyFaceDetectorOptions())
           .withFaceLandmarks()

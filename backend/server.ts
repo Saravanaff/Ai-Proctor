@@ -43,7 +43,7 @@ async function startServer() {
     res.download(caPath, "rootCA.pem");
   });
 
-
+  app.use("/uploads", express.static(path.join(process.cwd(), "..", "uploads")));
   app.use("/", authRoutes);
   app.use(authMiddleware);
   app.use("/", examRoutes);
@@ -51,7 +51,7 @@ async function startServer() {
   app.use("/", scoreRoutes);
   app.use("/api/video", videoRoutes);
   app.use("/", logRoute);
-  app.use("/",generatorRoute);
+  app.use("/", generatorRoute);
 
   const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
   const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
