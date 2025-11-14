@@ -279,9 +279,6 @@ export const downloadVideo = async (req: Request, res: Response) => {
     }
 
     const baseFileName = `${user_id}_${exam_id}_${category}`;
-    const mp4fileName = `${baseFileName}.mp4`;
-    const mp4Path = path.join(CONVERTED_VIDEOS_PATH, mp4fileName);
-
     const videoPath = findVideoFile(baseFileName, STORAGE_RECORDINGS_PATH);
 
     if (!videoPath) {
@@ -291,25 +288,33 @@ export const downloadVideo = async (req: Request, res: Response) => {
       });
     }
 
-    try {
-      await convertToMP4(videoPath, mp4Path);
-    } catch (conversionError: any) {
-      console.error("Conversion error:", conversionError);
-      return res.status(500).json({
-        success: false,
-        message: "Error converting video",
-        error: conversionError.message,
-      });
+    // ✅ Determine the correct MIME type and filename based on file extension
+    const fileExt = getFileExtension(videoPath);
+    const fileName = path.basename(videoPath);
+    let contentType = "video/webm";
+    
+    if (fileExt === ".mp4" || fileExt === ".m4v") {
+      contentType = "video/mp4";
+    } else if (fileExt === ".webm") {
+      contentType = "video/webm";
+    } else if (fileExt === ".avi") {
+      contentType = "video/x-msvideo";
+    } else if (fileExt === ".mov") {
+      contentType = "video/quicktime";
+    } else if (fileExt === ".mkv") {
+      contentType = "video/x-matroska";
     }
 
-    const stat = fs.statSync(mp4Path);
+    console.log(`📥 Downloading video: ${fileName} (${contentType})`);
 
-    res.setHeader("Content-Type", "video/mp4");
+    const stat = fs.statSync(videoPath);
+
+    res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Length", stat.size);
-    res.setHeader("Content-Disposition", `attachment; filename="${mp4fileName}"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
     res.setHeader("Access-Control-Allow-Origin", "*");
 
-    const stream = fs.createReadStream(mp4Path);
+    const stream = fs.createReadStream(videoPath);
     stream.pipe(res);
 
     stream.on("error", (error) => {

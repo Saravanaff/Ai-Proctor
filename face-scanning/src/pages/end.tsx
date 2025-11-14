@@ -33,7 +33,7 @@ const EndPage = () => {
   };
 
   useEffect(() => {
-    console.log("📊 End page mounted - saving final score");
+    console.log("End page mounted - saving final score");
     if (!hasSavedScore.current) {
       hasSavedScore.current = true;
       postData("/saveScore", {
