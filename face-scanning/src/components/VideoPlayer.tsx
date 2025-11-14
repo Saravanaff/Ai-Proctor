@@ -80,8 +80,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return null;
   }
 
-  // Use the video controller endpoint
-  const videoStreamUrl = `${baseUrl}/api/video/stream/${user.id}/${examDetails.id}/${category}`;
+  // Use the video controller endpoint with cache busting for selected video
+  const videoStreamUrl = `${baseUrl}/api/video/stream/${user.id}/${examDetails.id}/${category}${isSelected ? `?t=${Date.now()}` : ''}`;
   const isVideoAvailable = videosAvailability[category];
 
   // Enhanced error handling
@@ -486,9 +486,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               }}
               preload="metadata"
               playsInline
-              crossOrigin="anonymous"
             >
-              <source src={videoStreamUrl} type="video/mp4" />
+              {/* ✅ Remove type attribute to let browser auto-detect (supports webm, mp4, etc.) */}
+              <source src={videoStreamUrl} />
               <p>
                 Your browser doesn't support HTML video. You can{" "}
                 <a

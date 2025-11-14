@@ -191,10 +191,8 @@ export const streamVideo = async (req: Request, res: Response) => {
     }
 
     const baseFileName = `${user_id}_${exam_id}_${category}`;
-    const mp4fileName = `${baseFileName}.mp4`;
-    const mp4Path = path.join(CONVERTED_VIDEOS_PATH, mp4fileName);
-
     const videoPath = findVideoFile(baseFileName, STORAGE_RECORDINGS_PATH);
+    console.log(videoPath);
 
     if (!videoPath) {
       return res.status(404).json({
@@ -203,18 +201,25 @@ export const streamVideo = async (req: Request, res: Response) => {
       });
     }
 
-    try {
-      await convertToMP4(videoPath, mp4Path);
-    } catch (conversionError: any) {
-      console.error("Conversion error:", conversionError);
-      return res.status(500).json({
-        success: false,
-        message: "Error converting video",
-        error: conversionError.message,
-      });
+    // ✅ Determine the correct MIME type based on file extension
+    const fileExt = getFileExtension(videoPath);
+    let contentType = "video/webm";
+    
+    if (fileExt === ".mp4" || fileExt === ".m4v") {
+      contentType = "video/mp4";
+    } else if (fileExt === ".webm") {
+      contentType = "video/webm";
+    } else if (fileExt === ".avi") {
+      contentType = "video/x-msvideo";
+    } else if (fileExt === ".mov") {
+      contentType = "video/quicktime";
+    } else if (fileExt === ".mkv") {
+      contentType = "video/x-matroska";
     }
 
-    const stat = fs.statSync(mp4Path);
+    console.log(`📹 Streaming video: ${path.basename(videoPath)} (${contentType})`);
+
+    const stat = fs.statSync(videoPath);
     const fileSize = stat.size;
     const range = req.headers.range;
 
@@ -224,13 +229,13 @@ export const streamVideo = async (req: Request, res: Response) => {
       const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
       const chunkSize = end - start + 1;
 
-      const stream = fs.createReadStream(mp4Path, { start, end });
+      const stream = fs.createReadStream(videoPath, { start, end });
 
       res.writeHead(206, {
         "Content-Range": `bytes ${start}-${end}/${fileSize}`,
         "Accept-Ranges": "bytes",
         "Content-Length": chunkSize,
-        "Content-Type": "video/mp4",
+        "Content-Type": contentType,
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges",
       });
@@ -239,11 +244,11 @@ export const streamVideo = async (req: Request, res: Response) => {
     } else {
       res.writeHead(200, {
         "Content-Length": fileSize,
-        "Content-Type": "video/mp4",
+        "Content-Type": contentType,
         "Access-Control-Allow-Origin": "*",
       });
 
-      fs.createReadStream(mp4Path).pipe(res);
+      fs.createReadStream(videoPath).pipe(res);
     }
   } catch (error: any) {
     console.error("Error streaming video:", error);

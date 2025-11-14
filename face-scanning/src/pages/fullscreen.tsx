@@ -100,14 +100,26 @@ const fullscreen = () => {
                         pendingScreenChunksRef.current.add(chunkNum);
                         
                         e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
+                            // ✅ Check if MediaRecorder is inactive (meaning this is likely the final chunk)
+                            const isFinalChunk = screenRecorderMediaRecorderRef.current?.state === 'inactive';
+                            
                             const chunkData: any = {
                                 user_id: userId,
                                 exam_id: examId,
                                 category: "screen_recording",
                                 chunk: buffer,
                                 timestamp: Date.now(),
+                                chunkNumber: chunkNum,
+                                isFinal: isFinalChunk,
+                                totalChunks: isFinalChunk ? chunkNum + 1 : undefined,
                             };
-                            console.log(`📹 Sending screen chunk #${chunkNum} (${buffer.byteLength} bytes)`);
+                            
+                            if (isFinalChunk) {
+                                console.log(`🏁 Sending FINAL screen chunk #${chunkNum} (${buffer.byteLength} bytes)`);
+                            } else {
+                                console.log(`📹 Sending screen chunk #${chunkNum} (${buffer.byteLength} bytes)`);
+                            }
+                            
                             socket.emit("recorder-add-video-stream-chunk", chunkData);
                             
                             // ✅ Remove from pending after successful emit

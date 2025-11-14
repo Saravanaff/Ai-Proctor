@@ -89,6 +89,9 @@ interface VideoChunkData {
   timestamps: number;
   examSettings: any;
   settings: any;
+  chunkNumber?: number;
+  isFinal?: boolean;
+  totalChunks?: number;
 }
 
 const FloatingCamera = ({
@@ -486,6 +489,9 @@ const FloatingCamera = ({
               }
 
               e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
+                // ✅ Check if MediaRecorder is inactive (meaning this is likely the final chunk)
+                const isFinalChunk = mediaRecorderRef.current?.state === 'inactive';
+                
                 const chunkData: VideoChunkData = {
                   user_id: userId,
                   exam_id: examId,
@@ -494,9 +500,17 @@ const FloatingCamera = ({
                   timestamps: Date.now(),
                   examSettings: settingsRef.current,
                   settings: settingsRef.current,
+                  chunkNumber: chunkNum,
+                  isFinal: isFinalChunk,
+                  totalChunks: isFinalChunk ? chunkNum + 1 : undefined,
                 };
                 socket.emit("recorder-add-video-stream-chunk", chunkData);
-                console.log(`📹 Sent face camera chunk #${chunkNum} (${buffer.byteLength} bytes)`);
+                
+                if (isFinalChunk) {
+                  console.log(`🏁 Sent FINAL face camera chunk #${chunkNum} (${buffer.byteLength} bytes)`);
+                } else {
+                  console.log(`📹 Sent face camera chunk #${chunkNum} (${buffer.byteLength} bytes)`);
+                }
                 
                 // ✅ Remove from pending after successful emit (both refs)
                 pendingFaceChunksRef.current.delete(chunkNum);

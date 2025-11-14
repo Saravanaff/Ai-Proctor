@@ -26,7 +26,6 @@ const startStorageSocketServer = async () => {
     res.send("✅ Storage Server Running");
   });
 
-  // SSL
   const httpsOptions = {
     key: fs.readFileSync(path.join(__dirname, "..", "localhost-key.pem")),
     cert: fs.readFileSync(path.join(__dirname, "..", "localhost-cert.pem")),
@@ -71,11 +70,14 @@ const startStorageSocketServer = async () => {
         exam_id: string;
         category: string;
         chunk: ArrayBuffer;
+        chunkNumber?: number;
+        isFinal?: boolean;
+        totalChunks?: number;
       }) => {
         const fileName = `${data.user_id}_${data.exam_id}_${data.category}`;
 
         if (!recorder[fileName]) {
-          console.log("⚠️ Recorder not found for", fileName, "- chunk will be dropped");
+          console.log("Recorder not found for", fileName, "- chunk will be dropped");
           return;
         }
 
@@ -88,38 +90,84 @@ const startStorageSocketServer = async () => {
           ? data.chunk
           : Buffer.from(new Uint8Array(data.chunk));
 
-        // Always write chunks while recorder exists, even if marked inactive
-        // This ensures the final chunk with WebM footer gets written
-        recorder[fileName].write(buf);
+        const writeSuccess = recorder[fileName].write(buf);
         
         if (recordingActive[fileName]) {
-          console.log("📹 Written chunk for", fileName, ":", buf.length, "bytes");
+          console.log(`✅ Written chunk #${data.chunkNumber || '?'} for ${fileName}: ${buf.length} bytes`);
         } else {
-          console.log("📹 Written FINAL chunk for", fileName, ":", buf.length, "bytes (after stop signal)");
+          console.log(`📹 Written chunk #${data.chunkNumber || '?'} for ${fileName}: ${buf.length} bytes (after stop signal)`);
+        }
+
+        // ✅ Check for backpressure
+        if (!writeSuccess) {
+          console.warn(`⚠️ WriteStream buffer full for ${fileName} - backpressure detected`);
+          recorder[fileName].once('drain', () => {
+            console.log(`✅ ${fileName} buffer drained`);
+          });
+        }
+
+        // ✅ If this is marked as the final chunk, close the stream
+        if (data.isFinal) {
+          console.log(`🏁 Final chunk received for ${fileName} (chunk #${data.chunkNumber}/${data.totalChunks})`);
+          
+          // Small delay to ensure write completes
+          setTimeout(() => {
+            if (recorder[fileName]) {
+              // Check if buffer needs draining before closing
+              if (recorder[fileName].writableNeedDrain) {
+                console.log(`⏳ ${fileName} waiting for buffer to drain before closing...`);
+                recorder[fileName].once('drain', () => {
+                  console.log(`✅ ${fileName} drained, now closing...`);
+                  closeRecorder(fileName);
+                });
+              } else {
+                console.log(`✅ ${fileName} buffer empty, closing immediately...`);
+                closeRecorder(fileName);
+              }
+            }
+          }, 500); // 500ms to ensure write completes
         }
       }
     );
 
+    // Helper function to close recorder
+    const closeRecorder = (fileName: string) => {
+      if (recorder[fileName]) {
+        recorder[fileName].end((error: Error | null | undefined) => {
+          if (error) {
+            console.error(`❌ Error closing ${fileName}:`, error);
+          } else {
+            console.log(`✅ Recording successfully ended: ${fileName}`);
+          }
+          delete recorder[fileName];
+          delete recordingActive[fileName];
+        });
+        
+        recorder[fileName].on('finish', () => {
+          console.log(`✅ WriteStream finished for: ${fileName}`);
+        });
+      }
+    };
+
     socket.on(
       "stop-stream-recording",
-      (data: { user_id: string; exam_id: string; category:string}) => {
+      (data: { user_id: string; exam_id: string; category:string; isFinal?: boolean; totalChunks?: number }) => {
         const fileName = `${data.user_id}_${data.exam_id}_${data.category}`;
 
         if (recorder[fileName]) {
           // Mark as inactive to signal we're in closing phase
           recordingActive[fileName] = false;
           
-          console.log("⏹️ Stop signal received for:", fileName, "- waiting for final chunk");
+          console.log(`🛑 Stop signal received for: ${fileName} (total chunks: ${data.totalChunks || 'unknown'})`);
+          console.log(`⏳ Waiting for final chunk with isFinal flag...`);
           
-          // Wait 2 seconds for final chunk to arrive (accounts for async buffer conversion + network)
+          // ✅ Set a safety timeout in case final chunk never arrives (10 seconds)
           setTimeout(() => {
             if (recorder[fileName]) {
-              recorder[fileName].end();
-              console.log("✅ Recording finalized and closed:", fileName);
-              delete recorder[fileName];
-              delete recordingActive[fileName];
+              console.warn(`⚠️ Timeout waiting for final chunk for ${fileName} - force closing`);
+              closeRecorder(fileName);
             }
-          }, 2000);
+          }, 10000);
         } else {
           console.log("⚠️ No recorder found to stop for", fileName);
         }
