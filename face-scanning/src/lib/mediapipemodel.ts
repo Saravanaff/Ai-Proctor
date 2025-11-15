@@ -30,10 +30,10 @@ export async function loadMeshModel() {
     objectDetector = await ObjectDetector.createFromOptions(vision, {
         baseOptions: {
             modelAssetPath:
-                "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite",
+                "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite2/float16/1/efficientdet_lite2.tflite",
             delegate: "GPU",
         },
-        scoreThreshold: 0.5,
+        scoreThreshold: 0.1,
         runningMode: "VIDEO",
     });
     meshLoaded = true;
