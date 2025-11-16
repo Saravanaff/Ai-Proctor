@@ -41,12 +41,12 @@ type Answer = {
   option_text: string;
 };
 
-const ExamPage = ({ 
-  screenRecorderMediaRecorderRef, 
-  onBeforeSubmit, 
+const ExamPage = ({
+  screenRecorderMediaRecorderRef,
+  onBeforeSubmit,
   screenStreamRef,
   pendingScreenChunksRef,
-  pendingFaceChunksRef
+  pendingFaceChunksRef,
 }: any) => {
   const [answers, setAnswers] = useState<{ [key: number]: Answer }>({});
   const [blocked, setBlocked] = useState(false);
@@ -180,19 +180,18 @@ const ExamPage = ({
       });
 
       socket.emit("stream-listener-on", {
-            user_id: userId,
-            exam_id: examId,
-            category: "face_camera",
-            timestamp: new Date(),
+        user_id: userId,
+        exam_id: examId,
+        category: "face_camera",
+        timestamp: new Date(),
       });
 
       socket.emit("stream-listener-on", {
-            user_id: userId,
-            exam_id: examId,
-            category: "screen_recording",
-            timestamp: new Date(),
+        user_id: userId,
+        exam_id: examId,
+        category: "screen_recording",
+        timestamp: new Date(),
       });
-      
 
       setExamStarted(true);
       setFaceAuthenticationComplete(true);
@@ -262,17 +261,17 @@ const ExamPage = ({
         });
 
         socket.emit("stream-listener-on", {
-            user_id: userId,
-            exam_id: examId,
-            category: "face_camera",
-            timestamp: new Date(),
+          user_id: userId,
+          exam_id: examId,
+          category: "face_camera",
+          timestamp: new Date(),
         });
 
         socket.emit("stream-listener-on", {
-            user_id: userId,
-            exam_id: examId,
-            category: "screen_recording",
-            timestamp: new Date(),
+          user_id: userId,
+          exam_id: examId,
+          category: "screen_recording",
+          timestamp: new Date(),
         });
 
         setFaceAuthenticationComplete(true);
@@ -367,10 +366,7 @@ const ExamPage = ({
     if (timeoutRefs.current.lookAlert) {
       clearTimeout(timeoutRefs.current.lookAlert);
     }
-    timeoutRefs.current.lookAlert = setTimeout(
-      () => setlookAlert(false),
-      3000
-    );
+    timeoutRefs.current.lookAlert = setTimeout(() => setlookAlert(false), 3000);
   };
 
   const handleAuthFaceMissing = () => {
@@ -923,17 +919,23 @@ const ExamPage = ({
           <button
             className={`${styles.submitButton} theme-transition`}
             onClick={async () => {
-              console.log("🚀 Submit button clicked - initiating exam submission");
+              console.log(
+                "🚀 Submit button clicked - initiating exam submission"
+              );
               console.log(`📊 Current examSubmitted state: ${examSubmitted}`);
-              
+
               // ✅ STOP SCREEN STREAM TRACKS FIRST (Turn off screen sharing IMMEDIATELY)
               if (screenStreamRef && screenStreamRef.current) {
                 try {
                   console.log("🖥️ Stopping screen stream tracks...");
-                  screenStreamRef.current.getTracks().forEach((track: MediaStreamTrack) => {
-                    console.log(`  Stopping screen track: ${track.kind}, state: ${track.readyState}`);
-                    track.stop();
-                  });
+                  screenStreamRef.current
+                    .getTracks()
+                    .forEach((track: MediaStreamTrack) => {
+                      console.log(
+                        `  Stopping screen track: ${track.kind}, state: ${track.readyState}`
+                      );
+                      track.stop();
+                    });
                   screenStreamRef.current = null;
                   console.log("✅ Screen sharing turned OFF");
                 } catch (err) {
@@ -942,9 +944,14 @@ const ExamPage = ({
               }
 
               // ✅ STOP SCREEN RECORDING MEDIARECORDER
-              if (screenRecorderMediaRecorderRef && screenRecorderMediaRecorderRef.current) {
+              if (
+                screenRecorderMediaRecorderRef &&
+                screenRecorderMediaRecorderRef.current
+              ) {
                 try {
-                  if (screenRecorderMediaRecorderRef.current.state !== 'inactive') {
+                  if (
+                    screenRecorderMediaRecorderRef.current.state !== "inactive"
+                  ) {
                     console.log("📹 Stopping screen MediaRecorder...");
                     screenRecorderMediaRecorderRef.current.stop();
                   }
@@ -952,7 +959,7 @@ const ExamPage = ({
                   console.error("Error stopping screen recorder:", err);
                 }
               }
-              
+
               // ✅ SET EXAM SUBMITTED (This will trigger FloatingCamera cleanup - stops camera tracks immediately)
               console.log("🎯 Setting examSubmitted to TRUE");
               setExamSubmitted(true);
@@ -962,33 +969,40 @@ const ExamPage = ({
               const waitForAllChunks = async () => {
                 const maxWaitTime = 10000; // 10 seconds max
                 const startTime = Date.now();
-                
+
                 console.log("⏳ Waiting for all chunks to complete...");
-                
+
                 while (Date.now() - startTime < maxWaitTime) {
-                  const screenPending = pendingScreenChunksRef?.current?.size || 0;
+                  const screenPending =
+                    pendingScreenChunksRef?.current?.size || 0;
                   const facePending = pendingFaceChunksRef?.current?.size || 0;
                   const totalPending = screenPending + facePending;
-                  
+
                   if (totalPending === 0) {
                     console.log("✅ All chunks completed!");
                     return;
                   }
-                  
-                  console.log(`📊 Pending chunks - Screen: ${screenPending}, Face: ${facePending}, Total: ${totalPending}`);
-                  await new Promise(resolve => setTimeout(resolve, 100));
+
+                  console.log(
+                    `📊 Pending chunks - Screen: ${screenPending}, Face: ${facePending}, Total: ${totalPending}`
+                  );
+                  await new Promise((resolve) => setTimeout(resolve, 100));
                 }
-                
-                console.warn("⚠️ Timeout waiting for chunks - proceeding anyway");
+
+                console.warn(
+                  "⚠️ Timeout waiting for chunks - proceeding anyway"
+                );
               };
-              
+
               await waitForAllChunks();
-              
+
               // Additional safety delay
               console.log("⏳ Additional 1 second safety delay...");
               await new Promise((resolve) => setTimeout(resolve, 1000));
 
-              console.log("✅ All recordings stopped and events emitted from onstop handlers");
+              console.log(
+                "✅ All recordings stopped and events emitted from onstop handlers"
+              );
 
               const submissionAnswers = getAnswersForSubmission();
               console.log("📝 Submitting answers:", submissionAnswers);
@@ -1033,6 +1047,20 @@ const ExamPage = ({
                 console.error("Error in onBeforeSubmit:", err);
               }
 
+              // ✅ Emit end-exam socket event to update endTime in database
+              console.log("📤 Emitting end-exam event to server");
+              socket.emit("end-exam", {
+                user_id: userId,
+                exam_id: examId,
+                timestamp: new Date(),
+                status: "success",
+                message: "Exam ended successfully",
+              });
+              console.log("✅ end-exam event emitted");
+
+              // Wait a moment for the socket event to be processed
+              await new Promise((resolve) => setTimeout(resolve, 500));
+
               // Navigate to end page after cleanup
               console.log("✅ Navigating to end page");
               router.push("/end");
@@ -1068,7 +1096,7 @@ const ExamPage = ({
       </main>
 
       {/* ✅ Keep FloatingCamera mounted even after submission - just hide it */}
-      <div style={{ display: examSubmitted ? 'none' : 'block' }}>
+      <div style={{ display: examSubmitted ? "none" : "block" }}>
         <FloatingCamera
           settings={examSettings}
           socket={socket}
