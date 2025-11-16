@@ -20,6 +20,12 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent double submission
+    if (loading) {
+      return;
+    }
+
     setError("");
     setLoading(true);
 
@@ -60,12 +66,12 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
         }
       }
 
-      router.push(dest);
+      // Use replace instead of push to prevent back button issues
+      await router.replace(dest);
     } catch (err: any) {
       setError(
         err?.response?.data?.message || err.message || "Something went wrong"
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -162,6 +168,20 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
                     </svg>
                   )}
                 </button>
+              </div>
+              <div style={{ textAlign: "right", marginTop: 8 }}>
+                <Link href="/auth/forgot-password" legacyBehavior>
+                  <a
+                    style={{
+                      fontSize: 14,
+                      color: "var(--primary-color)",
+                      textDecoration: "none",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Forgot Password?
+                  </a>
+                </Link>
               </div>
             </div>
 

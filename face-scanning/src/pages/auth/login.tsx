@@ -4,15 +4,23 @@ import { useEffect, useState } from "react";
 
 const LoginPage = () => {
   const router = useRouter();
-  const { redirect, registered } = router.query;
+  const { redirect, registered, reset } = router.query;
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     if (registered === "true") {
+      setSuccessMessage("Registration successful! Please login.");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 5000);
+    } else if (reset === "true") {
+      setSuccessMessage(
+        "Password reset successful! Please login with your new password."
+      );
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 5000);
     }
-  }, [registered]);
+  }, [registered, reset]);
 
   return (
     <>
@@ -44,9 +52,7 @@ const LoginPage = () => {
           >
             <polyline points="20 6 9 17 4 12" />
           </svg>
-          <span style={{ fontWeight: 600 }}>
-            Registration successful! Please login.
-          </span>
+          <span style={{ fontWeight: 600 }}>{successMessage}</span>
         </div>
       )}
       <LoginForm redirect={(redirect as string) || "/"} />
