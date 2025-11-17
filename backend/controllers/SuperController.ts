@@ -200,7 +200,7 @@ export const deleteAdmin = async (req: Request, res: Response) => {
     const admin = await User.findOne({
       where: {
         email: adminEmail,
-        role: "admin",
+        role: "examiner",
       },
     });
 
