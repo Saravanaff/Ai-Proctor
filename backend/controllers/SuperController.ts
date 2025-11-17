@@ -5,6 +5,7 @@ import { Attend } from "../models/Attend";
 import { Scores } from "../models/Scores";
 import { ViolationLog } from "../models/ViolationLog";
 import { UserAnswer } from "../models/UserAnswer";
+import crypto from "crypto";
 
 
 
@@ -287,6 +288,79 @@ export const deleteAdmin = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to delete admin",
+      error: error.message,
+    });
+  }
+};
+
+export const createAdminWithoutPassword = async (req: Request, res: Response) => {
+  try {
+    const { name, email } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and email are required",
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email format",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "User with this email already exists",
+        data: {
+          existingUser: {
+            id: existingUser.id,
+            email: existingUser.email,
+            role: existingUser.role,
+          },
+        },
+      });
+    }
+
+    const tempPassword = 123;
+
+    console.log(`👤 Creating admin account for: ${name} (${email})`);
+
+    const newAdmin = await User.create({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password: tempPassword,
+      role: "admin",
+    });
+
+    console.log(`Admin created successfully: ${newAdmin.name} (ID: ${newAdmin.id})`);
+    return res.status(201).json({
+      success: true,
+      message: "Admin account created successfully. Password setup email will be sent.",
+      data: {
+        admin: {
+          id: newAdmin.id,
+          name: newAdmin.name,
+          email: newAdmin.email,
+          role: newAdmin.role,
+          createdAt: newAdmin.createdAt,
+        },
+        note: "Admin must set password via password reset link",
+      },
+    });
+  } catch (error: any) {
+    console.error("Error creating admin:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create admin account",
       error: error.message,
     });
   }
