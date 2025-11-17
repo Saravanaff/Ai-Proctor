@@ -6,6 +6,8 @@ import { Scores } from "../models/Scores";
 import { ViolationLog } from "../models/ViolationLog";
 import { UserAnswer } from "../models/UserAnswer";
 import crypto from "crypto";
+import { sendAdminCreationEmail } from "../utils/emailService";
+import bcrypt from "bcrypt";
 
 
 
@@ -329,21 +331,63 @@ export const createAdminWithoutPassword = async (req: Request, res: Response) =>
       });
     }
 
-    const tempPassword = 123;
+    // Generate a random password (8 characters: letters + numbers)
+    const generatePassword = () => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let password = '';
+      for (let i = 0; i < 8; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return password;
+    };
+
+    const randomPassword = generatePassword();
+    const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
     console.log(`👤 Creating admin account for: ${name} (${email})`);
 
     const newAdmin = await User.create({
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      password: tempPassword,
+      password: hashedPassword,
       role: "examiner",
     });
 
-    console.log(`Admin created successfully: ${newAdmin.name} (ID: ${newAdmin.id})`);
+    console.log(`✅ Admin created successfully: ${newAdmin.name} (ID: ${newAdmin.id})`);
+
+    // Send email with credentials
+    try {
+      await sendAdminCreationEmail(
+        newAdmin.email,
+        newAdmin.name,
+        newAdmin.email,
+        randomPassword
+      );
+      console.log(`📧 Welcome email sent to ${newAdmin.email}`);
+    } catch (emailError: any) {
+      console.error("⚠️  Failed to send welcome email:", emailError.message);
+      // Don't fail the request if email fails, but inform the user
+      return res.status(201).json({
+        success: true,
+        message: "Admin account created successfully, but email sending failed.",
+        data: {
+          admin: {
+            id: newAdmin.id,
+            name: newAdmin.name,
+            email: newAdmin.email,
+            role: newAdmin.role,
+            createdAt: newAdmin.createdAt,
+          },
+          emailSent: false,
+          emailError: emailError.message,
+          note: "Please manually share the login credentials with the admin.",
+        },
+      });
+    }
+
     return res.status(201).json({
       success: true,
-      message: "Admin account created successfully. Password setup email will be sent.",
+      message: "Admin account created successfully. Credentials have been sent via email.",
       data: {
         admin: {
           id: newAdmin.id,
@@ -352,7 +396,7 @@ export const createAdminWithoutPassword = async (req: Request, res: Response) =>
           role: newAdmin.role,
           createdAt: newAdmin.createdAt,
         },
-        note: "Admin must set password via password reset link",
+        emailSent: true,
       },
     });
   } catch (error: any) {
@@ -364,4 +408,134 @@ export const createAdminWithoutPassword = async (req: Request, res: Response) =>
     });
   }
 };
+
+export const bulkCreateAdmins = async (req: Request, res: Response) => {
+  try {
+    const { admins } = req.body;
+
+    if (!admins || !Array.isArray(admins) || admins.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Admins array is required and must not be empty",
+      });
+    }
+
+    console.log(`📋 Attempting to create ${admins.length} admin(s) from CSV`);
+
+    const results = {
+      successful: [] as any[],
+      failed: [] as any[],
+    };
+
+    for (const admin of admins) {
+      try {
+        const { name, email } = admin;
+
+        if (!name || !email) {
+          results.failed.push({
+            email: email || "unknown",
+            name: name || "unknown",
+            reason: "Name and email are required",
+          });
+          continue;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          results.failed.push({
+            email,
+            name,
+            reason: "Invalid email format",
+          });
+          continue;
+        }
+
+        const existingUser = await User.findOne({
+          where: { email: email.toLowerCase() },
+        });
+
+        if (existingUser) {
+          results.failed.push({
+            email,
+            name,
+            reason: "User with this email already exists",
+          });
+          continue;
+        }
+
+        // Generate random password
+        const generatePassword = () => {
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+          let password = '';
+          for (let i = 0; i < 8; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
+          return password;
+        };
+
+        const randomPassword = generatePassword();
+        const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+        const newAdmin = await User.create({
+          name: name.trim(),
+          email: email.toLowerCase().trim(),
+          password: hashedPassword,
+          role: "examiner",
+        });
+
+        // Send email with credentials
+        try {
+          await sendAdminCreationEmail(
+            newAdmin.email,
+            newAdmin.name,
+            newAdmin.email,
+            randomPassword
+          );
+          results.successful.push({
+            id: newAdmin.id,
+            name: newAdmin.name,
+            email: newAdmin.email,
+            emailSent: true,
+          });
+        } catch (emailError: any) {
+          console.error(`⚠️  Failed to send email to ${newAdmin.email}:`, emailError.message);
+          results.successful.push({
+            id: newAdmin.id,
+            name: newAdmin.name,
+            email: newAdmin.email,
+            emailSent: false,
+            emailError: emailError.message,
+          });
+        }
+      } catch (error: any) {
+        results.failed.push({
+          email: admin.email,
+          name: admin.name,
+          reason: error.message || "Unknown error",
+        });
+      }
+    }
+
+    console.log(`✅ Successfully created ${results.successful.length} admin(s)`);
+    console.log(`❌ Failed to create ${results.failed.length} admin(s)`);
+
+    return res.status(200).json({
+      success: true,
+      message: `Processed ${admins.length} admin(s): ${results.successful.length} successful, ${results.failed.length} failed`,
+      data: {
+        total: admins.length,
+        successful: results.successful,
+        failed: results.failed,
+      },
+    });
+  } catch (error: any) {
+    console.error("Error in bulk admin creation:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to process bulk admin creation",
+      error: error.message,
+    });
+  }
+};
+
 

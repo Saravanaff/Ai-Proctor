@@ -5,6 +5,7 @@ import {
   getAdminExams,
   deleteAdmin,
   createAdminWithoutPassword,
+  bulkCreateAdmins,
 } from "../controllers/SuperController";
 import { requireAdminRole } from "../middleware/roleMiddleware";
 import authMiddleware from "../middleware/authMiddleware";
@@ -22,6 +23,9 @@ router.get("/admin/:adminEmail/exams",getAdminExams);
 
 // Create admin without password
 router.post("/admin/create", createAdminWithoutPassword);
+
+// Bulk create admins from CSV
+router.post("/admin/bulk-create", bulkCreateAdmins);
 
 // Delete admin and all associated data
 router.delete("/admin/:adminEmail",deleteAdmin);

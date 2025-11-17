@@ -24,6 +24,10 @@ const SuperAdminDashboard = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showCSVModal, setShowCSVModal] = useState(false);
+  const [csvFile, setCSVFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<any>(null);
 
   axios.interceptors.request.use((config) => {
     const token = getTokenFromCookie();
@@ -109,7 +113,11 @@ const SuperAdminDashboard = () => {
       });
 
       if (res.data?.success) {
-        alert("Admin created successfully!");
+        alert(
+          `Admin created successfully!\n\n` +
+          `An email has been sent to ${newAdminEmail} with their login credentials.\n\n` +
+          `They can now log in to AI Proctor.`
+        );
         setShowCreateModal(false);
         setNewAdminName("");
         setNewAdminEmail("");
@@ -121,6 +129,93 @@ const SuperAdminDashboard = () => {
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const parseCSV = (csvText: string) => {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    const admins: { name: string; email: string }[] = [];
+
+    // Skip header if present (check if first line contains "name" or "email")
+    const startIndex = lines[0]?.toLowerCase().includes('name') || lines[0]?.toLowerCase().includes('email') ? 1 : 0;
+
+    for (let i = startIndex; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      // Handle CSV with or without quotes
+      const values = line.split(',').map(val => val.trim().replace(/^"|"$/g, ''));
+
+      if (values.length >= 2) {
+        const [name, email] = values;
+        if (name && email) {
+          admins.push({ name, email });
+        }
+      }
+    }
+
+    return admins;
+  };
+
+  const handleCSVUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!csvFile) {
+      alert("Please select a CSV file");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadResult(null);
+
+    try {
+      const reader = new FileReader();
+      
+      reader.onload = async (event) => {
+        try {
+          const csvText = event.target?.result as string;
+          const admins = parseCSV(csvText);
+
+          if (admins.length === 0) {
+            alert("No valid admin data found in CSV file");
+            setIsUploading(false);
+            return;
+          }
+
+          const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+          const res = await axios.post(`${base}/admin/bulk-create`, { admins });
+
+          if (res.data?.success) {
+            setUploadResult(res.data.data);
+            fetchAdmins();
+          }
+        } catch (error: any) {
+          const msg = error?.response?.data?.message || error.message || "Failed to upload CSV";
+          alert(msg);
+        } finally {
+          setIsUploading(false);
+        }
+      };
+
+      reader.onerror = () => {
+        alert("Failed to read CSV file");
+        setIsUploading(false);
+      };
+
+      reader.readAsText(csvFile);
+    } catch (error: any) {
+      alert("Failed to process CSV file");
+      setIsUploading(false);
+    }
+  };
+
+  const downloadSampleCSV = () => {
+    const sampleCSV = "name,email\nJohn Doe,john@example.com\nJane Smith,jane@example.com";
+    const blob = new Blob([sampleCSV], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sample_admins.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const filtered = admins.filter((a) =>
@@ -140,6 +235,13 @@ const SuperAdminDashboard = () => {
             className={`${styles.btn} ${styles.btnPrimary}`}
           >
             + Create Admin
+          </button>
+          <button
+            onClick={() => setShowCSVModal(true)}
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            style={{ marginLeft: "12px" }}
+          >
+            📄 Upload CSV
           </button>
           <button
             onClick={handleLogout}
@@ -357,6 +459,212 @@ const SuperAdminDashboard = () => {
                 {isDeleting ? "Deleting..." : "Delete Admin"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* CSV Upload Modal */}
+      {showCSVModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={() => {
+            setShowCSVModal(false);
+            setCSVFile(null);
+            setUploadResult(null);
+          }}
+        >
+          <div
+            className={styles.glassPanel}
+            style={{ maxWidth: "600px", width: "90%", padding: "24px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ margin: "0 0 24px 0", fontSize: "24px", fontWeight: "700" }}>
+              📄 Bulk Upload Admins (CSV)
+            </h2>
+
+            {!uploadResult ? (
+              <form onSubmit={handleCSVUpload}>
+                <div style={{ marginBottom: "20px" }}>
+                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
+                    Select CSV File
+                  </label>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setCSVFile(e.target.files?.[0] || null)}
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "8px",
+                      background: "var(--card-bg)",
+                      color: "var(--text-primary)",
+                      fontSize: "14px",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  <p style={{ fontSize: "12px", marginTop: "8px", opacity: 0.7 }}>
+                    CSV format: name, email (one per line)
+                  </p>
+                </div>
+
+                <div style={{ 
+                  background: "rgba(103, 126, 234, 0.1)", 
+                  padding: "16px", 
+                  borderRadius: "8px",
+                  marginBottom: "20px",
+                  border: "1px solid rgba(103, 126, 234, 0.3)"
+                }}>
+                  <p style={{ margin: "0 0 12px 0", fontWeight: "600", fontSize: "14px" }}>
+                    ℹ️ Instructions:
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "13px", lineHeight: "1.8" }}>
+                    <li>CSV file should have 2 columns: name and email</li>
+                    <li>First row can be a header (will be skipped if detected)</li>
+                    <li>Random passwords will be generated and emailed to each admin</li>
+                    <li>Admins will be instructed to change password on first login</li>
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={downloadSampleCSV}
+                    style={{
+                      marginTop: "12px",
+                      padding: "8px 16px",
+                      background: "transparent",
+                      border: "1px solid var(--accent-color)",
+                      color: "var(--accent-color)",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    📥 Download Sample CSV
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCSVModal(false);
+                      setCSVFile(null);
+                      setUploadResult(null);
+                    }}
+                    className={`${styles.btn} ${styles.btnGhost}`}
+                    disabled={isUploading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className={`${styles.btn} ${styles.btnPrimary}`}
+                    disabled={isUploading || !csvFile}
+                  >
+                    {isUploading ? "Uploading..." : "Upload & Create Admins"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div>
+                <div style={{ marginBottom: "20px" }}>
+                  <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "16px" }}>
+                    Upload Results
+                  </h3>
+                  
+                  <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "1fr 1fr", 
+                    gap: "16px", 
+                    marginBottom: "20px" 
+                  }}>
+                    <div style={{
+                      padding: "16px",
+                      background: "rgba(52, 211, 153, 0.1)",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(52, 211, 153, 0.3)",
+                    }}>
+                      <p style={{ fontSize: "24px", fontWeight: "700", color: "#34d399", margin: 0 }}>
+                        {uploadResult.successful.length}
+                      </p>
+                      <p style={{ fontSize: "14px", margin: "4px 0 0 0", opacity: 0.8 }}>
+                        Successful
+                      </p>
+                    </div>
+                    <div style={{
+                      padding: "16px",
+                      background: "rgba(239, 68, 68, 0.1)",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(239, 68, 68, 0.3)",
+                    }}>
+                      <p style={{ fontSize: "24px", fontWeight: "700", color: "#ef4444", margin: 0 }}>
+                        {uploadResult.failed.length}
+                      </p>
+                      <p style={{ fontSize: "14px", margin: "4px 0 0 0", opacity: 0.8 }}>
+                        Failed
+                      </p>
+                    </div>
+                  </div>
+
+                  {uploadResult.failed.length > 0 && (
+                    <div>
+                      <h4 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "#ef4444" }}>
+                        Failed Entries:
+                      </h4>
+                      <div style={{ 
+                        maxHeight: "200px", 
+                        overflowY: "auto",
+                        background: "rgba(239, 68, 68, 0.05)",
+                        padding: "12px",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(239, 68, 68, 0.2)"
+                      }}>
+                        {uploadResult.failed.map((item: any, idx: number) => (
+                          <div key={idx} style={{ 
+                            marginBottom: "8px", 
+                            paddingBottom: "8px",
+                            borderBottom: idx < uploadResult.failed.length - 1 ? "1px solid rgba(0,0,0,0.1)" : "none"
+                          }}>
+                            <p style={{ margin: 0, fontSize: "13px", fontWeight: "600" }}>
+                              {item.name} ({item.email})
+                            </p>
+                            <p style={{ margin: "4px 0 0 0", fontSize: "12px", opacity: 0.7 }}>
+                              Reason: {item.reason}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    onClick={() => {
+                      setShowCSVModal(false);
+                      setCSVFile(null);
+                      setUploadResult(null);
+                    }}
+                    className={`${styles.btn} ${styles.btnPrimary}`}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

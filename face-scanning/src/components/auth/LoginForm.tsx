@@ -9,6 +9,8 @@ interface LoginFormProps {
   redirect: string;
 }
 
+
+
 const LoginForm = ({ redirect }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +23,6 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Prevent double submission
     if (loading) {
       return;
     }
@@ -68,7 +69,6 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
         }
       }
 
-      // Use replace instead of push to prevent back button issues
       await router.replace(dest);
     } catch (err: any) {
       setError(
