@@ -923,8 +923,7 @@ const ExamPage = ({
                 "🚀 Submit button clicked - initiating exam submission"
               );
               console.log(`📊 Current examSubmitted state: ${examSubmitted}`);
-
-              // ✅ STOP SCREEN STREAM TRACKS FIRST (Turn off screen sharing IMMEDIATELY)
+              
               if (screenStreamRef && screenStreamRef.current) {
                 try {
                   console.log("🖥️ Stopping screen stream tracks...");
@@ -959,8 +958,7 @@ const ExamPage = ({
                   console.error("Error stopping screen recorder:", err);
                 }
               }
-
-              // ✅ SET EXAM SUBMITTED (This will trigger FloatingCamera cleanup - stops camera tracks immediately)
+              
               console.log("🎯 Setting examSubmitted to TRUE");
               setExamSubmitted(true);
               console.log("✅ examSubmitted state updated");

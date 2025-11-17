@@ -13,12 +13,12 @@ import {
 
 const router = Router();
 
-router.get("/getScore",requireExaminerRole,getScoreInPercent);
+router.get("/getScore", authMiddleware, requireExaminerRole, getScoreInPercent);
 
-router.post("/saveScore",requireStudentRole, putScoreInPercent);
+router.post("/saveScore", authMiddleware, requireStudentRole, putScoreInPercent);
 
-router.post("/setMicrophone", requireStudentRole,setMicrophoneCount);
+router.post("/setMicrophone", authMiddleware, requireStudentRole, setMicrophoneCount);
 
-router.post("/updateTabSwitch", requireStudentRole,updateTabSwitch);
+router.post("/updateTabSwitch", authMiddleware, requireStudentRole, updateTabSwitch);
 
 export default router;

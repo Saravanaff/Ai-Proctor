@@ -16,6 +16,7 @@ export const validateExam = async (req: Request, res: Response) => {
       message: "Exam key, user ID, and user name are required",
     });
   }
+  
 
   try {
     const exam = await Exam.findOne({ where: { key } });
@@ -145,10 +146,26 @@ export const saveUserAnswers = async (req: Request, res: Response) => {
       });
     }
 
-    if (!answers || !Array.isArray(answers) || answers.length === 0) {
+    // ✅ Allow empty answers - student may not have answered any questions
+    if (!answers || !Array.isArray(answers)) {
       return res.status(400).json({
         success: false,
-        message: "answers array is required and must not be empty",
+        message: "answers must be an array",
+      });
+    }
+
+    // ✅ If no answers provided, just return success (student submitted blank exam)
+    if (answers.length === 0) {
+      console.log("No answers provided - blank submission");
+      return res.status(200).json({
+        success: true,
+        message: "Blank exam submitted successfully",
+        data: {
+          user_id,
+          exam_id,
+          totalAnswers: 0,
+          savedAt: new Date(),
+        },
       });
     }
 

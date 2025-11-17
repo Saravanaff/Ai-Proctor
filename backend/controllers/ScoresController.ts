@@ -88,20 +88,35 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       },
     });
 
-    if (!attendRecord || !attendRecord.startTime || !attendRecord.endTime) {
+    if (!attendRecord) {
       return res.status(404).json({
         success: false,
-        error: "Attendance record not found or exam time not recorded",
+        error: "Attendance record not found",
       });
     }
 
-    // Calculate exam duration in minutes
-    const examDurationMs =
-      new Date(attendRecord.endTime).getTime() -
-      new Date(attendRecord.startTime).getTime();
-    const examDurationMinutes = examDurationMs / (1000 * 60);
+    // ✅ If endTime is not set, set it now (exam just ended)
+    if (!attendRecord.endTime) {
+      attendRecord.endTime = new Date();
+      await attendRecord.save();
+      console.log("Set exam endTime to:", attendRecord.endTime);
+    }
 
-    console.log(`Exam duration: ${examDurationMinutes} minutes`);
+    // ✅ If startTime is not set, use creation time as fallback
+    if (!attendRecord.startTime) {
+      attendRecord.startTime = attendRecord.createdAt;
+      await attendRecord.save();
+      console.log("Set exam startTime to:", attendRecord.startTime);
+    }
+
+    // Calculate exam duration in minutes
+    const startTime = attendRecord.startTime || attendRecord.createdAt;
+    const endTime = attendRecord.endTime || new Date();
+    
+    const examDurationMs = endTime.getTime() - startTime.getTime();
+    const examDurationMinutes = Math.max(examDurationMs / (1000 * 60), 1); // ✅ Minimum 1 minute
+
+    console.log(`Exam duration: ${examDurationMinutes.toFixed(2)} minutes`);
 
     // Fetch all violation logs for this user and exam
     const violationLogs = await ViolationLog.findAll({
@@ -115,14 +130,14 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       `Found ${violationLogs.length} violation logs for user ${userId}, exam ${examId}`
     );
 
-    // Define violation weights (higher weight = more severe violation)
+    // ✅ Define violation weights as per requirement
     const violationWeights = {
-      multiple_persons_detected: 10, // Critical: Multiple people helping
-      face_auth_failed: 9, // Critical: Wrong person taking exam
-      object_detection_violation: 8, // High: Using unauthorized materials/devices
-      no_person_detected: 5, // Medium: Leaving exam area
-      head_position_violation: 3, // Low: Looking away from screen
-      eye_position_violation: 3, // Low: Eye movement away from screen
+      head_position_violation: 0.5,    // Head movement
+      eye_position_violation: 0.3,     // Eye movement
+      object_detection_violation: 1.0, // Object detected
+      face_auth_failed: 1.0,           // Face authentication failed
+      multiple_persons_detected: 1.0,  // Multiple persons
+      no_person_detected: 0.5,         // No person detected
     };
 
     // Initialize violation counters
@@ -136,8 +151,8 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       sound_flagged: 0,
     };
 
-    // Count violations by type and calculate weighted score
-    let weightedViolationScore = 0;
+    // Count violations by type and calculate total weighted flags
+    let totalWeightedFlags = 0;
 
     violationLogs.forEach((log) => {
       const violationType = log.violation_name;
@@ -145,87 +160,61 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       switch (violationType) {
         case "multiple_persons_detected":
           violationCounts.no_of_person_flagged++;
-          weightedViolationScore += violationWeights.multiple_persons_detected;
+          totalWeightedFlags += violationWeights.multiple_persons_detected;
           break;
         case "no_person_detected":
           violationCounts.no_person_flagged++;
-          weightedViolationScore += violationWeights.no_person_detected;
+          totalWeightedFlags += violationWeights.no_person_detected;
           break;
         case "face_auth_failed":
           violationCounts.auth_face_flagged++;
-          weightedViolationScore += violationWeights.face_auth_failed;
+          totalWeightedFlags += violationWeights.face_auth_failed;
           break;
         case "head_position_violation":
           violationCounts.head_position_flagged++;
-          weightedViolationScore += violationWeights.head_position_violation;
+          totalWeightedFlags += violationWeights.head_position_violation;
           break;
         case "eye_position_violation":
           violationCounts.eyes_flagged++;
-          weightedViolationScore += violationWeights.eye_position_violation;
+          totalWeightedFlags += violationWeights.eye_position_violation;
           break;
         case "object_detection_violation":
           violationCounts.object_detected_flagged++;
-          weightedViolationScore += violationWeights.object_detection_violation;
+          totalWeightedFlags += violationWeights.object_detection_violation;
           break;
         default:
-          // Log unknown violation types for debugging
           console.log(`Unknown violation type: ${violationType}`);
           break;
       }
     });
 
-    // Add weighted scores for tab switches and microphone violations
-    const tabSwitchWeight = 7; // High severity
-    const microphoneWeight = 4; // Medium severity
+    // ✅ Calculate risk score based on total weighted flags
+    // Low Risk: 0-30% (0-10 weighted flags)
+    // Medium Risk: 31-60% (11-20 weighted flags)
+    // High Risk: 61-100% (21+ weighted flags)
+    
+    let riskScore = 0;
+    let riskLevel = "Low";
 
-    weightedViolationScore += (tabSwitchViolations || 0) * tabSwitchWeight;
-    weightedViolationScore += (numberOfMicrophones || 0) * microphoneWeight;
-
-    // Calculate cheating percentage based on:
-    // 1. Weighted violation score
-    // 2. Exam duration (normalize violations per hour)
-    // 3. Total violation count
-
-    const totalViolations =
-      Object.values(violationCounts).reduce((sum, count) => sum + count, 0) +
-      (tabSwitchViolations || 0);
-
-    // Calculate violations per hour to normalize across different exam durations
-    const violationsPerHour =
-      examDurationMinutes > 0
-        ? (totalViolations / examDurationMinutes) * 60
-        : 0;
-
-    // Calculate weighted score per hour
-    const weightedScorePerHour =
-      examDurationMinutes > 0
-        ? (weightedViolationScore / examDurationMinutes) * 60
-        : 0;
-
-    // Calculate cheating percentage (0-100 scale)
-    // Formula: Consider both frequency and severity
-    // Normalize to 100 scale: assume 20 weighted violations per hour = 100% cheating
-    const maxWeightedScorePerHour = 20;
-    let cheatingPercentage = Math.min(
-      Math.round((weightedScorePerHour / maxWeightedScorePerHour) * 100),
-      100
-    );
-
-    // If there are critical violations (multiple persons, face auth failed), ensure minimum 50% cheating score
-    if (
-      violationCounts.no_of_person_flagged > 0 ||
-      violationCounts.auth_face_flagged > 0
-    ) {
-      cheatingPercentage = Math.max(cheatingPercentage, 50);
+    if (totalWeightedFlags <= 10) {
+      // Low Risk: 0-30%
+      riskScore = Math.min(Math.round((totalWeightedFlags / 10) * 30), 30);
+      riskLevel = "Low";
+    } else if (totalWeightedFlags <= 20) {
+      // Medium Risk: 31-60%
+      riskScore = Math.min(Math.round(30 + ((totalWeightedFlags - 10) / 10) * 30), 60);
+      riskLevel = "Medium";
+    } else {
+      // High Risk: 61-100%
+      riskScore = Math.min(Math.round(60 + ((totalWeightedFlags - 20) / 20) * 40), 100);
+      riskLevel = "High";
     }
 
     console.log({
-      totalViolations,
-      weightedViolationScore,
-      examDurationMinutes,
-      violationsPerHour: violationsPerHour.toFixed(2),
-      weightedScorePerHour: weightedScorePerHour.toFixed(2),
-      cheatingPercentage,
+      totalWeightedFlags: totalWeightedFlags.toFixed(2),
+      riskScore,
+      riskLevel,
+      violationCounts,
     });
 
     const scoreData = {
@@ -241,7 +230,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       sound_flagged: violationCounts.sound_flagged,
       number_of_microphone: numberOfMicrophones || 0,
       tab_switch_violation: tabSwitchViolations || 0,
-      total_score: cheatingPercentage,
+      total_score: riskScore,
     };
 
     console.log("Calculated score data:", scoreData);
@@ -269,19 +258,17 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
         userId,
         examId,
         examDuration: {
-          startTime: attendRecord.startTime,
-          endTime: attendRecord.endTime,
+          startTime: startTime,
+          endTime: endTime,
           durationMinutes: Math.round(examDurationMinutes),
         },
         violationCounts,
         violationWeights,
         analytics: {
-          totalViolations,
-          weightedViolationScore,
-          violationsPerHour: parseFloat(violationsPerHour.toFixed(2)),
-          weightedScorePerHour: parseFloat(weightedScorePerHour.toFixed(2)),
+          totalWeightedFlags: parseFloat(totalWeightedFlags.toFixed(2)),
+          riskLevel,
         },
-        cheatingPercentage,
+        riskScore,
         savedScore: scoreData,
       },
     });

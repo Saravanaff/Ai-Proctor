@@ -14,6 +14,10 @@ const EndPage = () => {
   const hasSavedScore = useRef(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // ✅ Get userId and examId inside component
+  const userId = getUserId() || "unknown";
+  const examId = getExamId();
 
   const postData = async (endpoint: string, data: any) => {
     const token = getTokenFromCookie();
@@ -27,82 +31,55 @@ const EndPage = () => {
           Authorization: token ? `Bearer ${token}` : "",
           "Content-Type": "application/json",
         },
+        timeout: 10000, // ✅ 10 second timeout
       });
-      console.log("Score saved successfully:", response.data);
+      console.log("✅ Request successful:", response.data);
       return response.data;
     } catch (error: any) {
-      console.error(
-        "Error saving score:",
-        error.response?.data || error.message
-      );
-      console.error("Full error:", error);
+      if (error.response) {
+        // Server responded with error status
+        console.error("❌ Server error:", {
+          status: error.response.status,
+          data: error.response.data,
+          endpoint
+        });
+      } else if (error.request) {
+        // Request made but no response
+        console.error("❌ No response from server:", endpoint);
+      } else {
+        // Something else happened
+        console.error("❌ Request error:", error.message);
+      }
       throw error;
     }
   };
 
   useEffect(() => {
-    const saveScore = async () => {
-      if (hasSavedScore.current) return;
+    console.log("📊 End page mounted - saving final score");
+    if (!hasSavedScore.current) {
       hasSavedScore.current = true;
-
-      const userId = getUserId();
-      const examId = getExamId();
-      const token = getTokenFromCookie();
-
-      console.log("End page mounted - saving final score");
-      console.log("userId:", userId);
-      console.log("examId:", examId);
-      console.log("baseUrl:", baseUrl);
-      console.log("token:", token ? "Present" : "Missing");
-
-      // Validate required data
-      if (!userId || userId === "unknown" || !examId || examId === "unknown") {
-        const error = `Missing required data - userId: ${userId}, examId: ${examId}`;
-        console.error(error);
-        setErrorMessage(error);
-        setIsLoading(false);
-        return;
-      }
-
-      if (!token) {
-        const error = "Authentication token not found. Please log in again.";
-        console.error(error);
-        setErrorMessage(error);
-        setIsLoading(false);
-        return;
-      }
-
-      if (!baseUrl) {
-        const error =
-          "Backend URL not configured. Please check environment variables.";
-        console.error(error);
-        setErrorMessage(error);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        await postData("/saveScore", {
+      
+      // ✅ Add a small delay to ensure backend is ready
+      setTimeout(() => {
+        postData("/saveScore", {
           status: "completed",
           userId: Number(userId),
           examId: Number(examId),
           numberOfMicrophones: getNumberOfMicrophones() || 0,
           tabSwitchViolations: getTabSwitchViolations() || 0,
+        })
+        .then((data) => {
+          console.log("✅ Score saved successfully:", data);
+        })
+        .catch((err) => {
+          console.error("❌ Failed to save score:", {
+            error: err.response?.data || err.message,
+            userId,
+            examId,
+          });
         });
-        setIsLoading(false);
-      } catch (err: any) {
-        console.error("Failed to save score:", err);
-        const errorMsg =
-          err.response?.data?.error ||
-          err.response?.data?.message ||
-          err.message ||
-          "Failed to save exam score";
-        setErrorMessage(errorMsg);
-        setIsLoading(false);
-      }
-    };
-
-    saveScore();
+      }, 1000); // Wait 1 second for backend to be ready
+    }
   }, []);
 
   return (
