@@ -6,6 +6,7 @@ import { Scores } from './Scores';
 export enum UserRole {
   STUDENT = "student",
   ADMIN = "examiner",
+  SUPERADMIN="HEAD"
 }
 
 @Table({ tableName: "Users", timestamps: true })
@@ -15,7 +16,6 @@ export class User extends Model{
     primaryKey:true,
     autoIncrement:true
   })
-  
   id!: number;
 
   @Column({

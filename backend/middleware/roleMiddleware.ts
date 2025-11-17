@@ -24,6 +24,13 @@ export const requireRole = (allowedRoles: string | string[]) => {
       console.log(decoded);
       console.log(userRole);
       
+      // Allow "head" role access to all routes
+      if (userRole === 'head') {
+        console.log("✅ Head role detected - granting access to all routes");
+        (req as any).user = decoded;
+        return next();
+      }
+      
       const rolesArray = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
       
       if (!rolesArray.includes(userRole)) {
@@ -45,5 +52,5 @@ export const requireRole = (allowedRoles: string | string[]) => {
 };
 
 export const requireExaminerRole = requireRole('examiner');
-export const requireAdminRole = requireRole('admin');
+export const requireAdminRole = requireRole('head');
 export const requireStudentRole = requireRole('student');
