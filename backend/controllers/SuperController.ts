@@ -336,7 +336,7 @@ export const createAdminWithoutPassword = async (req: Request, res: Response) =>
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password: tempPassword,
-      role: "admin",
+      role: "examiner",
     });
 
     console.log(`Admin created successfully: ${newAdmin.name} (ID: ${newAdmin.id})`);
