@@ -17,7 +17,7 @@ const SuperAdminDashboard = () => {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newAdminName, setNewAdminName] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
@@ -71,7 +71,9 @@ const SuperAdminDashboard = () => {
   };
 
   const handleAdminClick = (adminEmail: string) => {
-    router.push(`/superAdmin/admin-profile?adminEmail=${encodeURIComponent(adminEmail)}`);
+    router.push(
+      `/superAdmin/admin-profile?adminEmail=${encodeURIComponent(adminEmail)}`
+    );
   };
 
   const handleDeleteClick = (e: React.MouseEvent, admin: Admin) => {
@@ -82,11 +84,13 @@ const SuperAdminDashboard = () => {
 
   const handleDeleteAdmin = async () => {
     if (!adminToDelete) return;
-    
+
     setIsDeleting(true);
     try {
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const res = await axios.delete(`${base}/admin/${encodeURIComponent(adminToDelete.email)}`);
+      const res = await axios.delete(
+        `${base}/admin/${encodeURIComponent(adminToDelete.email)}`
+      );
 
       if (res.data?.success) {
         alert("Admin deleted successfully!");
@@ -95,7 +99,8 @@ const SuperAdminDashboard = () => {
         fetchAdmins();
       }
     } catch (e: any) {
-      const msg = e?.response?.data?.message || e.message || "Failed to delete admin";
+      const msg =
+        e?.response?.data?.message || e.message || "Failed to delete admin";
       alert(msg);
     } finally {
       setIsDeleting(false);
@@ -116,8 +121,8 @@ const SuperAdminDashboard = () => {
       if (res.data?.success) {
         alert(
           `Admin created successfully!\n\n` +
-          `An email has been sent to ${newAdminEmail} with their login credentials.\n\n` +
-          `They can now log in to AI Proctor.`
+            `An email has been sent to ${newAdminEmail} with their login credentials.\n\n` +
+            `They can now log in to AI Proctor.`
         );
         setShowCreateModal(false);
         setNewAdminName("");
@@ -125,7 +130,8 @@ const SuperAdminDashboard = () => {
         fetchAdmins();
       }
     } catch (e: any) {
-      const msg = e?.response?.data?.message || e.message || "Failed to create admin";
+      const msg =
+        e?.response?.data?.message || e.message || "Failed to create admin";
       alert(msg);
     } finally {
       setIsCreating(false);
@@ -133,18 +139,24 @@ const SuperAdminDashboard = () => {
   };
 
   const parseCSV = (csvText: string) => {
-    const lines = csvText.split('\n').filter(line => line.trim());
+    const lines = csvText.split("\n").filter((line) => line.trim());
     const admins: { name: string; email: string }[] = [];
 
     // Skip header if present (check if first line contains "name" or "email")
-    const startIndex = lines[0]?.toLowerCase().includes('name') || lines[0]?.toLowerCase().includes('email') ? 1 : 0;
+    const startIndex =
+      lines[0]?.toLowerCase().includes("name") ||
+      lines[0]?.toLowerCase().includes("email")
+        ? 1
+        : 0;
 
     for (let i = startIndex; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
       // Handle CSV with or without quotes
-      const values = line.split(',').map(val => val.trim().replace(/^"|"$/g, ''));
+      const values = line
+        .split(",")
+        .map((val) => val.trim().replace(/^"|"$/g, ""));
 
       if (values.length >= 2) {
         const [name, email] = values;
@@ -169,7 +181,7 @@ const SuperAdminDashboard = () => {
 
     try {
       const reader = new FileReader();
-      
+
       reader.onload = async (event) => {
         try {
           const csvText = event.target?.result as string;
@@ -189,7 +201,10 @@ const SuperAdminDashboard = () => {
             fetchAdmins();
           }
         } catch (error: any) {
-          const msg = error?.response?.data?.message || error.message || "Failed to upload CSV";
+          const msg =
+            error?.response?.data?.message ||
+            error.message ||
+            "Failed to upload CSV";
           alert(msg);
         } finally {
           setIsUploading(false);
@@ -209,61 +224,214 @@ const SuperAdminDashboard = () => {
   };
 
   const downloadSampleCSV = () => {
-    const sampleCSV = "name,email\nJohn Doe,john@example.com\nJane Smith,jane@example.com";
-    const blob = new Blob([sampleCSV], { type: 'text/csv' });
+    const sampleCSV =
+      "name,email\nJohn Doe,john@example.com\nJane Smith,jane@example.com";
+    const blob = new Blob([sampleCSV], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'sample_admins.csv';
+    a.download = "sample_admins.csv";
     a.click();
     window.URL.revokeObjectURL(url);
   };
 
-  const filtered = admins.filter((a) =>
-    a.name.toLowerCase().includes(search.toLowerCase()) ||
-    a.email.toLowerCase().includes(search.toLowerCase())
+  const filtered = admins.filter(
+    (a) =>
+      a.name.toLowerCase().includes(search.toLowerCase()) ||
+      a.email.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className={styles.examinerContainer} style={{ minHeight: "100vh" }}>
-      <header className={styles.header}>
+    <div
+      className={styles.examinerContainer}
+      style={{ minHeight: "100vh", background: "var(--background)" }}
+    >
+      <header
+        className={styles.header}
+        style={{
+          marginBottom: "32px",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "20px",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <div className={styles.headerContent}>
-          <h1 className={styles.title}>Super Admin Dashboard</h1>
+          <h1
+            className={styles.title}
+            style={{
+              margin: 0,
+              fontSize: "32px",
+              fontWeight: "700",
+              color: "var(--text-primary)",
+            }}
+          >
+            Administrator Management
+          </h1>
+          <p
+            style={{
+              margin: "4px 0 0 0",
+              color: "var(--text-secondary)",
+              fontSize: "14px",
+            }}
+          >
+            Manage system administrators and monitor platform operations
+          </p>
         </div>
-        <div className={styles.headerActions}>
+        <div
+          className={styles.headerActions}
+          style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}
+        >
           <button
             onClick={() => setShowCreateModal(true)}
             className={`${styles.btn} ${styles.btnPrimary}`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "12px 20px",
+              borderRadius: "10px",
+              fontWeight: "600",
+            }}
           >
-            + Create Admin
+            ➕ Create Admin
           </button>
           <button
             onClick={() => setShowCSVModal(true)}
             className={`${styles.btn} ${styles.btnPrimary}`}
-            style={{ marginLeft: "12px" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "12px 20px",
+              borderRadius: "10px",
+              fontWeight: "600",
+            }}
           >
-            📄 Upload CSV
+            Import from CSV
           </button>
           <button
             onClick={handleLogout}
             className={`${styles.btn} ${styles.btnGhost}`}
-            style={{ marginLeft: "12px" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "12px 20px",
+              borderRadius: "10px",
+              fontWeight: "600",
+            }}
           >
-            Logout
+            Sign Out
           </button>
         </div>
       </header>
 
-      <input
-        type="text"
-        placeholder="Search admins..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{ width: "100%", padding: "12px", marginBottom: "20px", borderRadius: "8px" }}
-      />
+      <div style={{ marginBottom: "32px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "16px",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "22px",
+              fontWeight: "600",
+              margin: 0,
+              color: "var(--text-primary)",
+            }}
+          >
+            Administrators
+            <span
+              style={{
+                marginLeft: "12px",
+                fontSize: "16px",
+                fontWeight: "500",
+                color: "var(--text-secondary)",
+                background: "var(--info-bg)",
+                padding: "4px 12px",
+                borderRadius: "12px",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              {admins.length}
+            </span>
+          </h2>
+        </div>
+        <div style={{ position: "relative" }}>
+          <input
+            type="text"
+            placeholder="Search by name or email address..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "14px 20px",
+              marginBottom: "20px",
+              borderRadius: "12px",
+              border: "2px solid var(--border-color)",
+              background: "var(--input-bg)",
+              color: "var(--text-primary)",
+              fontSize: "15px",
+              transition: "all 0.3s ease",
+              boxShadow: "0 2px 8px var(--shadow)",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "var(--accent-color)";
+              e.target.style.boxShadow = "0 4px 16px rgba(14, 165, 233, 0.2)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "var(--border-color)";
+              e.target.style.boxShadow = "0 2px 8px var(--shadow)";
+            }}
+          />
+        </div>
+      </div>
 
       {loading ? (
-        <div>Loading...</div>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "60px 20px",
+            background: "var(--card-bg)",
+            borderRadius: "16px",
+            border: "1px solid var(--border-color)",
+          }}
+        >
+          <p style={{ color: "var(--text-secondary)", fontSize: "16px" }}>
+            Loading administrators...
+          </p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "60px 20px",
+            background: "var(--card-bg)",
+            borderRadius: "16px",
+            border: "1px solid var(--border-color)",
+          }}
+        >
+          <p
+            style={{
+              color: "var(--text-primary)",
+              fontSize: "18px",
+              fontWeight: "600",
+              marginBottom: "8px",
+            }}
+          >
+            {search ? "No Results Found" : "No Administrators"}
+          </p>
+          <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
+            {search
+              ? "Please refine your search criteria and try again"
+              : "Add your first administrator to begin"}
+          </p>
+        </div>
       ) : (
         <div className={styles.examsGrid}>
           {filtered.map((admin) => (
@@ -271,24 +439,135 @@ const SuperAdminDashboard = () => {
               key={admin.id}
               className={styles.examCard}
               onClick={() => handleAdminClick(admin.email)}
-              style={{ cursor: "pointer", position: "relative" }}
+              style={{
+                cursor: "pointer",
+                position: "relative",
+                transition: "all 0.3s ease",
+                border: "2px solid var(--border-color)",
+                borderRadius: "16px",
+                background: "var(--card-bg)",
+                padding: "24px",
+                paddingRight: "100px",
+                boxShadow: "0 2px 12px var(--shadow)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-6px)";
+                e.currentTarget.style.boxShadow = "0 12px 32px var(--shadow)";
+                e.currentTarget.style.borderColor = "var(--accent-color)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 2px 12px var(--shadow)";
+                e.currentTarget.style.borderColor = "var(--border-color)";
+              }}
             >
-              <h3>{admin.name}</h3>
-              <p>{admin.email}</p>
-              <p>Created: {new Date(admin.createdAt).toLocaleDateString()}</p>
-              
+              <div style={{ marginBottom: "16px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "12px",
+                      background:
+                        "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "20px",
+                      fontWeight: "700",
+                      color: "white",
+                      boxShadow: "0 4px 12px rgba(14, 165, 233, 0.3)",
+                    }}
+                  >
+                    {admin.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3
+                      style={{
+                        margin: "0",
+                        fontSize: "20px",
+                        fontWeight: "700",
+                        color: "var(--text-primary)",
+                        lineHeight: "1.2",
+                      }}
+                    >
+                      {admin.name}
+                    </h3>
+                    <p
+                      style={{
+                        margin: "4px 0 0 0",
+                        fontSize: "14px",
+                        color: "var(--text-secondary)",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {admin.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: "12px",
+                  background: "var(--secondary-bg)",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <p
+                  style={{
+                    margin: "0",
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  Created
+                </p>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  {new Date(admin.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+
               <button
                 onClick={(e) => handleDeleteClick(e, admin)}
                 className={`${styles.btn} ${styles.btnGhost}`}
                 style={{
                   position: "absolute",
-                  top: "12px",
-                  right: "12px",
-                  padding: "6px 12px",
+                  top: "16px",
+                  right: "16px",
+                  padding: "8px 14px",
                   fontSize: "12px",
-                  background: "rgba(239, 68, 68, 0.1)",
-                  color: "#ef4444",
-                  border: "1px solid #ef4444",
+                  background: "var(--error-bg)",
+                  color: "var(--error-color)",
+                  border: "2px solid var(--error-color)",
+                  borderRadius: "8px",
+                  fontWeight: "600",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--error-color)";
+                  e.currentTarget.style.color = "white";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "var(--error-bg)";
+                  e.currentTarget.style.color = "var(--error-color)";
+                  e.currentTarget.style.transform = "scale(1)";
                 }}
               >
                 Delete
@@ -321,19 +600,33 @@ const SuperAdminDashboard = () => {
             style={{ maxWidth: "500px", width: "90%", padding: "24px" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ margin: "0 0 24px 0", fontSize: "24px", fontWeight: "700" }}>
-              Create New Admin
+            <h2
+              style={{
+                margin: "0 0 24px 0",
+                fontSize: "24px",
+                fontWeight: "700",
+                color: "var(--text-primary)",
+              }}
+            >
+              Add New Administrator
             </h2>
             <form onSubmit={handleCreateAdmin}>
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    fontWeight: "600",
+                    color: "var(--text-primary)",
+                  }}
+                >
                   Name
                 </label>
                 <input
                   type="text"
                   value={newAdminName}
                   onChange={(e) => setNewAdminName(e.target.value)}
-                  placeholder="Enter admin name"
+                  placeholder="Full name"
                   required
                   style={{
                     width: "100%",
@@ -348,14 +641,21 @@ const SuperAdminDashboard = () => {
                 />
               </div>
               <div style={{ marginBottom: "20px" }}>
-                <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "8px",
+                    fontWeight: "600",
+                    color: "var(--text-primary)",
+                  }}
+                >
                   Email
                 </label>
                 <input
                   type="email"
                   value={newAdminEmail}
                   onChange={(e) => setNewAdminEmail(e.target.value)}
-                  placeholder="Enter admin email"
+                  placeholder="Email address"
                   required
                   style={{
                     width: "100%",
@@ -369,7 +669,14 @@ const SuperAdminDashboard = () => {
                   }}
                 />
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "24px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "12px",
+                  marginTop: "24px",
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
@@ -383,7 +690,7 @@ const SuperAdminDashboard = () => {
                   className={`${styles.btn} ${styles.btnPrimary}`}
                   disabled={isCreating}
                 >
-                  {isCreating ? "Creating..." : "Create Admin"}
+                  {isCreating ? "Creating..." : "Add Administrator"}
                 </button>
               </div>
             </form>
@@ -414,30 +721,66 @@ const SuperAdminDashboard = () => {
             style={{ maxWidth: "500px", width: "90%", padding: "24px" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ margin: "0 0 16px 0", fontSize: "24px", fontWeight: "700", color: "#ef4444" }}>
-              Confirm Delete
+            <h2
+              style={{
+                margin: "0 0 16px 0",
+                fontSize: "24px",
+                fontWeight: "700",
+                color: "var(--error-color)",
+              }}
+            >
+              Confirm Account Deletion
             </h2>
-            <p style={{ marginBottom: "16px", fontSize: "16px", lineHeight: "1.5" }}>
-              Are you sure you want to delete the admin account for:
+            <p
+              style={{
+                marginBottom: "16px",
+                fontSize: "16px",
+                lineHeight: "1.5",
+                color: "var(--text-primary)",
+              }}
+            >
+              You are about to permanently delete the administrator account for:
             </p>
-            <div style={{
-              padding: "16px",
-              background: "rgba(239, 68, 68, 0.1)",
-              borderRadius: "8px",
-              marginBottom: "24px",
-              border: "1px solid rgba(239, 68, 68, 0.3)"
-            }}>
-              <p style={{ margin: "4px 0", fontWeight: "600", fontSize: "16px" }}>
-                {adminToDelete.name}
+            <div
+              style={{
+                padding: "16px",
+                background: "var(--error-bg)",
+                borderRadius: "8px",
+                marginBottom: "24px",
+                border: "1px solid var(--error-color)",
+              }}
+            >
+              <p
+                style={{
+                  margin: "4px 0",
+                  fontWeight: "600",
+                  fontSize: "16px",
+                  color: "var(--text-primary)",
+                }}
+              >
+                👤 {adminToDelete.name}
               </p>
-              <p style={{ margin: "4px 0", opacity: 0.8 }}>
-                {adminToDelete.email}
+              <p style={{ margin: "4px 0", color: "var(--text-secondary)" }}>
+                📧 {adminToDelete.email}
               </p>
             </div>
-            <p style={{ marginBottom: "24px", fontSize: "14px", opacity: 0.8 }}>
-              This action cannot be undone. All exams created by this admin will remain in the system.
+            <p
+              style={{
+                marginBottom: "24px",
+                fontSize: "14px",
+                color: "var(--text-secondary)",
+              }}
+            >
+              This action cannot be undone. All examinations created by this
+              administrator will be preserved in the system.
             </p>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "12px",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => setShowDeleteModal(false)}
@@ -452,12 +795,15 @@ const SuperAdminDashboard = () => {
                 className={`${styles.btn}`}
                 disabled={isDeleting}
                 style={{
-                  background: "#ef4444",
+                  background: "var(--error-color)",
                   color: "white",
                   border: "none",
+                  transition: "all 0.2s ease",
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
               >
-                {isDeleting ? "Deleting..." : "Delete Admin"}
+                {isDeleting ? "Deleting..." : "Confirm Deletion"}
               </button>
             </div>
           </div>
@@ -491,14 +837,28 @@ const SuperAdminDashboard = () => {
             style={{ maxWidth: "600px", width: "90%", padding: "24px" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ margin: "0 0 24px 0", fontSize: "24px", fontWeight: "700" }}>
-              📄 Bulk Upload Admins (CSV)
+            <h2
+              style={{
+                margin: "0 0 24px 0",
+                fontSize: "24px",
+                fontWeight: "700",
+                color: "var(--text-primary)",
+              }}
+            >
+              Bulk Import Administrators
             </h2>
 
             {!uploadResult ? (
               <form onSubmit={handleCSVUpload}>
                 <div style={{ marginBottom: "20px" }}>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontWeight: "600",
+                      color: "var(--text-primary)",
+                    }}
+                  >
                     Select CSV File
                   </label>
                   <input
@@ -517,26 +877,58 @@ const SuperAdminDashboard = () => {
                       boxSizing: "border-box",
                     }}
                   />
-                  <p style={{ fontSize: "12px", marginTop: "8px", opacity: 0.7 }}>
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      marginTop: "8px",
+                      opacity: 0.7,
+                      color: "var(--text-secondary)",
+                    }}
+                  >
                     CSV format: name, email (one per line)
                   </p>
                 </div>
 
-                <div style={{ 
-                  background: "rgba(103, 126, 234, 0.1)", 
-                  padding: "16px", 
-                  borderRadius: "8px",
-                  marginBottom: "20px",
-                  border: "1px solid rgba(103, 126, 234, 0.3)"
-                }}>
-                  <p style={{ margin: "0 0 12px 0", fontWeight: "600", fontSize: "14px" }}>
-                    ℹ️ Instructions:
+                <div
+                  style={{
+                    background: "var(--info-bg)",
+                    padding: "16px",
+                    borderRadius: "8px",
+                    marginBottom: "20px",
+                    border: "1px solid var(--info-color)",
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: "0 0 12px 0",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    Import Instructions
                   </p>
-                  <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "13px", lineHeight: "1.8" }}>
-                    <li>CSV file should have 2 columns: name and email</li>
-                    <li>First row can be a header (will be skipped if detected)</li>
-                    <li>Random passwords will be generated and emailed to each admin</li>
-                    <li>Admins will be instructed to change password on first login</li>
+                  <ul
+                    style={{
+                      margin: 0,
+                      paddingLeft: "20px",
+                      fontSize: "13px",
+                      lineHeight: "1.8",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    <li>CSV file must contain two columns: name and email</li>
+                    <li>
+                      Header row is optional and will be automatically detected
+                    </li>
+                    <li>
+                      System will generate secure passwords and send credentials
+                      via email
+                    </li>
+                    <li>
+                      Administrators will be required to change their password
+                      upon first login
+                    </li>
                   </ul>
                   <button
                     type="button"
@@ -551,13 +943,28 @@ const SuperAdminDashboard = () => {
                       cursor: "pointer",
                       fontSize: "13px",
                       fontWeight: "600",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--accent-color)";
+                      e.currentTarget.style.color = "white";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "var(--accent-color)";
                     }}
                   >
-                    📥 Download Sample CSV
+                    Download Sample Template
                   </button>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: "12px",
+                  }}
+                >
                   <button
                     type="button"
                     onClick={() => {
@@ -575,46 +982,84 @@ const SuperAdminDashboard = () => {
                     className={`${styles.btn} ${styles.btnPrimary}`}
                     disabled={isUploading || !csvFile}
                   >
-                    {isUploading ? "Uploading..." : "Upload & Create Admins"}
+                    {isUploading ? "Importing..." : "Import Administrators"}
                   </button>
                 </div>
               </form>
             ) : (
               <div>
                 <div style={{ marginBottom: "20px" }}>
-                  <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "16px" }}>
-                    Upload Results
+                  <h3
+                    style={{
+                      fontSize: "18px",
+                      fontWeight: "600",
+                      marginBottom: "16px",
+                    }}
+                  >
+                    Import Summary
                   </h3>
-                  
-                  <div style={{ 
-                    display: "grid", 
-                    gridTemplateColumns: "1fr 1fr", 
-                    gap: "16px", 
-                    marginBottom: "20px" 
-                  }}>
-                    <div style={{
-                      padding: "16px",
-                      background: "rgba(52, 211, 153, 0.1)",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(52, 211, 153, 0.3)",
-                    }}>
-                      <p style={{ fontSize: "24px", fontWeight: "700", color: "#34d399", margin: 0 }}>
-                        {uploadResult.successful.length}
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "16px",
+                      marginBottom: "20px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding: "16px",
+                        background: "var(--success-bg)",
+                        borderRadius: "8px",
+                        border: "1px solid var(--success-color)",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: "24px",
+                          fontWeight: "700",
+                          color: "var(--success-color)",
+                          margin: 0,
+                        }}
+                      >
+                        ✅ {uploadResult.successful.length}
                       </p>
-                      <p style={{ fontSize: "14px", margin: "4px 0 0 0", opacity: 0.8 }}>
+                      <p
+                        style={{
+                          fontSize: "14px",
+                          margin: "4px 0 0 0",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
                         Successful
                       </p>
                     </div>
-                    <div style={{
-                      padding: "16px",
-                      background: "rgba(239, 68, 68, 0.1)",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(239, 68, 68, 0.3)",
-                    }}>
-                      <p style={{ fontSize: "24px", fontWeight: "700", color: "#ef4444", margin: 0 }}>
-                        {uploadResult.failed.length}
+                    <div
+                      style={{
+                        padding: "16px",
+                        background: "var(--error-bg)",
+                        borderRadius: "8px",
+                        border: "1px solid var(--error-color)",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: "24px",
+                          fontWeight: "700",
+                          color: "var(--error-color)",
+                          margin: 0,
+                        }}
+                      >
+                        ❌ {uploadResult.failed.length}
                       </p>
-                      <p style={{ fontSize: "14px", margin: "4px 0 0 0", opacity: 0.8 }}>
+                      <p
+                        style={{
+                          fontSize: "14px",
+                          margin: "4px 0 0 0",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
                         Failed
                       </p>
                     </div>
@@ -622,27 +1067,55 @@ const SuperAdminDashboard = () => {
 
                   {uploadResult.failed.length > 0 && (
                     <div>
-                      <h4 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "#ef4444" }}>
-                        Failed Entries:
+                      <h4
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: "600",
+                          marginBottom: "12px",
+                          color: "var(--error-color)",
+                        }}
+                      >
+                        ⚠️ Failed Entries:
                       </h4>
-                      <div style={{ 
-                        maxHeight: "200px", 
-                        overflowY: "auto",
-                        background: "rgba(239, 68, 68, 0.05)",
-                        padding: "12px",
-                        borderRadius: "8px",
-                        border: "1px solid rgba(239, 68, 68, 0.2)"
-                      }}>
+                      <div
+                        style={{
+                          maxHeight: "200px",
+                          overflowY: "auto",
+                          background: "var(--error-bg)",
+                          padding: "12px",
+                          borderRadius: "8px",
+                          border: "1px solid var(--error-color)",
+                        }}
+                      >
                         {uploadResult.failed.map((item: any, idx: number) => (
-                          <div key={idx} style={{ 
-                            marginBottom: "8px", 
-                            paddingBottom: "8px",
-                            borderBottom: idx < uploadResult.failed.length - 1 ? "1px solid rgba(0,0,0,0.1)" : "none"
-                          }}>
-                            <p style={{ margin: 0, fontSize: "13px", fontWeight: "600" }}>
+                          <div
+                            key={idx}
+                            style={{
+                              marginBottom: "8px",
+                              paddingBottom: "8px",
+                              borderBottom:
+                                idx < uploadResult.failed.length - 1
+                                  ? "1px solid var(--border-color)"
+                                  : "none",
+                            }}
+                          >
+                            <p
+                              style={{
+                                margin: 0,
+                                fontSize: "13px",
+                                fontWeight: "600",
+                                color: "var(--text-primary)",
+                              }}
+                            >
                               {item.name} ({item.email})
                             </p>
-                            <p style={{ margin: "4px 0 0 0", fontSize: "12px", opacity: 0.7 }}>
+                            <p
+                              style={{
+                                margin: "4px 0 0 0",
+                                fontSize: "12px",
+                                color: "var(--text-secondary)",
+                              }}
+                            >
                               Reason: {item.reason}
                             </p>
                           </div>
