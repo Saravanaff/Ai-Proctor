@@ -57,7 +57,7 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
 
       let dest = redirect as string;
       if (!dest) {
-        if (user.role === "HEAD") {
+        if (user.role === "head") {
           dest = "/superAdmin/dashboard";
         } else if (user.role === "examiner" || user.role === "admin") {
           dest = "/examiner/CreateExamPage";
