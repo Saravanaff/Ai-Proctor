@@ -24,8 +24,7 @@ export const requireRole = (allowedRoles: string | string[]) => {
       console.log(decoded);
       console.log(userRole);
       
-      // Allow "head" role access to all routes
-      if (userRole === 'head') {
+      if (userRole === 'HEAD') {
         console.log("✅ Head role detected - granting access to all routes");
         (req as any).user = decoded;
         return next();

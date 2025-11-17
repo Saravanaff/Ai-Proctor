@@ -187,6 +187,7 @@ export const getCanditates = async (req: Request, res: Response) => {
 export const getSingleExam = async (req: Request, res: Response) => {
   const { examId } = req.params;
   const user_id = getUserIdFromToken(req);
+  console.log(examId);
 
   if (!examId || !user_id) {
     return res.status(400).json({
@@ -199,7 +200,6 @@ export const getSingleExam = async (req: Request, res: Response) => {
     const exam = await Exam.findOne({
       where: {
         id: examId,
-        user_id: user_id,
       },
       attributes: [
         "id",
@@ -239,6 +239,8 @@ export const getSingleExam = async (req: Request, res: Response) => {
         },
       ],
     });
+
+    console.log(exam);
 
     if (!exam) {
       return res.status(404).json({

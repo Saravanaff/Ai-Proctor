@@ -17,6 +17,7 @@ const SuperAdminDashboard = () => {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newAdminName, setNewAdminName] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
