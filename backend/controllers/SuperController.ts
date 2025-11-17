@@ -13,7 +13,7 @@ export const getAdminEmails = async (req: Request, res: Response) => {
   try {
     const admins = await User.findAll({
       where: {
-        role: "admin",
+        role: "examiner",
       },
       attributes: ["id", "name", "email", "createdAt"],
       order: [["createdAt", "DESC"]],
@@ -218,6 +218,7 @@ export const deleteAdmin = async (req: Request, res: Response) => {
       },
     });
 
+    
     const examIds = exams.map((exam) => exam.id);
     console.log(`Found ${exams.length} exam(s) to delete`);
 
@@ -236,7 +237,6 @@ export const deleteAdmin = async (req: Request, res: Response) => {
       });
       console.log(`Deleted ${deletedViolations} violation log(s)`);
 
-      // Delete all scores for these exams
       const deletedScores = await Scores.destroy({
         where: {
           exam_id: examIds,
@@ -244,7 +244,6 @@ export const deleteAdmin = async (req: Request, res: Response) => {
       });
       console.log(`Deleted ${deletedScores} score record(s)`);
 
-      // Delete all attendance records for these exams
       const deletedAttendance = await Attend.destroy({
         where: {
           exam_id: examIds,
@@ -252,7 +251,6 @@ export const deleteAdmin = async (req: Request, res: Response) => {
       });
       console.log(`Deleted ${deletedAttendance} attendance record(s)`);
 
-      // Delete all exams
       const deletedExams = await Exam.destroy({
         where: {
           id: examIds,

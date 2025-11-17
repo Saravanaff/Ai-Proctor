@@ -15,6 +15,7 @@ import videoRoutes from "./routes/videoRoutes";
 import logRoute from "./routes/logRoute";
 import generatorRoute from "./routes/generatorRoutes";
 import otpRoutes from "./routes/otpRoutes";
+import superAdminRoutes from "./routes/superAdminRoutes";
 import fs from "fs";
 
 dotenv.config({ path: path.join(__dirname, ".env") });
@@ -49,6 +50,7 @@ async function startServer() {
   app.use("/", authRoutes);
   app.use("/otp", otpRoutes); // OTP routes don't need authentication
   app.use(authMiddleware);
+  app.use("/", superAdminRoutes);
   app.use("/", examRoutes);
   app.use("/", studentRoutes);
   app.use("/", scoreRoutes);
