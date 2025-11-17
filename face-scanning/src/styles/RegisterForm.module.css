@@ -635,6 +635,110 @@
   }
 }
 
+/* Photo Modal */
+.photoModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.photoModal {
+  background: var(--card-bg, #fff);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px var(--shadow, rgba(0, 0, 0, 0.18));
+  padding: 2.5rem 2rem 2rem 2rem;
+  min-width: 320px;
+  max-width: 95vw;
+  width: 370px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: modalIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalIn {
+  from {
+    transform: scale(0.95) translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.photoModalClose {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 1.7rem;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: color 0.15s;
+  z-index: 2;
+}
+.photoModalClose:hover {
+  color: var(--text-primary, #222);
+}
+
+.photoModal h3 {
+  margin: 0 0 1.2rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #222);
+  text-align: center;
+}
+
+.photoModalBtn {
+  display: block;
+  width: 100%;
+  margin: 0.5rem 0;
+  padding: 10px 24px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.photoModalBtn:hover,
+.photoModalBtn:focus {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.photoModal label.photoModalBtn {
+  text-align: center;
+  cursor: pointer;
+}
+
+.photoModal h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: var(--text-primary, #222);
+  font-weight: 500;
+}
+
+.photoModal video {
+  margin: 0 auto 0.5rem auto;
+  display: block;
+  border-radius: 8px;
+  background: var(--secondary-bg, #222);
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .container {

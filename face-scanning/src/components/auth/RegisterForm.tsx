@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import styles from "../../styles/RegisterForm.module.css";
@@ -14,7 +13,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student");
+  const role = "student";
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
@@ -24,8 +23,17 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [webcamError, setWebcamError] = useState("");
 
   const router = useRouter();
+
+  // Set higher resolution for webcam capture
+  const VIDEO_WIDTH = 480;
+  const VIDEO_HEIGHT = 640;
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,6 +53,74 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
     setPhoto(file);
     setPhotoPreview(URL.createObjectURL(file));
     setError("");
+    setShowPhotoModal(false);
+  };
+
+  const openWebcam = async () => {
+    setWebcamError("");
+    setCapturing(true);
+    setShowPhotoModal(true);
+    // Stop any previous stream
+    if (videoRef.current && videoRef.current.srcObject) {
+      const oldStream = videoRef.current.srcObject as MediaStream;
+      oldStream.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: VIDEO_WIDTH, height: VIDEO_HEIGHT },
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.width = VIDEO_WIDTH;
+        videoRef.current.height = VIDEO_HEIGHT;
+        videoRef.current.play();
+      }
+    } catch (err) {
+      setWebcamError("Unable to access webcam.");
+      setCapturing(false);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const context = canvasRef.current.getContext("2d");
+      if (context) {
+        // Set canvas size to match video
+        canvasRef.current.width = VIDEO_WIDTH;
+        canvasRef.current.height = VIDEO_HEIGHT;
+        context.drawImage(videoRef.current, 0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
+        canvasRef.current.toBlob(
+          (blob) => {
+            if (blob) {
+              const file = new File(
+                [blob],
+                "webcam-photo.jpg",
+                { type: "image/jpeg" }
+              );
+              setPhoto(file);
+              setPhotoPreview(URL.createObjectURL(file));
+              setShowPhotoModal(false);
+              // Stop webcam
+              const stream = videoRef.current?.srcObject as MediaStream;
+              stream?.getTracks().forEach((track) => track.stop());
+            }
+          },
+          "image/jpeg"
+        );
+      }
+    }
+  };
+
+  const closePhotoModal = () => {
+    setShowPhotoModal(false);
+    setCapturing(false);
+    setWebcamError("");
+    // Stop webcam if open
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+    }
   };
 
   const validatePassword = () => {
@@ -227,6 +303,35 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
 
   return (
     <div className={styles.container}>
+      {/* Photo Modal */}
+      {showPhotoModal && (
+        <div className={styles.photoModalOverlay}>
+          <div className={styles.photoModal}>
+            <button className={styles.photoModalClose} onClick={closePhotoModal}>&times;</button>
+            {!capturing ? (
+              <>
+                <h3>Select Photo Option</h3>
+                <button className={styles.photoModalBtn} onClick={openWebcam} type="button">Capture from Webcam</button>
+                <label className={styles.photoModalBtn} style={{ display: 'block', cursor: 'pointer' }}>
+                  Upload from File
+                  <input type="file" accept="image/jpeg,image/png" style={{ display: 'none' }} onChange={handlePhotoChange} />
+                </label>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center' }}>
+                <h4>Webcam Capture</h4>
+                {webcamError && <div className={styles.error}>{webcamError}</div>}
+                <video ref={videoRef} width={VIDEO_WIDTH} height={VIDEO_HEIGHT} style={{ borderRadius: 8, background: '#222', maxWidth: '100%', maxHeight: '60vh' }} />
+                <div style={{ margin: '10px 0' }}>
+                  <button type="button" className={styles.photoModalBtn} onClick={capturePhoto}>Capture</button>
+                  <button type="button" className={styles.photoModalBtn} onClick={closePhotoModal}>Cancel</button>
+                </div>
+                <canvas ref={canvasRef} width={VIDEO_WIDTH} height={VIDEO_HEIGHT} style={{ display: 'none' }} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <div className={styles.content}>
         <div className={styles.header}>
           <div className={styles.logo}>
@@ -265,80 +370,45 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
               }}
               className={styles.form}
             >
-              {/* Role Selection */}
+              {/* Photo Upload for Students (always student) */}
               <div className={styles.inputGroup}>
-                <label className={styles.label}>Select Role</label>
-                <div className={styles.roleSelector}>
-                  <button
-                    type="button"
-                    className={`${styles.roleButton} ${
-                      role === "student" ? styles.roleActive : ""
-                    }`}
-                    onClick={() => setRole("student")}
-                  >
-                    <div>
-                      <div className={styles.roleTitle}>Student</div>
-                      <div className={styles.roleDesc}>Taking exams</div>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.roleButton} ${
-                      role === "examiner" ? styles.roleActive : ""
-                    }`}
-                    onClick={() => setRole("examiner")}
-                  >
-                    <div>
-                      <div className={styles.roleTitle}>Examiner</div>
-                      <div className={styles.roleDesc}>Creating exams</div>
-                    </div>
-                  </button>
-                </div>
-              </div>{" "}
-              {/* Photo Upload for Students */}
-              {role === "student" && (
-                <div className={styles.inputGroup}>
-                  <label className={styles.label}>Upload Formal Photo</label>
-                  <div className={styles.photoUpload}>
-                    <div className={styles.photoFrame}>
-                      {photoPreview ? (
-                        <img
-                          src={photoPreview}
-                          alt="Preview"
-                          className={styles.photoPreview}
-                        />
-                      ) : (
-                        <div className={styles.photoPlaceholder}>
-                          <svg
-                            width="40"
-                            height="40"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <path d="M21 15l-5-5L5 21" />
-                          </svg>
-                          <span>No Photo</span>
-                        </div>
-                      )}
-                    </div>
-                    <label className={styles.photoUploadButton}>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png"
-                        onChange={handlePhotoChange}
-                        required={role === "student"}
-                        style={{ display: "none" }}
+                <label className={styles.label}>Upload Formal Photo</label>
+                <div className={styles.photoUpload}>
+                  <div className={styles.photoFrame}>
+                    {photoPreview ? (
+                      <img
+                        src={photoPreview}
+                        alt="Preview"
+                        className={styles.photoPreview}
                       />
-                      <span>Choose Photo</span>
-                    </label>
-                    <p className={styles.photoHint}>JPG or PNG, max 2MB</p>
+                    ) : (
+                      <div className={styles.photoPlaceholder}>
+                        <svg
+                          width="40"
+                          height="40"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <path d="M21 15l-5-5L5 21" />
+                        </svg>
+                        <span>No Photo</span>
+                      </div>
+                    )}
                   </div>
+                  <button
+                    type="button"
+                    className={styles.photoUploadButton}
+                    onClick={() => setShowPhotoModal(true)}
+                  >
+                    <span>Choose Photo</span>
+                  </button>
+                  <p className={styles.photoHint}>JPG or PNG, max 2MB</p>
                 </div>
-              )}
+              </div>
               {/* Name */}
               <div className={styles.inputGroup}>
                 <label className={styles.label}>Full Name</label>
@@ -423,9 +493,8 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                     {passwordRequirements.map((req) => (
                       <div key={req.key} className={styles.passwordReq}>
                         <span
-                          className={`${styles.passwordReqIcon} ${
-                            req.passed ? styles.passwordReqPassed : ""
-                          }`}
+                          className={`${styles.passwordReqIcon} ${req.passed ? styles.passwordReqPassed : ""
+                            }`}
                         >
                           {req.passed ? "✓" : ""}
                         </span>
