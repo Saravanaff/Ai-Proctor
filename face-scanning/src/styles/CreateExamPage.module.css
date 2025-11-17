@@ -769,13 +769,13 @@
 
 .examsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 28px;
 }
 
 .examCard {
   position: relative;
-  padding: 20px 20px 18px;
+  padding: 24px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: linear-gradient(
@@ -786,8 +786,9 @@
   backdrop-filter: blur(14px);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   transition: transform 0.35s, box-shadow 0.35s, border-color 0.35s;
+  min-height: 200px;
 }
 
 .examCard::after {
@@ -1015,6 +1016,13 @@
   }
 }
 
+@media (max-width: 768px) {
+  .examsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+}
+
 @media (max-width: 560px) {
   .enterpriseRoot {
     padding: 28px 20px 60px;
@@ -1022,8 +1030,13 @@
   .statsRow {
     grid-template-columns: 1fr 1fr;
   }
+  .examsGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
   .examCard {
-    padding: 18px 16px;
+    padding: 20px;
+    min-height: auto;
   }
   .examActions {
     flex-wrap: wrap;

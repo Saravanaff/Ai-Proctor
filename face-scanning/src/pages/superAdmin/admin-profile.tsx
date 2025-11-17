@@ -87,45 +87,163 @@ const AdminProfilePage = () => {
       className={styles.examinerContainer}
       style={{ minHeight: "100vh", background: "var(--background)" }}
     >
-      <header className={styles.header} style={{ marginBottom: "32px" }}>
+      <header className={styles.header} style={{ marginBottom: "40px" }}>
         <div
-          className={styles.headerContent}
-          style={{ display: "flex", alignItems: "center", gap: "16px" }}
+          style={{
+            background:
+              "linear-gradient(135deg, var(--card-bg), var(--secondary-bg))",
+            borderRadius: "24px",
+            padding: "40px",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 8px 32px var(--shadow)",
+            position: "relative",
+            overflow: "hidden",
+          }}
         >
-          <button
-            onClick={handleBack}
-            className={`${styles.btn} ${styles.btnGhost}`}
+          {/* Decorative gradient overlay */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "5px",
+              background:
+                "linear-gradient(90deg, var(--accent-color), var(--primary-color))",
+            }}
+          />
+
+          {/* Back button and status in one row */}
+          <div
             style={{
               display: "flex",
+              justifyContent: "space-between",
               alignItems: "center",
-              gap: "8px",
-              padding: "10px 16px",
-              borderRadius: "8px",
+              marginBottom: "32px",
+              flexWrap: "wrap",
+              gap: "16px",
             }}
           >
-            ← Back
-          </button>
-          <div style={{ flex: 1 }}>
-            <h1
-              className={styles.title}
+            <button
+              onClick={handleBack}
+              className={`${styles.btn} ${styles.btnGhost}`}
               style={{
-                margin: 0,
-                fontSize: "32px",
-                fontWeight: "700",
-                color: "var(--text-primary)",
-              }}
-            >
-              {admin?.name || "Admin Profile"}
-            </h1>
-            <p
-              style={{
-                margin: "4px 0 0 0",
-                color: "var(--text-secondary)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "12px 20px",
+                borderRadius: "10px",
+                fontWeight: "600",
                 fontSize: "14px",
               }}
             >
-              {admin?.email}
-            </p>
+              ← Back to Dashboard
+            </button>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "10px 20px",
+                background: "var(--success-bg)",
+                color: "var(--success-color)",
+                borderRadius: "10px",
+                fontSize: "14px",
+                fontWeight: "600",
+                border: "1.5px solid var(--success-color)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              ✓ Active
+            </div>
+          </div>
+
+          {/* Profile info */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "32px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div
+              style={{
+                width: "100px",
+                height: "100px",
+                borderRadius: "20px",
+                background:
+                  "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "42px",
+                fontWeight: "700",
+                color: "white",
+                boxShadow: "0 12px 32px rgba(14, 165, 233, 0.4)",
+                flexShrink: 0,
+                border: "3px solid var(--background)",
+              }}
+            >
+              {admin?.name?.charAt(0).toUpperCase() || "A"}
+            </div>
+            <div style={{ flex: 1, minWidth: "280px" }}>
+              <h1
+                style={{
+                  margin: "0 0 12px 0",
+                  fontSize: "32px",
+                  fontWeight: "700",
+                  color: "var(--text-primary)",
+                  lineHeight: "1.2",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                {admin?.name || "Admin Profile"}
+              </h1>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "8px 16px",
+                    background: "var(--info-bg)",
+                    color: "var(--text-secondary)",
+                    borderRadius: "10px",
+                    fontSize: "15px",
+                    fontWeight: "500",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  <span style={{ fontSize: "16px" }}>📧</span>
+                  {admin?.email}
+                </div>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "8px 16px",
+                    background: "var(--primary-bg-light)",
+                    color: "var(--accent-color)",
+                    borderRadius: "10px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    border: "1px solid var(--accent-color)",
+                  }}
+                >
+                  <span style={{ fontSize: "16px" }}>👤</span>
+                  Administrator
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -243,29 +361,45 @@ const AdminProfilePage = () => {
               onClick={() => handleExamClick(exam.id)}
               style={{
                 cursor: "pointer",
-                transition: "all 0.3s ease",
-                border: "2px solid var(--border-color)",
-                borderRadius: "16px",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "20px",
                 background: "var(--card-bg)",
-                padding: "24px",
-                boxShadow: "0 2px 12px var(--shadow)",
+                padding: "28px",
+                boxShadow: "0 4px 20px var(--shadow)",
+                position: "relative",
+                overflow: "hidden",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-6px)";
-                e.currentTarget.style.boxShadow = "0 12px 32px var(--shadow)";
+                e.currentTarget.style.transform = "translateY(-8px)";
+                e.currentTarget.style.boxShadow = "0 16px 48px var(--shadow)";
                 e.currentTarget.style.borderColor = "var(--accent-color)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 2px 12px var(--shadow)";
+                e.currentTarget.style.boxShadow = "0 4px 20px var(--shadow)";
                 e.currentTarget.style.borderColor = "var(--border-color)";
               }}
             >
-              <div style={{ marginBottom: "16px" }}>
+              {/* Accent bar */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "4px",
+                  background:
+                    "linear-gradient(90deg, var(--accent-color), var(--primary-color))",
+                }}
+              />
+
+              {/* Header */}
+              <div style={{ marginBottom: "20px" }}>
                 <h3
                   style={{
-                    margin: "0 0 8px 0",
-                    fontSize: "20px",
+                    margin: "0 0 10px 0",
+                    fontSize: "22px",
                     fontWeight: "700",
                     color: "var(--text-primary)",
                     lineHeight: "1.3",
@@ -273,79 +407,147 @@ const AdminProfilePage = () => {
                 >
                   {exam.exam_name}
                 </h3>
-                <p
-                  style={{
-                    margin: "0",
-                    color: "var(--text-secondary)",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                  }}
-                >
-                  Key: {exam.key}
-                </p>
-              </div>
-
-              <div style={{ marginBottom: "16px" }}>
                 <div
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "6px",
-                    padding: "8px 16px",
+                    padding: "4px 12px",
+                    background: "var(--secondary-bg)",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--text-secondary)",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Key:
+                  </span>
+                  <span
+                    style={{
+                      fontSize: "13px",
+                      color: "var(--text-primary)",
+                      fontWeight: "700",
+                    }}
+                  >
+                    {exam.key}
+                  </span>
+                </div>
+              </div>
+
+              {/* Participants badge */}
+              <div style={{ marginBottom: "20px" }}>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 18px",
                     background:
                       "linear-gradient(135deg, var(--info-bg), var(--primary-bg-light))",
                     color: "var(--accent-color)",
-                    borderRadius: "20px",
-                    fontSize: "14px",
+                    borderRadius: "12px",
+                    fontSize: "15px",
                     fontWeight: "700",
-                    border: "2px solid var(--accent-color)",
-                    boxShadow: "0 2px 8px rgba(14, 165, 233, 0.2)",
+                    border: "1.5px solid var(--accent-color)",
+                    boxShadow: "0 4px 12px rgba(14, 165, 233, 0.15)",
                   }}
                 >
+                  <span style={{ fontSize: "18px" }}>👥</span>
                   {exam.totalParticipants} Participant
                   {exam.totalParticipants !== 1 ? "s" : ""}
                 </div>
               </div>
 
+              {/* Divider */}
+              <div
+                style={{
+                  height: "1px",
+                  background: "var(--border-color)",
+                  marginBottom: "20px",
+                }}
+              />
+
+              {/* Dates */}
               <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
-                  gap: "8px",
-                  padding: "12px",
-                  background: "var(--secondary-bg)",
-                  borderRadius: "12px",
-                  marginBottom: "16px",
-                  border: "1px solid var(--border-color)",
+                  gap: "12px",
+                  marginBottom: "20px",
                 }}
               >
                 <div
-                  style={{ fontSize: "12px", color: "var(--text-secondary)" }}
+                  style={{
+                    padding: "14px 16px",
+                    background: "var(--secondary-bg)",
+                    borderRadius: "12px",
+                    border: "1px solid var(--border-color)",
+                  }}
                 >
-                  Created
-                  <div
+                  <p
                     style={{
+                      margin: "0 0 4px 0",
+                      fontSize: "11px",
+                      color: "var(--text-secondary)",
                       fontWeight: "600",
-                      color: "var(--text-primary)",
-                      marginTop: "2px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
                     }}
                   >
-                    {new Date(exam.createdAt).toLocaleDateString()}
-                  </div>
+                    Created
+                  </p>
+                  <p
+                    style={{
+                      margin: "0",
+                      fontWeight: "700",
+                      color: "var(--text-primary)",
+                      fontSize: "14px",
+                    }}
+                  >
+                    {new Date(exam.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
                 </div>
                 <div
-                  style={{ fontSize: "12px", color: "var(--text-secondary)" }}
+                  style={{
+                    padding: "14px 16px",
+                    background: "var(--secondary-bg)",
+                    borderRadius: "12px",
+                    border: "1px solid var(--border-color)",
+                  }}
                 >
-                  Updated
-                  <div
+                  <p
                     style={{
+                      margin: "0 0 4px 0",
+                      fontSize: "11px",
+                      color: "var(--text-secondary)",
                       fontWeight: "600",
-                      color: "var(--text-primary)",
-                      marginTop: "2px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
                     }}
                   >
-                    {new Date(exam.updatedAt).toLocaleDateString()}
-                  </div>
+                    Updated
+                  </p>
+                  <p
+                    style={{
+                      margin: "0",
+                      fontWeight: "700",
+                      color: "var(--text-primary)",
+                      fontSize: "14px",
+                    }}
+                  >
+                    {new Date(exam.updatedAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
                 </div>
               </div>
 
