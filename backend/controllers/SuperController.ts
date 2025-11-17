@@ -90,6 +90,7 @@ export const getExaminerEmails = async (req: Request, res: Response) => {
 export const getAdminExams = async (req: Request, res: Response) => {
   try {
     const { adminEmail } = req.params;
+    console.log(adminEmail);
 
     if (!adminEmail) {
       return res.status(400).json({
@@ -101,7 +102,7 @@ export const getAdminExams = async (req: Request, res: Response) => {
     const admin = await User.findOne({
       where: {
         email: adminEmail,
-        role: "admin",
+        role: "examiner",
       },
       attributes: ["id", "name", "email"],
     });

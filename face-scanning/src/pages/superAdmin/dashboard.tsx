@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import styles from "../../styles/CreateExamPage.module.css";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import axios from "axios";
@@ -12,6 +13,7 @@ interface Admin {
 }
 
 const SuperAdminDashboard = () => {
+  const router = useRouter();
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -44,6 +46,25 @@ const SuperAdminDashboard = () => {
   useEffect(() => {
     fetchAdmins();
   }, []);
+
+  const handleLogout = () => {
+    try {
+      // clear token cookie
+      document.cookie =
+        "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      // clear localStorage
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("globalName");
+    } finally {
+      // redirect to login page
+      window.location.href = "/";
+    }
+  };
+
+  const handleAdminClick = (adminEmail: string) => {
+    router.push(`/superAdmin/admin-profile?adminEmail=${encodeURIComponent(adminEmail)}`);
+  };
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +110,13 @@ const SuperAdminDashboard = () => {
           >
             + Create Admin
           </button>
+          <button
+            onClick={handleLogout}
+            className={`${styles.btn} ${styles.btnGhost}`}
+            style={{ marginLeft: "12px" }}
+          >
+            Logout
+          </button>
         </div>
       </header>
 
@@ -105,7 +133,12 @@ const SuperAdminDashboard = () => {
       ) : (
         <div className={styles.examsGrid}>
           {filtered.map((admin) => (
-            <div key={admin.id} className={styles.examCard}>
+            <div
+              key={admin.id}
+              className={styles.examCard}
+              onClick={() => handleAdminClick(admin.email)}
+              style={{ cursor: "pointer" }}
+            >
               <h3>{admin.name}</h3>
               <p>{admin.email}</p>
               <p>Created: {new Date(admin.createdAt).toLocaleDateString()}</p>
