@@ -8,6 +8,7 @@ import { MCQQuestion } from "../../types/mcq";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { ExaminerGuard } from "@/components/guards";
 
 const EditExamQuestions = () => {
   const router = useRouter();
@@ -218,9 +219,10 @@ const EditExamQuestions = () => {
         </div>
       </div>
     );
-  }
+  };
 
   return (
+    <ExaminerGuard>
     <div
       className={`${styles.examinerContainer} ${styles.enterpriseRoot} theme-transition`}
       style={{
@@ -395,6 +397,7 @@ const EditExamQuestions = () => {
         </div>
       </div>
     </div>
+    </ExaminerGuard>
   );
 };
 

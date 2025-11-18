@@ -6,8 +6,8 @@ import LoadingIndicator from "../../components/LoadingIndicator";
 import styles from "../../styles/ParticipantDetailsPage.module.css";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import VideoPlayer from "../../components/VideoPlayer";
+import { ExaminerGuard } from "@/components/guards";
 
-// PDF Constants
 const PDF_CONSTANTS = {
   SUPER_PROCTOR_FEED: 0,
   RESTRICTED_OBJECT: 0,
@@ -82,11 +82,9 @@ interface ViolationLogResponse {
 }
 
 const ParticipantDetailsPage: React.FC = () => {
-  // PDF generation handler
   const handleGeneratePDF = async () => {
     if (!user || !examDetails) return;
 
-    // Fetch exam results if not already loaded
     let results = examResults;
     if (!results) {
       try {
@@ -492,7 +490,6 @@ const ParticipantDetailsPage: React.FC = () => {
         const logs = response.data.data;
         console.log(logs);
 
-        // Transform logs to ViolationEvent format
         const transformedViolations: ViolationEvent[] = logs.map(
           (log, index: number) => ({
             id: log.id.toString(),
@@ -506,13 +503,11 @@ const ParticipantDetailsPage: React.FC = () => {
           })
         );
 
-        // Create timeline events by grouping violations by time intervals
         const timelineEvents = createTimelineFromLogs(logs);
 
         setViolations(transformedViolations);
         setTimelineEvents(timelineEvents);
 
-        // Set exam start time from attendance startTime (when user actually started exam)
         const attendanceToUse = attendanceData || attendance;
         
         if (attendanceToUse?.startTime) {
@@ -523,7 +518,6 @@ const ParticipantDetailsPage: React.FC = () => {
           );
           setExamStartTime(examStartFromAttendance);
         } else if (examDetails?.createdAt) {
-          // Fallback: use exam creation time if attendance startTime not available
           const examStartFromCreation = new Date(examDetails.createdAt);
           console.log(
             "Setting exam start time from examDetails.createdAt (fallback):",
@@ -531,7 +525,6 @@ const ParticipantDetailsPage: React.FC = () => {
           );
           setExamStartTime(examStartFromCreation);
         } else if (logs.length > 0) {
-          // Last resort fallback: use first violation time
           const firstViolationTime = new Date(logs[0].violation_timestamp);
           console.log(
             "Setting exam start time from first violation (last resort fallback):",
@@ -547,7 +540,6 @@ const ParticipantDetailsPage: React.FC = () => {
     }
   };
 
-  // Fetch exam results for the student
   const fetchExamResults = async () => {
     if (!user || !examDetails) return;
 
@@ -556,7 +548,6 @@ const ParticipantDetailsPage: React.FC = () => {
       const token = getTokenFromCookie();
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-      // Fetch questions
       const questionsRes = await axios.get(
         `${base}/getExamQuestions/${examDetails.id}`,
         {
@@ -564,7 +555,6 @@ const ParticipantDetailsPage: React.FC = () => {
         }
       );
 
-      // Fetch user answers using the new endpoint for examiners
       const answersRes = await axios.get(
         `${base}/exam/${examDetails.id}/student/${user.id}/answers`,
         {
@@ -575,9 +565,7 @@ const ParticipantDetailsPage: React.FC = () => {
       const questions = questionsRes.data.questions || [];
       const userAnswers = answersRes.data.data?.answers || [];
 
-      // Map questions with user answers
       const detailedAnswers = questions.map((question: any) => {
-        // Ensure QuestionOptions is always an array
         const questionOptions = Array.isArray(question.QuestionOptions)
           ? question.QuestionOptions
           : [];
@@ -598,7 +586,7 @@ const ParticipantDetailsPage: React.FC = () => {
         return {
           question: {
             ...question,
-            QuestionOptions: questionOptions, // Ensure it's always an array
+            QuestionOptions: questionOptions,
           },
           userAnswer: userAnswer || null,
           selectedOption,
@@ -1330,6 +1318,7 @@ const ParticipantDetailsPage: React.FC = () => {
   }
 
   return (
+    <ExaminerGuard>
     <div className={styles.container}>
       {/* Header */}
       <div className={styles.header}>
@@ -3246,6 +3235,7 @@ const ParticipantDetailsPage: React.FC = () => {
         </div>
       )}
     </div>
+    </ExaminerGuard>
   );
 };
 

@@ -4,6 +4,7 @@ import axios from "axios";
 import LoadingIndicator from "../../components/LoadingIndicator";
 import styles from "../../styles/ExamDetailsPage.module.css";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { ExaminerGuard } from "@/components/guards";
 interface User {
   id: number;
   name: string;
@@ -250,6 +251,7 @@ const ExamDetailsPage: React.FC = () => {
   }
 
   return (
+    <ExaminerGuard>
     <div className={styles.container}>
       {/* Header */}
       <div className={styles.header}>
@@ -436,6 +438,7 @@ const ExamDetailsPage: React.FC = () => {
         )}
       </div>
     </div>
+    </ExaminerGuard>
   );
 };
 

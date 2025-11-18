@@ -6,6 +6,7 @@ import ExamStats from "../../components/exams/ExamStats";
 import ExamsGrid from "../../components/exams/ExamsGrid";
 import ExamResultsModal from "../../components/exams/ExamResultsModal";
 import { ThemeToggle } from "../../components/ThemeToggle";
+import { ExaminerGuard } from "../../components/guards";
 import axios from "axios";
 import { getUserId, getTokenFromCookie } from "@/constants/AuthStore";
 import { useRouter } from "next/router";
@@ -157,11 +158,12 @@ const CreateExam = () => {
   };
 
   return (
-    <div
-      className={`${styles.examinerContainer} ${styles.enterpriseRoot} theme-transition`}
-      style={{
-        // Ensure background adapts to dark/light theme
-        background: "var(--app-bg, var(--background, var(--body-bg, #0f1115)))",
+    <ExaminerGuard>
+      <div
+        className={`${styles.examinerContainer} ${styles.enterpriseRoot} theme-transition`}
+        style={{
+          // Ensure background adapts to dark/light theme
+          background: "var(--app-bg, var(--background, var(--body-bg, #0f1115)))",
         minHeight: "100vh",
         color: "var(--text-primary)",
       }}
@@ -371,6 +373,7 @@ const CreateExam = () => {
         </div>
       </div>
     </div>
+    </ExaminerGuard>
   );
 };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import styles from "../../styles/CreateExamPage.module.css";
 import { ThemeToggle } from "../../components/ThemeToggle";
+import { SuperAdminGuard } from "../../components/guards";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 
@@ -83,24 +84,23 @@ const AdminProfilePage = () => {
   );
 
   return (
-    <div
-      className={styles.examinerContainer}
-      style={{ minHeight: "100vh", background: "var(--background)" }}
-    >
-      <header className={styles.header} style={{ marginBottom: "40px" }}>
+    <SuperAdminGuard>
+      <div
+        className={styles.examinerContainer}
+        style={{ minHeight: "100vh", background: "var(--background)" }}
+      >
+      <header style={{ marginBottom: "32px" }}>
         <div
           style={{
-            background:
-              "linear-gradient(135deg, var(--card-bg), var(--secondary-bg))",
+            background: "linear-gradient(135deg, var(--card-bg), var(--secondary-bg))",
             borderRadius: "24px",
-            padding: "40px",
+            padding: "32px",
             border: "1px solid var(--border-color)",
             boxShadow: "0 8px 32px var(--shadow)",
             position: "relative",
             overflow: "hidden",
           }}
         >
-          {/* Decorative gradient overlay */}
           <div
             style={{
               position: "absolute",
@@ -108,22 +108,11 @@ const AdminProfilePage = () => {
               left: 0,
               right: 0,
               height: "5px",
-              background:
-                "linear-gradient(90deg, var(--accent-color), var(--primary-color))",
+              background: "linear-gradient(90deg, var(--accent-color), var(--primary-color))",
             }}
           />
-
-          {/* Back button and status in one row */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "32px",
-              flexWrap: "wrap",
-              gap: "16px",
-            }}
-          >
+          
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px", marginBottom: "24px" }}>
             <button
               onClick={handleBack}
               className={`${styles.btn} ${styles.btnGhost}`}
@@ -135,6 +124,13 @@ const AdminProfilePage = () => {
                 borderRadius: "10px",
                 fontWeight: "600",
                 fontSize: "14px",
+                transition: "all 0.3s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateX(-4px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateX(0)";
               }}
             >
               ← Back to Dashboard
@@ -151,14 +147,12 @@ const AdminProfilePage = () => {
                 fontSize: "14px",
                 fontWeight: "600",
                 border: "1.5px solid var(--success-color)",
-                whiteSpace: "nowrap",
               }}
             >
               ✓ Active
             </div>
           </div>
 
-          {/* Profile info */}
           <div
             style={{
               display: "flex",
@@ -172,8 +166,7 @@ const AdminProfilePage = () => {
                 width: "100px",
                 height: "100px",
                 borderRadius: "20px",
-                background:
-                  "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -182,7 +175,6 @@ const AdminProfilePage = () => {
                 color: "white",
                 boxShadow: "0 12px 32px rgba(14, 165, 233, 0.4)",
                 flexShrink: 0,
-                border: "3px solid var(--background)",
               }}
             >
               {admin?.name?.charAt(0).toUpperCase() || "A"}
@@ -241,6 +233,23 @@ const AdminProfilePage = () => {
                 >
                   <span style={{ fontSize: "16px" }}>👤</span>
                   Administrator
+                </div>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "8px 16px",
+                    background: "var(--secondary-bg)",
+                    color: "var(--text-primary)",
+                    borderRadius: "10px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  <span style={{ fontSize: "16px" }}>📝</span>
+                  {exams.length} Exams
                 </div>
               </div>
             </div>
@@ -353,312 +362,206 @@ const AdminProfilePage = () => {
           </p>
         </div>
       ) : (
-        <div className={styles.examsGrid}>
+        <div
+          style={{
+            background: "var(--card-bg)",
+            borderRadius: "16px",
+            border: "1px solid var(--border-color)",
+            overflow: "hidden",
+            boxShadow: "0 4px 20px var(--shadow)",
+          }}
+        >
+          {/* Table Header */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "2fr 1fr 1fr 1fr 120px",
+              padding: "16px 24px",
+              background: "var(--secondary-bg)",
+              borderBottom: "1px solid var(--border-color)",
+              fontWeight: "700",
+              fontSize: "13px",
+              color: "var(--text-secondary)",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            <div>Exam Name</div>
+            <div>Key</div>
+            <div>Participants</div>
+            <div>Created</div>
+            <div style={{ textAlign: "center" }}>Actions</div>
+          </div>
+
+          {/* Table Body */}
           {filtered.map((exam) => (
             <div
               key={exam.id}
-              className={styles.examCard}
-              onClick={() => handleExamClick(exam.id)}
               style={{
+                display: "grid",
+                gridTemplateColumns: "2fr 1fr 1fr 1fr 120px",
+                padding: "20px 24px",
+                borderBottom: "1px solid var(--border-color)",
+                alignItems: "center",
+                transition: "all 0.2s ease",
                 cursor: "pointer",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                border: "1px solid var(--border-color)",
-                borderRadius: "20px",
-                background: "var(--card-bg)",
-                padding: "28px",
-                boxShadow: "0 4px 20px var(--shadow)",
-                position: "relative",
-                overflow: "hidden",
               }}
+              onClick={() => handleExamClick(exam.id)}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-8px)";
-                e.currentTarget.style.boxShadow = "0 16px 48px var(--shadow)";
-                e.currentTarget.style.borderColor = "var(--accent-color)";
+                e.currentTarget.style.background = "var(--secondary-bg)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 4px 20px var(--shadow)";
-                e.currentTarget.style.borderColor = "var(--border-color)";
+                e.currentTarget.style.background = "transparent";
               }}
             >
-              {/* Accent bar */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: "4px",
-                  background:
-                    "linear-gradient(90deg, var(--accent-color), var(--primary-color))",
-                }}
-              />
-
-              {/* Header */}
-              <div style={{ marginBottom: "20px" }}>
-                <h3
-                  style={{
-                    margin: "0 0 10px 0",
-                    fontSize: "22px",
-                    fontWeight: "700",
-                    color: "var(--text-primary)",
-                    lineHeight: "1.3",
-                  }}
-                >
-                  {exam.exam_name}
-                </h3>
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "4px 12px",
-                    background: "var(--secondary-bg)",
-                    borderRadius: "8px",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      color: "var(--text-secondary)",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Key:
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "13px",
-                      color: "var(--text-primary)",
-                      fontWeight: "700",
-                    }}
-                  >
-                    {exam.key}
-                  </span>
-                </div>
-              </div>
-
-              {/* Participants badge */}
-              <div style={{ marginBottom: "20px" }}>
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "10px 18px",
-                    background:
-                      "linear-gradient(135deg, var(--info-bg), var(--primary-bg-light))",
-                    color: "var(--accent-color)",
-                    borderRadius: "12px",
-                    fontSize: "15px",
-                    fontWeight: "700",
-                    border: "1.5px solid var(--accent-color)",
-                    boxShadow: "0 4px 12px rgba(14, 165, 233, 0.15)",
-                  }}
-                >
-                  <span style={{ fontSize: "18px" }}>👥</span>
-                  {exam.totalParticipants} Participant
-                  {exam.totalParticipants !== 1 ? "s" : ""}
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div
-                style={{
-                  height: "1px",
-                  background: "var(--border-color)",
-                  marginBottom: "20px",
-                }}
-              />
-
-              {/* Dates */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "12px",
-                  marginBottom: "20px",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "14px 16px",
-                    background: "var(--secondary-bg)",
-                    borderRadius: "12px",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: "0 0 4px 0",
-                      fontSize: "11px",
-                      color: "var(--text-secondary)",
-                      fontWeight: "600",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    Created
-                  </p>
-                  <p
-                    style={{
-                      margin: "0",
-                      fontWeight: "700",
-                      color: "var(--text-primary)",
-                      fontSize: "14px",
-                    }}
-                  >
-                    {new Date(exam.createdAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </p>
-                </div>
-                <div
-                  style={{
-                    padding: "14px 16px",
-                    background: "var(--secondary-bg)",
-                    borderRadius: "12px",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: "0 0 4px 0",
-                      fontSize: "11px",
-                      color: "var(--text-secondary)",
-                      fontWeight: "600",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    Updated
-                  </p>
-                  <p
-                    style={{
-                      margin: "0",
-                      fontWeight: "700",
-                      color: "var(--text-primary)",
-                      fontSize: "14px",
-                    }}
-                  >
-                    {new Date(exam.updatedAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </p>
-                </div>
-              </div>
-
+              {/* Exam Name */}
               <div>
-                <p
-                  style={{
-                    margin: "0 0 10px 0",
-                    fontSize: "13px",
-                    fontWeight: "700",
-                    color: "var(--text-primary)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  Features
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                <div style={{ fontWeight: "600", color: "var(--text-primary)", fontSize: "15px", marginBottom: "4px" }}>
+                  {exam.exam_name}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
                   {exam.settings.third_eye_enabled && (
                     <span
                       style={{
-                        padding: "6px 12px",
+                        padding: "4px 8px",
                         background: "var(--success-bg)",
                         color: "var(--success-color)",
-                        borderRadius: "8px",
-                        fontSize: "11px",
+                        borderRadius: "6px",
+                        fontSize: "10px",
                         fontWeight: "600",
-                        border: "1.5px solid var(--success-color)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "4px",
+                        border: "1px solid var(--success-color)",
                       }}
                     >
                       Third Eye
                     </span>
                   )}
-                  {exam.settings.multiple_person_detection_enabled && (
-                    <span
-                      style={{
-                        padding: "6px 12px",
-                        background: "var(--success-bg)",
-                        color: "var(--success-color)",
-                        borderRadius: "8px",
-                        fontSize: "11px",
-                        fontWeight: "600",
-                        border: "1.5px solid var(--success-color)",
-                      }}
-                    >
-                      Multi-Person
-                    </span>
-                  )}
                   {exam.settings.eyeball_detection_enabled && (
                     <span
                       style={{
-                        padding: "6px 12px",
+                        padding: "4px 8px",
                         background: "var(--success-bg)",
                         color: "var(--success-color)",
-                        borderRadius: "8px",
-                        fontSize: "11px",
+                        borderRadius: "6px",
+                        fontSize: "10px",
                         fontWeight: "600",
-                        border: "1.5px solid var(--success-color)",
+                        border: "1px solid var(--success-color)",
                       }}
                     >
-                      Eye Tracking
+                      Eye Track
                     </span>
                   )}
                   {exam.settings.object_detection_enabled && (
                     <span
                       style={{
-                        padding: "6px 12px",
+                        padding: "4px 8px",
                         background: "var(--success-bg)",
                         color: "var(--success-color)",
-                        borderRadius: "8px",
-                        fontSize: "11px",
+                        borderRadius: "6px",
+                        fontSize: "10px",
                         fontWeight: "600",
-                        border: "1.5px solid var(--success-color)",
+                        border: "1px solid var(--success-color)",
                       }}
                     >
-                      Object Detection
-                    </span>
-                  )}
-                  {exam.settings.head_direction_enabled && (
-                    <span
-                      style={{
-                        padding: "6px 12px",
-                        background: "var(--success-bg)",
-                        color: "var(--success-color)",
-                        borderRadius: "8px",
-                        fontSize: "11px",
-                        fontWeight: "600",
-                        border: "1.5px solid var(--success-color)",
-                      }}
-                    >
-                      Head Tracking
+                      Object Detect
                     </span>
                   )}
                   {exam.settings.video_recording_enabled && (
                     <span
                       style={{
-                        padding: "6px 12px",
+                        padding: "4px 8px",
                         background: "var(--success-bg)",
                         color: "var(--success-color)",
-                        borderRadius: "8px",
-                        fontSize: "11px",
+                        borderRadius: "6px",
+                        fontSize: "10px",
                         fontWeight: "600",
-                        border: "1.5px solid var(--success-color)",
+                        border: "1px solid var(--success-color)",
                       }}
                     >
                       Recording
                     </span>
                   )}
                 </div>
+              </div>
+
+              {/* Key Badge */}
+              <div>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    fontWeight: "700",
+                    background: "var(--secondary-bg)",
+                    color: "var(--text-primary)",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  {exam.key}
+                </span>
+              </div>
+
+              {/* Participants Badge */}
+              <div>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    background: "var(--info-bg)",
+                    color: "var(--accent-color)",
+                    border: "1px solid var(--accent-color)",
+                  }}
+                >
+                  <span style={{ fontSize: "14px" }}>👥</span>
+                  {exam.totalParticipants}
+                </span>
+              </div>
+
+              {/* Created Date */}
+              <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
+                {new Date(exam.createdAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </div>
+
+              {/* Actions */}
+              <div style={{ textAlign: "center" }}>
+                <button
+                  style={{
+                    padding: "6px 12px",
+                    background: "transparent",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "8px",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    transition: "all 0.2s ease",
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleExamClick(exam.id);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--accent-color)";
+                    e.currentTarget.style.color = "white";
+                    e.currentTarget.style.borderColor = "var(--accent-color)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                    e.currentTarget.style.borderColor = "var(--border-color)";
+                  }}
+                >
+                  View
+                </button>
               </div>
             </div>
           ))}
@@ -667,6 +570,7 @@ const AdminProfilePage = () => {
 
       <ThemeToggle />
     </div>
+    </SuperAdminGuard>
   );
 };
 

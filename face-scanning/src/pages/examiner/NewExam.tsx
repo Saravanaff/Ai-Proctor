@@ -7,6 +7,7 @@ import PDFQuestionUploader from "../../components/exam/PDFQuestionUploader";
 import { MCQQuestion } from "../../types/mcq";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import LatexRenderer from "../../components/exam/LatexRenderer";
+import { ExaminerGuard } from "@/components/guards";
 
 const NewExam = () => {
   const router = useRouter();
@@ -447,6 +448,7 @@ const NewExam = () => {
   };
 
   return (
+    <ExaminerGuard>
     <div
       className="theme-transition"
       style={{
@@ -945,6 +947,7 @@ const NewExam = () => {
         </div>
       </main>
     </div>
+    </ExaminerGuard>
   );
 };
 

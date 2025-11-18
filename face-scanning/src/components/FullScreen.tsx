@@ -12,7 +12,8 @@ import { getTokenFromCookie } from "@/constants/AuthStore";
 //   id: i + 1,
 //   question: `Sample Question ${i + 1}?`,
 //   options: ["Option A", "Option B", "Option C", "Option D"],
-// }));
+// }));f
+
 
 const examId = getExamId();
 

@@ -5,6 +5,7 @@ import LatexRenderer from "../../components/exam/LatexRenderer";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import styles from "../../styles/CreateExamPage.module.css";
+import { ExaminerGuard } from "@/components/guards";
 
 const ExamPreview = () => {
   const router = useRouter();
@@ -136,6 +137,7 @@ const ExamPreview = () => {
   const { examName, mcqQuestions } = examData;
 
   return (
+    <ExaminerGuard>
     <div
       className="theme-transition"
       style={{
@@ -485,6 +487,7 @@ const ExamPreview = () => {
         </div>
       </div>
     </div>
+    </ExaminerGuard>
   );
 };
 

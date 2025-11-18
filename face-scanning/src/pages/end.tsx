@@ -70,6 +70,7 @@ const EndPage = () => {
         })
         .then((data) => {
           console.log("✅ Score saved successfully:", data);
+          setIsLoading(false);
         })
         .catch((err) => {
           console.error("❌ Failed to save score:", {
