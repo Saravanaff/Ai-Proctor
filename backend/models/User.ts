@@ -2,6 +2,7 @@ import { Table, Column, Model, DataType, PrimaryKey, AutoIncrement, Unique, Allo
 import { Exam } from "./Exam";
 import { Attend } from "./Attend";
 import { Scores } from './Scores';
+import { Col } from "sequelize/types/utils";
 
 export enum UserRole {
   STUDENT = "student",
@@ -30,6 +31,24 @@ export class User extends Model{
     unique: true,
   })
   email!: string;
+
+  // @Column({
+  //   type:DataType.STRING,
+  //   allowNull:false
+  // })
+  // dept?:string
+
+  // @Column({
+  //   type:DataType.STRING,
+  //   allowNull:false
+  // })
+  // dob?:string
+
+  // @Column({
+  //   type:DataType.STRING,
+  //   allowNull:false
+  // })
+  // reg?:string
 
   @Column({
     type: DataType.STRING,

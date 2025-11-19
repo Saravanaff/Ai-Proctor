@@ -76,7 +76,7 @@ const AdminProfilePage = () => {
   };
 
   const handleBack = () => {
-    router.push("/superAdmin/dashboard");
+    router.push("/superAdmin/admins");
   };
 
   const filtered = exams.filter((exam) =>

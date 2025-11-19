@@ -121,7 +121,7 @@ const SuperAdminDashboard = () => {
 
   const handleLogout = () => {
     document.cookie = "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    router.push("/login");
+    router.push("/");
   };
 
   const filtered = admins.filter((a) => {
@@ -138,7 +138,208 @@ const SuperAdminDashboard = () => {
 
   return (
     <SuperAdminGuard>
-      <div className={styles.examinerContainer} style={{ minHeight: "100vh", background: "var(--background)" }}>
+      <div style={{ display: "flex", minHeight: "100vh", background: "var(--background)" }}>
+        {/* Sidebar */}
+        <aside
+          style={{
+            width: "260px",
+            background: "var(--card-bg)",
+            borderRight: "1px solid var(--border-color)",
+            padding: "24px 16px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            position: "fixed",
+            height: "100vh",
+            left: 0,
+            top: 0,
+            zIndex: 100,
+          }}
+        >
+          {/* Logo/Brand */}
+          <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                marginBottom: "32px",
+                padding: "0 8px",
+              }}
+            >
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "20px",
+                  fontWeight: "700",
+                  color: "white",
+                  boxShadow: "0 4px 12px rgba(14, 165, 233, 0.3)",
+                }}
+              >
+                SA
+              </div>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-primary)" }}>
+                  Super Admin
+                </div>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                  Admin Portal
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <button
+                onClick={() => router.push("/superAdmin")}
+                style={{
+                  padding: "12px 16px",
+                  background: "transparent",
+                  color: "var(--text-secondary)",
+                  border: "none",
+                  borderRadius: "10px",
+                  textAlign: "left",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  position: "relative",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--secondary-bg)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.paddingLeft = "20px";
+                  const icon = e.currentTarget.querySelector("span") as HTMLElement;
+                  if (icon) icon.style.transform = "scale(1.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.paddingLeft = "16px";
+                  const icon = e.currentTarget.querySelector("span") as HTMLElement;
+                  if (icon) icon.style.transform = "scale(1)";
+                }}
+              >
+                <span style={{ fontSize: "18px", transition: "transform 0.3s ease" }}>📊</span>
+                Dashboard
+              </button>
+              <button
+                onClick={() => router.push("/superAdmin/admins")}
+                style={{
+                  padding: "12px 16px",
+                  background: "var(--accent-color)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "10px",
+                  textAlign: "left",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                <span style={{ fontSize: "18px", transition: "transform 0.3s ease" }}>👥</span>
+                <span style={{ flex: 1 }}>Admin Management</span>
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: "4px",
+                    background: "white",
+                    borderRadius: "10px 0 0 10px",
+                  }}
+                />
+              </button>
+            </nav>
+          </div>
+
+          {/* Logout at bottom */}
+          <div>
+            <button
+              onClick={handleLogout}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                background: "transparent",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "10px",
+                textAlign: "left",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--danger-bg)";
+                e.currentTarget.style.color = "var(--danger-color)";
+                e.currentTarget.style.borderColor = "var(--danger-color)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--text-secondary)";
+                e.currentTarget.style.borderColor = "var(--border-color)";
+              }}
+            >
+              <span style={{ fontSize: "18px" }}>🚪</span>
+              Logout
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <div style={{ marginLeft: "260px", flex: 1, padding: "32px" }}>
+          <style jsx>{`
+            @keyframes slideIn {
+              from {
+                opacity: 0;
+                transform: translateX(-20px);
+              }
+              to {
+                opacity: 1;
+                transform: translateX(0);
+              }
+            }
+            
+            @keyframes modalFadeIn {
+              from {
+                opacity: 0;
+              }
+              to {
+                opacity: 1;
+              }
+            }
+            
+            @keyframes modalSlideUp {
+              from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+              }
+            }
+          `}</style>
       {/* Modern Header */}
       <header style={{ marginBottom: "32px" }}>
         <div
@@ -192,7 +393,7 @@ const SuperAdminDashboard = () => {
               </div>
             </div>
             
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <button
                 onClick={() => setShowCreateModal(true)}
                 style={{
@@ -221,32 +422,6 @@ const SuperAdminDashboard = () => {
               >
                 <span style={{ fontSize: "16px" }}>+</span>
                 Add Admin
-              </button>
-              <button
-                onClick={handleLogout}
-                style={{
-                  padding: "12px 20px",
-                  background: "var(--secondary-bg)",
-                  color: "var(--text-primary)",
-                  border: "1px solid var(--border-color)",
-                  borderRadius: "12px",
-                  fontWeight: "600",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--danger-bg)";
-                  e.currentTarget.style.color = "var(--danger-color)";
-                  e.currentTarget.style.borderColor = "var(--danger-color)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "var(--secondary-bg)";
-                  e.currentTarget.style.color = "var(--text-primary)";
-                  e.currentTarget.style.borderColor = "var(--border-color)";
-                }}
-              >
-                Logout
               </button>
             </div>
           </div>
@@ -326,7 +501,7 @@ const SuperAdminDashboard = () => {
             padding: "60px 20px",
             background: "var(--card-bg)",
             borderRadius: "16px",
-            border: "1px solid var(--border-color)",
+            border: "1px solid var(--border-color)"
           }}
         >
           <p style={{ color: "var(--text-secondary)", fontSize: "16px" }}>Loading administrators...</p>
@@ -338,7 +513,7 @@ const SuperAdminDashboard = () => {
             padding: "60px 20px",
             background: "var(--card-bg)",
             borderRadius: "16px",
-            border: "1px solid var(--border-color)",
+            border: "1px solid var(--border-color)"
           }}
         >
           <p style={{ color: "var(--text-primary)", fontSize: "18px", fontWeight: "600", marginBottom: "8px" }}>
@@ -355,7 +530,7 @@ const SuperAdminDashboard = () => {
             borderRadius: "16px",
             border: "1px solid var(--border-color)",
             overflow: "hidden",
-            boxShadow: "0 4px 20px var(--shadow)",
+            boxShadow: "0 4px 20px var(--shadow)"
           }}
         >
           {/* Table Header */}
@@ -553,12 +728,13 @@ const SuperAdminDashboard = () => {
             justifyContent: "center",
             zIndex: 1000,
             backdropFilter: "blur(4px)",
+            animation: "modalFadeIn 0.3s ease-out"
           }}
           onClick={() => setShowCreateModal(false)}
         >
           <div
             className={styles.glassPanel}
-            style={{ maxWidth: "500px", width: "90%", padding: "24px" }}
+            style={{ maxWidth: "500px", width: "90%", padding: "24px", animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <h2 style={{ margin: "0 0 24px 0", fontSize: "24px", fontWeight: "700" }}>
@@ -646,12 +822,13 @@ const SuperAdminDashboard = () => {
             justifyContent: "center",
             zIndex: 1000,
             backdropFilter: "blur(4px)",
+            animation: "modalFadeIn 0.3s ease-out"
           }}
           onClick={() => setShowDeleteModal(false)}
         >
           <div
             className={styles.glassPanel}
-            style={{ maxWidth: "500px", width: "90%", padding: "24px" }}
+            style={{ maxWidth: "500px", width: "90%", padding: "24px", animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <h2 style={{ margin: "0 0 16px 0", fontSize: "24px", fontWeight: "700", color: "var(--text-primary)" }}>
@@ -714,8 +891,29 @@ const SuperAdminDashboard = () => {
         </div>
       )}
 
-      <ThemeToggle />
-    </div>
+        {/* Floating Theme Toggle */}
+        <div
+          style={{
+            position: "fixed",
+            right: 20,
+            bottom: 20,
+            zIndex: 1200,
+          }}
+        >
+          <div
+            style={{
+              background: "var(--card-bg)",
+              border: "1px solid var(--border-color)",
+              borderRadius: 12,
+              padding: 8,
+              boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+            }}
+          >
+            <ThemeToggle />
+          </div>
+        </div>
+        </div>
+      </div>
     </SuperAdminGuard>
   );
 };

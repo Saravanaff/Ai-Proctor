@@ -394,12 +394,21 @@ const ParticipantDetailsPage: React.FC = () => {
       return false;
     }
 
+    // Only check video availability on client side
+    if (typeof window === "undefined") {
+      return false;
+    }
+
     try {
       // Use the video controller endpoint for checking availability
       const videoUrl = `${baseUrl}/api/video/stream/${user.id}/${examDetails.id}/${category}`;
       console.log(`Checking video availability for: ${videoUrl}`);
 
-      const response = await axios.head(videoUrl);
+      const response = await axios.head(videoUrl, {
+        timeout: 5000, // 5 second timeout
+        validateStatus: (status) => status < 500, // Don't throw on 404
+      });
+      
       console.log(
         `Video availability check for ${category}: ${response.status}`
       );
@@ -468,6 +477,8 @@ const ParticipantDetailsPage: React.FC = () => {
     try {
       const response = await axios.get(`${baseUrl}/getScore`, {
         params: payload,
+        timeout: 10000, // 10 second timeout
+        validateStatus: (status) => status < 500,
       });
       return response.data;
     } catch (err) {
@@ -483,6 +494,8 @@ const ParticipantDetailsPage: React.FC = () => {
         `${baseUrl}/getLogs`,
         {
           params: { examId, userId },
+          timeout: 10000, // 10 second timeout
+          validateStatus: (status) => status < 500,
         }
       );
 
@@ -552,6 +565,8 @@ const ParticipantDetailsPage: React.FC = () => {
         `${base}/getExamQuestions/${examDetails.id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000,
+          validateStatus: (status) => status < 500,
         }
       );
 
@@ -559,6 +574,8 @@ const ParticipantDetailsPage: React.FC = () => {
         `${base}/exam/${examDetails.id}/student/${user.id}/answers`,
         {
           headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000,
+          validateStatus: (status) => status < 500,
         }
       );
 
@@ -717,7 +734,16 @@ const ParticipantDetailsPage: React.FC = () => {
         setLoading(true);
 
         // Fetch exam details
-        const examResponse = await axios.get(`${baseUrl}/exam/${examId}`);
+        const examResponse = await axios.get(`${baseUrl}/exam/${examId}`, {
+          timeout: 10000,
+          validateStatus: (status) => status < 500,
+        });
+        
+        if (!examResponse.data || !examResponse.data.exam) {
+          console.error("Invalid exam response:", examResponse);
+          return;
+        }
+        
         setExamDetails(examResponse.data.exam);
 
         // Find the specific user from exam attendances
@@ -836,7 +862,9 @@ const ParticipantDetailsPage: React.FC = () => {
         console.error("Error fetching participant details:", error);
         if (axios.isAxiosError(error)) {
           if (error.response?.status === 401) {
-            localStorage.removeItem("token");
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("token");
+            }
             router.push("/Login");
           }
         }

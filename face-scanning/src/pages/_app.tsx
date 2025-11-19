@@ -13,6 +13,49 @@ function hasAuthClient(): boolean {
   return /(?:^|; )(?:authToken|ai_proctor_auth)=/.test(document.cookie);
 }
 
+// Page transition wrapper component
+function PageTransition({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    const handleStart = () => setIsAnimating(true);
+    const handleComplete = () => setIsAnimating(false);
+
+    router.events.on('routeChangeStart', handleStart);
+    router.events.on('routeChangeComplete', handleComplete);
+    router.events.on('routeChangeError', handleComplete);
+
+    return () => {
+      router.events.off('routeChangeStart', handleStart);
+      router.events.off('routeChangeComplete', handleComplete);
+      router.events.off('routeChangeError', handleComplete);
+    };
+  }, [router]);
+
+  return (
+    <>
+      <style jsx global>{`
+        .page-transition-enter {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        .page-transition-enter-active {
+          opacity: 1;
+          transform: translateY(0);
+          transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+      `}</style>
+      <div
+        key={router.pathname}
+        className={isAnimating ? 'page-transition-enter' : 'page-transition-enter-active'}
+      >
+        {children}
+      </div>
+    </>
+  );
+}
+
 function ClientAuth({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
@@ -51,8 +94,10 @@ export default function App({ Component, pageProps }: AppProps) {
     <ThemeProvider>
       <ClientAuth>
         <ToastProvider>
-          <ThemeToggle />
-          <Component {...pageProps} />
+          <PageTransition>
+            <ThemeToggle />
+            <Component {...pageProps} />
+          </PageTransition>
         </ToastProvider>
       </ClientAuth>
     </ThemeProvider>

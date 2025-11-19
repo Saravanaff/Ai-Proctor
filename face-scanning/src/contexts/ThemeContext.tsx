@@ -19,17 +19,21 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    // Load theme from localStorage on client side
-    const savedTheme = localStorage.getItem("ai-proctor-theme") as Theme;
-    if (savedTheme) {
-      setTheme(savedTheme);
+    // Load theme from localStorage on client side only
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("ai-proctor-theme") as Theme;
+      if (savedTheme) {
+        setTheme(savedTheme);
+      }
     }
   }, []);
 
   useEffect(() => {
-    // Apply theme to document
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("ai-proctor-theme", theme);
+    // Apply theme to document on client side only
+    if (typeof window !== "undefined") {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("ai-proctor-theme", theme);
+    }
   }, [theme]);
 
   const toggleTheme = () => {

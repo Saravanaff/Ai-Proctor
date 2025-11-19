@@ -7,7 +7,7 @@ interface ExaminerGuardProps {
 }
 
 export const ExaminerGuard: React.FC<ExaminerGuardProps> = ({ children }) => {
-  const router = useRouter();
+const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
