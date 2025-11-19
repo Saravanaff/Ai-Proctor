@@ -7,13 +7,17 @@ const JWT_SECRET = "dev_secret_change_me";
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role } = req.body || {};
+    const { name, email, password, role, dept, dob, reg } = req.body || {};
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: "name, email, password and role are required" });
     }
 
     if (role === "student" && !req.file) {
       return res.status(400).json({ message: "Profile photo is required for student role" });
+    }
+
+    if (role === "student" && (!dept || !dob || !reg)) {
+      return res.status(400).json({ message: "Department, date of birth, and registration number are required for student role" });
     }
 
     const existing = await User.findOne({
@@ -33,7 +37,10 @@ export const register = async (req: Request, res: Response) => {
       name,
       email: email.toLowerCase(),
       password: hashed,
-      role: role
+      role: role,
+      dept,
+      dob,
+      reg
     } as any);
 
     if (req.file) {

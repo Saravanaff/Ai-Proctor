@@ -26,8 +26,15 @@ const SuperAdminDashboard = () => {
   const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
   const [newAdminName, setNewAdminName] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [newAdminDept, setNewAdminDept] = useState("");
+  const [newAdminDob, setNewAdminDob] = useState("");
+  const [newAdminReg, setNewAdminReg] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importResults, setImportResults] = useState<any>(null);
 
   axios.interceptors.request.use((config) => {
     const token = getTokenFromCookie();
@@ -70,6 +77,9 @@ const SuperAdminDashboard = () => {
       const res = await axios.post(`${base}/admin/create`, {
         name: newAdminName,
         email: newAdminEmail,
+        dept: newAdminDept,
+        dob: newAdminDob,
+        reg: newAdminReg,
       });
 
       if (res.data?.success) {
@@ -77,6 +87,9 @@ const SuperAdminDashboard = () => {
         setShowCreateModal(false);
         setNewAdminName("");
         setNewAdminEmail("");
+        setNewAdminDept("");
+        setNewAdminDob("");
+        setNewAdminReg("");
         fetchAdmins();
       }
     } catch (e: any) {
@@ -113,6 +126,53 @@ const SuperAdminDashboard = () => {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleCSVImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        setIsImporting(true);
+        const text = event.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        // Skip header row
+        const dataLines = lines.slice(1);
+        
+        const admins = dataLines.map(line => {
+          const [name, email, dept, dob, reg] = line.split(',').map(item => item.trim());
+          return { name, email, dept, dob, reg };
+        }).filter(admin => admin.name && admin.email);
+
+        if (admins.length === 0) {
+          alert("No valid admin data found in CSV file");
+          setIsImporting(false);
+          return;
+        }
+
+        const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+        const res = await axios.post(`${base}/admin/bulk-create`, { admins });
+
+        if (res.data?.success) {
+          setImportResults(res.data.data);
+          setShowUploadModal(false);
+          setShowImportModal(true);
+          fetchAdmins();
+        }
+      } catch (error: any) {
+        const msg = error?.response?.data?.message || error.message || "Failed to import CSV";
+        alert(msg);
+      } finally {
+        setIsImporting(false);
+        // Reset file input
+        e.target.value = '';
+      }
+    };
+    
+    reader.readAsText(file);
   };
 
   const handleAdminClick = (email: string) => {
@@ -394,6 +454,47 @@ const SuperAdminDashboard = () => {
             </div>
             
                 <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <button
+                onClick={() => setShowUploadModal(true)}
+                style={{
+                  padding: "12px 24px",
+                  background: "var(--secondary-bg)",
+                  color: "var(--text-primary)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "12px",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.borderColor = "var(--accent-color)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.borderColor = "var(--border-color)";
+                }}
+              >
+                <svg 
+                  width="18" 
+                  height="18" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Import CSV
+              </button>
               <button
                 onClick={() => setShowCreateModal(true)}
                 style={{
@@ -713,6 +814,281 @@ const SuperAdminDashboard = () => {
         </div>
       )}
 
+      {/* CSV Upload Modal */}
+      {showUploadModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            backdropFilter: "blur(4px)",
+            animation: "modalFadeIn 0.3s ease-out"
+          }}
+          onClick={() => setShowUploadModal(false)}
+        >
+          <div
+            className={styles.glassPanel}
+            style={{ 
+              maxWidth: "600px", 
+              width: "90%", 
+              padding: "32px", 
+              animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+              maxHeight: "90vh",
+              overflowY: "auto"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ 
+              margin: "0 0 8px 0", 
+              fontSize: "24px", 
+              fontWeight: "700", 
+              color: "var(--text-primary)",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px"
+            }}>
+              <svg 
+                width="28" 
+                height="28" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Import Admins from CSV
+            </h2>
+            <p style={{ margin: "0 0 24px 0", color: "var(--text-secondary)", fontSize: "14px" }}>
+              Upload a CSV or Excel file to bulk create admin accounts
+            </p>
+
+            {/* File Upload Area */}
+            <div style={{ marginBottom: "24px" }}>
+              <label
+                style={{
+                  display: "block",
+                  padding: "40px 20px",
+                  border: "2px dashed var(--border-color)",
+                  borderRadius: "12px",
+                  background: "var(--secondary-bg)",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--accent-color)";
+                  e.currentTarget.style.background = "var(--card-bg)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-color)";
+                  e.currentTarget.style.background = "var(--secondary-bg)";
+                }}
+              >
+                <svg 
+                  width="48" 
+                  height="48" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="var(--accent-color)" 
+                  strokeWidth="2"
+                  style={{ margin: "0 auto 16px" }}
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="12" y1="18" x2="12" y2="12" />
+                  <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+                <div style={{ fontSize: "16px", fontWeight: "600", color: "var(--text-primary)", marginBottom: "8px" }}>
+                  {isImporting ? "Uploading..." : "Click to upload CSV or Excel file"}
+                </div>
+                <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                  Supports .csv and .xlsx files
+                </div>
+                <input
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={handleCSVImport}
+                  disabled={isImporting}
+                  style={{ display: "none" }}
+                />
+              </label>
+            </div>
+
+            {/* Format Instructions */}
+            <div style={{ 
+              marginBottom: "24px",
+              padding: "16px",
+              background: "var(--secondary-bg)",
+              borderRadius: "12px",
+              border: "1px solid var(--border-color)"
+            }}>
+              <div style={{ 
+                fontSize: "14px", 
+                fontWeight: "600", 
+                marginBottom: "12px", 
+                color: "var(--text-primary)",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }}>
+                <svg 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                File Format Requirements
+              </div>
+              <ul style={{ 
+                margin: "0", 
+                paddingLeft: "20px", 
+                fontSize: "13px", 
+                color: "var(--text-secondary)",
+                lineHeight: "1.8"
+              }}>
+                <li>First row must be the header: <code style={{ 
+                  background: "var(--card-bg)", 
+                  padding: "2px 6px", 
+                  borderRadius: "4px",
+                  fontSize: "12px"
+                }}>name,email,dept,dob,reg</code></li>
+                <li>Each subsequent row represents one admin</li>
+                <li>All fields are required for each admin</li>
+                <li>Date of birth format: YYYY-MM-DD (e.g., 1990-01-15)</li>
+              </ul>
+            </div>
+
+            {/* Sample CSV */}
+            <div style={{ 
+              marginBottom: "24px",
+              padding: "16px",
+              background: "var(--secondary-bg)",
+              borderRadius: "12px",
+              border: "1px solid var(--border-color)"
+            }}>
+              <div style={{ 
+                fontSize: "14px", 
+                fontWeight: "600", 
+                marginBottom: "12px", 
+                color: "var(--text-primary)",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }}>
+                <svg 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2"
+                >
+                  <polyline points="16 18 22 12 16 6" />
+                  <polyline points="8 6 2 12 8 18" />
+                </svg>
+                Sample CSV Format
+              </div>
+              <pre style={{ 
+                margin: 0, 
+                padding: "12px", 
+                background: "var(--card-bg)", 
+                borderRadius: "8px", 
+                fontSize: "12px",
+                fontFamily: "monospace",
+                color: "var(--text-secondary)",
+                overflowX: "auto",
+                border: "1px solid var(--border-color)",
+                lineHeight: "1.6"
+              }}>
+{`name,email,dept,dob,reg
+John Doe,john@example.com,Computer Science,1990-01-15,CS001
+Jane Smith,jane@example.com,Mathematics,1992-05-20,MATH002
+Bob Wilson,bob@example.com,Engineering,1991-08-10,ENG003`}
+              </pre>
+              <button
+                onClick={() => {
+                  const csvContent = `name,email,dept,dob,reg
+John Doe,john@example.com,Computer Science,1990-01-15,CS001
+Jane Smith,jane@example.com,Mathematics,1992-05-20,MATH002
+Bob Wilson,bob@example.com,Engineering,1991-08-10,ENG003`;
+                  const blob = new Blob([csvContent], { type: 'text/csv' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'admin_import_sample.csv';
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                }}
+                style={{
+                  marginTop: "12px",
+                  padding: "8px 16px",
+                  background: "var(--card-bg)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "8px",
+                  color: "var(--text-primary)",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "all 0.3s ease"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--accent-color)";
+                  e.currentTarget.style.background = "var(--secondary-bg)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-color)";
+                  e.currentTarget.style.background = "var(--card-bg)";
+                }}
+              >
+                <svg 
+                  width="14" 
+                  height="14" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Download Sample CSV
+              </button>
+            </div>
+
+            {/* Close Button */}
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowUploadModal(false)}
+                className={`${styles.btn} ${styles.btnGhost}`}
+                style={{ padding: "12px 24px", borderRadius: "10px", fontWeight: "600" }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Admin Modal */}
       {showCreateModal && (
         <div
@@ -772,6 +1148,72 @@ const SuperAdminDashboard = () => {
                   value={newAdminEmail}
                   onChange={(e) => setNewAdminEmail(e.target.value)}
                   placeholder="Enter admin email"
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "8px",
+                    background: "var(--card-bg)",
+                    color: "var(--text-primary)",
+                    fontSize: "14px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
+                  Department
+                </label>
+                <input
+                  type="text"
+                  value={newAdminDept}
+                  onChange={(e) => setNewAdminDept(e.target.value)}
+                  placeholder="Enter department"
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "8px",
+                    background: "var(--card-bg)",
+                    color: "var(--text-primary)",
+                    fontSize: "14px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  value={newAdminDob}
+                  onChange={(e) => setNewAdminDob(e.target.value)}
+                  placeholder="Select date of birth"
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "8px",
+                    background: "var(--card-bg)",
+                    color: "var(--text-primary)",
+                    fontSize: "14px",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
+                  Registration Number
+                </label>
+                <input
+                  type="text"
+                  value={newAdminReg}
+                  onChange={(e) => setNewAdminReg(e.target.value)}
+                  placeholder="Enter registration number"
                   required
                   style={{
                     width: "100%",
@@ -885,6 +1327,133 @@ const SuperAdminDashboard = () => {
                 }}
               >
                 {isDeleting ? "Deleting..." : "Delete Admin"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Results Modal */}
+      {showImportModal && importResults && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            backdropFilter: "blur(4px)",
+            animation: "modalFadeIn 0.3s ease-out"
+          }}
+          onClick={() => {
+            setShowImportModal(false);
+            setImportResults(null);
+          }}
+        >
+          <div
+            className={styles.glassPanel}
+            style={{ 
+              maxWidth: "700px", 
+              width: "90%", 
+              padding: "24px", 
+              animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+              maxHeight: "80vh",
+              overflowY: "auto"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ margin: "0 0 24px 0", fontSize: "24px", fontWeight: "700", color: "var(--text-primary)" }}>
+              CSV Import Results
+            </h2>
+            
+            <div style={{ marginBottom: "20px" }}>
+              <div style={{ display: "flex", gap: "16px", marginBottom: "16px" }}>
+                <div style={{ 
+                  flex: 1, 
+                  padding: "16px", 
+                  background: "var(--success-bg)", 
+                  borderRadius: "12px",
+                  border: "1px solid var(--success-color)"
+                }}>
+                  <div style={{ fontSize: "24px", fontWeight: "700", color: "var(--success-color)" }}>
+                    {importResults.successful?.length || 0}
+                  </div>
+                  <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>Successful</div>
+                </div>
+                <div style={{ 
+                  flex: 1, 
+                  padding: "16px", 
+                  background: "var(--danger-bg)", 
+                  borderRadius: "12px",
+                  border: "1px solid var(--danger-color)"
+                }}>
+                  <div style={{ fontSize: "24px", fontWeight: "700", color: "var(--danger-color)" }}>
+                    {importResults.failed?.length || 0}
+                  </div>
+                  <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>Failed</div>
+                </div>
+              </div>
+            </div>
+
+            {importResults.successful?.length > 0 && (
+              <div style={{ marginBottom: "20px" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "var(--success-color)" }}>
+                  ✅ Successfully Created ({importResults.successful.length})
+                </h3>
+                <div style={{ maxHeight: "200px", overflowY: "auto", background: "var(--secondary-bg)", padding: "12px", borderRadius: "8px" }}>
+                  {importResults.successful.map((admin: any, index: number) => (
+                    <div key={index} style={{ 
+                      padding: "8px 0", 
+                      borderBottom: index < importResults.successful.length - 1 ? "1px solid var(--border-color)" : "none",
+                      fontSize: "14px"
+                    }}>
+                      <strong>{admin.name}</strong> ({admin.email})
+                      {!admin.emailSent && (
+                        <span style={{ color: "var(--warning-color)", marginLeft: "8px" }}>⚠️ Email not sent</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {importResults.failed?.length > 0 && (
+              <div style={{ marginBottom: "20px" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "var(--danger-color)" }}>
+                  ❌ Failed ({importResults.failed.length})
+                </h3>
+                <div style={{ maxHeight: "200px", overflowY: "auto", background: "var(--secondary-bg)", padding: "12px", borderRadius: "8px" }}>
+                  {importResults.failed.map((admin: any, index: number) => (
+                    <div key={index} style={{ 
+                      padding: "8px 0", 
+                      borderBottom: index < importResults.failed.length - 1 ? "1px solid var(--border-color)" : "none",
+                      fontSize: "14px"
+                    }}>
+                      <strong>{admin.name}</strong> ({admin.email})
+                      <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}>
+                        Reason: {admin.reason}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px" }}>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportResults(null);
+                }}
+                className={`${styles.btn} ${styles.btnPrimary}`}
+                style={{ padding: "12px 24px", borderRadius: "10px", fontWeight: "600" }}
+              >
+                Close
               </button>
             </div>
           </div>

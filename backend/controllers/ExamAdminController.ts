@@ -233,7 +233,7 @@ export const getSingleExam = async (req: Request, res: Response) => {
           include: [
             {
               model: User,
-              attributes: ["id", "name", "email"],
+              attributes: ["id", "name", "email", "dept", "dob", "reg"],
             },
           ],
         },
@@ -440,7 +440,7 @@ export const getExamResults = async (req: Request, res: Response) => {
       include: [
         {
           model: User,
-          attributes: ["id", "name", "email"],
+          attributes: ["id", "name", "email", "dept", "dob", "reg"],
         },
       ],
     });

@@ -1,8 +1,7 @@
 /* Participant Details Page Styles */
 .container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 24px;
+  width: 100%;
+  padding: 32px;
   background: var(--background);
   min-height: 100vh;
 }
@@ -27,20 +26,19 @@
   display: flex;
   align-items: center;
   gap: 24px;
-  margin-bottom: 40px;
-  padding-bottom: 24px;
-  border-bottom: 2px solid var(--border-color);
-  position: relative;
+  margin-bottom: 32px;
+  animation: slideIn 0.6s ease-out;
 }
 
-.header::after {
-  content: "";
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 60px;
-  height: 2px;
-  background: #3b82f6;
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .backButton {
@@ -48,7 +46,7 @@
   align-items: center;
   gap: 10px;
   padding: 12px 20px;
-  background: var(--card-bg);
+  background: var(--secondary-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   color: var(--text-primary);
@@ -60,9 +58,9 @@
 }
 
 .backButton:hover {
-  background: var(--button-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  background: var(--card-bg);
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 .title {
@@ -74,12 +72,12 @@
 
 /* Participant Card */
 .participantCard {
-  background: var(--card-bg);
-  border-radius: 20px;
-  padding: 40px;
-  margin-bottom: 30px;
+  background: linear-gradient(135deg, var(--card-bg), var(--secondary-bg));
+  border-radius: 24px;
+  padding: 32px;
+  margin-bottom: 32px;
   border: 1px solid var(--border-color);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px var(--shadow);
   position: relative;
   overflow: hidden;
 }
@@ -90,8 +88,8 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: #3b82f6;
+  height: 5px;
+  background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
 }
 
 .participantHeader {
@@ -101,19 +99,18 @@
 }
 
 .participantAvatar {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: #3b82f6;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
-  font-weight: bold;
+  font-size: 28px;
+  font-weight: 700;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
-  border: 4px solid white;
+  box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
 }
 
 .participantInfo {
@@ -122,27 +119,19 @@
 }
 
 .participantName {
-  font-size: 2.25rem;
-  font-weight: 800;
-  color: #3b82f6;
-  margin: 0 0 16px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
   line-height: 1.2;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  position: relative;
-  padding: 8px 0;
-  border-bottom: 3px solid #3b82f6;
+  letter-spacing: -0.02em;
 }
 
 .participantEmail {
-  font-size: 1.1rem;
-  color: #334155;
-  margin: 0 0 20px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
   font-weight: 500;
-  letter-spacing: 0.2px;
 }
 
 .examDetails {
@@ -224,33 +213,43 @@
 }
 
 .quickStats {
-  display: flex;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 20px;
   width: 100%;
+  margin-top: 24px;
 }
 
 .statItem {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px;
-  background: var(--background);
-  border-radius: 12px;
+  padding: 24px;
+  background: var(--card-bg);
+  border-radius: 16px;
   border: 1px solid var(--border-color);
-  flex: 1;
-  min-width: 0;
+  box-shadow: 0 4px 16px var(--shadow);
+  transition: all 0.3s ease;
+}
+
+.statItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--shadow);
 }
 
 .statLabel {
-  font-size: 0.8rem;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-secondary);
-  margin-bottom: 4px;
+  margin-bottom: 12px;
   text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .statValue {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 36px;
+  font-weight: 700;
   color: var(--text-primary);
   text-align: center;
 }

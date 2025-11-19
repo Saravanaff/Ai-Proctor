@@ -32,23 +32,23 @@ export class User extends Model{
   })
   email!: string;
 
-  // @Column({
-  //   type:DataType.STRING,
-  //   allowNull:false
-  // })
-  // dept?:string
+  @Column({
+    type:DataType.STRING,
+    allowNull:false
+  })
+  dept?:string
 
-  // @Column({
-  //   type:DataType.STRING,
-  //   allowNull:false
-  // })
-  // dob?:string
+  @Column({
+    type:DataType.STRING,
+    allowNull:false
+  })
+  dob?:string
 
-  // @Column({
-  //   type:DataType.STRING,
-  //   allowNull:false
-  // })
-  // reg?:string
+  @Column({
+    type:DataType.STRING,
+    allowNull:false
+  })
+  reg?:string
 
   @Column({
     type: DataType.STRING,

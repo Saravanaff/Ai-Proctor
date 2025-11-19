@@ -21,6 +21,9 @@ interface User {
   id: number;
   name: string;
   email: string;
+  dept: string;
+  dob: string;
+  reg: string;
 }
 
 interface ExamDetails {
@@ -1415,6 +1418,24 @@ const ParticipantDetailsPage: React.FC = () => {
                 <strong style={{ color: "#495057" }}>User ID:</strong>{" "}
                 <span style={{ color: "#6c757d", fontWeight: "500" }}>
                   {user.id}
+                </span>
+              </p>
+              <p className={styles.participantId}>
+                <strong style={{ color: "#495057" }}>Department:</strong>{" "}
+                <span style={{ color: "#6c757d", fontWeight: "500" }}>
+                  {user.dept || "N/A"}
+                </span>
+              </p>
+              <p className={styles.participantId}>
+                <strong style={{ color: "#495057" }}>Date of Birth:</strong>{" "}
+                <span style={{ color: "#6c757d", fontWeight: "500" }}>
+                  {user.dob || "N/A"}
+                </span>
+              </p>
+              <p className={styles.participantId}>
+                <strong style={{ color: "#495057" }}>Registration No:</strong>{" "}
+                <span style={{ color: "#6c757d", fontWeight: "500" }}>
+                  {user.reg || "N/A"}
                 </span>
               </p>
 

@@ -296,12 +296,12 @@ export const deleteAdmin = async (req: Request, res: Response) => {
 
 export const createAdminWithoutPassword = async (req: Request, res: Response) => {
   try {
-    const { name, email } = req.body;
+    const { name, email, dept, dob, reg } = req.body;
 
-    if (!name || !email) {
+    if (!name || !email || !dept || !dob || !reg) {
       return res.status(400).json({
         success: false,
-        message: "Name and email are required",
+        message: "Name, email, department, date of birth, and registration number are required",
       });
     }
 
@@ -351,6 +351,9 @@ export const createAdminWithoutPassword = async (req: Request, res: Response) =>
       email: email.toLowerCase().trim(),
       password: hashedPassword,
       role: "examiner",
+      dept: dept.trim(),
+      dob: dob.trim(),
+      reg: reg.trim(),
     });
 
     console.log(`✅ Admin created successfully: ${newAdmin.name} (ID: ${newAdmin.id})`);
@@ -429,13 +432,13 @@ export const bulkCreateAdmins = async (req: Request, res: Response) => {
 
     for (const admin of admins) {
       try {
-        const { name, email } = admin;
+        const { name, email, dept, dob, reg } = admin;
 
-        if (!name || !email) {
+        if (!name || !email || !dept || !dob || !reg) {
           results.failed.push({
             email: email || "unknown",
             name: name || "unknown",
-            reason: "Name and email are required",
+            reason: "Name, email, department, date of birth, and registration number are required",
           });
           continue;
         }
@@ -481,6 +484,9 @@ export const bulkCreateAdmins = async (req: Request, res: Response) => {
           email: email.toLowerCase().trim(),
           password: hashedPassword,
           role: "examiner",
+          dept: dept.trim(),
+          dob: dob.trim(),
+          reg: reg.trim(),
         });
 
         // Send email with credentials

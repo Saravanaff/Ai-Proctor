@@ -13,6 +13,9 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [dept, setDept] = useState("");
+  const [dob, setDob] = useState("");
+  const [reg, setReg] = useState("");
   const role = "student";
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -146,7 +149,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
 
     try {
       // Validate all required fields
-      if (!name || !email || !password) {
+      if (!name || !email || !password || !dept || !dob || !reg) {
         throw new Error("Please fill in all required fields.");
       }
 
@@ -244,6 +247,9 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
       payload.append("email", email);
       payload.append("password", password);
       payload.append("role", role);
+      payload.append("dept", dept);
+      payload.append("dob", dob);
+      payload.append("reg", reg);
 
       if (role === "student" && photo) {
         payload.append("photo", photo);
@@ -417,6 +423,42 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                   placeholder="Enter your full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  className={styles.input}
+                  required
+                />
+              </div>
+              {/* Department */}
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Department</label>
+                <input
+                  type="text"
+                  placeholder="Enter your department"
+                  value={dept}
+                  onChange={(e) => setDept(e.target.value)}
+                  className={styles.input}
+                  required
+                />
+              </div>
+              {/* Date of Birth */}
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Date of Birth</label>
+                <input
+                  type="date"
+                  placeholder="Select your date of birth"
+                  value={dob}
+                  onChange={(e) => setDob(e.target.value)}
+                  className={styles.input}
+                  required
+                />
+              </div>
+              {/* Registration Number */}
+              <div className={styles.inputGroup}>
+                <label className={styles.label}>Registration Number</label>
+                <input
+                  type="text"
+                  placeholder="Enter your registration number"
+                  value={reg}
+                  onChange={(e) => setReg(e.target.value)}
                   className={styles.input}
                   required
                 />

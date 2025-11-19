@@ -270,7 +270,7 @@ export const getUserAnswersByAdmin = async (req: Request, res: Response) => {
       include: [
         {
           model: User,
-          attributes: ["id", "name", "email"],
+          attributes: ["id", "name", "email", "dept", "dob", "reg"],
         },
       ],
     });

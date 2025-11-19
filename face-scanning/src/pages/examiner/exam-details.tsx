@@ -9,6 +9,9 @@ interface User {
   id: number;
   name: string;
   email: string;
+  dept: string;
+  dob: string;
+  reg: string;
 }
 
 interface Attendance {
@@ -337,8 +340,8 @@ const ExamDetailsPage: React.FC = () => {
     <ExaminerGuard>
     <div style={{
       minHeight: "100vh",
-      background: "var(--bg-primary)",
-      padding: "24px",
+      background: "var(--background)",
+      padding: "32px",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif"
     }}>
       <style jsx>{`
@@ -349,13 +352,6 @@ const ExamDetailsPage: React.FC = () => {
         @keyframes slideIn {
           from { opacity: 0; transform: translateX(-20px); }
           to { opacity: 1; transform: translateX(0); }
-        }
-        .glass-panel {
-          background: var(--glass-bg);
-          backdrop-filter: blur(12px);
-          border-radius: 16px;
-          border: 1px solid var(--glass-border);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
       `}</style>
 
@@ -368,9 +364,8 @@ const ExamDetailsPage: React.FC = () => {
             alignItems: "center",
             gap: "8px",
             padding: "10px 20px",
-            background: "var(--glass-bg)",
-            backdropFilter: "blur(12px)",
-            border: "1px solid var(--glass-border)",
+            background: "var(--secondary-bg)",
+            border: "1px solid var(--border-color)",
             borderRadius: "12px",
             color: "var(--text-primary)",
             fontSize: "14px",
@@ -381,11 +376,11 @@ const ExamDetailsPage: React.FC = () => {
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "translateX(-4px)";
-            e.currentTarget.style.background = "var(--glass-hover)";
+            e.currentTarget.style.background = "var(--card-bg)";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "translateX(0)";
-            e.currentTarget.style.background = "var(--glass-bg)";
+            e.currentTarget.style.background = "var(--secondary-bg)";
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -394,23 +389,41 @@ const ExamDetailsPage: React.FC = () => {
           Back
         </button>
 
-        <div className="glass-panel" style={{ padding: "24px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div style={{
+          background: "linear-gradient(135deg, var(--card-bg), var(--secondary-bg))",
+          borderRadius: "24px",
+          padding: "32px",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 8px 32px var(--shadow)",
+          position: "relative",
+          overflow: "hidden"
+        }}>
+          <div style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "5px",
+            background: "linear-gradient(90deg, var(--accent-color), var(--primary-color))"
+          }} />
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
             <div style={{
-              width: "56px",
-              height: "56px",
-              borderRadius: "14px",
-              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+              width: "60px",
+              height: "60px",
+              borderRadius: "16px",
+              background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "28px"
+              fontSize: "28px",
+              boxShadow: "0 8px 24px rgba(14, 165, 233, 0.4)"
             }}>
               📚
             </div>
             <div style={{ flex: 1 }}>
               <h1 style={{
-                margin: 0,
+                margin: "0 0 8px 0",
                 fontSize: "28px",
                 fontWeight: "700",
                 color: "var(--text-primary)",
@@ -418,13 +431,14 @@ const ExamDetailsPage: React.FC = () => {
               }}>
                 {examDetails.exam_name}
               </h1>
-              <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "14px", color: "var(--text-secondary)" }}>
+              <div style={{ display: "flex", gap: "16px", fontSize: "14px", color: "var(--text-secondary)", flexWrap: "wrap" }}>
                 <span style={{ fontWeight: "500" }}>Exam ID: <strong style={{ color: "var(--text-primary)" }}>{examDetails.id}</strong></span>
                 <span style={{ fontWeight: "500" }}>Access Key: <strong style={{ 
-                  color: "#3b82f6",
-                  background: "rgba(59, 130, 246, 0.1)",
-                  padding: "2px 8px",
-                  borderRadius: "6px"
+                  color: "var(--accent-color)",
+                  background: "rgba(var(--accent-rgb), 0.1)",
+                  padding: "4px 12px",
+                  borderRadius: "8px",
+                  fontSize: "15px"
                 }}>{examDetails.key}</strong></span>
                 <span style={{ fontWeight: "500" }}>Created: {new Date(examDetails.createdAt).toLocaleDateString('en-US', { 
                   month: 'short', 
@@ -440,16 +454,23 @@ const ExamDetailsPage: React.FC = () => {
       {/* Statistics Cards */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-        gap: "16px",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: "20px",
         marginBottom: "32px",
         animation: "fadeIn 0.7s ease-out 0.2s backwards"
       }}>
-        <div className="glass-panel" style={{ padding: "20px" }}>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        <div style={{
+          background: "var(--card-bg)",
+          borderRadius: "16px",
+          padding: "24px",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 4px 16px var(--shadow)",
+          transition: "all 0.3s ease"
+        }}>
+          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Total Participants
           </div>
-          <div style={{ fontSize: "32px", fontWeight: "700", color: "var(--text-primary)", marginBottom: "4px" }}>
+          <div style={{ fontSize: "36px", fontWeight: "700", color: "var(--text-primary)", marginBottom: "4px" }}>
             {totalParticipants}
           </div>
           <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
@@ -457,48 +478,69 @@ const ExamDetailsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="glass-panel" style={{ padding: "20px" }}>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        <div style={{
+          background: "var(--card-bg)",
+          borderRadius: "16px",
+          padding: "24px",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 4px 16px var(--shadow)",
+          transition: "all 0.3s ease"
+        }}>
+          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Average Risk Score
           </div>
-          <div style={{ fontSize: "32px", fontWeight: "700", color: averageRiskScore > 60 ? "#ef4444" : averageRiskScore > 30 ? "#f59e0b" : "#10b981", marginBottom: "4px" }}>
+          <div style={{ fontSize: "36px", fontWeight: "700", color: averageRiskScore > 60 ? "#ef4444" : averageRiskScore > 30 ? "#f59e0b" : "#10b981", marginBottom: "4px" }}>
             {participantsWithScores > 0 ? averageRiskScore.toFixed(1) : "N/A"}
-            {participantsWithScores > 0 && <span style={{ fontSize: "18px" }}>%</span>}
+            {participantsWithScores > 0 && <span style={{ fontSize: "20px" }}>%</span>}
           </div>
           <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
             {participantsWithScores > 0 ? `${participantsWithScores} scored` : "No scores yet"}
           </div>
         </div>
 
-        <div className="glass-panel" style={{ padding: "20px" }}>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        <div style={{
+          background: "var(--card-bg)",
+          borderRadius: "16px",
+          padding: "24px",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 4px 16px var(--shadow)",
+          transition: "all 0.3s ease"
+        }}>
+          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Average Marks
           </div>
-          <div style={{ fontSize: "32px", fontWeight: "700", color: averageMarks >= 70 ? "#10b981" : averageMarks >= 40 ? "#f59e0b" : "#ef4444", marginBottom: "4px" }}>
+          <div style={{ fontSize: "36px", fontWeight: "700", color: averageMarks >= 70 ? "#10b981" : averageMarks >= 40 ? "#f59e0b" : "#ef4444", marginBottom: "4px" }}>
             {participantsWithExamScores > 0 ? averageMarks.toFixed(1) : "N/A"}
-            {participantsWithExamScores > 0 && <span style={{ fontSize: "18px" }}>%</span>}
+            {participantsWithExamScores > 0 && <span style={{ fontSize: "20px" }}>%</span>}
           </div>
           <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
             {participantsWithExamScores > 0 ? `${participantsWithExamScores} students` : "No scores yet"}
           </div>
         </div>
 
-        <div className="glass-panel" style={{ padding: "20px" }}>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        <div style={{
+          background: "var(--card-bg)",
+          borderRadius: "16px",
+          padding: "24px",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 4px 16px var(--shadow)",
+          transition: "all 0.3s ease"
+        }}>
+          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Risk Distribution
           </div>
-          <div style={{ display: "flex", gap: "12px", alignItems: "baseline", marginTop: "8px" }}>
+          <div style={{ display: "flex", gap: "16px", alignItems: "baseline", marginTop: "8px" }}>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "24px", fontWeight: "700", color: "#ef4444" }}>{highRiskCount}</div>
-              <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>High</div>
+              <div style={{ fontSize: "28px", fontWeight: "700", color: "#ef4444" }}>{highRiskCount}</div>
+              <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px", fontWeight: "600" }}>High</div>
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "24px", fontWeight: "700", color: "#f59e0b" }}>{mediumRiskCount}</div>
-              <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>Medium</div>
+              <div style={{ fontSize: "28px", fontWeight: "700", color: "#f59e0b" }}>{mediumRiskCount}</div>
+              <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px", fontWeight: "600" }}>Medium</div>
             </div>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "24px", fontWeight: "700", color: "#10b981" }}>{lowRiskCount}</div>
-              <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>Low</div>
+              <div style={{ fontSize: "28px", fontWeight: "700", color: "#10b981" }}>{lowRiskCount}</div>
+              <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px", fontWeight: "600" }}>Low</div>
             </div>
           </div>
         </div>
@@ -507,16 +549,22 @@ const ExamDetailsPage: React.FC = () => {
       {/* Analytics Graphs Section */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
-        gap: "16px",
+        gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
+        gap: "20px",
         marginBottom: "32px",
         animation: "fadeIn 0.8s ease-out 0.3s backwards"
       }}>
         {/* Risk Distribution Pie Chart */}
-        <div className="glass-panel" style={{ padding: "24px" }}>
+        <div style={{
+          background: "var(--card-bg)",
+          borderRadius: "16px",
+          padding: "28px",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 4px 16px var(--shadow)"
+        }}>
           <h3 style={{
-            margin: "0 0 20px 0",
-            fontSize: "16px",
+            margin: "0 0 24px 0",
+            fontSize: "18px",
             fontWeight: "700",
             color: "var(--text-primary)"
           }}>
@@ -666,10 +714,16 @@ const ExamDetailsPage: React.FC = () => {
         </div>
 
         {/* Performance Bar Chart */}
-        <div className="glass-panel" style={{ padding: "24px" }}>
+        <div style={{
+          background: "var(--card-bg)",
+          borderRadius: "16px",
+          padding: "28px",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 4px 16px var(--shadow)"
+        }}>
           <h3 style={{
-            margin: "0 0 20px 0",
-            fontSize: "16px",
+            margin: "0 0 24px 0",
+            fontSize: "18px",
             fontWeight: "700",
             color: "var(--text-primary)"
           }}>
@@ -743,11 +797,11 @@ const ExamDetailsPage: React.FC = () => {
                       width: "100%",
                       height: `${(goodCount / maxCount) * 140}px`,
                       minHeight: goodCount > 0 ? "30px" : "0px",
-                      background: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
+                      background: "linear-gradient(180deg, var(--accent-color), var(--primary-color))",
                       borderRadius: "8px 8px 0 0",
                       transition: "height 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
                       position: "relative",
-                      boxShadow: "0 -4px 12px rgba(59, 130, 246, 0.3)",
+                      boxShadow: "0 -4px 12px rgba(var(--accent-rgb), 0.3)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center"
@@ -860,8 +914,15 @@ const ExamDetailsPage: React.FC = () => {
       </div>
 
       {/* Participants Section */}
-      <div className="glass-panel" style={{ padding: "24px", animation: "fadeIn 0.8s ease-out 0.3s backwards" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+      <div style={{
+        background: "var(--card-bg)",
+        borderRadius: "16px",
+        padding: "28px",
+        border: "1px solid var(--border-color)",
+        boxShadow: "0 4px 16px var(--shadow)",
+        animation: "fadeIn 0.8s ease-out 0.3s backwards"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
           <h2 style={{
             margin: 0,
             fontSize: "20px",
@@ -869,28 +930,29 @@ const ExamDetailsPage: React.FC = () => {
             color: "var(--text-primary)",
             display: "flex",
             alignItems: "center",
-            gap: "8px"
+            gap: "10px"
           }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
             Participants
           </h2>
           <span style={{
-            background: "var(--glass-hover)",
-            padding: "6px 12px",
-            borderRadius: "8px",
-            fontSize: "13px",
+            background: "var(--secondary-bg)",
+            padding: "8px 16px",
+            borderRadius: "10px",
+            fontSize: "14px",
             fontWeight: "600",
-            color: "var(--text-primary)"
+            color: "var(--text-primary)",
+            border: "1px solid var(--border-color)"
           }}>
             {filteredParticipants.length} {filteredParticipants.length === 1 ? 'student' : 'students'}
           </span>
         </div>
 
         {/* Search Bar */}
-        <div style={{ marginBottom: "20px" }}>
+        <div style={{ marginBottom: "24px" }}>
           <div style={{
             position: "relative",
             display: "flex",
@@ -899,9 +961,9 @@ const ExamDetailsPage: React.FC = () => {
             <svg
               style={{
                 position: "absolute",
-                left: "14px",
-                width: "16px",
-                height: "16px",
+                left: "16px",
+                width: "18px",
+                height: "18px",
                 color: "var(--text-secondary)",
                 pointerEvents: "none"
               }}
@@ -920,9 +982,9 @@ const ExamDetailsPage: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: "100%",
-                padding: "12px 14px 12px 42px",
-                background: "var(--bg-primary)",
-                border: "1px solid var(--glass-border)",
+                padding: "14px 16px 14px 48px",
+                background: "var(--secondary-bg)",
+                border: "1px solid var(--border-color)",
                 borderRadius: "12px",
                 fontSize: "14px",
                 fontWeight: "500",
@@ -931,11 +993,11 @@ const ExamDetailsPage: React.FC = () => {
                 transition: "all 0.3s ease"
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = "#3b82f6";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.1)";
+                e.currentTarget.style.borderColor = "var(--accent-color)";
+                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(var(--accent-rgb), 0.1)";
               }}
               onBlur={(e) => {
-                e.currentTarget.style.borderColor = "var(--glass-border)";
+                e.currentTarget.style.borderColor = "var(--border-color)";
                 e.currentTarget.style.boxShadow = "none";
               }}
             />
@@ -944,29 +1006,29 @@ const ExamDetailsPage: React.FC = () => {
                 onClick={() => setSearchTerm("")}
                 style={{
                   position: "absolute",
-                  right: "12px",
-                  width: "20px",
-                  height: "20px",
+                  right: "14px",
+                  width: "24px",
+                  height: "24px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: "var(--glass-hover)",
-                  border: "none",
-                  borderRadius: "6px",
+                  background: "var(--secondary-bg)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "8px",
                   cursor: "pointer",
                   color: "var(--text-secondary)",
                   transition: "all 0.2s ease"
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--glass-border)";
+                  e.currentTarget.style.background = "var(--card-bg)";
                   e.currentTarget.style.color = "var(--text-primary)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "var(--glass-hover)";
+                  e.currentTarget.style.background = "var(--secondary-bg)";
                   e.currentTarget.style.color = "var(--text-secondary)";
                 }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
@@ -976,7 +1038,7 @@ const ExamDetailsPage: React.FC = () => {
         </div>
 
         {filteredParticipants.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             {filteredParticipants.map((attendance, index) => {
               const stats = participantStats[attendance.user.id];
               const riskScore = stats?.riskScore;
@@ -987,47 +1049,48 @@ const ExamDetailsPage: React.FC = () => {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "16px",
-                    padding: "16px",
-                    background: "var(--bg-primary)",
-                    border: "1px solid var(--glass-border)",
-                    borderRadius: "12px",
+                    gap: "20px",
+                    padding: "20px",
+                    background: "var(--secondary-bg)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "14px",
                     cursor: "pointer",
                     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.12)";
-                    e.currentTarget.style.borderColor = "#3b82f6";
+                    e.currentTarget.style.boxShadow = "0 8px 24px var(--shadow)";
+                    e.currentTarget.style.borderColor = "var(--accent-color)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = "translateY(0)";
                     e.currentTarget.style.boxShadow = "none";
-                    e.currentTarget.style.borderColor = "var(--glass-border)";
+                    e.currentTarget.style.borderColor = "var(--border-color)";
                   }}
                 >
                   <div style={{
-                    width: "48px",
-                    height: "48px",
-                    borderRadius: "12px",
-                    background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                    width: "52px",
+                    height: "52px",
+                    borderRadius: "14px",
+                    background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "18px",
+                    fontSize: "20px",
                     fontWeight: "700",
                     color: "white",
-                    flexShrink: 0
+                    flexShrink: 0,
+                    boxShadow: "0 4px 12px rgba(14, 165, 233, 0.3)"
                   }}>
                     {attendance.user.name.charAt(0).toUpperCase()}
                   </div>
                   
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                      fontSize: "15px",
+                      fontSize: "16px",
                       fontWeight: "600",
                       color: "var(--text-primary)",
-                      marginBottom: "4px",
+                      marginBottom: "6px",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap"
@@ -1035,7 +1098,7 @@ const ExamDetailsPage: React.FC = () => {
                       {attendance.user.name}
                     </div>
                     <div style={{
-                      fontSize: "13px",
+                      fontSize: "14px",
                       color: "var(--text-secondary)",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -1043,24 +1106,44 @@ const ExamDetailsPage: React.FC = () => {
                     }}>
                       {attendance.user.email}
                     </div>
+                    <div style={{
+                      fontSize: "13px",
+                      color: "var(--text-secondary)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      marginTop: "4px"
+                    }}>
+                      <strong style={{ color: "#495057" }}>Dept:</strong> {attendance.user.dept || "N/A"} | <strong style={{ color: "#495057" }}>DOB:</strong> {attendance.user.dob || "N/A"}
+                    </div>
+                    <div style={{
+                      fontSize: "13px",
+                      color: "var(--text-secondary)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      marginTop: "2px"
+                    }}>
+                      <strong style={{ color: "#495057" }}>Reg No:</strong> {attendance.user.reg || "N/A"}
+                    </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: "16px", alignItems: "center", flexShrink: 0 }}>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginBottom: "4px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <div style={{ display: "flex", gap: "20px", alignItems: "center", flexShrink: 0, flexWrap: "wrap" }}>
+                    <div style={{ textAlign: "center", minWidth: "70px" }}>
+                      <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginBottom: "6px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                         Duration
                       </div>
-                      <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary)" }}>
+                      <div style={{ fontSize: "15px", fontWeight: "600", color: "var(--text-primary)" }}>
                         {calculateDuration(attendance)}
                       </div>
                     </div>
 
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginBottom: "4px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    <div style={{ textAlign: "center", minWidth: "70px" }}>
+                      <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginBottom: "6px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                         Risk Score
                       </div>
                       <div style={{
-                        fontSize: "14px",
+                        fontSize: "15px",
                         fontWeight: "700",
                         color: riskScore !== null && riskScore !== undefined ? getRiskColor(riskScore) : "var(--text-secondary)"
                       }}>
@@ -1068,12 +1151,12 @@ const ExamDetailsPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginBottom: "4px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    <div style={{ textAlign: "center", minWidth: "70px" }}>
+                      <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginBottom: "6px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                         Violations
                       </div>
                       <div style={{
-                        fontSize: "14px",
+                        fontSize: "15px",
                         fontWeight: "700",
                         color: (stats?.violationCount || 0) > 0 ? "#ef4444" : "var(--text-primary)"
                       }}>
@@ -1136,8 +1219,8 @@ const ExamDetailsPage: React.FC = () => {
             </p>
             <div style={{
               display: "inline-block",
-              background: "rgba(59, 130, 246, 0.1)",
-              color: "#3b82f6",
+              background: "rgba(var(--accent-rgb), 0.1)",
+              color: "var(--accent-color)",
               padding: "8px 16px",
               borderRadius: "8px",
               fontSize: "18px",
