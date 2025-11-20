@@ -296,12 +296,12 @@ export const deleteAdmin = async (req: Request, res: Response) => {
 
 export const createAdminWithoutPassword = async (req: Request, res: Response) => {
   try {
-    const { name, email, dept, dob, reg } = req.body;
+    const { name, email, phone, dob } = req.body;
 
-    if (!name || !email || !dept || !dob || !reg) {
+    if (!name || !email || !phone || !dob) {
       return res.status(400).json({
         success: false,
-        message: "Name, email, department, date of birth, and registration number are required",
+        message: "Name, email, phone number, and date of birth are required",
       });
     }
 
@@ -351,9 +351,8 @@ export const createAdminWithoutPassword = async (req: Request, res: Response) =>
       email: email.toLowerCase().trim(),
       password: hashedPassword,
       role: "examiner",
-      dept: dept.trim(),
+      phone: phone.trim(),
       dob: dob.trim(),
-      reg: reg.trim(),
     });
 
     console.log(`✅ Admin created successfully: ${newAdmin.name} (ID: ${newAdmin.id})`);
@@ -432,13 +431,13 @@ export const bulkCreateAdmins = async (req: Request, res: Response) => {
 
     for (const admin of admins) {
       try {
-        const { name, email, dept, dob, reg } = admin;
+        const { name, email, phone, dob } = admin;
 
-        if (!name || !email || !dept || !dob || !reg) {
+        if (!name || !email || !phone || !dob) {
           results.failed.push({
             email: email || "unknown",
             name: name || "unknown",
-            reason: "Name, email, department, date of birth, and registration number are required",
+            reason: "Name, email, phone number, and date of birth are required",
           });
           continue;
         }
@@ -484,9 +483,8 @@ export const bulkCreateAdmins = async (req: Request, res: Response) => {
           email: email.toLowerCase().trim(),
           password: hashedPassword,
           role: "examiner",
-          dept: dept.trim(),
+          phone: phone.trim(),
           dob: dob.trim(),
-          reg: reg.trim(),
         });
 
         // Send email with credentials

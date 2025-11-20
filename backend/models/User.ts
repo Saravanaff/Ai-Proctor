@@ -34,7 +34,7 @@ export class User extends Model{
 
   @Column({
     type:DataType.STRING,
-    allowNull:false
+    allowNull:true
   })
   dept?:string
 
@@ -42,13 +42,19 @@ export class User extends Model{
     type:DataType.STRING,
     allowNull:false
   })
-  dob?:string
+  dob!:string
 
   @Column({
     type:DataType.STRING,
-    allowNull:false
+    allowNull:true
   })
   reg?:string
+
+  @Column({
+    type:DataType.STRING,
+    allowNull:true
+  })
+  phone?:string
 
   @Column({
     type: DataType.STRING,

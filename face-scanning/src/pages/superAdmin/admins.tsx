@@ -26,9 +26,8 @@ const SuperAdminDashboard = () => {
   const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
   const [newAdminName, setNewAdminName] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
-  const [newAdminDept, setNewAdminDept] = useState("");
+  const [newAdminPhone, setNewAdminPhone] = useState("");
   const [newAdminDob, setNewAdminDob] = useState("");
-  const [newAdminReg, setNewAdminReg] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -77,9 +76,8 @@ const SuperAdminDashboard = () => {
       const res = await axios.post(`${base}/admin/create`, {
         name: newAdminName,
         email: newAdminEmail,
-        dept: newAdminDept,
+        phone: newAdminPhone,
         dob: newAdminDob,
-        reg: newAdminReg,
       });
 
       if (res.data?.success) {
@@ -87,9 +85,8 @@ const SuperAdminDashboard = () => {
         setShowCreateModal(false);
         setNewAdminName("");
         setNewAdminEmail("");
-        setNewAdminDept("");
+        setNewAdminPhone("");
         setNewAdminDob("");
-        setNewAdminReg("");
         fetchAdmins();
       }
     } catch (e: any) {
@@ -143,8 +140,8 @@ const SuperAdminDashboard = () => {
         const dataLines = lines.slice(1);
         
         const admins = dataLines.map(line => {
-          const [name, email, dept, dob, reg] = line.split(',').map(item => item.trim());
-          return { name, email, dept, dob, reg };
+          const [name, email, phone, dob] = line.split(',').map(item => item.trim());
+          return { name, email, phone, dob };
         }).filter(admin => admin.name && admin.email);
 
         if (admins.length === 0) {
@@ -1003,7 +1000,7 @@ const SuperAdminDashboard = () => {
                   padding: "2px 6px", 
                   borderRadius: "4px",
                   fontSize: "12px"
-                }}>name,email,dept,dob,reg</code></li>
+                }}>name,email,phone,dob</code></li>
                 <li>Each subsequent row represents one admin</li>
                 <li>All fields are required for each admin</li>
                 <li>Date of birth format: YYYY-MM-DD (e.g., 1990-01-15)</li>
@@ -1052,17 +1049,17 @@ const SuperAdminDashboard = () => {
                 border: "1px solid var(--border-color)",
                 lineHeight: "1.6"
               }}>
-{`name,email,dept,dob,reg
-John Doe,john@example.com,Computer Science,1990-01-15,CS001
-Jane Smith,jane@example.com,Mathematics,1992-05-20,MATH002
-Bob Wilson,bob@example.com,Engineering,1991-08-10,ENG003`}
+{`name,email,phone,dob
+John Doe,john@example.com,+1234567890,1990-01-15
+Jane Smith,jane@example.com,+0987654321,1992-05-20
+Bob Wilson,bob@example.com,+1122334455,1991-08-10`}
               </pre>
               <button
                 onClick={() => {
-                  const csvContent = `name,email,dept,dob,reg
-John Doe,john@example.com,Computer Science,1990-01-15,CS001
-Jane Smith,jane@example.com,Mathematics,1992-05-20,MATH002
-Bob Wilson,bob@example.com,Engineering,1991-08-10,ENG003`;
+                  const csvContent = `name,email,phone,dob
+John Doe,john@example.com,+1234567890,1990-01-15
+Jane Smith,jane@example.com,+0987654321,1992-05-20
+Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                   const blob = new Blob([csvContent], { type: 'text/csv' });
                   const url = window.URL.createObjectURL(blob);
                   const a = document.createElement('a');
@@ -1199,13 +1196,13 @@ Bob Wilson,bob@example.com,Engineering,1991-08-10,ENG003`;
               </div>
               <div style={{ marginBottom: "20px" }}>
                 <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
-                  Department
+                  Phone Number
                 </label>
                 <input
-                  type="text"
-                  value={newAdminDept}
-                  onChange={(e) => setNewAdminDept(e.target.value)}
-                  placeholder="Enter department"
+                  type="tel"
+                  value={newAdminPhone}
+                  onChange={(e) => setNewAdminPhone(e.target.value)}
+                  placeholder="Enter phone number"
                   required
                   style={{
                     width: "100%",
@@ -1228,28 +1225,6 @@ Bob Wilson,bob@example.com,Engineering,1991-08-10,ENG003`;
                   value={newAdminDob}
                   onChange={(e) => setNewAdminDob(e.target.value)}
                   placeholder="Select date of birth"
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid var(--border-color)",
-                    borderRadius: "8px",
-                    background: "var(--card-bg)",
-                    color: "var(--text-primary)",
-                    fontSize: "14px",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: "20px" }}>
-                <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
-                  Registration Number
-                </label>
-                <input
-                  type="text"
-                  value={newAdminReg}
-                  onChange={(e) => setNewAdminReg(e.target.value)}
-                  placeholder="Enter registration number"
                   required
                   style={{
                     width: "100%",
