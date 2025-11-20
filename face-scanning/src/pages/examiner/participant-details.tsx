@@ -1919,6 +1919,29 @@ const ParticipantDetailsPage: React.FC = () => {
                   </span>
                 </div>
                 <div className={styles.statItem}>
+                  <span className={styles.statLabel}>Exam Score</span>
+                  <span
+                    className={styles.statValue}
+                    style={{ 
+                      color: examResults 
+                        ? (examResults.stats.correct / examResults.stats.totalQuestions * 100 >= 70 
+                          ? "#10b981" 
+                          : examResults.stats.correct / examResults.stats.totalQuestions * 100 >= 40 
+                          ? "#f59e0b" 
+                          : "#ef4444")
+                        : examResultsLoading 
+                        ? "inherit"
+                        : "#ef4444"
+                    }}
+                  >
+                    {examResults 
+                      ? `${examResults.stats.correct}/${examResults.stats.totalQuestions} (${examResults.stats.score}${examResults.stats.score.includes('%') ? '' : '%'})`
+                      : examResultsLoading 
+                      ? "Loading..." 
+                      : "0 (0%)"}
+                  </span>
+                </div>
+                <div className={styles.statItem}>
                   <span className={styles.statLabel}>Risk Level</span>
                   <span
                     className={styles.statValue}
