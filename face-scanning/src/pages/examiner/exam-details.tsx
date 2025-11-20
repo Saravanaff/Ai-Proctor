@@ -47,8 +47,37 @@ const ExamDetailsPage: React.FC = () => {
   const [loadingExam, setLoadingExam] = useState(true);
   const [participantStats, setParticipantStats] = useState<{ [key: number]: ParticipantStats }>({});
   const [searchTerm, setSearchTerm] = useState<string>("");
+  
+  // Filter states
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
+  const [violationFilter, setViolationFilter] = useState<string>("");
+  const [regNoFilter, setRegNoFilter] = useState<string>("");
+  const [selectedRiskLevel, setSelectedRiskLevel] = useState<string>("all");
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Find all open dropdowns
+      const dropdowns = document.querySelectorAll('[data-filter-dropdown]');
+      dropdowns.forEach(dropdown => {
+        const dropdownElement = dropdown as HTMLElement;
+        const button = dropdown.previousElementSibling as HTMLElement;
+        
+        // If click is outside both button and dropdown, close it
+        if (!dropdown.contains(target) && !button?.contains(target)) {
+          dropdownElement.style.display = 'none';
+        }
+      });
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const getRiskLabel = (score: number): string => {
     if (score <= 30) return "Low Risk";
@@ -106,10 +135,53 @@ const ExamDetailsPage: React.FC = () => {
     }
   };
 
-  const filteredParticipants = examDetails?.attendances?.filter(attendance =>
-    attendance.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    attendance.user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  // Get unique departments for filter
+  const uniqueDepartments = Array.from(
+    new Set(examDetails?.attendances?.map(a => a.user.dept).filter(Boolean) || [])
+  ).sort();
+
+  const filteredParticipants = examDetails?.attendances?.filter(attendance => {
+    const stats = participantStats[attendance.user.id];
+    
+    // Search filter (name or email)
+    const matchesSearch = 
+      attendance.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      attendance.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Department filter
+    const matchesDepartment = 
+      selectedDepartment === "all" || 
+      attendance.user.dept === selectedDepartment;
+    
+    // Reg No filter
+    const matchesRegNo = 
+      regNoFilter === "" || 
+      attendance.user.reg?.toLowerCase().includes(regNoFilter.toLowerCase());
+    
+    // Violation filter (search by number)
+    const violationCount = stats?.violationCount || 0;
+    const matchesViolations = 
+      violationFilter === "" || 
+      violationCount.toString().includes(violationFilter);
+    
+    // Risk Level filter
+    const riskScore = stats?.riskScore;
+    let matchesRiskLevel = true;
+    
+    if (selectedRiskLevel !== "all" && riskScore !== null && riskScore !== undefined) {
+      if (selectedRiskLevel === "low") {
+        matchesRiskLevel = riskScore <= 30;
+      } else if (selectedRiskLevel === "medium") {
+        matchesRiskLevel = riskScore > 30 && riskScore <= 60;
+      } else if (selectedRiskLevel === "high") {
+        matchesRiskLevel = riskScore > 60;
+      }
+    } else if (selectedRiskLevel !== "all" && (riskScore === null || riskScore === undefined)) {
+      matchesRiskLevel = false; // Exclude participants without risk scores when filter is active
+    }
+    
+    return matchesSearch && matchesDepartment && matchesRegNo && matchesViolations && matchesRiskLevel;
+  }) || [];
 
   const fetchParticipantScore = async (userId: number, examId: number) => {
     try {
@@ -932,12 +1004,14 @@ const ExamDetailsPage: React.FC = () => {
           </span>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar and Filters */}
         <div style={{ marginBottom: "24px" }}>
+          {/* Search Bar */}
           <div style={{
             position: "relative",
             display: "flex",
-            alignItems: "center"
+            alignItems: "center",
+            marginBottom: "12px"
           }}>
             <svg
               style={{
@@ -1016,6 +1090,173 @@ const ExamDetailsPage: React.FC = () => {
               </button>
             )}
           </div>
+
+          {/* Active Filters Info */}
+          {(selectedDepartment !== "all" || regNoFilter !== "" || violationFilter !== "" || selectedRiskLevel !== "all") && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              flexWrap: "wrap"
+            }}>
+              <span style={{
+                fontSize: "12px",
+                color: "var(--text-secondary)",
+                fontWeight: "600"
+              }}>
+                Active Filters:
+              </span>
+              {selectedDepartment !== "all" && (
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "4px 10px",
+                  background: "var(--accent-color)",
+                  color: "white",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "600"
+                }}>
+                  Dept: {selectedDepartment}
+                  <button
+                    onClick={() => setSelectedDepartment("all")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "white",
+                      cursor: "pointer",
+                      padding: "0",
+                      display: "flex",
+                      alignItems: "center"
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </span>
+              )}
+              {regNoFilter !== "" && (
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "4px 10px",
+                  background: "var(--accent-color)",
+                  color: "white",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "600"
+                }}>
+                  Reg: {regNoFilter}
+                  <button
+                    onClick={() => setRegNoFilter("")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "white",
+                      cursor: "pointer",
+                      padding: "0",
+                      display: "flex",
+                      alignItems: "center"
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </span>
+              )}
+              {violationFilter !== "" && (
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "4px 10px",
+                  background: "var(--accent-color)",
+                  color: "white",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "600"
+                }}>
+                  Violations: {violationFilter}
+                  <button
+                    onClick={() => setViolationFilter("")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "white",
+                      cursor: "pointer",
+                      padding: "0",
+                      display: "flex",
+                      alignItems: "center"
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </span>
+              )}
+              {selectedRiskLevel !== "all" && (
+                <span style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "4px 10px",
+                  background: "var(--accent-color)",
+                  color: "white",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "600"
+                }}>
+                  Risk: {selectedRiskLevel.charAt(0).toUpperCase() + selectedRiskLevel.slice(1)}
+                  <button
+                    onClick={() => setSelectedRiskLevel("all")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "white",
+                      cursor: "pointer",
+                      padding: "0",
+                      display: "flex",
+                      alignItems: "center"
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  setSelectedDepartment("all");
+                  setRegNoFilter("");
+                  setViolationFilter("");
+                  setSelectedRiskLevel("all");
+                }}
+                style={{
+                  padding: "4px 10px",
+                  background: "var(--error-bg)",
+                  border: "1px solid var(--error-color)",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  color: "var(--error-color)",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Clear All
+              </button>
+            </div>
+          )}
         </div>
 
         {filteredParticipants.length > 0 ? (
@@ -1068,7 +1309,88 @@ const ExamDetailsPage: React.FC = () => {
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
                   }}>
-                    Department
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      Department
+                      <div style={{ position: "relative", display: "inline-block" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const dropdown = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (dropdown) {
+                              dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+                            }
+                          }}
+                          style={{
+                            background: selectedDepartment !== "all" ? "var(--accent-color)" : "transparent",
+                            border: "none",
+                            padding: "4px",
+                            cursor: "pointer",
+                            borderRadius: "4px",
+                            display: "flex",
+                            alignItems: "center",
+                            color: selectedDepartment !== "all" ? "white" : "var(--text-secondary)",
+                            transition: "all 0.2s ease"
+                          }}
+                          onMouseEnter={(e) => {
+                            if (selectedDepartment === "all") {
+                              e.currentTarget.style.color = "var(--accent-color)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (selectedDepartment === "all") {
+                              e.currentTarget.style.color = "var(--text-secondary)";
+                            }
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                          </svg>
+                        </button>
+                        <div
+                          data-filter-dropdown
+                          style={{
+                            display: "none",
+                            position: "absolute",
+                            top: "100%",
+                            left: "0",
+                            marginTop: "8px",
+                            background: "var(--card-bg)",
+                            border: "1px solid var(--border-color)",
+                            borderRadius: "8px",
+                            padding: "8px",
+                            minWidth: "180px",
+                            boxShadow: "0 4px 12px var(--shadow)",
+                            zIndex: 1000
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <select
+                            value={selectedDepartment}
+                            onChange={(e) => {
+                              setSelectedDepartment(e.target.value);
+                              const dropdown = e.currentTarget.parentElement as HTMLElement;
+                              if (dropdown) dropdown.style.display = "none";
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: "8px",
+                              background: "var(--secondary-bg)",
+                              border: "1px solid var(--border-color)",
+                              borderRadius: "6px",
+                              fontSize: "13px",
+                              color: "var(--text-primary)",
+                              cursor: "pointer",
+                              outline: "none"
+                            }}
+                          >
+                            <option value="all">All Departments</option>
+                            {uniqueDepartments.map(dept => (
+                              <option key={dept} value={dept}>{dept}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
                   </th>
                   <th style={{
                     padding: "16px",
@@ -1092,7 +1414,82 @@ const ExamDetailsPage: React.FC = () => {
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
                   }}>
-                    Reg No
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      Reg No
+                      <div style={{ position: "relative", display: "inline-block" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const dropdown = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (dropdown) {
+                              dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+                              const input = dropdown.querySelector('input') as HTMLInputElement;
+                              if (input) input.focus();
+                            }
+                          }}
+                          style={{
+                            background: regNoFilter !== "" ? "var(--accent-color)" : "transparent",
+                            border: "none",
+                            padding: "4px",
+                            cursor: "pointer",
+                            borderRadius: "4px",
+                            display: "flex",
+                            alignItems: "center",
+                            color: regNoFilter !== "" ? "white" : "var(--text-secondary)",
+                            transition: "all 0.2s ease"
+                          }}
+                          onMouseEnter={(e) => {
+                            if (regNoFilter === "") {
+                              e.currentTarget.style.color = "var(--accent-color)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (regNoFilter === "") {
+                              e.currentTarget.style.color = "var(--text-secondary)";
+                            }
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                          </svg>
+                        </button>
+                        <div
+                          data-filter-dropdown
+                          style={{
+                            display: "none",
+                            position: "absolute",
+                            top: "100%",
+                            left: "0",
+                            marginTop: "8px",
+                            background: "var(--card-bg)",
+                            border: "1px solid var(--border-color)",
+                            borderRadius: "8px",
+                            padding: "12px",
+                            minWidth: "200px",
+                            boxShadow: "0 4px 12px var(--shadow)",
+                            zIndex: 1000
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="text"
+                            placeholder="Filter reg no..."
+                            value={regNoFilter}
+                            onChange={(e) => setRegNoFilter(e.target.value)}
+                            style={{
+                              width: "100%",
+                              padding: "8px",
+                              background: "var(--secondary-bg)",
+                              border: "1px solid var(--border-color)",
+                              borderRadius: "6px",
+                              fontSize: "13px",
+                              color: "var(--text-primary)",
+                              outline: "none"
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </th>
                   <th style={{
                     padding: "16px",
@@ -1116,7 +1513,88 @@ const ExamDetailsPage: React.FC = () => {
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
                   }}>
-                    Risk Score
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                      Risk Score
+                      <div style={{ position: "relative", display: "inline-block" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const dropdown = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (dropdown) {
+                              dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+                            }
+                          }}
+                          style={{
+                            background: selectedRiskLevel !== "all" ? "var(--accent-color)" : "transparent",
+                            border: "none",
+                            padding: "4px",
+                            cursor: "pointer",
+                            borderRadius: "4px",
+                            display: "flex",
+                            alignItems: "center",
+                            color: selectedRiskLevel !== "all" ? "white" : "var(--text-secondary)",
+                            transition: "all 0.2s ease"
+                          }}
+                          onMouseEnter={(e) => {
+                            if (selectedRiskLevel === "all") {
+                              e.currentTarget.style.color = "var(--accent-color)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (selectedRiskLevel === "all") {
+                              e.currentTarget.style.color = "var(--text-secondary)";
+                            }
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                          </svg>
+                        </button>
+                        <div
+                          data-filter-dropdown
+                          style={{
+                            display: "none",
+                            position: "absolute",
+                            top: "100%",
+                            right: "0",
+                            marginTop: "8px",
+                            background: "var(--card-bg)",
+                            border: "1px solid var(--border-color)",
+                            borderRadius: "8px",
+                            padding: "8px",
+                            minWidth: "160px",
+                            boxShadow: "0 4px 12px var(--shadow)",
+                            zIndex: 1000
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <select
+                            value={selectedRiskLevel}
+                            onChange={(e) => {
+                              setSelectedRiskLevel(e.target.value);
+                              const dropdown = e.currentTarget.parentElement as HTMLElement;
+                              if (dropdown) dropdown.style.display = "none";
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: "8px",
+                              background: "var(--secondary-bg)",
+                              border: "1px solid var(--border-color)",
+                              borderRadius: "6px",
+                              fontSize: "13px",
+                              color: "var(--text-primary)",
+                              cursor: "pointer",
+                              outline: "none"
+                            }}
+                          >
+                            <option value="all">All Risk Levels</option>
+                            <option value="low">Low (0-30%)</option>
+                            <option value="medium">Medium (31-60%)</option>
+                            <option value="high">High (61-100%)</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
                   </th>
                   <th style={{
                     padding: "16px",
@@ -1128,7 +1606,82 @@ const ExamDetailsPage: React.FC = () => {
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
                   }}>
-                    Violations
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                      Violations
+                      <div style={{ position: "relative", display: "inline-block" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const dropdown = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (dropdown) {
+                              dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+                              const input = dropdown.querySelector('input') as HTMLInputElement;
+                              if (input) input.focus();
+                            }
+                          }}
+                          style={{
+                            background: violationFilter !== "" ? "var(--accent-color)" : "transparent",
+                            border: "none",
+                            padding: "4px",
+                            cursor: "pointer",
+                            borderRadius: "4px",
+                            display: "flex",
+                            alignItems: "center",
+                            color: violationFilter !== "" ? "white" : "var(--text-secondary)",
+                            transition: "all 0.2s ease"
+                          }}
+                          onMouseEnter={(e) => {
+                            if (violationFilter === "") {
+                              e.currentTarget.style.color = "var(--accent-color)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (violationFilter === "") {
+                              e.currentTarget.style.color = "var(--text-secondary)";
+                            }
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                          </svg>
+                        </button>
+                        <div
+                          data-filter-dropdown
+                          style={{
+                            display: "none",
+                            position: "absolute",
+                            top: "100%",
+                            right: "0",
+                            marginTop: "8px",
+                            background: "var(--card-bg)",
+                            border: "1px solid var(--border-color)",
+                            borderRadius: "8px",
+                            padding: "12px",
+                            minWidth: "200px",
+                            boxShadow: "0 4px 12px var(--shadow)",
+                            zIndex: 1000
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="text"
+                            placeholder="Filter violations..."
+                            value={violationFilter}
+                            onChange={(e) => setViolationFilter(e.target.value)}
+                            style={{
+                              width: "100%",
+                              padding: "8px",
+                              background: "var(--secondary-bg)",
+                              border: "1px solid var(--border-color)",
+                              borderRadius: "6px",
+                              fontSize: "13px",
+                              color: "var(--text-primary)",
+                              outline: "none"
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </th>
                   <th style={{
                     padding: "16px",
