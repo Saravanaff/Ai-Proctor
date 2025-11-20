@@ -6,6 +6,8 @@ import {
   deleteAdmin,
   createAdminWithoutPassword,
   bulkCreateAdmins,
+  getAllStudents,
+  getStudentExams,
 } from "../controllers/SuperController";
 import { requireAdminRole } from "../middleware/roleMiddleware";
 import authMiddleware from "../middleware/authMiddleware";
@@ -17,6 +19,12 @@ router.get("/admin/emails", getAdminEmails);
 
 // Get all examiner emails
 router.get("/examiner/emails", getExaminerEmails);
+
+// Get all students
+router.get("/admin/students", getAllStudents);
+
+// Get all exams attended by a specific student
+router.get("/admin/student/:studentId/exams", getStudentExams);
 
 // Get all exams created by a specific admin
 router.get("/admin/:adminEmail/exams",getAdminExams);

@@ -544,4 +544,111 @@ export const bulkCreateAdmins = async (req: Request, res: Response) => {
   }
 };
 
+// Get all students
+export const getAllStudents = async (req: Request, res: Response) => {
+  try {
+    const students = await User.findAll({
+      where: {
+        role: "student",
+      },
+      attributes: ["id", "name", "email", "dept", "dob", "reg", "createdAt"],
+      order: [["createdAt", "DESC"]],
+    });
+
+    console.log(`🎓 Found ${students.length} student(s)`);
+
+    return res.status(200).json({
+      success: true,
+      message: `Found ${students.length} student(s)`,
+      data: {
+        count: students.length,
+        students: students.map((student) => ({
+          id: student.id,
+          name: student.name,
+          email: student.email,
+          dept: student.dept,
+          dob: student.dob,
+          reg: student.reg,
+          createdAt: student.createdAt,
+        })),
+      },
+    });
+  } catch (error: any) {
+    console.error("Error fetching students:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch students",
+      error: error.message,
+    });
+  }
+};
+
+// Get all exams attended by a specific student
+export const getStudentExams = async (req: Request, res: Response) => {
+  try {
+    const { studentId } = req.params;
+
+    console.log(`🔍 Fetching exams for student ID: ${studentId}`);
+
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Student ID is required",
+      });
+    }
+
+    // Verify student exists
+    const student = await User.findByPk(Number(studentId));
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    // Find all exam attendances for this student
+    const attendances = await Attend.findAll({
+      where: {
+        user_id: Number(studentId),
+      },
+      include: [
+        {
+          model: Exam,
+          as: "exam",
+          attributes: ["id", "exam_name", "key", "createdAt", "updatedAt"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    console.log(`📚 Found ${attendances.length} exam(s) for student ID ${studentId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: `Found ${attendances.length} exam(s)`,
+      data: {
+        count: attendances.length,
+        exams: attendances.map((attendance) => ({
+          exam_id: attendance.exam_id,
+          user_id: attendance.user_id,
+          startTime: attendance.startTime,
+          endTime: attendance.endTime,
+          createdAt: attendance.createdAt,
+          exam: attendance.exam,
+        })),
+      },
+    });
+  } catch (error: any) {
+    console.error("❌ Error fetching student exams:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch student exams",
+      error: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
+  }
+};
+
+
+
 

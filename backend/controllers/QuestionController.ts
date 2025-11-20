@@ -24,11 +24,20 @@ export const createQuestion = async (req: Request, res: Response) => {
 
     const transaction = await sequelize.transaction();
     try {
+      // Find the correct answer text from options if provided
+      let correctAnswer = answer || '';
+      if (options && options.length) {
+        const correctOption = options.find((opt: any) => opt.is_correct === true);
+        if (correctOption) {
+          correctAnswer = correctOption.option_text || correctOption.text || String(correctOption);
+        }
+      }
+
       const question = await Question.create(
         {
           exam_id,
           question_text,
-          answer,
+          answer: correctAnswer,
           marks,
         },
         { transaction }
@@ -123,11 +132,20 @@ export const updateQuestionsForExam = async (req: Request, res: Response) => {
           });
         }
 
+        // Find the correct answer text from options if provided
+        let correctAnswer = answer || '';
+        if (options && options.length) {
+          const correctOption = options.find((opt: any) => opt.is_correct === true);
+          if (correctOption) {
+            correctAnswer = correctOption.option_text || correctOption.text || String(correctOption);
+          }
+        }
+
         const question = await Question.create(
           {
             exam_id,
             question_text,
-            answer,
+            answer: correctAnswer,
             marks,
           },
           { transaction }

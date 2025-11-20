@@ -26,7 +26,7 @@ interface ParticipantStats {
   userId: number;
   riskScore: number | null;
   violationCount: number;
-  examScore: number | null; // Actual exam score from answers
+  examScore: number | null; 
   loading: boolean;
 }
 
@@ -50,24 +50,20 @@ const ExamDetailsPage: React.FC = () => {
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  // Get risk label based on score (same logic as participant-details.tsx)
   const getRiskLabel = (score: number): string => {
     if (score <= 30) return "Low Risk";
     if (score <= 60) return "Medium Risk";
     return "High Risk";
   };
 
-  // Get risk color based on score (same logic as participant-details.tsx)
   const getRiskColor = (score: number): string => {
-    if (score <= 30) return "#10b981"; // Green for low risk
-    if (score <= 60) return "#f59e0b"; // Orange for medium risk
-    return "#ef4444"; // Red for high risk
+    if (score <= 30) return "#10b981";
+    if (score <= 60) return "#f59e0b";
+    return "#ef4444";
   };
 
-  // Calculate duration since joining
   const calculateDuration = (attendance: Attendance): string => {
     try {
-      // Use startTime and endTime from attendance if available
       if (attendance.startTime) {
         const startTime = new Date(attendance.startTime);
         const endTime = attendance.endTime ? new Date(attendance.endTime) : new Date();
@@ -78,7 +74,6 @@ const ExamDetailsPage: React.FC = () => {
         const hours = Math.floor(durationMs / (1000 * 60 * 60));
         const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
 
-        // Add status indicator if exam is still ongoing
         const statusIndicator = attendance.endTime ? "" : " (ongoing)";
 
         if (hours > 0) {
@@ -90,7 +85,6 @@ const ExamDetailsPage: React.FC = () => {
         }
       }
       
-      // Fallback to createdAt if startTime is not available
       const startTime = new Date(attendance.createdAt);
       const endTime = new Date();
       const durationMs = endTime.getTime() - startTime.getTime();
@@ -112,7 +106,6 @@ const ExamDetailsPage: React.FC = () => {
     }
   };
 
-  // Filter participants based on search term
   const filteredParticipants = examDetails?.attendances?.filter(attendance =>
     attendance.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     attendance.user.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -124,18 +117,15 @@ const ExamDetailsPage: React.FC = () => {
       const response = await axios.get(`${baseUrl}/getScore`, {
         params: { userId, examId },
         headers: { Authorization: `Bearer ${token}` },
-        validateStatus: (status) => status < 500, // Don't throw on 404, etc.
+        validateStatus: (status) => status < 500,
       });
       
-      // Handle different response statuses
       if (response.status === 200 && response.data?.data !== undefined) {
         return response.data.data;
       }
       
-      // Score not found or not yet calculated
       return null;
     } catch (error) {
-      // Only log actual network errors, not expected missing data
       if (axios.isAxiosError(error) && !error.response) {
         console.error(`Network error fetching score for user ${userId}:`, error.message);
       }
@@ -149,15 +139,13 @@ const ExamDetailsPage: React.FC = () => {
       const response = await axios.get(`${baseUrl}/getLogs`, {
         params: { examId, userId },
         headers: { Authorization: `Bearer ${token}` },
-        validateStatus: (status) => status < 500, // Don't throw on 404, etc.
+        validateStatus: (status) => status < 500, 
       });
       
-      // Handle different response statuses
       if (response.status === 200 && response.data?.count !== undefined) {
         return response.data.count;
       }
       
-      // No violations found or not yet available
       return 0;
     } catch (error) {
       // Only log actual network errors, not expected missing data
@@ -727,7 +715,7 @@ const ExamDetailsPage: React.FC = () => {
             fontWeight: "700",
             color: "var(--text-primary)"
           }}>
-            Score Performance Chart
+            Score Performance Distribution
           </h3>
           
           {participantsWithExamScores > 0 ? (() => {
@@ -737,170 +725,163 @@ const ExamDetailsPage: React.FC = () => {
             const averageCount = Object.values(participantStats).filter(s => !s.loading && s.examScore !== null && s.examScore >= 40 && s.examScore < 60).length;
             const poorCount = Object.values(participantStats).filter(s => !s.loading && s.examScore !== null && s.examScore < 40).length;
             
-            const maxCount = Math.max(excellentCount, goodCount, averageCount, poorCount, 1);
+            const dataPoints = [
+              { label: "Poor", range: "(<40%)", value: poorCount, color: "#ef4444", bgColor: "#FEE2E2" },
+              { label: "Average", range: "(40-59%)", value: averageCount, color: "#f59e0b", bgColor: "#FEF3C7" },
+              { label: "Good", range: "(60-79%)", value: goodCount, color: "#0ea5e9", bgColor: "#E0F2FE" },
+              { label: "Excellent", range: "(80-100%)", value: excellentCount, color: "#10b981", bgColor: "#DCFCE7" }
+            ];
+            
+            const maxValue = Math.max(...dataPoints.map(d => d.value), 1);
             
             return (
-              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                {/* Bar Chart */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {/* Modern Horizontal Bar Chart */}
                 <div style={{
                   display: "flex",
-                  alignItems: "flex-end",
-                  justifyContent: "space-around",
-                  height: "200px",
-                  gap: "12px",
-                  padding: "30px 10px 0"
+                  flexDirection: "column",
+                  gap: "14px",
+                  padding: "0"
                 }}>
-                  {/* Excellent Bar */}
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-                    <div style={{ fontSize: "14px", fontWeight: "700", color: "#000", minHeight: "20px" }}>
-                      {participantsWithExamScores > 0 ? ((excellentCount / participantsWithExamScores) * 100).toFixed(0) : 0}%
-                    </div>
-                    <div style={{
-                      width: "100%",
-                      height: `${(excellentCount / maxCount) * 140}px`,
-                      minHeight: excellentCount > 0 ? "30px" : "0px",
-                      background: "linear-gradient(180deg, #10b981 0%, #059669 100%)",
-                      borderRadius: "8px 8px 0 0",
-                      transition: "height 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-                      position: "relative",
-                      boxShadow: "0 -4px 12px rgba(16, 185, 129, 0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}>
+                  {dataPoints.map((d, i) => {
+                    const percentage = (d.value / maxValue) * 100;
+                    const studentPercentage = participantsWithExamScores > 0 ? ((d.value / participantsWithExamScores) * 100).toFixed(0) : 0;
+                    
+                    return (
+                      <div key={i} style={{ position: "relative" }}>
+                        <div style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: "6px"
+                        }}>
+                          <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px"
+                          }}>
+                            <div style={{
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "2px",
+                              background: d.color
+                            }} />
+                            <span style={{
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              color: "var(--text-primary)"
+                            }}>
+                              {d.label}
+                            </span>
+                            <span style={{
+                              fontSize: "11px",
+                              color: "var(--text-secondary)"
+                            }}>
+                              {d.range}
+                            </span>
+                          </div>
+                          <div style={{
+                            display: "flex",
+                            alignItems: "baseline",
+                            gap: "6px"
+                          }}>
+                            <span style={{
+                              fontSize: "18px",
+                              fontWeight: "700",
+                              color: d.color
+                            }}>
+                              {d.value}
+                            </span>
+                            <span style={{
+                              fontSize: "11px",
+                              fontWeight: "600",
+                              color: "var(--text-secondary)"
+                            }}>
+                              ({studentPercentage}%)
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Bar Container */}
+                        <div style={{
+                          width: "100%",
+                          height: "32px",
+                          background: d.bgColor,
+                          borderRadius: "8px",
+                          overflow: "hidden",
+                          position: "relative",
+                          border: `1px solid ${d.color}20`
+                        }}>
+                          {/* Animated Bar */}
+                          <div style={{
+                            height: "100%",
+                            width: `${percentage}%`,
+                            background: `linear-gradient(90deg, ${d.color}, ${d.color}dd)`,
+                            borderRadius: "8px",
+                            transition: "width 1s cubic-bezier(0.4, 0, 0.2, 1)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "flex-end",
+                            paddingRight: "10px",
+                            boxShadow: `0 2px 8px ${d.color}40`,
+                            minWidth: d.value > 0 ? "50px" : "0px"
+                          }}>
+                            {d.value > 0 && (
+                              <span style={{
+                                fontSize: "12px",
+                                fontWeight: "700",
+                                color: "white",
+                                textShadow: "0 1px 2px rgba(0,0,0,0.3)"
+                              }}>
+                                {d.value} {d.value === 1 ? 'student' : 'students'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Stats Summary Cards */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+                  gap: "10px",
+                  marginTop: "6px"
+                }}>
+                  {dataPoints.map((d, i) => (
+                    <div key={i} style={{
+                      textAlign: "center",
+                      padding: "12px 10px",
+                      background: d.bgColor,
+                      borderRadius: "10px",
+                      border: `2px solid ${d.color}`,
+                      transition: "transform 0.2s ease",
+                      cursor: "default"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}
+                    >
                       <div style={{
-                        fontSize: "16px",
+                        fontSize: "24px",
                         fontWeight: "700",
-                        color: "#fff",
-                        textShadow: "0 1px 2px rgba(0,0,0,0.3)"
+                        color: d.color,
+                        lineHeight: "1"
                       }}>
-                        {excellentCount}
+                        {d.value}
+                      </div>
+                      <div style={{
+                        fontSize: "10px",
+                        color: d.color,
+                        marginTop: "5px",
+                        fontWeight: "600",
+                        opacity: 0.8
+                      }}>
+                        {participantsWithExamScores > 0 ? ((d.value / participantsWithExamScores) * 100).toFixed(0) : 0}% {d.label}
                       </div>
                     </div>
-                    <div style={{
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      color: "#333",
-                      textAlign: "center",
-                      marginTop: "8px"
-                    }}>
-                      Excellent<br/>(80-100%)
-                    </div>
-                  </div>
-                  
-                  {/* Good Bar */}
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-                    <div style={{ fontSize: "14px", fontWeight: "700", color: "#000", minHeight: "20px" }}>
-                      {participantsWithExamScores > 0 ? ((goodCount / participantsWithExamScores) * 100).toFixed(0) : 0}%
-                    </div>
-                    <div style={{
-                      width: "100%",
-                      height: `${(goodCount / maxCount) * 140}px`,
-                      minHeight: goodCount > 0 ? "30px" : "0px",
-                      background: "linear-gradient(180deg, var(--accent-color), var(--primary-color))",
-                      borderRadius: "8px 8px 0 0",
-                      transition: "height 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-                      position: "relative",
-                      boxShadow: "0 -4px 12px rgba(var(--accent-rgb), 0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}>
-                      <div style={{
-                        fontSize: "16px",
-                        fontWeight: "700",
-                        color: "#fff",
-                        textShadow: "0 1px 2px rgba(0,0,0,0.3)"
-                      }}>
-                        {goodCount}
-                      </div>
-                    </div>
-                    <div style={{
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      color: "#333",
-                      textAlign: "center",
-                      marginTop: "8px"
-                    }}>
-                      Good<br/>(60-79%)
-                    </div>
-                  </div>
-                  
-                  {/* Average Bar */}
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-                    <div style={{ fontSize: "14px", fontWeight: "700", color: "#000", minHeight: "20px" }}>
-                      {participantsWithExamScores > 0 ? ((averageCount / participantsWithExamScores) * 100).toFixed(0) : 0}%
-                    </div>
-                    <div style={{
-                      width: "100%",
-                      height: `${(averageCount / maxCount) * 140}px`,
-                      minHeight: averageCount > 0 ? "30px" : "0px",
-                      background: "linear-gradient(180deg, #f59e0b 0%, #d97706 100%)",
-                      borderRadius: "8px 8px 0 0",
-                      transition: "height 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-                      position: "relative",
-                      boxShadow: "0 -4px 12px rgba(245, 158, 11, 0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}>
-                      <div style={{
-                        fontSize: "16px",
-                        fontWeight: "700",
-                        color: "#fff",
-                        textShadow: "0 1px 2px rgba(0,0,0,0.3)"
-                      }}>
-                        {averageCount}
-                      </div>
-                    </div>
-                    <div style={{
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      color: "#333",
-                      textAlign: "center",
-                      marginTop: "8px"
-                    }}>
-                      Average<br/>(40-59%)
-                    </div>
-                  </div>
-                  
-                  {/* Poor Bar */}
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-                    <div style={{ fontSize: "14px", fontWeight: "700", color: "#000", minHeight: "20px" }}>
-                      {participantsWithExamScores > 0 ? ((poorCount / participantsWithExamScores) * 100).toFixed(0) : 0}%
-                    </div>
-                    <div style={{
-                      width: "100%",
-                      height: `${(poorCount / maxCount) * 140}px`,
-                      minHeight: poorCount > 0 ? "30px" : "0px",
-                      background: "linear-gradient(180deg, #ef4444 0%, #dc2626 100%)",
-                      borderRadius: "8px 8px 0 0",
-                      transition: "height 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-                      position: "relative",
-                      boxShadow: "0 -4px 12px rgba(239, 68, 68, 0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}>
-                      <div style={{
-                        fontSize: "16px",
-                        fontWeight: "700",
-                        color: "#fff",
-                        textShadow: "0 1px 2px rgba(0,0,0,0.3)"
-                      }}>
-                        {poorCount}
-                      </div>
-                    </div>
-                    <div style={{
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      color: "#333",
-                      textAlign: "center",
-                      marginTop: "8px"
-                    }}>
-                      Poor<br/>(&lt;40%)
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             );
@@ -1038,147 +1019,315 @@ const ExamDetailsPage: React.FC = () => {
         </div>
 
         {filteredParticipants.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            {filteredParticipants.map((attendance, index) => {
-              const stats = participantStats[attendance.user.id];
-              const riskScore = stats?.riskScore;
-              return (
-                <div
-                  key={index}
-                  onClick={() => handleUserClick(attendance.user)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "20px",
-                    padding: "20px",
-                    background: "var(--secondary-bg)",
-                    border: "1px solid var(--border-color)",
-                    borderRadius: "14px",
-                    cursor: "pointer",
-                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 8px 24px var(--shadow)";
-                    e.currentTarget.style.borderColor = "var(--accent-color)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "none";
-                    e.currentTarget.style.borderColor = "var(--border-color)";
-                  }}
-                >
-                  <div style={{
-                    width: "52px",
-                    height: "52px",
-                    borderRadius: "14px",
-                    background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "20px",
+          <div style={{
+            overflowX: "auto",
+            borderRadius: "12px",
+            border: "1px solid var(--border-color)"
+          }}>
+            <table style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "14px"
+            }}>
+              <thead>
+                <tr style={{
+                  background: "var(--secondary-bg)",
+                  borderBottom: "2px solid var(--border-color)"
+                }}>
+                  <th style={{
+                    padding: "16px",
+                    textAlign: "left",
                     fontWeight: "700",
-                    color: "white",
-                    flexShrink: 0,
-                    boxShadow: "0 4px 12px rgba(14, 165, 233, 0.3)"
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap"
                   }}>
-                    {attendance.user.name.charAt(0).toUpperCase()}
-                  </div>
-                  
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: "16px",
-                      fontWeight: "600",
-                      color: "var(--text-primary)",
-                      marginBottom: "6px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap"
-                    }}>
-                      {attendance.user.name}
-                    </div>
-                    <div style={{
-                      fontSize: "14px",
-                      color: "var(--text-secondary)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap"
-                    }}>
-                      {attendance.user.email}
-                    </div>
-                    <div style={{
-                      fontSize: "13px",
-                      color: "var(--text-secondary)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      marginTop: "4px"
-                    }}>
-                      <strong style={{ color: "#495057" }}>Dept:</strong> {attendance.user.dept || "N/A"} | <strong style={{ color: "#495057" }}>DOB:</strong> {attendance.user.dob || "N/A"}
-                    </div>
-                    <div style={{
-                      fontSize: "13px",
-                      color: "var(--text-secondary)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      marginTop: "2px"
-                    }}>
-                      <strong style={{ color: "#495057" }}>Reg No:</strong> {attendance.user.reg || "N/A"}
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: "20px", alignItems: "center", flexShrink: 0, flexWrap: "wrap" }}>
-                    <div style={{ textAlign: "center", minWidth: "70px" }}>
-                      <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginBottom: "6px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Duration
-                      </div>
-                      <div style={{ fontSize: "15px", fontWeight: "600", color: "var(--text-primary)" }}>
-                        {calculateDuration(attendance)}
-                      </div>
-                    </div>
-
-                    <div style={{ textAlign: "center", minWidth: "70px" }}>
-                      <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginBottom: "6px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Risk Score
-                      </div>
-                      <div style={{
-                        fontSize: "15px",
-                        fontWeight: "700",
-                        color: riskScore !== null && riskScore !== undefined ? getRiskColor(riskScore) : "var(--text-secondary)"
-                      }}>
-                        {stats?.loading ? "..." : riskScore !== null && riskScore !== undefined ? `${riskScore}%` : "N/A"}
-                      </div>
-                    </div>
-
-                    <div style={{ textAlign: "center", minWidth: "70px" }}>
-                      <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginBottom: "6px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Violations
-                      </div>
-                      <div style={{
-                        fontSize: "15px",
-                        fontWeight: "700",
-                        color: (stats?.violationCount || 0) > 0 ? "#ef4444" : "var(--text-primary)"
-                      }}>
-                        {stats?.loading ? "..." : stats?.violationCount || 0}
-                      </div>
-                    </div>
-
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      style={{ color: "var(--text-secondary)", flexShrink: 0 }}
+                    Student
+                  </th>
+                  <th style={{
+                    padding: "16px",
+                    textAlign: "left",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap"
+                  }}>
+                    Email
+                  </th>
+                  <th style={{
+                    padding: "16px",
+                    textAlign: "left",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap"
+                  }}>
+                    Department
+                  </th>
+                  <th style={{
+                    padding: "16px",
+                    textAlign: "left",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap"
+                  }}>
+                    DOB
+                  </th>
+                  <th style={{
+                    padding: "16px",
+                    textAlign: "left",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap"
+                  }}>
+                    Reg No
+                  </th>
+                  <th style={{
+                    padding: "16px",
+                    textAlign: "center",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap"
+                  }}>
+                    Duration
+                  </th>
+                  <th style={{
+                    padding: "16px",
+                    textAlign: "center",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap"
+                  }}>
+                    Risk Score
+                  </th>
+                  <th style={{
+                    padding: "16px",
+                    textAlign: "center",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap"
+                  }}>
+                    Violations
+                  </th>
+                  <th style={{
+                    padding: "16px",
+                    textAlign: "center",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap"
+                  }}>
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredParticipants.map((attendance, index) => {
+                  const stats = participantStats[attendance.user.id];
+                  const riskScore = stats?.riskScore;
+                  return (
+                    <tr
+                      key={index}
+                      style={{
+                        borderBottom: "1px solid var(--border-color)",
+                        transition: "background 0.2s ease",
+                        cursor: "pointer"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "var(--secondary-bg)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                      }}
+                      onClick={() => handleUserClick(attendance.user)}
                     >
-                      <path d="m9 18 6-6-6-6" />
-                    </svg>
-                  </div>
-                </div>
-              );
-            })}
+                      <td style={{
+                        padding: "16px",
+                        whiteSpace: "nowrap"
+                      }}>
+                        <div style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px"
+                        }}>
+                          <div style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "10px",
+                            background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "16px",
+                            fontWeight: "700",
+                            color: "white",
+                            flexShrink: 0
+                          }}>
+                            {attendance.user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span style={{
+                            fontWeight: "600",
+                            color: "var(--text-primary)"
+                          }}>
+                            {attendance.user.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{
+                        padding: "16px",
+                        color: "var(--text-secondary)",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {attendance.user.email}
+                      </td>
+                      <td style={{
+                        padding: "16px",
+                        whiteSpace: "nowrap"
+                      }}>
+                        <span style={{
+                          display: "inline-block",
+                          padding: "6px 12px",
+                          background: "#EEF2FF",
+                          color: "#4F46E5",
+                          borderRadius: "8px",
+                          fontSize: "13px",
+                          fontWeight: "600"
+                        }}>
+                          {attendance.user.dept || "N/A"}
+                        </span>
+                      </td>
+                      <td style={{
+                        padding: "16px",
+                        color: "var(--text-secondary)",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {attendance.user.dob || "N/A"}
+                      </td>
+                      <td style={{
+                        padding: "16px",
+                        whiteSpace: "nowrap"
+                      }}>
+                        <span style={{
+                          display: "inline-block",
+                          padding: "6px 12px",
+                          background: "#F0FDF4",
+                          color: "#16A34A",
+                          borderRadius: "8px",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          fontFamily: "'Courier New', monospace"
+                        }}>
+                          {attendance.user.reg || "N/A"}
+                        </span>
+                      </td>
+                      <td style={{
+                        padding: "16px",
+                        textAlign: "center",
+                        fontWeight: "600",
+                        color: "var(--text-primary)",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {calculateDuration(attendance)}
+                      </td>
+                      <td style={{
+                        padding: "16px",
+                        textAlign: "center",
+                        whiteSpace: "nowrap"
+                      }}>
+                        <span style={{
+                          display: "inline-block",
+                          padding: "6px 12px",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          fontWeight: "700",
+                          background: riskScore !== null && riskScore !== undefined 
+                            ? (riskScore > 60 ? "#FEE2E2" : riskScore > 30 ? "#FEF3C7" : "#DCFCE7")
+                            : "var(--secondary-bg)",
+                          color: riskScore !== null && riskScore !== undefined 
+                            ? getRiskColor(riskScore) 
+                            : "var(--text-secondary)"
+                        }}>
+                          {stats?.loading ? "..." : riskScore !== null && riskScore !== undefined ? `${riskScore}%` : "N/A"}
+                        </span>
+                      </td>
+                      <td style={{
+                        padding: "16px",
+                        textAlign: "center",
+                        whiteSpace: "nowrap"
+                      }}>
+                        <span style={{
+                          display: "inline-block",
+                          padding: "6px 12px",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          fontWeight: "700",
+                          background: (stats?.violationCount || 0) > 0 ? "#FEE2E2" : "var(--secondary-bg)",
+                          color: (stats?.violationCount || 0) > 0 ? "#ef4444" : "var(--text-primary)"
+                        }}>
+                          {stats?.loading ? "..." : stats?.violationCount || 0}
+                        </span>
+                      </td>
+                      <td style={{
+                        padding: "16px",
+                        textAlign: "center"
+                      }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUserClick(attendance.user);
+                          }}
+                          style={{
+                            padding: "8px 16px",
+                            background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "8px",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                            whiteSpace: "nowrap"
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                            e.currentTarget.style.boxShadow = "0 4px 12px rgba(14, 165, 233, 0.4)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow = "none";
+                          }}
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         ) : searchTerm ? (
           <div style={{

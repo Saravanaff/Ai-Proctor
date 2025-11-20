@@ -192,6 +192,42 @@ const SuperAdminDashboard = () => {
                 <span style={{ fontSize: "18px", transition: "transform 0.3s ease" }}>👥</span>
                 Admin Management
               </button>
+              <button
+                onClick={() => router.push("/superAdmin/students")}
+                style={{
+                  padding: "12px 16px",
+                  background: "transparent",
+                  color: "var(--text-secondary)",
+                  border: "none",
+                  borderRadius: "10px",
+                  textAlign: "left",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  position: "relative",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--secondary-bg)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.paddingLeft = "20px";
+                  const icon = e.currentTarget.querySelector("span") as HTMLElement;
+                  if (icon) icon.style.transform = "scale(1.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.paddingLeft = "16px";
+                  const icon = e.currentTarget.querySelector("span") as HTMLElement;
+                  if (icon) icon.style.transform = "scale(1)";
+                }}
+              >
+                <span style={{ fontSize: "18px", transition: "transform 0.3s ease" }}>🎓</span>
+                Student Management
+              </button>
             </nav>
           </div>
 

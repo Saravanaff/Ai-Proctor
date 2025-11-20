@@ -917,26 +917,25 @@ const ParticipantDetailsPage: React.FC = () => {
     }
   }, [activeTab, user, examDetails]);
 
-  // Calculate total violations
+  // Calculate total violations (count only violation types that occurred, not the sum)
   const getTotalViolations = () => {
     if (!scoreDetails?.scoreBreakdown) return 0;
 
     const breakdown = scoreDetails.scoreBreakdown;
-    return (
-      (breakdown.no_of_person_flagged || 0) +
-      (breakdown.no_person_flagged || 0) +
-      (breakdown.auth_face_flagged || 0) +
-      (breakdown.head_position_flagged || 0) +
-      (breakdown.eyes_flagged || 0) +
-      (breakdown.sound_flagged || 0) +
-      (breakdown.object_detected_flagged || 0) +
-      (breakdown.tab_switch_violation || 0) +
-      (breakdown.number_of_microphone || 0) +
-      (breakdown.screen_sharing ? 1 : 0) +
-      (breakdown.safe_browser ? 1 : 0) +
-      (breakdown.control_desktop_apps ? 1 : 0) +
-      (breakdown.blank_feed || 0)
-    );
+    let count = 0;
+    
+    // Only count actual violations (not settings or informational fields)
+    if (breakdown.no_of_person_flagged > 0) count++;
+    if (breakdown.no_person_flagged > 0) count++;
+    if (breakdown.auth_face_flagged > 0) count++;
+    if (breakdown.head_position_flagged > 0) count++;
+    if (breakdown.eyes_flagged > 0) count++;
+    if (breakdown.sound_flagged > 0) count++;
+    if (breakdown.object_detected_flagged > 0) count++;
+    if (breakdown.tab_switch_violation > 0) count++;
+    if (breakdown.blank_feed > 0) count++;
+    
+    return count;
   };
 
   const getSeverityColor = (severity: "low" | "medium" | "high" | string) => {

@@ -78,10 +78,21 @@ export const createExam = async (req: Request, res: Response) => {
 
     if (questions && Array.isArray(questions) && questions.length > 0) {
       for (const q of questions) {
+        // Find the correct answer text from options
+        let correctAnswer = q.answer || '';
+        if (q.options && Array.isArray(q.options)) {
+          const correctOption = q.options.find((opt: any) => 
+            typeof opt === 'object' && opt.is_correct === true
+          );
+          if (correctOption) {
+            correctAnswer = correctOption.option_text || correctOption.text || '';
+          }
+        }
+
         const createdQuestion = await Question.create({
           exam_id: newExam.id,
           question_text: q.question_text || q.question,
-          answer: String(q.answer),
+          answer: correctAnswer,
           marks: q.marks || 1,
         });
 
