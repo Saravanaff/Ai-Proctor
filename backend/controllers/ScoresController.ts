@@ -132,12 +132,12 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
 
     // ✅ Define violation weights as per requirement
     const violationWeights = {
-      head_position_violation: 0.5,    // Head movement
-      eye_position_violation: 0.3,     // Eye movement
+      head_position_violation: 1,    // Head movement
+      eye_position_violation: 0.5,     // Eye movement
       object_detection_violation: 1.0, // Object detected
       face_auth_failed: 1.0,           // Face authentication failed
       multiple_persons_detected: 1.0,  // Multiple persons
-      no_person_detected: 0.5,         // No person detected
+      no_person_detected: 1,         // No person detected
     };
 
     // Initialize violation counters
@@ -189,24 +189,24 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
     });
 
     // ✅ Calculate risk score based on total weighted flags
-    // Low Risk: 0-30% (0-10 weighted flags)
-    // Medium Risk: 31-60% (11-20 weighted flags)
-    // High Risk: 61-100% (21+ weighted flags)
+    // Low Risk: 0-30% (below 6 weighted flags)
+    // Medium Risk: 31-60% (6-10 weighted flags)
+    // High Risk: 61-100% (above 10 weighted flags)
     
     let riskScore = 0;
     let riskLevel = "Low";
 
-    if (totalWeightedFlags <= 10) {
+    if (totalWeightedFlags < 6) {
       // Low Risk: 0-30%
-      riskScore = Math.min(Math.round((totalWeightedFlags / 10) * 30), 30);
+      riskScore = Math.min(Math.round((totalWeightedFlags / 6) * 30), 30);
       riskLevel = "Low";
-    } else if (totalWeightedFlags <= 20) {
+    } else if (totalWeightedFlags <= 10) {
       // Medium Risk: 31-60%
-      riskScore = Math.min(Math.round(30 + ((totalWeightedFlags - 10) / 10) * 30), 60);
+      riskScore = Math.min(Math.round(30 + ((totalWeightedFlags - 6) / 4) * 30), 60);
       riskLevel = "Medium";
     } else {
       // High Risk: 61-100%
-      riskScore = Math.min(Math.round(60 + ((totalWeightedFlags - 20) / 20) * 40), 100);
+      riskScore = Math.min(Math.round(60 + ((totalWeightedFlags - 10) / 15) * 40), 100);
       riskLevel = "High";
     }
 

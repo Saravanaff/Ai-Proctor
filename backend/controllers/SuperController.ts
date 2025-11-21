@@ -17,7 +17,7 @@ export const getAdminEmails = async (req: Request, res: Response) => {
       where: {
         role: "examiner",
       },
-      attributes: ["id", "name", "email", "createdAt"],
+      attributes: ["id", "name", "email", "createdAt", "isActive"],
       order: [["createdAt", "DESC"]],
     });
 
@@ -36,6 +36,7 @@ export const getAdminEmails = async (req: Request, res: Response) => {
           name: admin.name,
           email: admin.email,
           createdAt: admin.createdAt,
+          isActive: admin.isActive,
         })),
       },
     });
@@ -289,6 +290,67 @@ export const deleteAdmin = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to delete admin",
+      error: error.message,
+    });
+  }
+};
+
+export const toggleAdminStatus = async (req: Request, res: Response) => {
+  try {
+    const { adminEmail } = req.params;
+    const { isActive } = req.body;
+
+    if (!adminEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Admin email is required",
+      });
+    }
+
+    if (typeof isActive !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "isActive must be a boolean value",
+      });
+    }
+
+    const admin = await User.findOne({
+      where: {
+        email: adminEmail,
+        role: "examiner",
+      },
+    });
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin not found",
+      });
+    }
+
+    admin.isActive = isActive;
+    await admin.save();
+
+    const action = isActive ? "activated" : "suspended";
+    console.log(`${action} admin: ${admin.name} (${admin.email})`);
+
+    return res.status(200).json({
+      success: true,
+      message: `Admin ${admin.name} has been ${action} successfully`,
+      data: {
+        admin: {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          isActive: admin.isActive,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error("Error toggling admin status:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to toggle admin status",
       error: error.message,
     });
   }

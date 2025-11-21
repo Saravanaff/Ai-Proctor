@@ -69,6 +69,13 @@ export class User extends Model{
   })
   role!: UserRole;
 
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  })
+  isActive!: boolean;
+
   @HasMany(() => Exam)
   exams!: Exam[];
 

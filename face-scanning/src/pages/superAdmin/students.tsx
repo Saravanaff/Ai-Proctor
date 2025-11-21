@@ -253,7 +253,7 @@ export default function StudentsManagement() {
           {/* Stats Cards */}
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
-              <div className={styles.statIconWrapper} style={{ background: "#EEF2FF" }}>
+              <div className={styles.statIconWrapper} style={{ background: "var(--primary-bg-light)" }}>
                 <svg
                   width="24"
                   height="24"
@@ -263,28 +263,28 @@ export default function StudentsManagement() {
                 >
                   <path
                     d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
-                    stroke="#4F46E5"
+                    stroke="var(--accent-color)"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                   <path
                     d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z"
-                    stroke="#4F46E5"
+                    stroke="var(--accent-color)"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                   <path
                     d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13"
-                    stroke="#4F46E5"
+                    stroke="var(--accent-color)"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                   <path
                     d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88"
-                    stroke="#4F46E5"
+                    stroke="var(--accent-color)"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -298,7 +298,7 @@ export default function StudentsManagement() {
             </div>
 
             <div className={styles.statCard}>
-              <div className={styles.statIconWrapper} style={{ background: "#F0FDF4" }}>
+              <div className={styles.statIconWrapper} style={{ background: "var(--success-bg)" }}>
                 <svg
                   width="24"
                   height="24"
@@ -308,7 +308,7 @@ export default function StudentsManagement() {
                 >
                   <path
                     d="M22 12H18L15 21L9 3L6 12H2"
-                    stroke="#16A34A"
+                    stroke="var(--success-color)"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"

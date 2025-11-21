@@ -107,17 +107,22 @@ export const getCandidateVideos = async (req: Request, res: Response) => {
 
     const faceCameraBaseName = `${user_id}_${exam_id}_face_camera`;
     const screenRecordingBaseName = `${user_id}_${exam_id}_screen_recording`;
+    const thirdEyeBaseName = `${user_id}_${exam_id}_third_eye`;
 
     const faceCameraPath = findVideoFile(faceCameraBaseName, STORAGE_RECORDINGS_PATH);
     const screenRecordingPath = findVideoFile(screenRecordingBaseName, STORAGE_RECORDINGS_PATH);
+    const thirdEyePath = findVideoFile(thirdEyeBaseName, STORAGE_RECORDINGS_PATH);
 
     const faceCameraExists = faceCameraPath !== null;
     const screenRecordingExists = screenRecordingPath !== null;
+    const thirdEyeExists = thirdEyePath !== null;
 
     let faceCameraStats = null;
     let screenRecordingStats = null;
+    let thirdEyeStats = null;
     let faceCameraFileName = null;
     let screenRecordingFileName = null;
+    let thirdEyeFileName = null;
 
     if (faceCameraExists && faceCameraPath) {
       faceCameraStats = fs.statSync(faceCameraPath);
@@ -127,6 +132,11 @@ export const getCandidateVideos = async (req: Request, res: Response) => {
     if (screenRecordingExists && screenRecordingPath) {
       screenRecordingStats = fs.statSync(screenRecordingPath);
       screenRecordingFileName = path.basename(screenRecordingPath);
+    }
+
+    if (thirdEyeExists && thirdEyePath) {
+      thirdEyeStats = fs.statSync(thirdEyePath);
+      thirdEyeFileName = path.basename(thirdEyePath);
     }
 
     return res.status(200).json({
@@ -160,6 +170,19 @@ export const getCandidateVideos = async (req: Request, res: Response) => {
             ? `/api/video/download/${user_id}/${exam_id}/screen_recording` 
             : null,
         },
+        third_eye: {
+          available: thirdEyeExists,
+          fileName: thirdEyeFileName,
+          mp4_fileName: `${thirdEyeBaseName}.mp4`,
+          size: thirdEyeStats ? thirdEyeStats.size : 0,
+          created_at: thirdEyeStats ? thirdEyeStats.birthtime : null,
+          stream_url: thirdEyeExists 
+            ? `/api/video/stream/${user_id}/${exam_id}/third_eye` 
+            : null,
+          download_url: thirdEyeExists 
+            ? `/api/video/download/${user_id}/${exam_id}/third_eye` 
+            : null,
+        },
       },
     });
   } catch (error: any) {
@@ -183,16 +206,16 @@ export const streamVideo = async (req: Request, res: Response) => {
       });
     }
 
-    if (category !== "face_camera" && category !== "screen_recording") {
+    if (category !== "face_camera" && category !== "screen_recording" && category !== "third_eye") {
       return res.status(400).json({
         success: false,
-        message: "Invalid category. Must be 'face_camera' or 'screen_recording'",
+        message: "Invalid category. Must be 'face_camera', 'screen_recording', or 'third_eye'",
       });
     }
 
     const baseFileName = `${user_id}_${exam_id}_${category}`;
     const videoPath = findVideoFile(baseFileName, STORAGE_RECORDINGS_PATH);
-    console.log(videoPath);
+    console.log(`Looking for video: ${baseFileName} -> ${videoPath || 'NOT FOUND'}`);
 
     if (!videoPath) {
       return res.status(404).json({
@@ -271,10 +294,10 @@ export const downloadVideo = async (req: Request, res: Response) => {
       });
     }
 
-    if (category !== "face_camera" && category !== "screen_recording") {
+    if (category !== "face_camera" && category !== "screen_recording" && category !== "third_eye") {
       return res.status(400).json({
         success: false,
-        message: "Invalid category. Must be 'face_camera' or 'screen_recording'",
+        message: "Invalid category. Must be 'face_camera', 'screen_recording', or 'third_eye'",
       });
     }
 

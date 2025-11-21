@@ -4,6 +4,7 @@ import {
   getExaminerEmails,
   getAdminExams,
   deleteAdmin,
+  toggleAdminStatus,
   createAdminWithoutPassword,
   bulkCreateAdmins,
   getAllStudents,
@@ -34,6 +35,9 @@ router.post("/admin/create", createAdminWithoutPassword);
 
 // Bulk create admins from CSV
 router.post("/admin/bulk-create", bulkCreateAdmins);
+
+// Toggle admin status (suspend/activate)
+router.patch("/admin/:adminEmail/status", toggleAdminStatus);
 
 // Delete admin and all associated data
 router.delete("/admin/:adminEmail",deleteAdmin);

@@ -3,7 +3,6 @@ import bcrypt from "bcrypt";
 import { User } from "../models/User";
 import { Otp } from "../models/Otp";
 
-// Reset password with OTP verification
 export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { email, otp, newPassword } = req.body;
@@ -15,7 +14,6 @@ export const resetPassword = async (req: Request, res: Response) => {
       });
     }
 
-    // Validate password strength
     if (newPassword.length < 8) {
       return res.status(400).json({
         success: false,

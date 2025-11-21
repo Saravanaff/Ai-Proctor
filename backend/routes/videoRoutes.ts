@@ -26,13 +26,11 @@ router.options("/stream/:user_id/:exam_id/:category", (req, res) => {
 
 router.get(
   "/candidate/:user_id/:exam_id",
-  authMiddleware,
   getCandidateVideos
 );
 
 router.get(
   "/exam/:exam_id",
-  authMiddleware,
   getExamVideos
 );
 
@@ -48,7 +46,6 @@ router.get(
 
 router.get(
   "/download/:user_id/:exam_id/:category",
-  authMiddleware,
   downloadVideo
 );
 

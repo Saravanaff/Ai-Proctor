@@ -13,6 +13,7 @@ interface Admin {
   createdAt: string;
   role?: string;
   status?: string;
+  isActive?: boolean;
 }
 
 const SuperAdminDashboard = () => {
@@ -30,6 +31,7 @@ const SuperAdminDashboard = () => {
   const [newAdminDob, setNewAdminDob] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -52,7 +54,7 @@ const SuperAdminDashboard = () => {
         const adminsWithStatus = res.data.data.admins.map((admin: Admin) => ({
           ...admin,
           role: admin.role || "Admin",
-          status: admin.status || "Active",
+          status: admin.isActive === false ? "Suspended" : "Active",
         }));
         setAdmins(adminsWithStatus);
       }
@@ -122,6 +124,34 @@ const SuperAdminDashboard = () => {
       alert(msg);
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleToggleStatus = async (admin: Admin, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const action = admin.isActive === false ? "activate" : "suspend";
+    const confirmMsg = `Are you sure you want to ${action} ${admin.name}?`;
+    
+    if (!confirm(confirmMsg)) return;
+    
+    setIsTogglingStatus(true);
+
+    try {
+      const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const res = await axios.patch(`${base}/admin/${admin.email}/status`, {
+        isActive: admin.isActive === false ? true : false,
+      });
+
+      if (res.data?.success) {
+        alert(res.data.message);
+        fetchAdmins();
+      }
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e.message || "Failed to toggle admin status";
+      alert(msg);
+    } finally {
+      setIsTogglingStatus(false);
     }
   };
 
@@ -671,7 +701,7 @@ const SuperAdminDashboard = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "2fr 1fr 1fr 1fr 160px",
+              gridTemplateColumns: "2fr 1fr 1fr 1fr 240px",
               padding: "16px 24px",
               background: "var(--secondary-bg)",
               borderBottom: "1px solid var(--border-color)",
@@ -686,7 +716,7 @@ const SuperAdminDashboard = () => {
             <div>Status</div>
             <div>Role</div>
             <div>Joined</div>
-            <div style={{ textAlign: "center" }}>Actions</div>
+            <div style={{ textAlign: "right", paddingRight: "8px" }}>Actions</div>
           </div>
 
           {/* Table Body */}
@@ -695,7 +725,7 @@ const SuperAdminDashboard = () => {
               key={admin.id}
               style={{
                 display: "grid",
-                gridTemplateColumns: "2fr 1fr 1fr 1fr 160px",
+                gridTemplateColumns: "2fr 1fr 1fr 1fr 240px",
                 padding: "20px 24px",
                 borderBottom: "1px solid var(--border-color)",
                 alignItems: "center",
@@ -785,10 +815,10 @@ const SuperAdminDashboard = () => {
               </div>
 
               {/* Actions */}
-              <div style={{ textAlign: "center", display: "flex", gap: "8px", justifyContent: "center" }}>
+              <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end", alignItems: "center" }}>
                 <button
                   style={{
-                    padding: "6px 12px",
+                    padding: "8px 14px",
                     background: "transparent",
                     border: "1px solid var(--border-color)",
                     borderRadius: "8px",
@@ -797,6 +827,8 @@ const SuperAdminDashboard = () => {
                     fontSize: "12px",
                     fontWeight: "600",
                     transition: "all 0.2s ease",
+                    whiteSpace: "nowrap",
+                    minWidth: "70px",
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -817,7 +849,7 @@ const SuperAdminDashboard = () => {
                 </button>
                 <button
                   style={{
-                    padding: "6px 12px",
+                    padding: "8px 14px",
                     background: "transparent",
                     border: "1px solid var(--border-color)",
                     borderRadius: "8px",
@@ -826,12 +858,44 @@ const SuperAdminDashboard = () => {
                     fontSize: "12px",
                     fontWeight: "600",
                     transition: "all 0.2s ease",
+                    whiteSpace: "nowrap",
+                    minWidth: "85px",
+                  }}
+                  onClick={(e) => handleToggleStatus(admin, e)}
+                  onMouseEnter={(e) => {
+                    const warningColor = admin.isActive === false ? "#10b981" : "#f59e0b";
+                    e.currentTarget.style.background = warningColor;
+                    e.currentTarget.style.color = "white";
+                    e.currentTarget.style.borderColor = warningColor;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                    e.currentTarget.style.borderColor = "var(--border-color)";
+                  }}
+                  disabled={isTogglingStatus}
+                >
+                  {admin.isActive === false ? "Activate" : "Suspend"}
+                </button>
+                <button
+                  style={{
+                    padding: "8px 14px",
+                    background: "transparent",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "8px",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    transition: "all 0.2s ease",
+                    whiteSpace: "nowrap",
+                    minWidth: "70px",
                   }}
                   onClick={(e) => handleDeleteClick(admin, e)}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--danger-color)";
+                    e.currentTarget.style.background = "#ef4444";
                     e.currentTarget.style.color = "white";
-                    e.currentTarget.style.borderColor = "var(--danger-color)";
+                    e.currentTarget.style.borderColor = "#ef4444";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "transparent";
