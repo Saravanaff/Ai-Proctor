@@ -310,7 +310,7 @@ export const getUserAnswersByAdmin = async (req: Request, res: Response) => {
       include: [
         {
           model: Question,
-          attributes: ["id", "question_text"],
+          attributes: ["id", "question_text", "marks"],
           include: [
             {
               model: QuestionOption,
@@ -328,16 +328,33 @@ export const getUserAnswersByAdmin = async (req: Request, res: Response) => {
       order: [["question_id", "ASC"]],
     });
 
+    const totalQuestions = await Question.count({
+      where: {
+        exam_id: Number(examId),
+      },
+    });
+
+    const maxScore = await Question.sum("marks", {
+      where: {
+        exam_id: Number(examId),
+      },
+    });
+
     let correctAnswers = 0;
+    let obtainedScore = 0;
     let totalAnswered = userAnswers.length;
 
     const answersWithDetails = userAnswers.map((answer) => {
       const isCorrect = answer.selected_option?.is_correct || false;
-      if (isCorrect) correctAnswers++;
+      if (isCorrect) {
+        correctAnswers++;
+        obtainedScore += answer.question?.marks || 0;
+      }
 
       return {
         question_id: answer.question_id,
         question_text: answer.question?.question_text,
+        marks: answer.question?.marks,
         all_options: answer.question?.options || [],
         selected_option_id: answer.option_id,
         selected_option_text: answer.selected_option?.option_text,
@@ -350,6 +367,8 @@ export const getUserAnswersByAdmin = async (req: Request, res: Response) => {
     console.log("Successfully fetched user answers:", {
       totalAnswered,
       correctAnswers,
+      obtainedScore,
+      maxScore,
     });
 
     return res.status(200).json({
@@ -366,12 +385,15 @@ export const getUserAnswersByAdmin = async (req: Request, res: Response) => {
           email: attendance.user?.email,
         },
         statistics: {
+          total_questions: totalQuestions,
           total_answered: totalAnswered,
           correct_answers: correctAnswers,
           incorrect_answers: totalAnswered - correctAnswers,
+          obtained_score: obtainedScore,
+          max_score: maxScore || 0,
           score_percentage:
-            totalAnswered > 0
-              ? ((correctAnswers / totalAnswered) * 100).toFixed(2)
+            (maxScore || 0) > 0
+              ? ((obtainedScore / (maxScore || 1)) * 100).toFixed(2)
               : "0.00",
         },
         answers: answersWithDetails,

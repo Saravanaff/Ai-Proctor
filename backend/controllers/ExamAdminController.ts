@@ -479,6 +479,18 @@ export const getExamResults = async (req: Request, res: Response) => {
       });
     }
 
+    const totalQuestions = await Question.count({
+      where: {
+        exam_id: Number(examId),
+      },
+    });
+
+    const maxScore = await Question.sum("marks", {
+      where: {
+        exam_id: Number(examId),
+      },
+    });
+
     const results = await Promise.all(
       candidates.map(async (candidate) => {
         const userId = candidate.user_id;
@@ -490,6 +502,10 @@ export const getExamResults = async (req: Request, res: Response) => {
           },
           include: [
             {
+              model: Question,
+              attributes: ["marks"],
+            },
+            {
               model: QuestionOption,
               as: "selected_option",
               attributes: ["id", "option_text", "is_correct"],
@@ -498,11 +514,13 @@ export const getExamResults = async (req: Request, res: Response) => {
         });
 
         let correctAnswers = 0;
+        let obtainedScore = 0;
         let totalAnswered = userAnswers.length;
 
         userAnswers.forEach((answer) => {
           if (answer.selected_option && answer.selected_option.is_correct) {
             correctAnswers++;
+            obtainedScore += answer.question?.marks || 0;
           }
         });
 
@@ -511,10 +529,13 @@ export const getExamResults = async (req: Request, res: Response) => {
           name: candidate.user?.name || "Unknown",
           email: candidate.user?.email || "",
           total_answered: totalAnswered,
+          total_questions: totalQuestions,
           correct_answers: correctAnswers,
+          obtained_score: obtainedScore,
+          max_score: maxScore || 0,
           score_percentage:
-            totalAnswered > 0
-              ? ((correctAnswers / totalAnswered) * 100).toFixed(2)
+            (maxScore || 0) > 0
+              ? ((obtainedScore / (maxScore || 1)) * 100).toFixed(2)
               : "0.00",
         };
       })

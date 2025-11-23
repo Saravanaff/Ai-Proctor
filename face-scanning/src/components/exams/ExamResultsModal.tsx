@@ -8,7 +8,10 @@ interface Student {
   name: string;
   email: string;
   total_answered: number;
+  total_questions?: number;
   correct_answers: number;
+  obtained_score?: number;
+  max_score?: number;
   score_percentage: string;
 }
 
@@ -44,6 +47,8 @@ interface StudentDetail {
     wrong: number;
     unanswered: number;
     score: string;
+    obtainedScore?: number;
+    maxScore?: number;
   };
 }
 
@@ -123,25 +128,27 @@ const ExamResultsModal: React.FC<ExamResultsModalProps> = ({
       const questions: QuestionDetail[] = questionsRes.data.questions || [];
       const userAnswers: UserAnswer[] = answersRes.data.data?.answers || [];
 
-      console.log(`✅ Loaded ${questions.length} questions, ${userAnswers.length} answers`);
+      console.log(
+        `✅ Loaded ${questions.length} questions, ${userAnswers.length} answers`
+      );
 
       // Map questions with user answers
       const detailedAnswers = questions.map((question) => {
         // Ensure QuestionOptions exists and is an array
-        const options = Array.isArray(question.QuestionOptions) 
-          ? question.QuestionOptions 
+        const options = Array.isArray(question.QuestionOptions)
+          ? question.QuestionOptions
           : [];
-        
+
         const userAnswer = userAnswers.find(
           (ans) => ans.question_id === question.id
         );
-        
+
         const selectedOption = userAnswer
           ? options.find((opt) => opt.id === userAnswer.option_id)
           : null;
-        
+
         const correctOption = options.find((opt) => opt.is_correct);
-        
+
         const isCorrect = selectedOption?.is_correct || false;
 
         return {
@@ -164,13 +171,21 @@ const ExamResultsModal: React.FC<ExamResultsModalProps> = ({
           .length,
         unanswered: questions.length - userAnswers.length,
         score: student.score_percentage,
+        obtainedScore: detailedAnswers.reduce(
+          (acc, a) => acc + (a.isCorrect ? a.question.marks || 1 : 0),
+          0
+        ),
+        maxScore: detailedAnswers.reduce(
+          (acc, a) => acc + (a.question.marks || 1),
+          0
+        ),
       };
 
       setStudentDetail({
         answers: detailedAnswers,
         stats,
       });
-      
+
       console.log("✅ Student details loaded successfully");
     } catch (err: any) {
       console.error("❌ Error fetching student details:", err);
@@ -179,12 +194,12 @@ const ExamResultsModal: React.FC<ExamResultsModalProps> = ({
         response: err?.response?.data,
         status: err?.response?.status,
       });
-      
-      const errorMessage = 
-        err?.response?.data?.message || 
-        err?.message || 
+
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
         "Failed to load student details";
-      
+
       setError(errorMessage);
       setStudentDetail(null); // Clear any partial data
     } finally {
@@ -272,7 +287,9 @@ const ExamResultsModal: React.FC<ExamResultsModalProps> = ({
                         {student.score_percentage}%
                       </div>
                       <div className={styles.scoreDetails}>
-                        {student.correct_answers}/{student.total_answered}
+                        {student.obtained_score !== undefined
+                          ? `${student.obtained_score}/${student.max_score}`
+                          : `${student.correct_answers}/${student.total_answered}`}
                       </div>
                     </div>
                   </div>
@@ -294,6 +311,14 @@ const ExamResultsModal: React.FC<ExamResultsModalProps> = ({
               <div className={styles.detailContent}>
                 {/* Stats summary */}
                 <div className={styles.statsGrid}>
+                  <div className={styles.statCard}>
+                    <div className={styles.statLabel}>Score</div>
+                    <div className={`${styles.statValue} ${styles.scoreHigh}`}>
+                      {studentDetail.stats.obtainedScore !== undefined
+                        ? `${studentDetail.stats.obtainedScore}/${studentDetail.stats.maxScore}`
+                        : studentDetail.stats.score + "%"}
+                    </div>
+                  </div>
                   <div className={styles.statCard}>
                     <div className={styles.statLabel}>Total Questions</div>
                     <div className={styles.statValue}>
@@ -339,6 +364,15 @@ const ExamResultsModal: React.FC<ExamResultsModalProps> = ({
                           Q{index + 1}
                         </span>
                         <span
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--text-secondary)",
+                            marginLeft: "8px",
+                          }}
+                        >
+                          ({item.question.marks || 1} marks)
+                        </span>
+                        <span
                           className={`${styles.questionStatus} ${
                             item.isCorrect
                               ? styles.statusCorrect
@@ -360,7 +394,7 @@ const ExamResultsModal: React.FC<ExamResultsModalProps> = ({
                       </div>
 
                       <div className={styles.optionsList}>
-                        {Array.isArray(item.question.QuestionOptions) && 
+                        {Array.isArray(item.question.QuestionOptions) &&
                           item.question.QuestionOptions.map((option) => (
                             <div
                               key={option.id}
