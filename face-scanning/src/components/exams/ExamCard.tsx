@@ -9,6 +9,7 @@ interface Props {
   onEdit?: (exam: Exam) => void;
   onManage?: (exam: Exam) => void;
   onViewResults?: (exam: Exam) => void;
+  onStatusChange?: (examId: number, newStatus: string) => void;
 }
 
 const ExamCard: React.FC<Props> = ({
@@ -18,9 +19,11 @@ const ExamCard: React.FC<Props> = ({
   onEdit,
   onManage,
   onViewResults,
+  onStatusChange,
 }) => {
   const [copied, setCopied] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
 
   // Handle different property names flexibly
   const examName =
@@ -29,21 +32,34 @@ const ExamCard: React.FC<Props> = ({
     (exam as any).crparticeated_at || (exam as any).createdAt || new Date();
   const startTime = (exam as any).start_time || (exam as any).startTime;
   const endTime = (exam as any).end_time || (exam as any).endTime;
-  const status = (exam as any).status || "draft";
+  const rawStatus = (exam as any).status || "draft";
   const examKey =
     (exam as any).key || (exam as any).exam_key || (exam as any).id;
   const attendees = (exam as any).Attends || (exam as any).attendances || [];
   const participantCount = (exam as any).participants || attendees.length || 0;
+
+  // Determine display status
+  const isSuspended = rawStatus === "suspended";
+  const isFuture = !isSuspended && startTime && new Date(startTime) > new Date();
+  
+  let displayStatus = rawStatus;
+  if (isSuspended) displayStatus = "suspended";
+  else if (isFuture) displayStatus = "future";
+  else if (rawStatus === "active") displayStatus = "active";
 
   // Theme-aware status colors
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
         return "var(--success-color)";
+      case "future":
+        return "var(--info-color)";
+      case "suspended":
+        return "var(--error-color)";
       case "draft":
         return "var(--warning-color)";
       case "completed":
-        return "var(--info-color)";
+        return "var(--text-secondary)";
       case "cancelled":
         return "var(--error-color)";
       default:
@@ -55,10 +71,14 @@ const ExamCard: React.FC<Props> = ({
     switch (status) {
       case "active":
         return "var(--success-bg)";
+      case "future":
+        return "var(--info-bg)";
+      case "suspended":
+        return "var(--error-bg)";
       case "draft":
         return "var(--warning-bg)";
       case "completed":
-        return "var(--info-bg)";
+        return "var(--card-bg)";
       case "cancelled":
         return "var(--error-bg)";
       default:
@@ -268,12 +288,12 @@ const ExamCard: React.FC<Props> = ({
           <span
             className={styles.statusBadge}
             style={{
-              color: getStatusColor(status),
-              backgroundColor: getStatusBg(status),
-              borderColor: getStatusColor(status),
+              color: getStatusColor(displayStatus),
+              backgroundColor: getStatusBg(displayStatus),
+              borderColor: getStatusColor(displayStatus),
             }}
           >
-            {status}
+            {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
           </span>
         </div>
 
@@ -458,6 +478,32 @@ const ExamCard: React.FC<Props> = ({
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
               </svg>
               Edit
+            </button>
+          )}
+
+          {isSuspended && onStatusChange && (
+            <button
+              className={`${styles.button} ${styles.secondaryButton}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsReactivating(true);
+                onStatusChange(exam.id, "active");
+                setTimeout(() => setIsReactivating(false), 1000);
+              }}
+              disabled={isReactivating}
+            >
+              <svg
+                className={styles.buttonIcon}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M23 4v6h-6"></path>
+                <path d="M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              {isReactivating ? "Activating..." : "Reactivate"}
             </button>
           )}
 

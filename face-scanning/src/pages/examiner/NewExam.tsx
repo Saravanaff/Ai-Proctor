@@ -13,6 +13,9 @@ const NewExam = () => {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1); // 1: Name & Questions, 2: Settings
   const [examName, setExamName] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [duration, setDuration] = useState("");
 
   // Section collapse states
   const [normalProctoringOpen, setNormalProctoringOpen] = useState(true);
@@ -56,6 +59,9 @@ const NewExam = () => {
       try {
         const data = JSON.parse(storedData);
         setExamName(data.examName || "");
+        setStartTime(data.startTime || "");
+        setEndTime(data.endTime || "");
+        setDuration(data.duration || "");
         setThirdEye(data.thirdEye ?? true);
         setMultiPerson(data.multiPerson ?? true);
         setEyeBall(data.eyeBall ?? true);
@@ -188,6 +194,9 @@ const NewExam = () => {
       "examPreviewData",
       JSON.stringify({
         examName,
+        startTime,
+        endTime,
+        duration,
         thirdEye,
         multiPerson,
         eyeBall,
@@ -606,7 +615,187 @@ const NewExam = () => {
                 />
               </div>
 
-              {/* MCQ Section */}
+              {/* Exam Schedule & Duration */}
+              <div
+                className={`${styles.glassPanel} theme-transition`}
+                style={{
+                  padding: "24px",
+                  borderRadius: "14px",
+                  marginBottom: "16px",
+                  background: "var(--card-bg)",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+                  <span style={{ fontSize: "24px" }}>📅</span>
+                  <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "var(--text-primary)" }}>
+                    Schedule & Timing
+                  </h3>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+                  {/* Start Time */}
+                  <div style={{ position: "relative" }}>
+                    <label
+                      className="theme-transition"
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        color: "var(--text-secondary)",
+                        fontWeight: 500,
+                        fontSize: "14px",
+                      }}
+                    >
+                      Start Date & Time
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type="datetime-local"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="input-theme theme-transition"
+                        style={{
+                          width: "100%",
+                          padding: "12px 16px",
+                          borderRadius: "10px",
+                          border: "1px solid var(--border-color)",
+                          background: "var(--secondary-bg)",
+                          color: "var(--text-primary)",
+                          fontSize: "14px",
+                          outline: "none",
+                          transition: "all 0.2s ease",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* End Time */}
+                  <div style={{ position: "relative" }}>
+                    <label
+                      className="theme-transition"
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        color: "var(--text-secondary)",
+                        fontWeight: 500,
+                        fontSize: "14px",
+                      }}
+                    >
+                      End Date & Time
+                    </label>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type="datetime-local"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        className="input-theme theme-transition"
+                        style={{
+                          width: "100%",
+                          padding: "12px 16px",
+                          borderRadius: "10px",
+                          border: "1px solid var(--border-color)",
+                          background: "var(--secondary-bg)",
+                          color: "var(--text-primary)",
+                          fontSize: "14px",
+                          outline: "none",
+                          transition: "all 0.2s ease",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Duration Input */}
+                <div style={{ marginTop: "24px" }}>
+                  <label
+                    className="theme-transition"
+                    style={{
+                      display: "block",
+                      marginBottom: "12px",
+                      color: "var(--text-secondary)",
+                      fontWeight: 500,
+                      fontSize: "14px",
+                    }}
+                  >
+                    Exam Duration
+                  </label>
+                  <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
+                    <div style={{ flex: "0 0 120px" }}>
+                      <label style={{ fontSize: "12px", color: "var(--text-tertiary)", marginBottom: "6px", display: "block" }}>Hours</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={Math.floor(Number(duration || 0) / 60)}
+                        onChange={(e) => {
+                          const h = Math.max(0, parseInt(e.target.value) || 0);
+                          const m = (Number(duration || 0) % 60);
+                          setDuration((h * 60 + m).toString());
+                        }}
+                        className="input-theme theme-transition"
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          borderRadius: "10px",
+                          border: "1px solid var(--border-color)",
+                          background: "var(--secondary-bg)",
+                          color: "var(--text-primary)",
+                          fontSize: "16px",
+                          textAlign: "center",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                    <div style={{ paddingTop: "32px", color: "var(--text-tertiary)", fontWeight: "bold" }}>:</div>
+                    <div style={{ flex: "0 0 120px" }}>
+                      <label style={{ fontSize: "12px", color: "var(--text-tertiary)", marginBottom: "6px", display: "block" }}>Minutes</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={(Number(duration || 0) % 60)}
+                        onChange={(e) => {
+                          const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                          const h = Math.floor(Number(duration || 0) / 60);
+                          setDuration((h * 60 + m).toString());
+                        }}
+                        className="input-theme theme-transition"
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          borderRadius: "10px",
+                          border: "1px solid var(--border-color)",
+                          background: "var(--secondary-bg)",
+                          color: "var(--text-primary)",
+                          fontSize: "16px",
+                          textAlign: "center",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", height: "80px", paddingLeft: "20px" }}>
+                      <div style={{ 
+                        background: "var(--secondary-bg)", 
+                        padding: "10px 20px", 
+                        borderRadius: "8px",
+                        border: "1px solid var(--border-color)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px"
+                      }}>
+                        <span style={{ fontSize: "20px" }}>⏱</span>
+                        <div>
+                          <div style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>Total Duration</div>
+                          <div style={{ color: "var(--accent-color)", fontWeight: 700, fontSize: "16px" }}>
+                            {duration || 0} minutes
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Questions Section */}
               <CollapsibleSection
                 title="MCQ Questions"
                 subtitle={`Add multiple choice questions (${mcqQuestions.length} questions added)`}

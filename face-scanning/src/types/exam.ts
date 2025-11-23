@@ -1,8 +1,8 @@
 export interface Exam {
-  id: string;
+  id: number;
   name: string;
   createdAt: string;
-  status: 'active' | 'draft' | 'completed';
+  status: 'active' | 'draft' | 'completed' | 'suspended';
   studentsCount: number;
   startTime?: string;
   endTime?: string;

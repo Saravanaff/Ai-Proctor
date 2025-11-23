@@ -4,6 +4,7 @@ import {
   getExam,
   getSingleExam,
   updateExam,
+  updateExamStatus,
   deleteExam,
   getExamResults,
   getStudentAnswers
@@ -30,6 +31,7 @@ router.get("/getExamSettings", getExamSettings);
 router.get("/exam/:examId",requireExaminerRole,getSingleExam);
 router.post("/examCreate", requireExaminerRole, createExam);
 router.put("/exam/:examId", requireExaminerRole, updateExam);
+router.put("/exam/:examId/status", requireExaminerRole, updateExamStatus);
 router.delete("/exam/:examId", requireExaminerRole, deleteExam);
 router.get("/getExamQuestions/:examId", getQuestionsByExam);
 router.put("/updateExamQuestions/:exam_id", requireExaminerRole, updateQuestionsForExam);

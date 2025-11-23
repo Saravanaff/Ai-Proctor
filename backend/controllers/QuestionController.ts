@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { sequelize } from "../db";
 import Question from "../models/Questions";
 import QuestionOption from "../models/QuestionOption";
+import { Exam } from "../models/Exam";
 
 export const createQuestion = async (req: Request, res: Response) => {
   try {
@@ -196,6 +197,11 @@ export const getQuestionsByExam = async (req: Request, res: Response) => {
         .status(400)
         .json({ success: false, message: "exam_id is required" });
 
+    const exam = await Exam.findByPk(examId);
+    if (!exam) {
+      return res.status(404).json({ success: false, message: "Exam not found" });
+    }
+
     const questions = await Question.findAll({
       where: { exam_id: examId },
       attributes: [
@@ -214,7 +220,15 @@ export const getQuestionsByExam = async (req: Request, res: Response) => {
       ],
     });
 
-    return res.status(200).json({ success: true, questions });
+    return res.status(200).json({ 
+      success: true, 
+      questions,
+      exam: {
+        start_time: exam.start_time,
+        end_time: exam.end_time,
+        duration: exam.duration
+      }
+    });
   } catch (err: any) {
     return res
       .status(500)

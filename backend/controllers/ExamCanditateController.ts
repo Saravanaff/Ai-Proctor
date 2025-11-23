@@ -27,6 +27,21 @@ export const validateExam = async (req: Request, res: Response) => {
       });
     }
 
+    const now = new Date();
+    if (exam.start_time && new Date(exam.start_time) > now) {
+      return res.status(403).json({
+        success: false,
+        message: "Exam has not started yet",
+      });
+    }
+
+    if (exam.end_time && new Date(exam.end_time) < now) {
+      return res.status(403).json({
+        success: false,
+        message: "Exam has ended",
+      });
+    }
+
     await Attend.create({
       user_id,
       exam_id: exam.id,
@@ -90,6 +105,9 @@ export const getExamSettings = async (req: Request, res: Response) => {
       ai_powered_proctoring,
       recorded_manual_proctoring,
       face_authentication_enabled,
+      start_time,
+      end_time,
+      duration,
     } = exam;
 
     return res.status(200).json({
@@ -111,6 +129,9 @@ export const getExamSettings = async (req: Request, res: Response) => {
       ai_powered_proctoring,
       recorded_manual_proctoring,
       face_authentication_enabled,
+      start_time,
+      end_time,
+      duration,
     });
   } catch (err) {
     console.log("Error while getExamSettings : ", err);

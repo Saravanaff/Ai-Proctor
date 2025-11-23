@@ -105,6 +105,17 @@ export class Exam extends Model{
     @Column({ type:DataType.BOOLEAN, allowNull:false, defaultValue:false })
     face_authentication_enabled!:boolean
     
+    @Column({ type: DataType.DATE, allowNull: true })
+    start_time!: Date;
+
+    @Column({ type: DataType.DATE, allowNull: true })
+    end_time!: Date;
+
+    @Column({ type: DataType.INTEGER, allowNull: true })
+    duration!: number;
+
+    @Column({ type: DataType.STRING, allowNull: false, defaultValue: "active" })
+    status!: string;
 
     @BelongsTo(() => User)
     user!: User;

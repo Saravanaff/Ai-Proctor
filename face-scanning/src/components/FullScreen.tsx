@@ -67,6 +67,7 @@ const ExamPage = ({
   const [examStarted, setExamStarted] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   // ✅ REMOVED: lastAlertRef - No longer needed (throttling handled in FloatingCamera)
   // ✅ REMOVED: ALERT_THROTTLE_MS - No longer needed (throttling handled in FloatingCamera)
@@ -106,6 +107,11 @@ const ExamPage = ({
 
         if (response.data.success && response.data.questions) {
           setQuestions(response.data.questions);
+          
+          if (response.data.exam && response.data.exam.duration) {
+            // Set timer based on duration (in minutes)
+            setTimeLeft(response.data.exam.duration * 60);
+          }
         }
       } catch (error) {
         console.error("❌ Failed to fetch exam questions:", error);
@@ -419,6 +425,538 @@ const ExamPage = ({
 
   const getAnswersForSubmission = () => {
     return Object.values(answers);
+  };
+
+  // Timer effect
+  useEffect(() => {
+    if (timeLeft === null || examSubmitted) return;
+
+    if (timeLeft <= 0) {
+      handleSubmit();
+      return;
+    }
+
+    const timerId = setInterval(() => {
+      setTimeLeft((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [timeLeft, examSubmitted]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  };
+
+  const handleSubmit = async () => {
+    console.log("🚀 Submit button clicked - initiating exam submission");
+    console.log(`📊 Current examSubmitted state: ${examSubmitted}`);
+
+    if (screenStreamRef && screenStreamRef.current) {
+      try {
+        console.log("🖥️ Stopping screen stream tracks...");
+        screenStreamRef.current
+          .getTracks()
+          .forEach((track: MediaStreamTrack) => {
+            console.log(
+              `  Stopping screen track: ${track.kind}, state: ${track.readyState}`
+            );
+            track.stop();
+          });
+        screenStreamRef.current = null;
+        console.log("✅ Screen sharing turned OFF");
+      } catch (err) {
+        console.error("Error stopping screen stream tracks:", err);
+      }
+    }
+
+    // ✅ STOP SCREEN RECORDING MEDIARECORDER
+    if (
+      screenRecorderMediaRecorderRef &&
+      screenRecorderMediaRecorderRef.current
+    ) {
+      try {
+        if (screenRecorderMediaRecorderRef.current.state !== "inactive") {
+          console.log("📹 Stopping screen MediaRecorder...");
+          screenRecorderMediaRecorderRef.current.stop();
+        }
+      } catch (err) {
+        console.error("Error stopping screen recorder:", err);
+      }
+    }
+
+    console.log("🎯 Setting examSubmitted to TRUE");
+    setExamSubmitted(true);
+    console.log("✅ examSubmitted state updated");
+
+    // ✅ Wait for ALL pending chunks from BOTH recorders to complete
+    const waitForAllChunks = async () => {
+      const maxWaitTime = 10000; // 10 seconds max
+      const startTime = Date.now();
+
+      console.log("⏳ Waiting for all chunks to complete...");
+
+      while (Date.now() - startTime < maxWaitTime) {
+        const screenPending = pendingScreenChunksRef?.current?.size || 0;
+        const facePending = pendingFaceChunksRef?.current?.size || 0;
+        const totalPending = screenPending + facePending;
+
+        if (totalPending === 0) {
+          console.log("✅ All chunks completed!");
+          return;
+        }
+
+        console.log(
+          `📊 Pending chunks - Screen: ${screenPending}, Face: ${facePending}, Total: ${totalPending}`
+        );
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
+      console.warn("⚠️ Timeout waiting for chunks - proceeding anyway");
+    };
+
+    await waitForAllChunks();
+
+    // Additional safety delay
+    console.log("⏳ Additional 1 second safety delay...");
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    console.log(
+      "✅ All recordings stopped and events emitted from onstop handlers"
+    );
+
+    const submissionAnswers = getAnswersForSubmission();
+    console.log("📝 Submitting answers:", submissionAnswers);
+    console.log("Answers structure:", {
+      totalQuestions: questions.length,
+      answeredQuestions: submissionAnswers.length,
+      answers: submissionAnswers,
+    });
+
+    // Save user answers to database
+    try {
+      console.log("💾 Saving user answers to database...");
+      const response = await axios.post(
+        `${baseUrl}/saveUserAnswers`,
+        {
+          exam_id: Number(examId),
+          answers: submissionAnswers,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${getTokenFromCookie()}`,
+          },
+        }
+      );
+      console.log("✅ Answers saved successfully:", response.data);
+    } catch (error: any) {
+      console.error(
+        "❌ Error saving answers:",
+        error.response?.data || error.message
+      );
+      toast({
+        title: "Warning",
+        description:
+          "Failed to save some answers. Your exam will still be submitted.",
+        variant: "destructive",
+      });
+    }
+
+    try {
+      if (onBeforeSubmit) await onBeforeSubmit();
+    } catch (err) {
+      console.error("Error in onBeforeSubmit:", err);
+    }
+
+    // ✅ Emit end-exam socket event to update endTime in database
+    console.log("📤 Emitting end-exam event to server");
+    socket.emit("end-exam", {
+      user_id: userId,
+      exam_id: examId,
+      timestamp: new Date(),
+      status: "success",
+      message: "Exam ended successfully",
+    });
+    console.log("✅ end-exam event emitted");
+
+    // Wait a moment for the socket event to be processed
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // Navigate to end page after cleanup
+    console.log("✅ Navigating to end page");
+    router.push("/end");
+  };
+
+  // Fetch exam questions - runs once on mount
+  useEffect(() => {
+    const fetchExamQuestions = async () => {
+      try {
+        setIsLoadingQuestions(true);
+        const examId = getExamId();
+
+        if (!examId) {
+          console.error("No exam ID found");
+          setIsLoadingQuestions(false);
+          return;
+        }
+
+        console.log("📚 Fetching questions for exam:", examId);
+
+        // ✅ FIX: Use path parameter instead of query parameter
+        const response = await axios.get(
+          `${baseUrl}/getExamQuestions/${examId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${getTokenFromCookie()}`,
+            },
+          }
+        );
+
+        console.log("✅ Questions fetched:", response.data);
+
+        if (response.data.success && response.data.questions) {
+          setQuestions(response.data.questions);
+          
+          if (response.data.exam && response.data.exam.duration) {
+            // Set timer based on duration (in minutes)
+            setTimeLeft(response.data.exam.duration * 60);
+          }
+        }
+      } catch (error) {
+        console.error("❌ Failed to fetch exam questions:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load exam questions",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
+
+    fetchExamQuestions();
+  }, []); // ✅ FIX: Empty dependency array - run only once on mount
+
+  // ✅ REMOVE: Axios interceptor moved out of component to prevent repeated requests
+
+  // Cleanup all timeouts when component unmounts
+  useEffect(() => {
+    return () => {
+      Object.values(timeoutRefs.current).forEach((timeout) => {
+        if (timeout) clearTimeout(timeout);
+      });
+    };
+  }, []);
+
+  // Fetch exam settings - runs once on mount
+  useEffect(() => {
+    const fetchExamSettings = async () => {
+      try {
+        const examId = getExamId();
+
+        if (!examId) {
+          console.error("No exam ID found");
+          return;
+        }
+
+        console.log("⚙️ Fetching exam settings for exam:", examId);
+
+        const response = await axios.get(`${baseUrl}/getExamSettings`, {
+          params: { userId: Number(userId), examId: Number(examId) },
+          headers: {
+            Authorization: `Bearer ${getTokenFromCookie()}`,
+          },
+        });
+
+        console.log("✅ Exam settings fetched:", response.data);
+        setExamSettings(response.data);
+      } catch (error) {
+        console.error("❌ Failed to fetch exam settings:", error);
+      }
+    };
+
+    fetchExamSettings();
+  }, []); // ✅ FIX: Empty dependency array - run only once on mount
+
+  // Start exam automatically if face authentication is disabled
+  useEffect(() => {
+    if (!examSettings || Object.keys(examSettings).length === 0) return;
+
+    if (!examSettings.face_authentication_enabled && !examStarted) {
+      console.log(
+        "✅ Face authentication disabled - Starting exam immediately"
+      );
+
+      socket.emit("start-exam", {
+        user_id: userId,
+        exam_id: examId,
+        timestamp: new Date(),
+        status: "success",
+        message: "Exam Started successfully (no face auth required)",
+      });
+
+      socket.emit("stream-listener-on", {
+        user_id: userId,
+        exam_id: examId,
+        category: "face_camera",
+        timestamp: new Date(),
+      });
+
+      socket.emit("stream-listener-on", {
+        user_id: userId,
+        exam_id: examId,
+        category: "screen_recording",
+        timestamp: new Date(),
+      });
+
+      setExamStarted(true);
+      setFaceAuthenticationComplete(true);
+    }
+  }, [examSettings, examStarted]);
+
+  // Cleanup all timeouts when component unmounts
+  useEffect(() => {
+    return () => {
+      Object.values(timeoutRefs.current).forEach((timeout) => {
+        if (timeout) clearTimeout(timeout);
+      });
+    };
+  }, []);
+
+  const detectObject = () => {
+    console.log("Object detected - showing notification");
+    setObject(true);
+
+    // ✅ REMOVED: Duplicate API logging (already handled in FloatingCamera.tsx)
+    // ✅ REMOVED: Time throttling check (already handled in FloatingCamera.tsx)
+    // Violation is logged in FloatingCamera after 4 seconds of continuous detection
+
+    // Clear existing timeout before setting new one
+    if (timeoutRefs.current.object) {
+      clearTimeout(timeoutRefs.current.object);
+    }
+    timeoutRefs.current.object = setTimeout(() => setObject(false), 3000);
+  };
+
+  const number = (a: number) => {
+    console.log("Multiple persons detected - showing notification");
+    setFace(a);
+    setNum(true);
+
+    // ✅ REMOVED: Duplicate API logging (already handled in FloatingCamera.tsx)
+    // ✅ REMOVED: Time throttling check (already handled in FloatingCamera.tsx)
+    // Violation is logged in FloatingCamera after 4 seconds of continuous detection
+
+    // Clear existing timeout before setting new one
+    if (timeoutRefs.current.num) {
+      clearTimeout(timeoutRefs.current.num);
+    }
+    timeoutRefs.current.num = setTimeout(() => {
+      setNum(false);
+    }, 2000);
+  };
+
+  // Handle face authentication success - start exam on first successful auth
+  const handleAuthResume = () => {
+    console.log("✅ Face authenticated - User detected");
+
+    if (examSettings.face_authentication_enabled) {
+      if (!faceAuthenticationComplete && !examStarted) {
+        console.log(
+          "✅ First face authentication detected - Starting exam now"
+        );
+        const userId = getUserId() || "unknown";
+
+        // ✅ ONLY EMIT ONCE
+        socket.emit("start-exam", {
+          user_id: userId,
+          exam_id: examId,
+          timestamp: new Date(),
+          status: "success",
+          message: "Exam Started successfully",
+        });
+
+        socket.emit("stream-listener-on", {
+          user_id: userId,
+          exam_id: examId,
+          category: "face_camera",
+          timestamp: new Date(),
+        });
+
+        socket.emit("stream-listener-on", {
+          user_id: userId,
+          exam_id: examId,
+          category: "screen_recording",
+          timestamp: new Date(),
+        });
+
+        setFaceAuthenticationComplete(true);
+        setExamStarted(true);
+      }
+
+      setPaused(false);
+    }
+  };
+
+  const handleAuthPause = () => {
+    console.log("⚠️ Face lost - User not detected");
+
+    if (examSettings.face_authentication_enabled && examStarted) {
+      setPaused(true);
+    }
+  };
+
+  useEffect(() => {
+    try {
+      const preventActions: any = (e: any) => {
+        if (
+          e instanceof KeyboardEvent &&
+          ["F12", "Control", "Meta", "Alt", "Tab"].includes(e.key)
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (e instanceof MouseEvent && e.button === 2) {
+          e.preventDefault();
+        }
+      };
+
+      const blurHandler = () => {
+        setBlocked(true);
+      };
+
+      const focusHandler = () => {
+        setBlocked(true);
+      };
+
+      const userId = getUserId() || "unknown";
+
+      if (!examSettings || Object.keys(examSettings).length === 0) {
+        console.log("⏳ Waiting for exam settings to load...");
+        return;
+      }
+
+      const fullscreenChangeHandler = () => {
+        if (!document.fullscreenElement) {
+          setBlocked(true);
+        }
+      };
+
+      const sizeHandler = () => {
+        const widthDiff = Math.abs(window.innerWidth - window.screen.width);
+        const heightDiff = Math.abs(window.innerHeight - window.screen.height);
+        if (widthDiff > 10 || heightDiff > 10) {
+          setBlocked(true);
+        }
+      };
+
+      return () => {
+        window.removeEventListener("blur", blurHandler);
+        window.removeEventListener("focus", focusHandler);
+        document.removeEventListener(
+          "fullscreenchange",
+          fullscreenChangeHandler
+        );
+        window.removeEventListener("keydown", preventActions);
+        window.removeEventListener("contextmenu", preventActions);
+        window.removeEventListener("copy", preventActions);
+        window.removeEventListener("cut", preventActions);
+        window.removeEventListener("paste", preventActions);
+        window.removeEventListener("resize", sizeHandler);
+      };
+    } catch (e) {
+      console.log("Error in useEffect");
+    }
+  }, [examSettings.face_authentication_enabled, examStarted]);
+  let s: any;
+  const lookingAlert = (side: any) => {
+    console.log("Looking away detected - showing notification");
+    setLookDirection(side);
+    setlookAlert(true);
+
+    // ✅ REMOVED: Duplicate API logging (already handled in FloatingCamera.tsx)
+    // ✅ REMOVED: Time throttling check (already handled in FloatingCamera.tsx)
+    // Violation is logged in FloatingCamera after 4 seconds of continuous detection
+
+    // Clear existing timeout before setting new one
+    if (timeoutRefs.current.lookAlert) {
+      clearTimeout(timeoutRefs.current.lookAlert);
+    }
+    timeoutRefs.current.lookAlert = setTimeout(() => setlookAlert(false), 3000);
+  };
+
+  const handleAuthFaceMissing = () => {
+    console.log("Auth face missing - showing notification");
+    setAuthFaceMissing(true);
+
+    // ✅ REMOVED: Duplicate API logging (already handled in FloatingCamera.tsx)
+    // ✅ REMOVED: Time throttling check (already handled in FloatingCamera.tsx)
+    // Violation is logged in FloatingCamera after 4 seconds of continuous detection
+
+    // Clear existing timeout before setting new one
+    if (timeoutRefs.current.authFaceMissing) {
+      clearTimeout(timeoutRefs.current.authFaceMissing);
+    }
+    timeoutRefs.current.authFaceMissing = setTimeout(
+      () => setAuthFaceMissing(false),
+      3000
+    );
+  };
+
+  const handleHeadDirection = (direction: string) => {
+    console.log("Head direction changed - showing notification:", direction);
+    setHeadDirection(true);
+
+    // ✅ REMOVED: Duplicate API logging (already handled in FloatingCamera.tsx)
+    // ✅ REMOVED: Time throttling check (already handled in FloatingCamera.tsx)
+    // Violation is logged in FloatingCamera after 4 seconds of continuous detection
+
+    // Clear existing timeout before setting new one
+    if (timeoutRefs.current.headDirection) {
+      clearTimeout(timeoutRefs.current.headDirection);
+    }
+    timeoutRefs.current.headDirection = setTimeout(
+      () => setHeadDirection(false),
+      3000
+    );
+  };
+
+  const handleChange = (qId: number, optionId: number, optionText: string) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [qId]: {
+        question_id: qId,
+        option_id: optionId,
+        option_text: optionText,
+      },
+    }));
+  };
+
+  const getAnswersForSubmission = () => {
+    return Object.values(answers);
+  };
+
+  // Timer effect
+  useEffect(() => {
+    if (timeLeft === null || examSubmitted) return;
+
+    if (timeLeft <= 0) {
+      handleSubmit();
+      return;
+    }
+
+    const timerId = setInterval(() => {
+      setTimeLeft((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [timeLeft, examSubmitted]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
   if (blocked) {
@@ -748,35 +1286,90 @@ const ExamPage = ({
             transition: "all 0.3s ease",
           }}
         >
-          <h2
+          <div
             className="theme-transition"
             style={{
-              color: "var(--text-primary)",
-              fontSize: "24px",
-              fontWeight: 600,
-              margin: "0 0 8px 0",
-              letterSpacing: "-0.02em",
-              transition: "color 0.3s ease",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "32px",
+              padding: "20px",
+              background: "var(--card-bg)",
+              borderRadius: "16px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+              border: "1px solid var(--border-color)",
             }}
           >
-            Online Assessment
-          </h2>
-          <p
-            className="theme-transition"
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: "14px",
-              margin: 0,
-              lineHeight: 1.5,
-              transition: "color 0.3s ease",
-            }}
-          >
-            Read each question carefully and select the best answer. This
-            session is proctored for academic integrity.
-          </p>
+            <div>
+              <h1
+                className="theme-transition"
+                style={{
+                  fontSize: "28px",
+                  fontWeight: 800,
+                  color: "var(--text-primary)",
+                  margin: 0,
+                  marginBottom: "8px",
+                  letterSpacing: "-0.5px",
+                }}
+              >
+                Final Examination
+              </h1>
+              <p
+                className="theme-transition"
+                style={{
+                  fontSize: "15px",
+                  color: "var(--text-secondary)",
+                  margin: 0,
+                  fontWeight: 500,
+                }}
+              >
+                Read each question carefully and select the best answer. This
+                session is proctored for academic integrity.
+              </p>
+            </div>
+            
+            {timeLeft !== null && (
+              <div
+                className="theme-transition"
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: "12px",
+                  background: timeLeft < 300 ? "var(--error-bg)" : "var(--secondary-bg)",
+                  border: `2px solid ${timeLeft < 300 ? "var(--error-color)" : "var(--border-color)"}`,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  minWidth: "120px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: timeLeft < 300 ? "var(--error-color)" : "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Time Left
+                </span>
+                <span
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: 700,
+                    color: timeLeft < 300 ? "var(--error-color)" : "var(--text-primary)",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {formatTime(timeLeft)}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {questions.map((q, index) => (
+        {questions.map((q) => (
           <div
             key={q.id}
             className={`${styles.questionBlock} theme-transition`}
@@ -919,151 +1512,7 @@ const ExamPage = ({
         >
           <button
             className={`${styles.submitButton} theme-transition`}
-            onClick={async () => {
-              console.log(
-                "🚀 Submit button clicked - initiating exam submission"
-              );
-              console.log(`📊 Current examSubmitted state: ${examSubmitted}`);
-              
-              if (screenStreamRef && screenStreamRef.current) {
-                try {
-                  console.log("🖥️ Stopping screen stream tracks...");
-                  screenStreamRef.current
-                    .getTracks()
-                    .forEach((track: MediaStreamTrack) => {
-                      console.log(
-                        `  Stopping screen track: ${track.kind}, state: ${track.readyState}`
-                      );
-                      track.stop();
-                    });
-                  screenStreamRef.current = null;
-                  console.log("✅ Screen sharing turned OFF");
-                } catch (err) {
-                  console.error("Error stopping screen stream tracks:", err);
-                }
-              }
-
-              // ✅ STOP SCREEN RECORDING MEDIARECORDER
-              if (
-                screenRecorderMediaRecorderRef &&
-                screenRecorderMediaRecorderRef.current
-              ) {
-                try {
-                  if (
-                    screenRecorderMediaRecorderRef.current.state !== "inactive"
-                  ) {
-                    console.log("📹 Stopping screen MediaRecorder...");
-                    screenRecorderMediaRecorderRef.current.stop();
-                  }
-                } catch (err) {
-                  console.error("Error stopping screen recorder:", err);
-                }
-              }
-              
-              console.log("🎯 Setting examSubmitted to TRUE");
-              setExamSubmitted(true);
-              console.log("✅ examSubmitted state updated");
-
-              // ✅ Wait for ALL pending chunks from BOTH recorders to complete
-              const waitForAllChunks = async () => {
-                const maxWaitTime = 10000; // 10 seconds max
-                const startTime = Date.now();
-
-                console.log("⏳ Waiting for all chunks to complete...");
-
-                while (Date.now() - startTime < maxWaitTime) {
-                  const screenPending =
-                    pendingScreenChunksRef?.current?.size || 0;
-                  const facePending = pendingFaceChunksRef?.current?.size || 0;
-                  const totalPending = screenPending + facePending;
-
-                  if (totalPending === 0) {
-                    console.log("✅ All chunks completed!");
-                    return;
-                  }
-
-                  console.log(
-                    `📊 Pending chunks - Screen: ${screenPending}, Face: ${facePending}, Total: ${totalPending}`
-                  );
-                  await new Promise((resolve) => setTimeout(resolve, 100));
-                }
-
-                console.warn(
-                  "⚠️ Timeout waiting for chunks - proceeding anyway"
-                );
-              };
-
-              await waitForAllChunks();
-
-              // Additional safety delay
-              console.log("⏳ Additional 1 second safety delay...");
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-
-              console.log(
-                "✅ All recordings stopped and events emitted from onstop handlers"
-              );
-
-              const submissionAnswers = getAnswersForSubmission();
-              console.log("📝 Submitting answers:", submissionAnswers);
-              console.log("Answers structure:", {
-                totalQuestions: questions.length,
-                answeredQuestions: submissionAnswers.length,
-                answers: submissionAnswers,
-              });
-
-              // Save user answers to database
-              try {
-                console.log("💾 Saving user answers to database...");
-                const response = await axios.post(
-                  `${baseUrl}/saveUserAnswers`,
-                  {
-                    exam_id: Number(examId),
-                    answers: submissionAnswers,
-                  },
-                  {
-                    headers: {
-                      Authorization: `Bearer ${getTokenFromCookie()}`,
-                    },
-                  }
-                );
-                console.log("✅ Answers saved successfully:", response.data);
-              } catch (error: any) {
-                console.error(
-                  "❌ Error saving answers:",
-                  error.response?.data || error.message
-                );
-                toast({
-                  title: "Warning",
-                  description:
-                    "Failed to save some answers. Your exam will still be submitted.",
-                  variant: "destructive",
-                });
-              }
-
-              try {
-                if (onBeforeSubmit) await onBeforeSubmit();
-              } catch (err) {
-                console.error("Error in onBeforeSubmit:", err);
-              }
-
-              // ✅ Emit end-exam socket event to update endTime in database
-              console.log("📤 Emitting end-exam event to server");
-              socket.emit("end-exam", {
-                user_id: userId,
-                exam_id: examId,
-                timestamp: new Date(),
-                status: "success",
-                message: "Exam ended successfully",
-              });
-              console.log("✅ end-exam event emitted");
-
-              // Wait a moment for the socket event to be processed
-              await new Promise((resolve) => setTimeout(resolve, 500));
-
-              // Navigate to end page after cleanup
-              console.log("✅ Navigating to end page");
-              router.push("/end");
-            }}
+            onClick={handleSubmit}
             style={{
               background:
                 "linear-gradient(135deg, var(--accent-color) 0%, #0284c7 100%)",

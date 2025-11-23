@@ -4,7 +4,8 @@ interface ExamStatsProps {
   stats: {
     total: number;
     active: number;
-    draft: number;
+    suspended: number;
+    future: number;
     completed: number;
   };
 }
@@ -22,9 +23,14 @@ const ExamStats: React.FC<ExamStatsProps> = ({ stats }) => {
       colorClass: 'active'
     },
     { 
-      label: 'DRAFT', 
-      value: stats.draft, 
-      colorClass: 'draft'
+      label: 'SUSPENDED', 
+      value: stats.suspended, 
+      colorClass: 'suspended'
+    },
+    { 
+      label: 'FUTURE', 
+      value: stats.future, 
+      colorClass: 'future'
     },
     { 
       label: 'COMPLETED', 
@@ -33,10 +39,21 @@ const ExamStats: React.FC<ExamStatsProps> = ({ stats }) => {
     }
   ];
 
+  const getColor = (type: string) => {
+    switch (type) {
+      case 'total': return 'var(--text-primary)';
+      case 'active': return 'var(--success-color)';
+      case 'suspended': return 'var(--error-color)';
+      case 'future': return 'var(--info-color)';
+      case 'completed': return 'var(--text-secondary)';
+      default: return 'var(--text-secondary)';
+    }
+  };
+
   return (
     <div className="theme-transition" style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(4, 1fr)',
+      gridTemplateColumns: 'repeat(5, 1fr)',
       gap: '24px',
       marginBottom: '32px',
       transition: 'all 0.3s ease'
@@ -66,10 +83,7 @@ const ExamStats: React.FC<ExamStatsProps> = ({ stats }) => {
           <div style={{
             fontSize: '36px',
             fontWeight: '700',
-            color: item.colorClass === 'total' ? 'var(--text-primary)' : 
-                   item.colorClass === 'active' ? 'var(--success-color)' :
-                   item.colorClass === 'draft' ? 'var(--warning-color)' :
-                   'var(--text-secondary)',
+            color: getColor(item.colorClass),
             marginBottom: '8px',
             lineHeight: 1
           }}>
@@ -78,10 +92,7 @@ const ExamStats: React.FC<ExamStatsProps> = ({ stats }) => {
           <div style={{
             fontSize: '14px',
             fontWeight: '600',
-            color: item.colorClass === 'total' ? 'var(--text-primary)' : 
-                   item.colorClass === 'active' ? 'var(--success-color)' :
-                   item.colorClass === 'draft' ? 'var(--warning-color)' :
-                   'var(--text-secondary)',
+            color: getColor(item.colorClass),
             textTransform: 'uppercase',
             letterSpacing: '0.5px'
           }}>

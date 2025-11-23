@@ -16,6 +16,7 @@ const CreateExam = () => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "suspended">("all");
   const [error, setError] = useState(null);
   const [connectionError, setConnectionError] = useState("");
   const [profileName, setProfileName] = useState<string | null>(null);
@@ -50,7 +51,7 @@ const CreateExam = () => {
           const examsWithParticipants = res.data.exams.map((exam: any) => ({
             ...exam,
             participants: exam.attendances ? exam.attendances.length : 0,
-            status: exam.status || "draft", // Default status if not provided
+            status: exam.status || "active", // Default to active if not provided
             exam_key: exam.key || exam.exam_key, // Normalize key field
             startTime: exam.startTime || exam.start_time,
             endTime: exam.endTime || exam.end_time,
@@ -72,21 +73,51 @@ const CreateExam = () => {
     };
   }, []);
 
+  const handleStatusChange = async (examId: number, newStatus: string) => {
+    try {
+      const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+      await axios.put(`${base}/exam/${examId}/status`, { status: newStatus });
+      
+      // Update local state
+      setExams((prevExams) =>
+        prevExams.map((exam) =>
+          exam.id === examId ? { ...exam, status: newStatus } : exam
+        )
+      );
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      // Optionally show an error message
+    }
+  };
+
   const filteredExams = useMemo(
     () =>
       exams.filter((e) => {
         const examName = (e as any).exam_name || (e as any).name || "";
-        return examName.toLowerCase().includes(search.toLowerCase());
+        const matchesSearch = examName.toLowerCase().includes(search.toLowerCase());
+        const matchesFilter = filterStatus === "all" || e.status === filterStatus;
+        return matchesSearch && matchesFilter;
       }),
-    [exams, search]
+    [exams, search, filterStatus]
   );
   const stats = useMemo(
-    () => ({
-      total: exams.length,
-      active: exams.filter((e) => e.status === "active").length,
-      draft: exams.filter((e) => e.status === "draft").length,
-      completed: exams.filter((e) => e.status === "completed").length,
-    }),
+    () => {
+      const now = new Date();
+      return {
+        total: exams.length,
+        active: exams.filter((e) => {
+          const start = (e as any).startTime || (e as any).start_time;
+          const isFuture = start && new Date(start) > now;
+          return e.status === "active" && !isFuture;
+        }).length,
+        suspended: exams.filter((e) => e.status === "suspended").length,
+        future: exams.filter((e) => {
+          const start = (e as any).startTime || (e as any).start_time;
+          return e.status === "active" && start && new Date(start) > now;
+        }).length,
+        completed: exams.filter((e) => e.status === "completed").length,
+      };
+    },
     [exams]
   );
 
@@ -185,6 +216,56 @@ const CreateExam = () => {
           </p>
         </div>
         <div className={styles.headerActions}>
+          <div style={{ display: "flex", gap: "8px", marginRight: "16px" }}>
+            <button
+              onClick={() => setFilterStatus("all")}
+              className="theme-transition"
+              style={{
+                padding: "8px 16px",
+                borderRadius: "8px",
+                border: "1px solid var(--border-color)",
+                background: filterStatus === "all" ? "var(--accent-color)" : "transparent",
+                color: filterStatus === "all" ? "white" : "var(--text-secondary)",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 500,
+              }}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilterStatus("active")}
+              className="theme-transition"
+              style={{
+                padding: "8px 16px",
+                borderRadius: "8px",
+                border: "1px solid var(--border-color)",
+                background: filterStatus === "active" ? "var(--success-color)" : "transparent",
+                color: filterStatus === "active" ? "white" : "var(--text-secondary)",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 500,
+              }}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => setFilterStatus("suspended")}
+              className="theme-transition"
+              style={{
+                padding: "8px 16px",
+                borderRadius: "8px",
+                border: "1px solid var(--border-color)",
+                background: filterStatus === "suspended" ? "var(--error-color)" : "transparent",
+                color: filterStatus === "suspended" ? "white" : "var(--text-secondary)",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 500,
+              }}
+            >
+              Suspended
+            </button>
+          </div>
           <SearchBar value={search} onChange={setSearch} />
           <button
             onClick={() => router.push("/examiner/NewExam")}
@@ -331,7 +412,10 @@ const CreateExam = () => {
           <ExamsGrid
             exams={filteredExams}
             formatRange={formatRange}
-            onViewResults={handleViewResults}
+            onViewResults={(exam) => {
+              setSelectedExamForResults({ id: exam.id, name: (exam as any).exam_name || (exam as any).name });
+            }}
+            onStatusChange={handleStatusChange}
           />
         )}
       </section>

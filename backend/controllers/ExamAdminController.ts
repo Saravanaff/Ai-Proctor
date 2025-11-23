@@ -33,6 +33,9 @@ export const createExam = async (req: Request, res: Response) => {
       ai_powered_proctoring,
       recorded_manual_proctoring,
       face_authentication_enabled,
+      start_time,
+      end_time,
+      duration,
       questions,
     } = req.body;
 
@@ -73,6 +76,9 @@ export const createExam = async (req: Request, res: Response) => {
       ai_powered_proctoring,
       recorded_manual_proctoring,
       face_authentication_enabled,
+      start_time,
+      end_time,
+      duration,
       key: nextKey,
     });
 
@@ -140,7 +146,7 @@ export const getExam = async (req: Request, res: Response) => {
   try {
     const exams = await Exam.findAll({
       where: { user_id },
-      attributes: ["id", "exam_name", "key"],
+      attributes: ["id", "exam_name", "key", "status", "start_time", "end_time", "duration"],
       include: [
         {
           model: Attend,
@@ -581,6 +587,46 @@ export const getStudentAnswers = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Error retrieving student answers",
+      error: err.message,
+    });
+  }
+};
+
+export const updateExamStatus = async (req: Request, res: Response) => {
+  try {
+    const { examId, status } = req.body;
+    const user_id = getUserIdFromToken(req);
+
+    if (!examId || !status) {
+      return res.status(400).json({
+        success: false,
+        message: "Exam ID and status are required",
+      });
+    }
+
+    const exam = await Exam.findOne({
+      where: { id: examId, user_id },
+    });
+
+    if (!exam) {
+      return res.status(404).json({
+        success: false,
+        message: "Exam not found",
+      });
+    }
+
+    exam.status = status;
+    await exam.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Exam status updated successfully",
+      exam,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating exam status",
       error: err.message,
     });
   }
