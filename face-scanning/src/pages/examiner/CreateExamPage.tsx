@@ -16,7 +16,9 @@ const CreateExam = () => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "suspended">("all");
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "active" | "suspended"
+  >("all");
   const [error, setError] = useState(null);
   const [connectionError, setConnectionError] = useState("");
   const [profileName, setProfileName] = useState<string | null>(null);
@@ -77,7 +79,7 @@ const CreateExam = () => {
     try {
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
       await axios.put(`${base}/exam/${examId}/status`, { status: newStatus });
-      
+
       // Update local state
       setExams((prevExams) =>
         prevExams.map((exam) =>
@@ -94,32 +96,32 @@ const CreateExam = () => {
     () =>
       exams.filter((e) => {
         const examName = (e as any).exam_name || (e as any).name || "";
-        const matchesSearch = examName.toLowerCase().includes(search.toLowerCase());
-        const matchesFilter = filterStatus === "all" || e.status === filterStatus;
+        const matchesSearch = examName
+          .toLowerCase()
+          .includes(search.toLowerCase());
+        const matchesFilter =
+          filterStatus === "all" || e.status === filterStatus;
         return matchesSearch && matchesFilter;
       }),
     [exams, search, filterStatus]
   );
-  const stats = useMemo(
-    () => {
-      const now = new Date();
-      return {
-        total: exams.length,
-        active: exams.filter((e) => {
-          const start = (e as any).startTime || (e as any).start_time;
-          const isFuture = start && new Date(start) > now;
-          return e.status === "active" && !isFuture;
-        }).length,
-        suspended: exams.filter((e) => e.status === "suspended").length,
-        future: exams.filter((e) => {
-          const start = (e as any).startTime || (e as any).start_time;
-          return e.status === "active" && start && new Date(start) > now;
-        }).length,
-        completed: exams.filter((e) => e.status === "completed").length,
-      };
-    },
-    [exams]
-  );
+  const stats = useMemo(() => {
+    const now = new Date();
+    return {
+      total: exams.length,
+      active: exams.filter((e) => {
+        const start = (e as any).startTime || (e as any).start_time;
+        const isFuture = start && new Date(start) > now;
+        return e.status === "active" && !isFuture;
+      }).length,
+      suspended: exams.filter((e) => e.status === "suspended").length,
+      future: exams.filter((e) => {
+        const start = (e as any).startTime || (e as any).start_time;
+        return e.status === "active" && start && new Date(start) > now;
+      }).length,
+      completed: exams.filter((e) => e.status === "completed").length,
+    };
+  }, [exams]);
 
   const formatRange = (s?: string, e?: string) => {
     if (!s || !e) return "—";
@@ -194,269 +196,291 @@ const CreateExam = () => {
         className={`${styles.examinerContainer} ${styles.enterpriseRoot} theme-transition`}
         style={{
           // Ensure background adapts to dark/light theme
-          background: "var(--app-bg, var(--background, var(--body-bg, #0f1115)))",
-        minHeight: "100vh",
-        color: "var(--text-primary)",
-      }}
-    >
-      <div className={styles.pageBackdrop} style={{ display: "none" }} />
-      <header className={`${styles.header} ${styles.fadeIn} theme-transition`}>
-        <div className={styles.headerContent}>
-          <h1
-            className={`${styles.title} theme-transition`}
-            style={{ color: "var(--text-primary)" }}
-          >
-            Exam Management Console
-          </h1>
-          <p
-            className={`${styles.subtitle} theme-transition`}
-            style={{ color: "var(--text-secondary)" }}
-          >
-            Create, monitor and manage assessments
-          </p>
-        </div>
-        <div className={styles.headerActions}>
-          <div style={{ display: "flex", gap: "8px", marginRight: "16px" }}>
-            <button
-              onClick={() => setFilterStatus("all")}
-              className="theme-transition"
-              style={{
-                padding: "8px 16px",
-                borderRadius: "8px",
-                border: "1px solid var(--border-color)",
-                background: filterStatus === "all" ? "var(--accent-color)" : "transparent",
-                color: filterStatus === "all" ? "white" : "var(--text-secondary)",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: 500,
-              }}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilterStatus("active")}
-              className="theme-transition"
-              style={{
-                padding: "8px 16px",
-                borderRadius: "8px",
-                border: "1px solid var(--border-color)",
-                background: filterStatus === "active" ? "var(--success-color)" : "transparent",
-                color: filterStatus === "active" ? "white" : "var(--text-secondary)",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: 500,
-              }}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => setFilterStatus("suspended")}
-              className="theme-transition"
-              style={{
-                padding: "8px 16px",
-                borderRadius: "8px",
-                border: "1px solid var(--border-color)",
-                background: filterStatus === "suspended" ? "var(--error-color)" : "transparent",
-                color: filterStatus === "suspended" ? "white" : "var(--text-secondary)",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: 500,
-              }}
-            >
-              Suspended
-            </button>
-          </div>
-          <SearchBar value={search} onChange={setSearch} />
-          <button
-            onClick={() => router.push("/examiner/NewExam")}
-            className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
-          >
-            + New Exam
-          </button>
-          <button
-            className={`${styles.btn} ${styles.btnSecondary} theme-transition`}
-            style={{ marginLeft: "8px" }}
-          >
-            Join Exam
-          </button>
-
-          {/* Logout button - transparent with accent color */}
-          <button
-            onClick={handleLogout}
-            className={`${styles.btn} theme-transition`}
-            style={{
-              marginLeft: "8px",
-              background: "transparent",
-              border: "none",
-              color: "var(--accent-color)",
-              padding: "8px 12px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-            title="Log out"
-          >
-            Logout
-          </button>
-
-          {/* Profile avatar (moved to top-right) */}
-          <div
-            title={profileName || "User"}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              background: "var(--accent-color)",
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: 14,
-              marginLeft: 12,
-              boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
-              cursor: "default",
-            }}
-            className="theme-transition"
-          >
-            {profileInitials}
-          </div>
-        </div>
-      </header>
-
-      <ExamStats stats={stats} />
-
-      <section
-        className={`${styles.examsSection} ${styles.fadeIn} theme-transition`}
-        style={{ background: "transparent" }}
+          background:
+            "var(--app-bg, var(--background, var(--body-bg, #0f1115)))",
+          minHeight: "100vh",
+          color: "var(--text-primary)",
+        }}
       >
-        <div className={`${styles.sectionHeader} theme-transition`}>
-          <h2
-            className={`${styles.sectionTitle} theme-transition`}
-            style={{
-              color: "var(--text-primary)",
-              fontSize: "20px",
-              fontWeight: "600",
-              margin: 0,
-              transition: "color 0.3s ease",
-            }}
-          >
-            Exams ({filteredExams.length})
-          </h2>
-          {search && (
-            <span
-              className={`${styles.filterInfo} theme-transition`}
+        <div className={styles.pageBackdrop} style={{ display: "none" }} />
+        <header
+          className={`${styles.header} ${styles.fadeIn} theme-transition`}
+        >
+          <div className={styles.headerContent}>
+            <h1
+              className={`${styles.title} theme-transition`}
+              style={{ color: "var(--text-primary)" }}
+            >
+              Exam Management Console
+            </h1>
+            <p
+              className={`${styles.subtitle} theme-transition`}
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Create, monitor and manage assessments
+            </p>
+          </div>
+          <div className={styles.headerActions}>
+            <div style={{ display: "flex", gap: "8px", marginRight: "16px" }}>
+              <button
+                onClick={() => setFilterStatus("all")}
+                className="theme-transition"
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-color)",
+                  background:
+                    filterStatus === "all"
+                      ? "var(--accent-color)"
+                      : "transparent",
+                  color:
+                    filterStatus === "all" ? "white" : "var(--text-secondary)",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                }}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setFilterStatus("active")}
+                className="theme-transition"
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-color)",
+                  background:
+                    filterStatus === "active"
+                      ? "var(--success-color)"
+                      : "transparent",
+                  color:
+                    filterStatus === "active"
+                      ? "white"
+                      : "var(--text-secondary)",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                }}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setFilterStatus("suspended")}
+                className="theme-transition"
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-color)",
+                  background:
+                    filterStatus === "suspended"
+                      ? "var(--error-color)"
+                      : "transparent",
+                  color:
+                    filterStatus === "suspended"
+                      ? "white"
+                      : "var(--text-secondary)",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                }}
+              >
+                Suspended
+              </button>
+            </div>
+            <SearchBar value={search} onChange={setSearch} />
+            <button
+              onClick={() => router.push("/examiner/NewExam")}
+              className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
+            >
+              + New Exam
+            </button>
+            <button
+              className={`${styles.btn} ${styles.btnSecondary} theme-transition`}
+              style={{ marginLeft: "8px" }}
+            >
+              Join Exam
+            </button>
+
+            {/* Logout button - transparent with accent color */}
+            <button
+              onClick={handleLogout}
+              className={`${styles.btn} theme-transition`}
               style={{
-                color: "var(--text-secondary)",
-                fontSize: "14px",
+                marginLeft: "8px",
+                background: "transparent",
+                border: "none",
+                color: "var(--accent-color)",
+                padding: "8px 12px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+              title="Log out"
+            >
+              Logout
+            </button>
+
+            {/* Profile avatar (moved to top-right) */}
+            <div
+              title={profileName || "User"}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: "var(--accent-color)",
+                color: "#fff",
+                fontWeight: 700,
+                fontSize: 14,
+                marginLeft: 12,
+                boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+                cursor: "default",
+              }}
+              className="theme-transition"
+            >
+              {profileInitials}
+            </div>
+          </div>
+        </header>
+
+        <ExamStats stats={stats} />
+
+        <section
+          className={`${styles.examsSection} ${styles.fadeIn} theme-transition`}
+          style={{ background: "transparent" }}
+        >
+          <div className={`${styles.sectionHeader} theme-transition`}>
+            <h2
+              className={`${styles.sectionTitle} theme-transition`}
+              style={{
+                color: "var(--text-primary)",
+                fontSize: "20px",
+                fontWeight: "600",
+                margin: 0,
                 transition: "color 0.3s ease",
               }}
             >
-              Filtered by: "{search}"
-            </span>
-          )}
-        </div>{" "}
-        {loading && (
-          <div className={styles.skeletonGrid}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className={`${styles.examCard} ${styles.skeletonCard} ${styles.shimmer} theme-transition`}
-              />
-            ))}
-          </div>
-        )}
-        {!loading && filteredExams.length === 0 && (
-          <div
-            className={`${styles.emptyState} ${styles.glassPanel} theme-transition`}
-          >
-            <div className={styles.emptyContent}>
-              <div
-                className={styles.emptyIcon}
-                style={{ fontSize: "48px", marginBottom: "16px" }}
-              >
-                📁
-              </div>
-              <h3
-                className={`${styles.emptyTitle} theme-transition`}
-                style={{
-                  color: "var(--text-primary)",
-                  fontSize: "18px",
-                  fontWeight: 600,
-                  marginBottom: "8px",
-                  transition: "color 0.3s ease",
-                }}
-              >
-                No exams match
-              </h3>
-              <p
-                className={`${styles.emptyDescription} theme-transition`}
+              Exams ({filteredExams.length})
+            </h2>
+            {search && (
+              <span
+                className={`${styles.filterInfo} theme-transition`}
                 style={{
                   color: "var(--text-secondary)",
                   fontSize: "14px",
-                  marginBottom: "24px",
                   transition: "color 0.3s ease",
                 }}
               >
-                Try adjusting your search or create a new exam.
-              </p>
-              <button
-                onClick={() => router.push("/examiner/NewExam")}
-                className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
-              >
-                ➕ Create Exam
-              </button>
+                Filtered by: "{search}"
+              </span>
+            )}
+          </div>{" "}
+          {loading && (
+            <div className={styles.skeletonGrid}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`${styles.examCard} ${styles.skeletonCard} ${styles.shimmer} theme-transition`}
+                />
+              ))}
             </div>
-          </div>
-        )}
-        {!loading && filteredExams.length > 0 && (
-          <ExamsGrid
-            exams={filteredExams}
-            formatRange={formatRange}
-            onViewResults={(exam) => {
-              setSelectedExamForResults({ id: exam.id, name: (exam as any).exam_name || (exam as any).name });
-            }}
-            onStatusChange={handleStatusChange}
+          )}
+          {!loading && filteredExams.length === 0 && (
+            <div
+              className={`${styles.emptyState} ${styles.glassPanel} theme-transition`}
+            >
+              <div className={styles.emptyContent}>
+                <div
+                  className={styles.emptyIcon}
+                  style={{ fontSize: "48px", marginBottom: "16px" }}
+                >
+                  📁
+                </div>
+                <h3
+                  className={`${styles.emptyTitle} theme-transition`}
+                  style={{
+                    color: "var(--text-primary)",
+                    fontSize: "18px",
+                    fontWeight: 600,
+                    marginBottom: "8px",
+                    transition: "color 0.3s ease",
+                  }}
+                >
+                  No exams match
+                </h3>
+                <p
+                  className={`${styles.emptyDescription} theme-transition`}
+                  style={{
+                    color: "var(--text-secondary)",
+                    fontSize: "14px",
+                    marginBottom: "24px",
+                    transition: "color 0.3s ease",
+                  }}
+                >
+                  Try adjusting your search or create a new exam.
+                </p>
+                <button
+                  onClick={() => router.push("/examiner/NewExam")}
+                  className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
+                >
+                  ➕ Create Exam
+                </button>
+              </div>
+            </div>
+          )}
+          {!loading && filteredExams.length > 0 && (
+            <ExamsGrid
+              exams={filteredExams}
+              formatRange={formatRange}
+              onViewResults={(exam) => {
+                setSelectedExamForResults({
+                  id: exam.id,
+                  name: (exam as any).exam_name || (exam as any).name,
+                });
+              }}
+              onStatusChange={handleStatusChange}
+            />
+          )}
+        </section>
+
+        {/* Exam Results Modal */}
+        {selectedExamForResults && (
+          <ExamResultsModal
+            examId={selectedExamForResults.id}
+            examName={selectedExamForResults.name}
+            onClose={handleCloseResultsModal}
           />
         )}
-      </section>
 
-      {/* Exam Results Modal */}
-      {selectedExamForResults && (
-        <ExamResultsModal
-          examId={selectedExamForResults.id}
-          examName={selectedExamForResults.name}
-          onClose={handleCloseResultsModal}
-        />
-      )}
-
-      {/* Floating controls: Theme toggle in bottom-right (avatar removed) */}
-      <div
-        style={{
-          position: "fixed",
-          right: 20,
-          bottom: 20,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 12,
-          zIndex: 1200,
-        }}
-      >
-        {/* Theme toggle (keeps existing ThemeToggle component) */}
+        {/* Floating controls: Theme toggle in bottom-right (avatar removed) */}
         <div
           style={{
-            background: "var(--card-bg)",
-            border: "1px solid var(--border-color)",
-            borderRadius: 12,
-            padding: 8,
-            boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+            position: "fixed",
+            right: 20,
+            bottom: 20,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 12,
+            zIndex: 1200,
           }}
-          className="theme-transition"
         >
-          <ThemeToggle />
+          {/* Theme toggle (keeps existing ThemeToggle component) */}
+          <div
+            style={{
+              background: "var(--card-bg)",
+              border: "1px solid var(--border-color)",
+              borderRadius: 12,
+              padding: 8,
+              boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+            }}
+            className="theme-transition"
+          >
+            <ThemeToggle />
+          </div>
         </div>
       </div>
-    </div>
     </ExaminerGuard>
   );
 };

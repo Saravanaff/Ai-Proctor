@@ -7,7 +7,7 @@ import {
   updateExamStatus,
   deleteExam,
   getExamResults,
-  getStudentAnswers
+  getStudentAnswers,
 } from "../controllers/ExamAdminController";
 import {
   getExamSettings,
@@ -28,13 +28,17 @@ const router = Router();
 
 router.get("/exam", authMiddleware, requireExaminerRole, getExam);
 router.get("/getExamSettings", getExamSettings);
-router.get("/exam/:examId",requireExaminerRole,getSingleExam);
+router.get("/exam/:examId", requireExaminerRole, getSingleExam);
 router.post("/examCreate", requireExaminerRole, createExam);
 router.put("/exam/:examId", requireExaminerRole, updateExam);
 router.put("/exam/:examId/status", requireExaminerRole, updateExamStatus);
 router.delete("/exam/:examId", requireExaminerRole, deleteExam);
 router.get("/getExamQuestions/:examId", getQuestionsByExam);
-router.put("/updateExamQuestions/:exam_id", requireExaminerRole, updateQuestionsForExam);
+router.put(
+  "/updateExamQuestions/:exam_id",
+  requireExaminerRole,
+  updateQuestionsForExam
+);
 
 router.post("/saveUserAnswers", requireStudentRole, saveUserAnswers);
 

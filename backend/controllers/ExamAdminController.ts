@@ -12,7 +12,7 @@ export const createExam = async (req: Request, res: Response) => {
   try {
     console.log("📨 Received exam creation request");
     console.log("📋 Request body:", JSON.stringify(req.body, null, 2));
-    
+
     const {
       exam_name,
       third_eye_enabled,
@@ -85,13 +85,14 @@ export const createExam = async (req: Request, res: Response) => {
     if (questions && Array.isArray(questions) && questions.length > 0) {
       for (const q of questions) {
         // Find the correct answer text from options
-        let correctAnswer = q.answer || '';
+        let correctAnswer = q.answer || "";
         if (q.options && Array.isArray(q.options)) {
-          const correctOption = q.options.find((opt: any) => 
-            typeof opt === 'object' && opt.is_correct === true
+          const correctOption = q.options.find(
+            (opt: any) => typeof opt === "object" && opt.is_correct === true
           );
           if (correctOption) {
-            correctAnswer = correctOption.option_text || correctOption.text || '';
+            correctAnswer =
+              correctOption.option_text || correctOption.text || "";
           }
         }
 
@@ -146,7 +147,15 @@ export const getExam = async (req: Request, res: Response) => {
   try {
     const exams = await Exam.findAll({
       where: { user_id },
-      attributes: ["id", "exam_name", "key", "status", "start_time", "end_time", "duration"],
+      attributes: [
+        "id",
+        "exam_name",
+        "key",
+        "status",
+        "start_time",
+        "end_time",
+        "duration",
+      ],
       include: [
         {
           model: Attend,

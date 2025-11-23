@@ -40,8 +40,9 @@ const ExamCard: React.FC<Props> = ({
 
   // Determine display status
   const isSuspended = rawStatus === "suspended";
-  const isFuture = !isSuspended && startTime && new Date(startTime) > new Date();
-  
+  const isFuture =
+    !isSuspended && startTime && new Date(startTime) > new Date();
+
   let displayStatus = rawStatus;
   if (isSuspended) displayStatus = "suspended";
   else if (isFuture) displayStatus = "future";

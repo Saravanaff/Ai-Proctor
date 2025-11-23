@@ -16,7 +16,6 @@ export const validateExam = async (req: Request, res: Response) => {
       message: "Exam key, user ID, and user name are required",
     });
   }
-  
 
   try {
     const exam = await Exam.findOne({ where: { key } });
@@ -387,9 +386,3 @@ export const getUserAnswersByAdmin = async (req: Request, res: Response) => {
     });
   }
 };
-
-
-
-
-
-

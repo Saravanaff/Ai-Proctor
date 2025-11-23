@@ -458,684 +458,769 @@ const NewExam = () => {
 
   return (
     <ExaminerGuard>
-    <div
-      className="theme-transition"
-      style={{
-        minHeight: "100vh",
-        background: "var(--primary-bg)",
-        transition: "background 0.3s ease",
-      }}
-    >
-      {/* Header */}
-      <header
+      <div
         className="theme-transition"
         style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 100,
-          background: "var(--card-bg)",
-          borderBottom: "1px solid var(--border-color)",
-          padding: "16px 32px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+          minHeight: "100vh",
+          background: "var(--primary-bg)",
+          transition: "background 0.3s ease",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <button
-            onClick={() => router.push("/examiner/CreateExamPage")}
-            className="theme-transition"
-            style={{
-              background: "var(--secondary-bg)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "10px",
-              padding: "10px 16px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              cursor: "pointer",
-              color: "var(--text-primary)",
-              fontSize: "14px",
-              fontWeight: 500,
-              transition: "all 0.2s ease",
-            }}
-          >
-            <span>←</span> Back
-          </button>
-          <div>
-            <h1
-              className="theme-transition"
-              style={{
-                fontSize: "24px",
-                fontWeight: 700,
-                color: "var(--text-primary)",
-                margin: 0,
-                marginBottom: "4px",
-              }}
-            >
-              Create New Exam - Step {currentStep} of 2
-            </h1>
-            <p
-              className="theme-transition"
-              style={{
-                fontSize: "13px",
-                color: "var(--text-secondary)",
-                margin: 0,
-              }}
-            >
-              {currentStep === 1 && "Setup exam name and questions"}
-              {currentStep === 2 &&
-                `Configure exam settings • ${
-                  mcqQuestions.length
-                } questions • ${getEnabledFeaturesCount()} features enabled`}
-            </p>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {/* Step Indicator */}
-          <div style={{ display: "flex", gap: "8px", marginRight: "16px" }}>
-            {[1, 2].map((step) => (
-              <div
-                key={step}
-                style={{
-                  width: currentStep === step ? "32px" : "10px",
-                  height: "10px",
-                  borderRadius: "5px",
-                  background:
-                    currentStep >= step
-                      ? "var(--accent-color)"
-                      : "var(--border-color)",
-                  transition: "all 0.3s ease",
-                }}
-              />
-            ))}
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main
-        style={{
-          display: "flex",
-          gap: "24px",
-          padding: "32px",
-          maxWidth: "1200px",
-          margin: "0 auto",
-          alignItems: "flex-start",
-        }}
-      >
-        {/* Form */}
-        <div
+        {/* Header */}
+        <header
+          className="theme-transition"
           style={{
-            flex: "1",
-            maxWidth: "100%",
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
+            background: "var(--card-bg)",
+            borderBottom: "1px solid var(--border-color)",
+            padding: "16px 32px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
           }}
         >
-          {/* STEP 1: Exam Name & Questions */}
-          {currentStep === 1 && (
-            <>
-              {/* Exam Name */}
-              <div
-                className={`${styles.glassPanel} theme-transition`}
+          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+            <button
+              onClick={() => router.push("/examiner/CreateExamPage")}
+              className="theme-transition"
+              style={{
+                background: "var(--secondary-bg)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "10px",
+                padding: "10px 16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                cursor: "pointer",
+                color: "var(--text-primary)",
+                fontSize: "14px",
+                fontWeight: 500,
+                transition: "all 0.2s ease",
+              }}
+            >
+              <span>←</span> Back
+            </button>
+            <div>
+              <h1
+                className="theme-transition"
                 style={{
-                  padding: "24px",
-                  borderRadius: "14px",
-                  marginBottom: "16px",
+                  fontSize: "24px",
+                  fontWeight: 700,
+                  color: "var(--text-primary)",
+                  margin: 0,
+                  marginBottom: "4px",
                 }}
               >
-                <label
-                  className="theme-transition"
+                Create New Exam - Step {currentStep} of 2
+              </h1>
+              <p
+                className="theme-transition"
+                style={{
+                  fontSize: "13px",
+                  color: "var(--text-secondary)",
+                  margin: 0,
+                }}
+              >
+                {currentStep === 1 && "Setup exam name and questions"}
+                {currentStep === 2 &&
+                  `Configure exam settings • ${
+                    mcqQuestions.length
+                  } questions • ${getEnabledFeaturesCount()} features enabled`}
+              </p>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {/* Step Indicator */}
+            <div style={{ display: "flex", gap: "8px", marginRight: "16px" }}>
+              {[1, 2].map((step) => (
+                <div
+                  key={step}
                   style={{
-                    display: "block",
-                    marginBottom: "12px",
-                    color: "var(--text-primary)",
-                    fontWeight: 600,
-                    fontSize: "15px",
-                  }}
-                >
-                  📝 Exam Name *
-                </label>
-                <input
-                  type="text"
-                  value={examName}
-                  onChange={(e) => setExamName(e.target.value)}
-                  placeholder="Enter exam name (e.g., Midterm Mathematics Exam)"
-                  className="input-theme theme-transition"
-                  style={{
-                    width: "100%",
-                    padding: "14px 16px",
-                    borderRadius: "10px",
-                    fontSize: "15px",
-                    outline: "none",
-                    border: "2px solid var(--border-color)",
-                    background: "var(--secondary-bg)",
+                    width: currentStep === step ? "32px" : "10px",
+                    height: "10px",
+                    borderRadius: "5px",
+                    background:
+                      currentStep >= step
+                        ? "var(--accent-color)"
+                        : "var(--border-color)",
+                    transition: "all 0.3s ease",
                   }}
                 />
-              </div>
+              ))}
+            </div>
+            <ThemeToggle />
+          </div>
+        </header>
 
-              {/* Exam Schedule & Duration */}
-              <div
-                className={`${styles.glassPanel} theme-transition`}
-                style={{
-                  padding: "24px",
-                  borderRadius: "14px",
-                  marginBottom: "16px",
-                  background: "var(--card-bg)",
-                  border: "1px solid var(--border-color)",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
-                  <span style={{ fontSize: "24px" }}>📅</span>
-                  <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "var(--text-primary)" }}>
-                    Schedule & Timing
-                  </h3>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
-                  {/* Start Time */}
-                  <div style={{ position: "relative" }}>
-                    <label
-                      className="theme-transition"
-                      style={{
-                        display: "block",
-                        marginBottom: "8px",
-                        color: "var(--text-secondary)",
-                        fontWeight: 500,
-                        fontSize: "14px",
-                      }}
-                    >
-                      Start Date & Time
-                    </label>
-                    <div style={{ position: "relative" }}>
-                      <input
-                        type="datetime-local"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        className="input-theme theme-transition"
-                        style={{
-                          width: "100%",
-                          padding: "12px 16px",
-                          borderRadius: "10px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--secondary-bg)",
-                          color: "var(--text-primary)",
-                          fontSize: "14px",
-                          outline: "none",
-                          transition: "all 0.2s ease",
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* End Time */}
-                  <div style={{ position: "relative" }}>
-                    <label
-                      className="theme-transition"
-                      style={{
-                        display: "block",
-                        marginBottom: "8px",
-                        color: "var(--text-secondary)",
-                        fontWeight: 500,
-                        fontSize: "14px",
-                      }}
-                    >
-                      End Date & Time
-                    </label>
-                    <div style={{ position: "relative" }}>
-                      <input
-                        type="datetime-local"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        className="input-theme theme-transition"
-                        style={{
-                          width: "100%",
-                          padding: "12px 16px",
-                          borderRadius: "10px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--secondary-bg)",
-                          color: "var(--text-primary)",
-                          fontSize: "14px",
-                          outline: "none",
-                          transition: "all 0.2s ease",
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Duration Input */}
-                <div style={{ marginTop: "24px" }}>
+        {/* Main Content */}
+        <main
+          style={{
+            display: "flex",
+            gap: "24px",
+            padding: "32px",
+            maxWidth: "1200px",
+            margin: "0 auto",
+            alignItems: "flex-start",
+          }}
+        >
+          {/* Form */}
+          <div
+            style={{
+              flex: "1",
+              maxWidth: "100%",
+            }}
+          >
+            {/* STEP 1: Exam Name & Questions */}
+            {currentStep === 1 && (
+              <>
+                {/* Exam Name */}
+                <div
+                  className={`${styles.glassPanel} theme-transition`}
+                  style={{
+                    padding: "24px",
+                    borderRadius: "14px",
+                    marginBottom: "16px",
+                  }}
+                >
                   <label
                     className="theme-transition"
                     style={{
                       display: "block",
                       marginBottom: "12px",
-                      color: "var(--text-secondary)",
-                      fontWeight: 500,
-                      fontSize: "14px",
+                      color: "var(--text-primary)",
+                      fontWeight: 600,
+                      fontSize: "15px",
                     }}
                   >
-                    Exam Duration
+                    📝 Exam Name *
                   </label>
-                  <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
-                    <div style={{ flex: "0 0 120px" }}>
-                      <label style={{ fontSize: "12px", color: "var(--text-tertiary)", marginBottom: "6px", display: "block" }}>Hours</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={Math.floor(Number(duration || 0) / 60)}
-                        onChange={(e) => {
-                          const h = Math.max(0, parseInt(e.target.value) || 0);
-                          const m = (Number(duration || 0) % 60);
-                          setDuration((h * 60 + m).toString());
-                        }}
-                        className="input-theme theme-transition"
+                  <input
+                    type="text"
+                    value={examName}
+                    onChange={(e) => setExamName(e.target.value)}
+                    placeholder="Enter exam name (e.g., Midterm Mathematics Exam)"
+                    className="input-theme theme-transition"
+                    style={{
+                      width: "100%",
+                      padding: "14px 16px",
+                      borderRadius: "10px",
+                      fontSize: "15px",
+                      outline: "none",
+                      border: "2px solid var(--border-color)",
+                      background: "var(--secondary-bg)",
+                    }}
+                  />
+                </div>
+
+                {/* Exam Schedule & Duration */}
+                <div
+                  className={`${styles.glassPanel} theme-transition`}
+                  style={{
+                    padding: "24px",
+                    borderRadius: "14px",
+                    marginBottom: "16px",
+                    background: "var(--card-bg)",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      marginBottom: "20px",
+                    }}
+                  >
+                    <span style={{ fontSize: "24px" }}>📅</span>
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontSize: "18px",
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      Schedule & Timing
+                    </h3>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "24px",
+                    }}
+                  >
+                    {/* Start Time */}
+                    <div style={{ position: "relative" }}>
+                      <label
+                        className="theme-transition"
                         style={{
-                          width: "100%",
-                          padding: "12px",
-                          borderRadius: "10px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--secondary-bg)",
-                          color: "var(--text-primary)",
-                          fontSize: "16px",
-                          textAlign: "center",
-                          outline: "none",
+                          display: "block",
+                          marginBottom: "8px",
+                          color: "var(--text-secondary)",
+                          fontWeight: 500,
+                          fontSize: "14px",
                         }}
-                      />
+                      >
+                        Start Date & Time
+                      </label>
+                      <div style={{ position: "relative" }}>
+                        <input
+                          type="datetime-local"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          className="input-theme theme-transition"
+                          style={{
+                            width: "100%",
+                            padding: "12px 16px",
+                            borderRadius: "10px",
+                            border: "1px solid var(--border-color)",
+                            background: "var(--secondary-bg)",
+                            color: "var(--text-primary)",
+                            fontSize: "14px",
+                            outline: "none",
+                            transition: "all 0.2s ease",
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div style={{ paddingTop: "32px", color: "var(--text-tertiary)", fontWeight: "bold" }}>:</div>
-                    <div style={{ flex: "0 0 120px" }}>
-                      <label style={{ fontSize: "12px", color: "var(--text-tertiary)", marginBottom: "6px", display: "block" }}>Minutes</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="59"
-                        value={(Number(duration || 0) % 60)}
-                        onChange={(e) => {
-                          const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
-                          const h = Math.floor(Number(duration || 0) / 60);
-                          setDuration((h * 60 + m).toString());
-                        }}
-                        className="input-theme theme-transition"
+
+                    {/* End Time */}
+                    <div style={{ position: "relative" }}>
+                      <label
+                        className="theme-transition"
                         style={{
-                          width: "100%",
-                          padding: "12px",
-                          borderRadius: "10px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--secondary-bg)",
-                          color: "var(--text-primary)",
-                          fontSize: "16px",
-                          textAlign: "center",
-                          outline: "none",
+                          display: "block",
+                          marginBottom: "8px",
+                          color: "var(--text-secondary)",
+                          fontWeight: 500,
+                          fontSize: "14px",
                         }}
-                      />
+                      >
+                        End Date & Time
+                      </label>
+                      <div style={{ position: "relative" }}>
+                        <input
+                          type="datetime-local"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          className="input-theme theme-transition"
+                          style={{
+                            width: "100%",
+                            padding: "12px 16px",
+                            borderRadius: "10px",
+                            border: "1px solid var(--border-color)",
+                            background: "var(--secondary-bg)",
+                            color: "var(--text-primary)",
+                            fontSize: "14px",
+                            outline: "none",
+                            transition: "all 0.2s ease",
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div style={{ flex: 1, display: "flex", alignItems: "center", height: "80px", paddingLeft: "20px" }}>
-                      <div style={{ 
-                        background: "var(--secondary-bg)", 
-                        padding: "10px 20px", 
-                        borderRadius: "8px",
-                        border: "1px solid var(--border-color)",
+                  </div>
+
+                  {/* Duration Input */}
+                  <div style={{ marginTop: "24px" }}>
+                    <label
+                      className="theme-transition"
+                      style={{
+                        display: "block",
+                        marginBottom: "12px",
+                        color: "var(--text-secondary)",
+                        fontWeight: 500,
+                        fontSize: "14px",
+                      }}
+                    >
+                      Exam Duration
+                    </label>
+                    <div
+                      style={{
                         display: "flex",
-                        alignItems: "center",
-                        gap: "8px"
-                      }}>
-                        <span style={{ fontSize: "20px" }}>⏱</span>
-                        <div>
-                          <div style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>Total Duration</div>
-                          <div style={{ color: "var(--accent-color)", fontWeight: 700, fontSize: "16px" }}>
-                            {duration || 0} minutes
+                        gap: "20px",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div style={{ flex: "0 0 120px" }}>
+                        <label
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--text-tertiary)",
+                            marginBottom: "6px",
+                            display: "block",
+                          }}
+                        >
+                          Hours
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={Math.floor(Number(duration || 0) / 60)}
+                          onChange={(e) => {
+                            const h = Math.max(
+                              0,
+                              parseInt(e.target.value) || 0
+                            );
+                            const m = Number(duration || 0) % 60;
+                            setDuration((h * 60 + m).toString());
+                          }}
+                          className="input-theme theme-transition"
+                          style={{
+                            width: "100%",
+                            padding: "12px",
+                            borderRadius: "10px",
+                            border: "1px solid var(--border-color)",
+                            background: "var(--secondary-bg)",
+                            color: "var(--text-primary)",
+                            fontSize: "16px",
+                            textAlign: "center",
+                            outline: "none",
+                          }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          paddingTop: "32px",
+                          color: "var(--text-tertiary)",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        :
+                      </div>
+                      <div style={{ flex: "0 0 120px" }}>
+                        <label
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--text-tertiary)",
+                            marginBottom: "6px",
+                            display: "block",
+                          }}
+                        >
+                          Minutes
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={Number(duration || 0) % 60}
+                          onChange={(e) => {
+                            const m = Math.max(
+                              0,
+                              Math.min(59, parseInt(e.target.value) || 0)
+                            );
+                            const h = Math.floor(Number(duration || 0) / 60);
+                            setDuration((h * 60 + m).toString());
+                          }}
+                          className="input-theme theme-transition"
+                          style={{
+                            width: "100%",
+                            padding: "12px",
+                            borderRadius: "10px",
+                            border: "1px solid var(--border-color)",
+                            background: "var(--secondary-bg)",
+                            color: "var(--text-primary)",
+                            fontSize: "16px",
+                            textAlign: "center",
+                            outline: "none",
+                          }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          flex: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          height: "80px",
+                          paddingLeft: "20px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            background: "var(--secondary-bg)",
+                            padding: "10px 20px",
+                            borderRadius: "8px",
+                            border: "1px solid var(--border-color)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <span style={{ fontSize: "20px" }}>⏱</span>
+                          <div>
+                            <div
+                              style={{
+                                fontSize: "12px",
+                                color: "var(--text-tertiary)",
+                              }}
+                            >
+                              Total Duration
+                            </div>
+                            <div
+                              style={{
+                                color: "var(--accent-color)",
+                                fontWeight: 700,
+                                fontSize: "16px",
+                              }}
+                            >
+                              {duration || 0} minutes
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Questions Section */}
-              <CollapsibleSection
-                title="MCQ Questions"
-                subtitle={`Add multiple choice questions (${mcqQuestions.length} questions added)`}
-                icon="❓"
-                isOpen={mcqSectionOpen}
-                onToggle={() => setMcqSectionOpen(!mcqSectionOpen)}
-              >
-                {showPDFUploader && (
-                  <PDFQuestionUploader
-                    onQuestionsExtracted={handlePDFQuestionsExtracted}
-                    onClose={handleCancelPDFUploader}
-                  />
-                )}
-
-                {showQuestionEditor && (
-                  <MCQQuestionEditor
-                    onSave={handleAddQuestion}
-                    onCancel={handleCancelQuestionEditor}
-                    initialQuestion={editingQuestion}
-                  />
-                )}
-
-                {!showQuestionEditor &&
-                  !showPDFUploader &&
-                  mcqQuestions.length > 0 && (
-                    <MCQQuestionList
-                      questions={mcqQuestions}
-                      onEdit={handleEditQuestion}
-                      onDelete={handleDeleteQuestion}
+                {/* Questions Section */}
+                <CollapsibleSection
+                  title="MCQ Questions"
+                  subtitle={`Add multiple choice questions (${mcqQuestions.length} questions added)`}
+                  icon="❓"
+                  isOpen={mcqSectionOpen}
+                  onToggle={() => setMcqSectionOpen(!mcqSectionOpen)}
+                >
+                  {showPDFUploader && (
+                    <PDFQuestionUploader
+                      onQuestionsExtracted={handlePDFQuestionsExtracted}
+                      onClose={handleCancelPDFUploader}
                     />
                   )}
 
-                {!showQuestionEditor &&
-                  !showPDFUploader &&
-                  mcqQuestions.length === 0 && (
-                    <div
-                      className="theme-transition"
-                      style={{
-                        textAlign: "center",
-                        padding: "40px 20px",
-                        color: "var(--text-secondary)",
-                        fontSize: "14px",
-                      }}
-                    >
-                      No questions added yet. Upload a PDF or add questions
-                      manually.
-                    </div>
+                  {showQuestionEditor && (
+                    <MCQQuestionEditor
+                      onSave={handleAddQuestion}
+                      onCancel={handleCancelQuestionEditor}
+                      initialQuestion={editingQuestion}
+                    />
                   )}
 
-                {!showQuestionEditor && !showPDFUploader && (
-                  <div
+                  {!showQuestionEditor &&
+                    !showPDFUploader &&
+                    mcqQuestions.length > 0 && (
+                      <MCQQuestionList
+                        questions={mcqQuestions}
+                        onEdit={handleEditQuestion}
+                        onDelete={handleDeleteQuestion}
+                      />
+                    )}
+
+                  {!showQuestionEditor &&
+                    !showPDFUploader &&
+                    mcqQuestions.length === 0 && (
+                      <div
+                        className="theme-transition"
+                        style={{
+                          textAlign: "center",
+                          padding: "40px 20px",
+                          color: "var(--text-secondary)",
+                          fontSize: "14px",
+                        }}
+                      >
+                        No questions added yet. Upload a PDF or add questions
+                        manually.
+                      </div>
+                    )}
+
+                  {!showQuestionEditor && !showPDFUploader && (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "12px",
+                        marginTop: mcqQuestions.length > 0 ? 16 : 0,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setShowPDFUploader(true)}
+                        className="theme-transition"
+                        style={{
+                          padding: "12px 20px",
+                          borderRadius: 10,
+                          border: "2px dashed var(--accent-color)",
+                          background: "transparent",
+                          color: "var(--accent-color)",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          flex: 1,
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        📄 Upload PDF
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuestionEditor(true)}
+                        className="theme-transition"
+                        style={{
+                          padding: "12px 20px",
+                          borderRadius: 10,
+                          border: "2px dashed var(--accent-color)",
+                          background: "transparent",
+                          color: "var(--accent-color)",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          flex: 1,
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        ✍️ Add Manually
+                      </button>
+                    </div>
+                  )}
+                </CollapsibleSection>
+
+                {/* Action Buttons */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    marginTop: "24px",
+                  }}
+                >
+                  <button
+                    onClick={() => router.push("/examiner/CreateExamPage")}
+                    className={`${styles.btn} ${styles.btnGhost} theme-transition`}
                     style={{
-                      display: "flex",
-                      gap: "12px",
-                      marginTop: mcqQuestions.length > 0 ? 16 : 0,
+                      padding: "10px 18px",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
                     }}
                   >
-                    <button
-                      type="button"
-                      onClick={() => setShowPDFUploader(true)}
-                      className="theme-transition"
-                      style={{
-                        padding: "12px 20px",
-                        borderRadius: 10,
-                        border: "2px dashed var(--accent-color)",
-                        background: "transparent",
-                        color: "var(--accent-color)",
-                        fontSize: 14,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        flex: 1,
-                        transition: "all 0.2s ease",
-                      }}
-                    >
-                      📄 Upload PDF
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowQuestionEditor(true)}
-                      className="theme-transition"
-                      style={{
-                        padding: "12px 20px",
-                        borderRadius: 10,
-                        border: "2px dashed var(--accent-color)",
-                        background: "transparent",
-                        color: "var(--accent-color)",
-                        fontSize: 14,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        flex: 1,
-                        transition: "all 0.2s ease",
-                      }}
-                    >
-                      ✍️ Add Manually
-                    </button>
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePreview}
+                    disabled={!examName.trim() || mcqQuestions.length === 0}
+                    className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      opacity:
+                        !examName.trim() || mcqQuestions.length === 0 ? 0.6 : 1,
+                      cursor:
+                        !examName.trim() || mcqQuestions.length === 0
+                          ? "not-allowed"
+                          : "pointer",
+                    }}
+                  >
+                    Next: Settings →
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 2: Exam Settings */}
+            {currentStep === 2 && (
+              <>
+                {/* Proctoring Sections */}
+                <CollapsibleSection
+                  title="Normal Proctoring"
+                  subtitle="Basic monitoring and browser control features"
+                  icon="🖥️"
+                  isOpen={normalProctoringOpen}
+                  onToggle={() =>
+                    setNormalProctoringOpen(!normalProctoringOpen)
+                  }
+                  masterToggle
+                  masterEnabled={normalProctoring}
+                  onMasterToggle={handleNormalProctoringToggle}
+                >
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(250px, 1fr))",
+                      gap: 12,
+                    }}
+                  >
+                    <Toggle
+                      label="Control Desktop Apps"
+                      enabled={controlDesktopApps}
+                      onToggle={() => setControlDesktopApps((v) => !v)}
+                      disabled={!normalProctoring}
+                    />
+                    <Toggle
+                      label="Screen Count Detection"
+                      enabled={screenCountDetection}
+                      onToggle={() => setScreenCountDetection((v) => !v)}
+                      disabled={!normalProctoring}
+                    />
+                    <Toggle
+                      label="Safe Browser"
+                      enabled={safeBrowser}
+                      onToggle={() => setSafeBrowser((v) => !v)}
+                      disabled={!normalProctoring}
+                    />
+                    <Toggle
+                      label="Tab Switch Detection"
+                      enabled={tabSwitchDetection}
+                      onToggle={() => setTabSwitchDetection((v) => !v)}
+                      disabled={!normalProctoring}
+                    />
+                    <Toggle
+                      label="Microphone Detection"
+                      enabled={microphoneDetection}
+                      onToggle={() => setMicrophoneDetection((v) => !v)}
+                      disabled={!normalProctoring}
+                    />
                   </div>
-                )}
-              </CollapsibleSection>
+                </CollapsibleSection>
 
-              {/* Action Buttons */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  marginTop: "24px",
-                }}
-              >
-                <button
-                  onClick={() => router.push("/examiner/CreateExamPage")}
-                  className={`${styles.btn} ${styles.btnGhost} theme-transition`}
-                  style={{
-                    padding: "10px 18px",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
+                <CollapsibleSection
+                  title="AI Powered Proctoring"
+                  subtitle="Advanced AI-based monitoring and detection"
+                  icon="🤖"
+                  isOpen={aiProctoringOpen}
+                  onToggle={() => setAiProctoringOpen(!aiProctoringOpen)}
+                  masterToggle
+                  masterEnabled={aiPoweredProctoring}
+                  onMasterToggle={handleAiProctoringToggle}
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePreview}
-                  disabled={!examName.trim() || mcqQuestions.length === 0}
-                  className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
-                  style={{
-                    padding: "10px 20px",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    opacity:
-                      !examName.trim() || mcqQuestions.length === 0 ? 0.6 : 1,
-                    cursor:
-                      !examName.trim() || mcqQuestions.length === 0
-                        ? "not-allowed"
-                        : "pointer",
-                  }}
-                >
-                  Next: Settings →
-                </button>
-              </div>
-            </>
-          )}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(250px, 1fr))",
+                      gap: 12,
+                    }}
+                  >
+                    <Toggle
+                      label="Third Eye"
+                      enabled={thirdEye}
+                      onToggle={() => setThirdEye((v) => !v)}
+                      disabled={!aiPoweredProctoring}
+                    />
+                    <Toggle
+                      label="Multiple Person Detection"
+                      enabled={multiPerson}
+                      onToggle={() => setMultiPerson((v) => !v)}
+                      disabled={!aiPoweredProctoring}
+                    />
+                    <Toggle
+                      label="Eyeball Detection"
+                      enabled={eyeBall}
+                      onToggle={() => setEyeBall((v) => !v)}
+                      disabled={!aiPoweredProctoring}
+                    />
+                    <Toggle
+                      label="Object Detection"
+                      enabled={objectDetect}
+                      onToggle={() => setObjectDetect((v) => !v)}
+                      disabled={!aiPoweredProctoring}
+                    />
+                    <Toggle
+                      label="Head Direction"
+                      enabled={headDirection}
+                      onToggle={() => setHeadDirection((v) => !v)}
+                      disabled={!aiPoweredProctoring}
+                    />
+                    <Toggle
+                      label="Face Authentication"
+                      enabled={faceAuthentication}
+                      onToggle={() => setFaceAuthentication((v) => !v)}
+                      disabled={!aiPoweredProctoring}
+                    />
+                  </div>
+                </CollapsibleSection>
 
-          {/* STEP 2: Exam Settings */}
-          {currentStep === 2 && (
-            <>
-              {/* Proctoring Sections */}
-              <CollapsibleSection
-                title="Normal Proctoring"
-                subtitle="Basic monitoring and browser control features"
-                icon="🖥️"
-                isOpen={normalProctoringOpen}
-                onToggle={() => setNormalProctoringOpen(!normalProctoringOpen)}
-                masterToggle
-                masterEnabled={normalProctoring}
-                onMasterToggle={handleNormalProctoringToggle}
-              >
+                <CollapsibleSection
+                  title="Recorded Manual Proctoring"
+                  subtitle="Recording and manual review capabilities"
+                  icon="📹"
+                  isOpen={manualProctoringOpen}
+                  onToggle={() =>
+                    setManualProctoringOpen(!manualProctoringOpen)
+                  }
+                  masterToggle
+                  masterEnabled={recordedManualProctoring}
+                  onMasterToggle={handleManualProctoringToggle}
+                >
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(250px, 1fr))",
+                      gap: 12,
+                    }}
+                  >
+                    <Toggle
+                      label="Flag Notifications"
+                      enabled={flagNotifications}
+                      onToggle={() => setFlagNotifications((v) => !v)}
+                      disabled={!recordedManualProctoring}
+                    />
+                    <Toggle
+                      label="Video Recording"
+                      enabled={videoRecording}
+                      onToggle={() => setVideoRecording((v) => !v)}
+                      disabled={!recordedManualProctoring}
+                    />
+                    <Toggle
+                      label="Proctor Feed to Test Taker"
+                      enabled={proctorFeedToTestTaker}
+                      onToggle={() => setProctorFeedToTestTaker((v) => !v)}
+                      disabled={!recordedManualProctoring}
+                    />
+                    <Toggle
+                      label="Screen Sharing"
+                      enabled={screenSharing}
+                      onToggle={() => setScreenSharing((v) => !v)}
+                      disabled={!recordedManualProctoring}
+                    />
+                  </div>
+                </CollapsibleSection>
+
+                {/* Action Buttons */}
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(250px, 1fr))",
-                    gap: 12,
+                    display: "flex",
+                    gap: "12px",
+                    marginTop: "24px",
                   }}
                 >
-                  <Toggle
-                    label="Control Desktop Apps"
-                    enabled={controlDesktopApps}
-                    onToggle={() => setControlDesktopApps((v) => !v)}
-                    disabled={!normalProctoring}
-                  />
-                  <Toggle
-                    label="Screen Count Detection"
-                    enabled={screenCountDetection}
-                    onToggle={() => setScreenCountDetection((v) => !v)}
-                    disabled={!normalProctoring}
-                  />
-                  <Toggle
-                    label="Safe Browser"
-                    enabled={safeBrowser}
-                    onToggle={() => setSafeBrowser((v) => !v)}
-                    disabled={!normalProctoring}
-                  />
-                  <Toggle
-                    label="Tab Switch Detection"
-                    enabled={tabSwitchDetection}
-                    onToggle={() => setTabSwitchDetection((v) => !v)}
-                    disabled={!normalProctoring}
-                  />
-                  <Toggle
-                    label="Microphone Detection"
-                    enabled={microphoneDetection}
-                    onToggle={() => setMicrophoneDetection((v) => !v)}
-                    disabled={!normalProctoring}
-                  />
+                  <button
+                    onClick={handleBackToQuestions}
+                    className={`${styles.btn} ${styles.btnGhost} theme-transition`}
+                    style={{
+                      padding: "10px 18px",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    ← Back to Questions
+                  </button>
+                  <button
+                    onClick={handleFinalSubmit}
+                    className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Preview & Create Exam →
+                  </button>
                 </div>
-              </CollapsibleSection>
-
-              <CollapsibleSection
-                title="AI Powered Proctoring"
-                subtitle="Advanced AI-based monitoring and detection"
-                icon="🤖"
-                isOpen={aiProctoringOpen}
-                onToggle={() => setAiProctoringOpen(!aiProctoringOpen)}
-                masterToggle
-                masterEnabled={aiPoweredProctoring}
-                onMasterToggle={handleAiProctoringToggle}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(250px, 1fr))",
-                    gap: 12,
-                  }}
-                >
-                  <Toggle
-                    label="Third Eye"
-                    enabled={thirdEye}
-                    onToggle={() => setThirdEye((v) => !v)}
-                    disabled={!aiPoweredProctoring}
-                  />
-                  <Toggle
-                    label="Multiple Person Detection"
-                    enabled={multiPerson}
-                    onToggle={() => setMultiPerson((v) => !v)}
-                    disabled={!aiPoweredProctoring}
-                  />
-                  <Toggle
-                    label="Eyeball Detection"
-                    enabled={eyeBall}
-                    onToggle={() => setEyeBall((v) => !v)}
-                    disabled={!aiPoweredProctoring}
-                  />
-                  <Toggle
-                    label="Object Detection"
-                    enabled={objectDetect}
-                    onToggle={() => setObjectDetect((v) => !v)}
-                    disabled={!aiPoweredProctoring}
-                  />
-                  <Toggle
-                    label="Head Direction"
-                    enabled={headDirection}
-                    onToggle={() => setHeadDirection((v) => !v)}
-                    disabled={!aiPoweredProctoring}
-                  />
-                  <Toggle
-                    label="Face Authentication"
-                    enabled={faceAuthentication}
-                    onToggle={() => setFaceAuthentication((v) => !v)}
-                    disabled={!aiPoweredProctoring}
-                  />
-                </div>
-              </CollapsibleSection>
-
-              <CollapsibleSection
-                title="Recorded Manual Proctoring"
-                subtitle="Recording and manual review capabilities"
-                icon="📹"
-                isOpen={manualProctoringOpen}
-                onToggle={() => setManualProctoringOpen(!manualProctoringOpen)}
-                masterToggle
-                masterEnabled={recordedManualProctoring}
-                onMasterToggle={handleManualProctoringToggle}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(250px, 1fr))",
-                    gap: 12,
-                  }}
-                >
-                  <Toggle
-                    label="Flag Notifications"
-                    enabled={flagNotifications}
-                    onToggle={() => setFlagNotifications((v) => !v)}
-                    disabled={!recordedManualProctoring}
-                  />
-                  <Toggle
-                    label="Video Recording"
-                    enabled={videoRecording}
-                    onToggle={() => setVideoRecording((v) => !v)}
-                    disabled={!recordedManualProctoring}
-                  />
-                  <Toggle
-                    label="Proctor Feed to Test Taker"
-                    enabled={proctorFeedToTestTaker}
-                    onToggle={() => setProctorFeedToTestTaker((v) => !v)}
-                    disabled={!recordedManualProctoring}
-                  />
-                  <Toggle
-                    label="Screen Sharing"
-                    enabled={screenSharing}
-                    onToggle={() => setScreenSharing((v) => !v)}
-                    disabled={!recordedManualProctoring}
-                  />
-                </div>
-              </CollapsibleSection>
-
-              {/* Action Buttons */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  marginTop: "24px",
-                }}
-              >
-                <button
-                  onClick={handleBackToQuestions}
-                  className={`${styles.btn} ${styles.btnGhost} theme-transition`}
-                  style={{
-                    padding: "10px 18px",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  ← Back to Questions
-                </button>
-                <button
-                  onClick={handleFinalSubmit}
-                  className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
-                  style={{
-                    padding: "10px 20px",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Preview & Create Exam →
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </main>
-    </div>
+              </>
+            )}
+          </div>
+        </main>
+      </div>
     </ExaminerGuard>
   );
 };

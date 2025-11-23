@@ -14,7 +14,6 @@ import { getTokenFromCookie } from "@/constants/AuthStore";
 //   options: ["Option A", "Option B", "Option C", "Option D"],
 // }));f
 
-
 const examId = getExamId();
 
 const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -107,7 +106,7 @@ const ExamPage = ({
 
         if (response.data.success && response.data.questions) {
           setQuestions(response.data.questions);
-          
+
           if (response.data.exam && response.data.exam.duration) {
             // Set timer based on duration (in minutes)
             setTimeLeft(response.data.exam.duration * 60);
@@ -617,7 +616,7 @@ const ExamPage = ({
 
         if (response.data.success && response.data.questions) {
           setQuestions(response.data.questions);
-          
+
           if (response.data.exam && response.data.exam.duration) {
             // Set timer based on duration (in minutes)
             setTimeLeft(response.data.exam.duration * 60);
@@ -1327,15 +1326,20 @@ const ExamPage = ({
                 session is proctored for academic integrity.
               </p>
             </div>
-            
+
             {timeLeft !== null && (
               <div
                 className="theme-transition"
                 style={{
                   padding: "12px 24px",
                   borderRadius: "12px",
-                  background: timeLeft < 300 ? "var(--error-bg)" : "var(--secondary-bg)",
-                  border: `2px solid ${timeLeft < 300 ? "var(--error-color)" : "var(--border-color)"}`,
+                  background:
+                    timeLeft < 300 ? "var(--error-bg)" : "var(--secondary-bg)",
+                  border: `2px solid ${
+                    timeLeft < 300
+                      ? "var(--error-color)"
+                      : "var(--border-color)"
+                  }`,
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
@@ -1346,7 +1350,10 @@ const ExamPage = ({
                   style={{
                     fontSize: "12px",
                     fontWeight: 600,
-                    color: timeLeft < 300 ? "var(--error-color)" : "var(--text-secondary)",
+                    color:
+                      timeLeft < 300
+                        ? "var(--error-color)"
+                        : "var(--text-secondary)",
                     textTransform: "uppercase",
                     letterSpacing: "1px",
                     marginBottom: "4px",
@@ -1358,7 +1365,10 @@ const ExamPage = ({
                   style={{
                     fontSize: "24px",
                     fontWeight: 700,
-                    color: timeLeft < 300 ? "var(--error-color)" : "var(--text-primary)",
+                    color:
+                      timeLeft < 300
+                        ? "var(--error-color)"
+                        : "var(--text-primary)",
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >

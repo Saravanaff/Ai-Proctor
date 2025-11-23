@@ -26,11 +26,16 @@ export const createQuestion = async (req: Request, res: Response) => {
     const transaction = await sequelize.transaction();
     try {
       // Find the correct answer text from options if provided
-      let correctAnswer = answer || '';
+      let correctAnswer = answer || "";
       if (options && options.length) {
-        const correctOption = options.find((opt: any) => opt.is_correct === true);
+        const correctOption = options.find(
+          (opt: any) => opt.is_correct === true
+        );
         if (correctOption) {
-          correctAnswer = correctOption.option_text || correctOption.text || String(correctOption);
+          correctAnswer =
+            correctOption.option_text ||
+            correctOption.text ||
+            String(correctOption);
         }
       }
 
@@ -134,11 +139,16 @@ export const updateQuestionsForExam = async (req: Request, res: Response) => {
         }
 
         // Find the correct answer text from options if provided
-        let correctAnswer = answer || '';
+        let correctAnswer = answer || "";
         if (options && options.length) {
-          const correctOption = options.find((opt: any) => opt.is_correct === true);
+          const correctOption = options.find(
+            (opt: any) => opt.is_correct === true
+          );
           if (correctOption) {
-            correctAnswer = correctOption.option_text || correctOption.text || String(correctOption);
+            correctAnswer =
+              correctOption.option_text ||
+              correctOption.text ||
+              String(correctOption);
           }
         }
 
@@ -199,7 +209,9 @@ export const getQuestionsByExam = async (req: Request, res: Response) => {
 
     const exam = await Exam.findByPk(examId);
     if (!exam) {
-      return res.status(404).json({ success: false, message: "Exam not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Exam not found" });
     }
 
     const questions = await Question.findAll({
@@ -220,14 +232,14 @@ export const getQuestionsByExam = async (req: Request, res: Response) => {
       ],
     });
 
-    return res.status(200).json({ 
-      success: true, 
+    return res.status(200).json({
+      success: true,
       questions,
       exam: {
         start_time: exam.start_time,
         end_time: exam.end_time,
-        duration: exam.duration
-      }
+        duration: exam.duration,
+      },
     });
   } catch (err: any) {
     return res
