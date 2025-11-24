@@ -318,10 +318,6 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
               <>
                 <h3>Select Photo Option</h3>
                 <button className={styles.photoModalBtn} onClick={openWebcam} type="button">Capture from Webcam</button>
-                <label className={styles.photoModalBtn} style={{ display: 'block', cursor: 'pointer' }}>
-                  Upload from File
-                  <input type="file" accept="image/jpeg,image/png" style={{ display: 'none' }} onChange={handlePhotoChange} />
-                </label>
               </>
             ) : (
               <div style={{ textAlign: 'center' }}>
@@ -408,9 +404,9 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                   <button
                     type="button"
                     className={styles.photoUploadButton}
-                    onClick={() => setShowPhotoModal(true)}
+                    onClick={openWebcam}
                   >
-                    <span>Choose Photo</span>
+                    <span>Capture Photo</span>
                   </button>
                   <p className={styles.photoHint}>JPG or PNG, max 2MB</p>
                 </div>
