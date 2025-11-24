@@ -26,6 +26,21 @@ export const joinExam = async (req: Request, res: Response) => {
             });
         }
 
+         const now = new Date();
+         console.log(now,exam.start_time);
+        if (exam.start_time && new Date(exam.start_time) > now) {
+        return res.status(403).json({
+            success: false,
+            message: "Exam has not started yet",
+        });
+        }
+
+        if (exam.end_time && new Date(exam.end_time) < now) {
+        return res.status(403).json({
+            success: false,
+            message: "Exam has ended",
+        });
+        }
         const existingAttendance = await Attend.findOne({
             where: { 
                 exam_id: exam.id,

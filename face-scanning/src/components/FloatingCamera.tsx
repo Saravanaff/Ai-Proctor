@@ -34,9 +34,9 @@ const baseUrlGlobal = process.env.NEXT_PUBLIC_BACKEND_URL;
 // Helper function to log violations to API
 const logViolation = async (violationName: string) => {
   try {
-    // ✅ Subtract 4 seconds (4000ms) because violation was detected after 4 seconds of continuous occurrence
+    // ✅ Subtract 2 seconds (2000ms) because violation was detected after 2 seconds of continuous occurrence
     // This gives us the actual time when the violation STARTED, not when it was logged
-    const actualViolationTime = new Date(Date.now() - 4000);
+    const actualViolationTime = new Date(Date.now() - 2000);
 
     await axios.post(
       `${baseUrlGlobal}/storeLogs`,
@@ -53,7 +53,7 @@ const logViolation = async (violationName: string) => {
       }
     );
     console.log(
-      `📝 Logged ${violationName} at ${actualViolationTime.toISOString()} (4s before detection)`
+      `📝 Logged ${violationName} at ${actualViolationTime.toISOString()} (2s before detection)`
     );
   } catch (error) {
     console.error(`Failed to log ${violationName}:`, error);
@@ -127,7 +127,7 @@ const FloatingCamera = ({
   const isStoppingRef = useRef(false);
   const pendingFaceChunksRef = useRef<Set<number>>(new Set());
   const faceChunkCounterRef = useRef<number>(0);
-  const examSubmittedRef = useRef(false); // ✅ Ref to track examSubmitted state for onstop handler
+  const examSubmittedRef = useRef(false);
 
   const countersRef = useRef({
     look: 0,
@@ -140,7 +140,6 @@ const FloatingCamera = ({
     mlp: 0,
   });
 
-  // Track last notification timestamps to prevent repeated alerts
   const lastNotificationRef = useRef<{ [key: string]: number }>({
     faceAuth: 0,
     headDirection: 0,
@@ -152,26 +151,29 @@ const FloatingCamera = ({
     noCandidate: 0,
   });
 
-  // ✅ NEW: Track when violations START (for continuous violation detection)
   const violationStartTimeRef = useRef<{ [key: string]: number | null }>({
     headDirection: null,
     eyePosition: null,
     deviceDetected: null,
     multiplePersons: null,
     noCandidate: null,
+    soundDetected: null,
   });
 
-  // ✅ NEW: Track if violation has been logged (to avoid duplicate logs)
   const violationLoggedRef = useRef<{ [key: string]: boolean }>({
     headDirection: false,
     eyePosition: false,
     deviceDetected: false,
     multiplePersons: false,
     noCandidate: false,
+    soundDetected: false,
   });
 
-  const NOTIFICATION_THROTTLE_MS = 2000; // 2 seconds gap
-  const CONTINUOUS_VIOLATION_THRESHOLD_MS = 4000; // 4 seconds continuous violation
+
+
+  const NOTIFICATION_THROTTLE_MS = 2000; 
+  const CONTINUOUS_VIOLATION_THRESHOLD_MS = 2000; // ✅ Changed from 4 seconds to 2 seconds
+
 
   const settingsRef = useRef<any>({});
   useEffect(() => {
@@ -342,9 +344,25 @@ const FloatingCamera = ({
 
   const { isSoundDetected, audioLevel } = useSoundLevel();
 
+  // Debug: Log sound detection status
+  useEffect(() => {
+    console.log(`🔊 Sound Detection - isSoundDetected: ${isSoundDetected}, audioLevel: ${audioLevel}, microphone_enabled: ${examSettings?.microphone_detection_enabled}`);
+  }, [isSoundDetected, audioLevel]);
+
   const handleSoundDetection = useCallback(() => {
     const now = Date.now();
+
+    // ✅ Only process sound detection if microphone detection is enabled
+    if (!examSettings?.microphone_detection_enabled) {
+      return;
+    }
+
     if (isSoundDetected && !prevSoundDetected) {
+      // ✅ Log violation immediately when sound is detected
+      console.log("🚨 Sound detected - Logging violation immediately");
+      logViolation("sound_detected");
+
+      // Show notification (throttled)
       if (
         now - lastNotificationRef.current.soundDetected >=
         NOTIFICATION_THROTTLE_MS
@@ -425,40 +443,68 @@ const FloatingCamera = ({
               "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
             );
 
-            const [faceLandmarker, objectDetector] = await Promise.all([
-              !faceLandmarkerRef.current
-                ? FaceLandmarker.createFromOptions(vision, {
-                    baseOptions: {
-                      modelAssetPath:
-                        "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-                      delegate: "GPU",
-                    },
-                    runningMode: "VIDEO",
-                    numFaces: 1,
-                    minFaceDetectionConfidence: 0.5,
-                    minFacePresenceConfidence: 0.5,
-                    minTrackingConfidence: 0.5,
-                    outputFaceBlendshapes: false,
-                    outputFacialTransformationMatrixes: false,
-                  })
-                : Promise.resolve(faceLandmarkerRef.current),
-              !objectDetectorRef.current
-                ? ObjectDetector.createFromOptions(vision, {
-                    baseOptions: {
-                      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite`,
-                      delegate: "GPU",
-                    },
-                    scoreThreshold: 0.5,
-                    runningMode: "VIDEO",
-                  })
-                : Promise.resolve(objectDetectorRef.current),
-            ]);
+            // ✅ Conditionally load models based on exam settings
+            const shouldLoadFaceLandmarker = 
+              examSettings?.head_direction_enabled || 
+              examSettings?.eyeball_detection_enabled;
+            
+            const shouldLoadObjectDetector = 
+              examSettings?.object_detection_enabled || 
+              examSettings?.multiple_person_detection_enabled;
 
-            if (!faceLandmarkerRef.current) {
+            const modelPromises: Promise<any>[] = [];
+
+            // Load Face Landmarker only if head or eye detection is enabled
+            if (shouldLoadFaceLandmarker) {
+              modelPromises.push(
+                !faceLandmarkerRef.current
+                  ? FaceLandmarker.createFromOptions(vision, {
+                      baseOptions: {
+                        modelAssetPath:
+                          "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+                        delegate: "GPU",
+                      },
+                      runningMode: "VIDEO",
+                      numFaces: 1,
+                      minFaceDetectionConfidence: 0.5,
+                      minFacePresenceConfidence: 0.5,
+                      minTrackingConfidence: 0.5,
+                      outputFaceBlendshapes: false,
+                      outputFacialTransformationMatrixes: false,
+                    })
+                  : Promise.resolve(faceLandmarkerRef.current)
+              );
+            } else {
+              modelPromises.push(Promise.resolve(null));
+              console.log("⏭️ Skipping Face Landmarker - head/eye detection disabled");
+            }
+
+            // Load Object Detector only if object or multiple person detection is enabled
+            if (shouldLoadObjectDetector) {
+              modelPromises.push(
+                !objectDetectorRef.current
+                  ? ObjectDetector.createFromOptions(vision, {
+                      baseOptions: {
+                        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite`,
+                      },
+                      scoreThreshold: 0.4,
+                      runningMode: "VIDEO",
+                      maxResults: 10,
+                    })
+                  : Promise.resolve(objectDetectorRef.current)
+              );
+            } else {
+              modelPromises.push(Promise.resolve(null));
+              console.log("⏭️ Skipping Object Detector - object/person detection disabled");
+            }
+
+            const [faceLandmarker, objectDetector] = await Promise.all(modelPromises);
+
+            if (faceLandmarker && !faceLandmarkerRef.current) {
               faceLandmarkerRef.current = faceLandmarker;
               console.log("✅ MediaPipe Face Landmarker initialized");
             }
-            if (!objectDetectorRef.current) {
+            if (objectDetector && !objectDetectorRef.current) {
               objectDetectorRef.current = objectDetector;
               console.log("✅ MediaPipe Object Detector initialized");
             }
@@ -623,92 +669,96 @@ const FloatingCamera = ({
                   const headPos = calculateHeadPosition(landmarks);
                   console.log(`📍 Head Position: ${headPos}`);
 
-                  // ✅ NEW: Track continuous head position violation
-                  if (
-                    headPos.toLowerCase() !== "forward" &&
-                    headPos.toLowerCase() !== "down"
-                  ) {
-                    const now = Date.now();
-
-                    // Start tracking if not already tracking
-                    if (violationStartTimeRef.current.headDirection === null) {
-                      violationStartTimeRef.current.headDirection = now;
-                      violationLoggedRef.current.headDirection = false;
-                      console.log("⚠️ Head direction violation started");
-                    }
-
-                    // Check if violation has been continuous for 4 seconds
-                    const violationDuration =
-                      now - violationStartTimeRef.current.headDirection;
+                  // ✅ NEW: Track continuous head position violation (only if enabled)
+                  if (examSettings?.head_direction_enabled) {
                     if (
-                      violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
-                      !violationLoggedRef.current.headDirection
+                      headPos.toLowerCase() !== "forward" &&
+                      headPos.toLowerCase() !== "down"
                     ) {
-                      console.log(
-                        `🚨 Head direction violation continuous for ${violationDuration}ms - Logging`
-                      );
-                      logViolation("head_position_violation");
-                      violationLoggedRef.current.headDirection = true;
+                      const now = Date.now();
 
-                      // Trigger UI notification
-                      if (
-                        now - lastNotificationRef.current.headDirection >=
-                        NOTIFICATION_THROTTLE_MS
-                      ) {
-                        onHeadDirection(headPos);
-                        lastNotificationRef.current.headDirection = now;
+                      // Start tracking if not already tracking
+                      if (violationStartTimeRef.current.headDirection === null) {
+                        violationStartTimeRef.current.headDirection = now;
+                        violationLoggedRef.current.headDirection = false;
+                        console.log("⚠️ Head direction violation started");
                       }
-                    }
-                  } else {
-                    // ✅ Reset tracking when violation stops
-                    if (violationStartTimeRef.current.headDirection !== null) {
-                      console.log("✅ Head direction violation ended");
-                      violationStartTimeRef.current.headDirection = null;
-                      violationLoggedRef.current.headDirection = false;
+
+                      // Check if violation has been continuous for 4 seconds
+                      const violationDuration =
+                        now - violationStartTimeRef.current.headDirection;
+                      if (
+                        violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
+                        !violationLoggedRef.current.headDirection
+                      ) {
+                        console.log(
+                          `🚨 Head direction violation continuous for ${violationDuration}ms - Logging`
+                        );
+                        logViolation("head_position_violation");
+                        violationLoggedRef.current.headDirection = true;
+
+                        // Trigger UI notification
+                        if (
+                          now - lastNotificationRef.current.headDirection >=
+                          NOTIFICATION_THROTTLE_MS
+                        ) {
+                          onHeadDirection(headPos);
+                          lastNotificationRef.current.headDirection = now;
+                        }
+                      }
+                    } else {
+                      // ✅ Reset tracking when violation stops
+                      if (violationStartTimeRef.current.headDirection !== null) {
+                        console.log("✅ Head direction violation ended");
+                        violationStartTimeRef.current.headDirection = null;
+                        violationLoggedRef.current.headDirection = false;
+                      }
                     }
                   }
 
                   const eyeGaze = calculateEyeGaze(landmarks);
                   console.log(`👁️ Eye Gaze: ${eyeGaze}`);
 
-                  // ✅ NEW: Track continuous eye position violation
-                  if (eyeGaze.toLowerCase() !== "center") {
-                    const now = Date.now();
+                  // ✅ NEW: Track continuous eye position violation (only if enabled)
+                  if (examSettings?.eyeball_detection_enabled) {
+                    if (eyeGaze.toLowerCase() !== "center") {
+                      const now = Date.now();
 
-                    // Start tracking if not already tracking
-                    if (violationStartTimeRef.current.eyePosition === null) {
-                      violationStartTimeRef.current.eyePosition = now;
-                      violationLoggedRef.current.eyePosition = false;
-                      console.log("⚠️ Eye position violation started");
-                    }
-
-                    // Check if violation has been continuous for 4 seconds
-                    const violationDuration =
-                      now - violationStartTimeRef.current.eyePosition;
-                    if (
-                      violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
-                      !violationLoggedRef.current.eyePosition
-                    ) {
-                      console.log(
-                        `🚨 Eye position violation continuous for ${violationDuration}ms - Logging`
-                      );
-                      logViolation("eye_position_violation");
-                      violationLoggedRef.current.eyePosition = true;
-
-                      // Trigger UI notification
-                      if (
-                        now - lastNotificationRef.current.eyePosition >=
-                        NOTIFICATION_THROTTLE_MS
-                      ) {
-                        onLookingAway(eyeGaze);
-                        lastNotificationRef.current.eyePosition = now;
+                      // Start tracking if not already tracking
+                      if (violationStartTimeRef.current.eyePosition === null) {
+                        violationStartTimeRef.current.eyePosition = now;
+                        violationLoggedRef.current.eyePosition = false;
+                        console.log("⚠️ Eye position violation started");
                       }
-                    }
-                  } else {
-                    if (violationStartTimeRef.current.eyePosition !== null) {
-                      console.log("✅ Eye position violation ended");
-                      violationStartTimeRef.current.eyePosition = null;
-                      violationLoggedRef.current.eyePosition = false;
+
+                      // Check if violation has been continuous for 4 seconds
+                      const violationDuration =
+                        now - violationStartTimeRef.current.eyePosition;
+                      if (
+                        violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
+                        !violationLoggedRef.current.eyePosition
+                      ) {
+                        console.log(
+                          `🚨 Eye position violation continuous for ${violationDuration}ms - Logging`
+                        );
+                        logViolation("eye_position_violation");
+                        violationLoggedRef.current.eyePosition = true;
+
+                        // Trigger UI notification
+                        if (
+                          now - lastNotificationRef.current.eyePosition >=
+                          NOTIFICATION_THROTTLE_MS
+                        ) {
+                          onLookingAway(eyeGaze);
+                          lastNotificationRef.current.eyePosition = now;
+                        }
+                      }
+                    } else {
+                      if (violationStartTimeRef.current.eyePosition !== null) {
+                        console.log("✅ Eye position violation ended");
+                        violationStartTimeRef.current.eyePosition = null;
+                        violationLoggedRef.current.eyePosition = false;
+                      }
                     }
                   }
                 }
@@ -738,8 +788,8 @@ const FloatingCamera = ({
 
                   const now = Date.now();
 
-                  // ✅ NEW: Track continuous phone detection violation
-                  if (detection.phone > 0) {
+                  // ✅ NEW: Track continuous phone detection violation (only if enabled)
+                  if (examSettings?.object_detection_enabled && detection.phone > 0) {
                     // Start tracking if not already tracking
                     if (violationStartTimeRef.current.deviceDetected === null) {
                       violationStartTimeRef.current.deviceDetected = now;
@@ -779,8 +829,8 @@ const FloatingCamera = ({
                     }
                   }
 
-                  // ✅ NEW: Track continuous multiple persons violation
-                  if (detection.person > 1) {
+                  // ✅ NEW: Track continuous multiple persons violation (only if enabled)
+                  if (examSettings?.multiple_person_detection_enabled && detection.person > 1) {
                     // Start tracking if not already tracking
                     if (
                       violationStartTimeRef.current.multiplePersons === null

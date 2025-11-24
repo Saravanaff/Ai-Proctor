@@ -27,6 +27,7 @@ export const validateExam = async (req: Request, res: Response) => {
     }
 
     const now = new Date();
+    console.log(now,exam.start_time);
     if (exam.start_time && new Date(exam.start_time) > now) {
       return res.status(403).json({
         success: false,
@@ -82,6 +83,21 @@ export const getExamSettings = async (req: Request, res: Response) => {
       return res.status(404).json({
         success: false,
         message: "Exam not found for specific examId and userId",
+      });
+    }
+
+    const now = new Date();
+    if (exam.start_time && new Date(exam.start_time) > now) {
+      return res.status(403).json({
+        success: false,
+        message: "Exam has not started yet",
+      });
+    }
+
+    if (exam.end_time && new Date(exam.end_time) < now) {
+      return res.status(403).json({
+        success: false,
+        message: "Exam has ended",
       });
     }
 
@@ -194,6 +210,21 @@ export const saveUserAnswers = async (req: Request, res: Response) => {
       return res.status(404).json({
         success: false,
         message: "Exam not found",
+      });
+    }
+
+    const now = new Date();
+    if (exam.start_time && new Date(exam.start_time) > now) {
+      return res.status(403).json({
+        success: false,
+        message: "Exam has not started yet. Cannot submit answers.",
+      });
+    }
+
+    if (exam.end_time && new Date(exam.end_time) < now) {
+      return res.status(403).json({
+        success: false,
+        message: "Exam has ended. Cannot submit answers.",
       });
     }
 

@@ -138,6 +138,7 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
       face_auth_failed: 1.0,           // Face authentication failed
       multiple_persons_detected: 1.0,  // Multiple persons
       no_person_detected: 1,         // No person detected
+      sound_detected: 0.5,           // Sound/Audio detected
     };
 
     // Initialize violation counters
@@ -181,6 +182,10 @@ export const putScoreInPercent = async (req: Request, res: Response) => {
         case "object_detection_violation":
           violationCounts.object_detected_flagged++;
           totalWeightedFlags += violationWeights.object_detection_violation;
+          break;
+        case "sound_detected":
+          violationCounts.sound_flagged++;
+          totalWeightedFlags += violationWeights.sound_detected;
           break;
         default:
           console.log(`Unknown violation type: ${violationType}`);

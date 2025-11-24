@@ -12,9 +12,9 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "name, email, password and role are required" });
     }
 
-    if (role === "student" && !req.file) {
-      return res.status(400).json({ message: "Profile photo is required for student role" });
-    }
+    // if (role === "student" && !req.file) {
+    //   return res.status(400).json({ message: "Profile photo is required for student role" });
+    // }
 
     if (role === "student" && (!dept || !dob || !reg)) {
       return res.status(400).json({ message: "Department, date of birth, and registration number are required for student role" });
@@ -47,7 +47,7 @@ export const register = async (req: Request, res: Response) => {
       const fs = require('fs');
       const path = require('path');
 
-      const ext = path.extname(req.file.originalname).toLowerCase(); // .jpg/.png
+      const ext = path.extname(req.file.originalname).toLowerCase();
       const newFilename = user.id + ext;
       const newFilePath = path.join(
         path.join(process.cwd(), "..", "uploads", "profile_pics"),
