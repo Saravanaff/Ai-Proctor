@@ -9,6 +9,7 @@ interface ExamsGridProps {
   formatRange: (start?: string, end?: string) => string;
   onViewResults?: (exam: Exam) => void;
   onStatusChange?: (examId: number, newStatus: string) => void;
+  onDelete?: (examId: number) => void;
 }
 
 const ExamsGrid: React.FC<ExamsGridProps> = ({
@@ -16,6 +17,7 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({
   formatRange,
   onViewResults,
   onStatusChange,
+  onDelete,
 }) => {
   const router = useRouter();
   const [selectedExam, setSelectedExam] = useState<any>(null);
@@ -90,6 +92,7 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({
             onManage={handleManageModal}
             onViewResults={onViewResults}
             onStatusChange={onStatusChange}
+            onDelete={onDelete}
           />
         ))}
       </div>

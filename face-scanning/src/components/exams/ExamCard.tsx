@@ -10,6 +10,7 @@ interface Props {
   onManage?: (exam: Exam) => void;
   onViewResults?: (exam: Exam) => void;
   onStatusChange?: (examId: number, newStatus: string) => void;
+  onDelete?: (examId: number) => void;
 }
 
 const ExamCard: React.FC<Props> = ({
@@ -20,6 +21,7 @@ const ExamCard: React.FC<Props> = ({
   onManage,
   onViewResults,
   onStatusChange,
+  onDelete,
 }) => {
   const [copied, setCopied] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
@@ -39,14 +41,20 @@ const ExamCard: React.FC<Props> = ({
   const participantCount = (exam as any).participants || attendees.length || 0;
 
   // Determine display status
+  const now = new Date();
   const isSuspended = rawStatus === "suspended";
+  const isExpired = endTime && new Date(endTime) < now;
   const isFuture =
-    !isSuspended && startTime && new Date(startTime) > new Date();
+    !isSuspended && !isExpired && startTime && new Date(startTime) > now;
 
   let displayStatus = rawStatus;
-  if (isSuspended) displayStatus = "suspended";
-  else if (isFuture) displayStatus = "future";
-  else if (rawStatus === "active") displayStatus = "active";
+  if (isSuspended || (rawStatus === "active" && isExpired)) {
+    displayStatus = "suspended";
+  } else if (isFuture) {
+    displayStatus = "future";
+  } else if (rawStatus === "active") {
+    displayStatus = "active";
+  }
 
   // Theme-aware status colors
   const getStatusColor = (status: string) => {
@@ -528,6 +536,31 @@ const ExamCard: React.FC<Props> = ({
                 <line x1="9" y1="15" x2="15" y2="15"></line>
               </svg>
               View Results
+            </button>
+          )}
+
+          {onDelete && (
+            <button
+              className={`${styles.button} ${styles.deleteButton}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(exam.id);
+              }}
+              title="Delete exam"
+            >
+              <svg
+                className={styles.buttonIcon}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+              Delete
             </button>
           )}
         </div>

@@ -6,6 +6,8 @@ import { User } from "../models/User";
 import { Question } from "../models/Questions";
 import { QuestionOption } from "../models/QuestionOption";
 import { UserAnswer } from "../models/UserAnswer";
+import { ViolationLog } from "../models/ViolationLog";
+import { Scores } from "../models/Scores";
 import { getUserIdFromToken } from "../utils/jwt";
 
 export const createExam = async (req: Request, res: Response) => {
@@ -420,13 +422,64 @@ export const deleteExam = async (req: Request, res: Response) => {
       });
     }
 
+    console.log(`🗑️ Deleting exam ${examId} and all related data...`);
+
+    // Delete all related records in the correct order (foreign key dependencies)
+    
+    // 1. Delete violation logs for this exam
+    await ViolationLog.destroy({
+      where: { exam_id: examId }
+    });
+    console.log(`✅ Deleted violation logs for exam ${examId}`);
+
+    // 2. Delete scores for this exam
+    await Scores.destroy({
+      where: { exam_id: examId }
+    });
+    console.log(`✅ Deleted scores for exam ${examId}`);
+
+    // 3. Delete user answers for this exam
+    await UserAnswer.destroy({
+      where: { exam_id: examId }
+    });
+    console.log(`✅ Deleted user answers for exam ${examId}`);
+
+    // 4. Delete question options for all questions in this exam
+    const questions = await Question.findAll({
+      where: { exam_id: examId }
+    });
+    
+    const questionIds = questions.map(q => q.id);
+    
+    if (questionIds.length > 0) {
+      await QuestionOption.destroy({
+        where: { question_id: questionIds }
+      });
+      console.log(`✅ Deleted question options for exam ${examId}`);
+    }
+
+    // 5. Delete questions for this exam
+    await Question.destroy({
+      where: { exam_id: examId }
+    });
+    console.log(`✅ Deleted questions for exam ${examId}`);
+
+    // 6. Delete attendance records for this exam
+    await Attend.destroy({
+      where: { exam_id: examId }
+    });
+    console.log(`✅ Deleted attendance records for exam ${examId}`);
+
+    // 7. Finally, delete the exam itself
     await exam.destroy();
+    console.log(`✅ Deleted exam ${examId}`);
 
     res.status(200).json({
       success: true,
-      message: "Exam deleted successfully",
+      message: "Exam and all related data deleted successfully",
     });
   } catch (err: any) {
+    console.error(`❌ Error deleting exam ${examId}:`, err);
     res.status(500).json({
       success: false,
       message: "Error deleting exam",

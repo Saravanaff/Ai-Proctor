@@ -93,6 +93,25 @@ const CreateExam = () => {
     }
   };
 
+  const handleDeleteExam = async (examId: number) => {
+    if (!confirm("Are you sure you want to delete this exam? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+      await axios.delete(`${base}/exam/${examId}`);
+
+      // Remove exam from local state
+      setExams((prevExams) => prevExams.filter((exam) => exam.id !== examId));
+      
+      alert("Exam deleted successfully!");
+    } catch (err) {
+      console.error("Failed to delete exam:", err);
+      alert("Failed to delete exam. Please try again.");
+    }
+  };
+
   const filteredExams = useMemo(
     () =>
       exams.filter((e) => {
@@ -103,8 +122,29 @@ const CreateExam = () => {
         const matchesSearch = examName
           .toLowerCase()
           .includes(search.toLowerCase());
-        const matchesFilter =
-          filterStatus === "all" || e.status === filterStatus;
+        
+        // Check if exam is expired
+        const now = new Date();
+        const end = 
+          e.endTime || (e as unknown as { end_time?: string }).end_time;
+        const isExpired = end && new Date(end) < now;
+        
+        // Determine if exam should be shown based on filter
+        let matchesFilter: boolean;
+        if (filterStatus === "all") {
+          matchesFilter = true;
+        } else if (filterStatus === "suspended") {
+          // Show exams that are suspended OR expired
+          matchesFilter = e.status === "suspended" || (e.status === "active" && !!isExpired);
+        } else if (filterStatus === "active") {
+          // Show only active exams that are not expired
+          const start = e.startTime || (e as unknown as { start_time?: string }).start_time;
+          const isFuture = start && new Date(start) > now;
+          matchesFilter = e.status === "active" && !isExpired && !isFuture;
+        } else {
+          matchesFilter = e.status === filterStatus;
+        }
+        
         return matchesSearch && matchesFilter;
       }),
     [exams, search, filterStatus]
@@ -116,10 +156,19 @@ const CreateExam = () => {
       active: exams.filter((e) => {
         const start =
           e.startTime || (e as unknown as { start_time?: string }).start_time;
+        const end = 
+          e.endTime || (e as unknown as { end_time?: string }).end_time;
         const isFuture = start && new Date(start) > now;
-        return e.status === "active" && !isFuture;
+        const isExpired = end && new Date(end) < now;
+        return e.status === "active" && !isFuture && !isExpired;
       }).length,
-      suspended: exams.filter((e) => e.status === "suspended").length,
+      suspended: exams.filter((e) => {
+        const end = 
+          e.endTime || (e as unknown as { end_time?: string }).end_time;
+        const isExpired = end && new Date(end) < now;
+        // Show as suspended if status is suspended OR if exam has expired
+        return e.status === "suspended" || (e.status === "active" && isExpired);
+      }).length,
       future: exams.filter((e) => {
         const start =
           e.startTime || (e as unknown as { start_time?: string }).start_time;
@@ -629,7 +678,7 @@ const CreateExam = () => {
                     className={styles.emptyIcon}
                     style={{ fontSize: "48px", marginBottom: "16px" }}
                   >
-                    📁
+                    {filterStatus === "suspended" ? "🚫" : "📁"}
                   </div>
                   <h3
                     className={styles.emptyTitle}
@@ -640,7 +689,11 @@ const CreateExam = () => {
                       marginBottom: "8px",
                     }}
                   >
-                    No exams match
+                    {filterStatus === "suspended" 
+                      ? "No Suspended Exams" 
+                      : filterStatus === "active"
+                      ? "No Active Exams"
+                      : "No Exams Found"}
                   </h3>
                   <p
                     className={styles.emptyDescription}
@@ -650,14 +703,20 @@ const CreateExam = () => {
                       marginBottom: "24px",
                     }}
                   >
-                    Try adjusting your search or create a new exam.
+                    {filterStatus === "suspended"
+                      ? "No exams are currently suspended or expired."
+                      : search
+                      ? "Try adjusting your search criteria."
+                      : "Get started by creating your first exam."}
                   </p>
-                  <button
-                    onClick={() => router.push("/examiner/NewExam")}
-                    className={`${styles.btn} ${styles.btnPrimary}`}
-                  >
-                    ➕ Create Exam
-                  </button>
+                  {filterStatus !== "suspended" && (
+                    <button
+                      onClick={() => router.push("/examiner/NewExam")}
+                      className={`${styles.btn} ${styles.btnPrimary}`}
+                    >
+                      ➕ Create Exam
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -675,6 +734,7 @@ const CreateExam = () => {
                   });
                 }}
                 onStatusChange={handleStatusChange}
+                onDelete={handleDeleteExam}
               />
             )}
           </section>

@@ -262,6 +262,20 @@
   transform: translateY(-1px);
 }
 
+/* Delete Button - Solid Red */
+.deleteButton {
+  background: #ef4444;
+  color: white;
+  border: 1px solid #dc2626;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+}
+
+.deleteButton:hover {
+  background: #dc2626;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+  transform: translateY(-1px);
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .examCard {
