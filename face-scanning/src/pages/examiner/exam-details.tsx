@@ -37,6 +37,8 @@ interface ExamDetails {
   attendances: Attendance[];
   createdAt: string;
   updatedAt: string;
+  startTime?: string;
+  endTime?: string;
 }
 
 const ExamDetailsPage: React.FC = () => {
@@ -505,6 +507,14 @@ const ExamDetailsPage: React.FC = () => {
                   day: 'numeric', 
                   year: 'numeric' 
                 })}</span>
+                {/* Exam Duration, Start Time, End Time */}
+                {examDetails.startTime && examDetails.endTime && (
+                  <span style={{ fontWeight: "500" }}>
+                    Start: <strong style={{ color: "var(--primary-color)" }}>{new Date(examDetails.startTime).toLocaleString()}</strong>
+                    {' | '}End: <strong style={{ color: "var(--primary-color)" }}>{new Date(examDetails.endTime).toLocaleString()}</strong>
+                    {' | '}Duration: <strong style={{ color: "var(--accent-color)" }}>{Math.round((new Date(examDetails.endTime).getTime() - new Date(examDetails.startTime).getTime()) / (1000 * 60))} min</strong>
+                  </span>
+                )}
               </div>
             </div>
           </div>
