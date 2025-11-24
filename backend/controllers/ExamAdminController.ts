@@ -233,6 +233,10 @@ export const getSingleExam = async (req: Request, res: Response) => {
         "id",
         "exam_name",
         "key",
+        "start_time",
+        "end_time",
+        "duration",
+        "status",
         "third_eye_enabled",
         "multiple_person_detection_enabled",
         "eyeball_detection_enabled",
@@ -296,25 +300,39 @@ export const updateExam = async (req: Request, res: Response) => {
   const user_id = getUserIdFromToken(req);
   const {
     exam_name,
-    third_eye_enabled,
-    multiple_person_detection_enabled,
-    eyeball_detection_enabled,
-    object_detection_enabled,
-    head_direction_enabled,
-    flag_notifications_enabled,
-    video_recording_enabled,
-    tab_switch_detection_enabled,
-    microphone_detection_enabled,
-    safe_browser_enabled,
-    proctor_feed_to_test_taker_enabled,
-    screen_sharing_enabled,
-    screen_count_detection_enabled,
-    control_desktop_apps_enabled,
-    normal_proctoring,
-    ai_powered_proctoring,
-    recorded_manual_proctoring,
-    face_authentication_enabled,
+    startTime,
+    endTime,
+    durationMinutes,
+    // Normal Proctoring
+    controlDesktopApps,
+    screenCountDetection,
+    safeBrowser,
+    tabSwitchDetection,
+    microphoneDetection,
+    normalProctoring,
+    // AI Powered Proctoring
+    thirdEye,
+    multiPerson,
+    eyeBall,
+    objectDetect,
+    headDirection,
+    faceAuthentication,
+    aiPoweredProctoring,
+    // Recorded Manual Proctoring
+    flagNotifications,
+    videoRecording,
+    proctorFeedToTestTaker,
+    screenSharing,
+    recordedManualProctoring,
   } = req.body;
+
+  console.log("📝 Update exam request received:", {
+    examId,
+    exam_name,
+    startTime,
+    endTime,
+    durationMinutes,
+  });
 
   if (!examId || !user_id) {
     return res.status(400).json({
@@ -339,46 +357,56 @@ export const updateExam = async (req: Request, res: Response) => {
     }
 
     const updateData: any = {};
+    
+    // Basic exam info
     if (exam_name !== undefined) updateData.exam_name = exam_name;
-    if (third_eye_enabled !== undefined)
-      updateData.third_eye_enabled = third_eye_enabled;
-    if (multiple_person_detection_enabled !== undefined)
-      updateData.multiple_person_detection_enabled =
-        multiple_person_detection_enabled;
-    if (eyeball_detection_enabled !== undefined)
-      updateData.eyeball_detection_enabled = eyeball_detection_enabled;
-    if (object_detection_enabled !== undefined)
-      updateData.object_detection_enabled = object_detection_enabled;
-    if (head_direction_enabled !== undefined)
-      updateData.head_direction_enabled = head_direction_enabled;
-    if (flag_notifications_enabled !== undefined)
-      updateData.flag_notifications_enabled = flag_notifications_enabled;
-    if (video_recording_enabled !== undefined)
-      updateData.video_recording_enabled = video_recording_enabled;
-    if (tab_switch_detection_enabled !== undefined)
-      updateData.tab_switch_detection_enabled = tab_switch_detection_enabled;
-    if (microphone_detection_enabled !== undefined)
-      updateData.microphone_detection_enabled = microphone_detection_enabled;
-    if (safe_browser_enabled !== undefined)
-      updateData.safe_browser_enabled = safe_browser_enabled;
-    if (proctor_feed_to_test_taker_enabled !== undefined)
-      updateData.proctor_feed_to_test_taker_enabled =
-        proctor_feed_to_test_taker_enabled;
-    if (screen_sharing_enabled !== undefined)
-      updateData.screen_sharing_enabled = screen_sharing_enabled;
-    if (screen_count_detection_enabled !== undefined)
-      updateData.screen_count_detection_enabled =
-        screen_count_detection_enabled;
-    if (control_desktop_apps_enabled !== undefined)
-      updateData.control_desktop_apps_enabled = control_desktop_apps_enabled;
-    if (normal_proctoring !== undefined)
-      updateData.normal_proctoring = normal_proctoring;
-    if (ai_powered_proctoring !== undefined)
-      updateData.ai_powered_proctoring = ai_powered_proctoring;
-    if (recorded_manual_proctoring !== undefined)
-      updateData.recorded_manual_proctoring = recorded_manual_proctoring;
-    if (face_authentication_enabled !== undefined)
-      updateData.face_authentication_enabled = face_authentication_enabled;
+    if (startTime !== undefined) updateData.start_time = startTime;
+    if (endTime !== undefined) updateData.end_time = endTime;
+    if (durationMinutes !== undefined) updateData.duration = durationMinutes;
+
+    // Normal Proctoring settings
+    if (controlDesktopApps !== undefined)
+      updateData.control_desktop_apps_enabled = controlDesktopApps;
+    if (screenCountDetection !== undefined)
+      updateData.screen_count_detection_enabled = screenCountDetection;
+    if (safeBrowser !== undefined)
+      updateData.safe_browser_enabled = safeBrowser;
+    if (tabSwitchDetection !== undefined)
+      updateData.tab_switch_detection_enabled = tabSwitchDetection;
+    if (microphoneDetection !== undefined)
+      updateData.microphone_detection_enabled = microphoneDetection;
+    if (normalProctoring !== undefined)
+      updateData.normal_proctoring = normalProctoring;
+
+    // AI Powered Proctoring settings
+    if (thirdEye !== undefined)
+      updateData.third_eye_enabled = thirdEye;
+    if (multiPerson !== undefined)
+      updateData.multiple_person_detection_enabled = multiPerson;
+    if (eyeBall !== undefined)
+      updateData.eyeball_detection_enabled = eyeBall;
+    if (objectDetect !== undefined)
+      updateData.object_detection_enabled = objectDetect;
+    if (headDirection !== undefined)
+      updateData.head_direction_enabled = headDirection;
+    if (faceAuthentication !== undefined)
+      updateData.face_authentication_enabled = faceAuthentication;
+    if (aiPoweredProctoring !== undefined)
+      updateData.ai_powered_proctoring = aiPoweredProctoring;
+
+    // Recorded Manual Proctoring settings
+    if (flagNotifications !== undefined)
+      updateData.flag_notifications_enabled = flagNotifications;
+    if (videoRecording !== undefined)
+      updateData.video_recording_enabled = videoRecording;
+    if (proctorFeedToTestTaker !== undefined)
+      updateData.proctor_feed_to_test_taker_enabled = proctorFeedToTestTaker;
+    if (screenSharing !== undefined)
+      updateData.screen_sharing_enabled = screenSharing;
+    if (recordedManualProctoring !== undefined)
+      updateData.recorded_manual_proctoring = recordedManualProctoring;
+
+    console.log("📊 Update data:", updateData);
 
     await exam.update(updateData);
 
@@ -388,6 +416,7 @@ export const updateExam = async (req: Request, res: Response) => {
       exam: await exam.reload(),
     });
   } catch (err: any) {
+    console.error("❌ Error updating exam:", err);
     res.status(500).json({
       success: false,
       message: "Error updating exam",

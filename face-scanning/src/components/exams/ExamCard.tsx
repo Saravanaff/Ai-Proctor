@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Exam } from "../../types/exam";
 import styles from "./ExamCard.module.css";
+import { getTokenFromCookie } from "../../constants/AuthStore";
 
 interface Props {
   exam: Exam;
@@ -26,6 +27,36 @@ const ExamCard: React.FC<Props> = ({
   const [copied, setCopied] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
+  const [showEditDetailsModal, setShowEditDetailsModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    startTime: '',
+    endTime: '',
+    durationMinutes: 0,
+    // Normal Proctoring
+    controlDesktopApps: false,
+    screenCountDetection: false,
+    safeBrowser: false,
+    tabSwitchDetection: false,
+    microphoneDetection: false,
+    normalProctoring: true,
+    // AI Powered Proctoring
+    thirdEye: true,
+    multiPerson: true,
+    eyeBall: true,
+    objectDetect: true,
+    headDirection: true,
+    faceAuthentication: true,
+    aiPoweredProctoring: true,
+    // Recorded Manual Proctoring
+    flagNotifications: true,
+    videoRecording: true,
+    proctorFeedToTestTaker: true,
+    screenSharing: true,
+    recordedManualProctoring: true,
+  });
+  const [isSavingDetails, setIsSavingDetails] = useState(false);
+  const [useDuration, setUseDuration] = useState(false);
 
   // Handle different property names flexibly
   const examName =
@@ -104,6 +135,187 @@ const ExamCard: React.FC<Props> = ({
       } catch (err) {
         console.error("Failed to copy: ", err);
       }
+    }
+  };
+
+  const openEditDetailsModal = () => {
+    // Format dates for datetime-local input
+    const formatForInput = (dateStr: string | undefined) => {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
+    // Calculate duration if both times exist
+    let durationMins = 0;
+    if (startTime && endTime) {
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      durationMins = Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+    }
+
+    setEditFormData({
+      name: examName,
+      startTime: formatForInput(startTime),
+      endTime: formatForInput(endTime),
+      durationMinutes: durationMins > 0 ? durationMins : ((exam as any).duration || 60),
+      // Normal Proctoring (map from snake_case backend fields)
+      controlDesktopApps: (exam as any).control_desktop_apps_enabled ?? false,
+      screenCountDetection: (exam as any).screen_count_detection_enabled ?? false,
+      safeBrowser: (exam as any).safe_browser_enabled ?? false,
+      tabSwitchDetection: (exam as any).tab_switch_detection_enabled ?? false,
+      microphoneDetection: (exam as any).microphone_detection_enabled ?? false,
+      normalProctoring: (exam as any).normal_proctoring ?? true,
+      // AI Powered Proctoring (map from snake_case backend fields)
+      thirdEye: (exam as any).third_eye_enabled ?? true,
+      multiPerson: (exam as any).multiple_person_detection_enabled ?? true,
+      eyeBall: (exam as any).eyeball_detection_enabled ?? true,
+      objectDetect: (exam as any).object_detection_enabled ?? true,
+      headDirection: (exam as any).head_direction_enabled ?? true,
+      faceAuthentication: (exam as any).face_authentication_enabled ?? true,
+      aiPoweredProctoring: (exam as any).ai_powered_proctoring ?? true,
+      // Recorded Manual Proctoring (map from snake_case backend fields)
+      flagNotifications: (exam as any).flag_notifications_enabled ?? true,
+      videoRecording: (exam as any).video_recording_enabled ?? true,
+      proctorFeedToTestTaker: (exam as any).proctor_feed_to_test_taker_enabled ?? true,
+      screenSharing: (exam as any).screen_sharing_enabled ?? true,
+      recordedManualProctoring: (exam as any).recorded_manual_proctoring ?? true,
+    });
+    setUseDuration(false);
+    setShowEditDetailsModal(true);
+  };
+
+  const handleSaveExamDetails = async () => {
+    if (!editFormData.name.trim()) {
+      alert('Exam name is required');
+      return;
+    }
+
+    // Validate based on mode
+    if (useDuration) {
+      if (editFormData.durationMinutes <= 0) {
+        alert('Duration must be greater than 0');
+        return;
+      }
+    } else {
+      if (editFormData.startTime && editFormData.endTime) {
+        const start = new Date(editFormData.startTime);
+        const end = new Date(editFormData.endTime);
+        if (end <= start) {
+          alert('End time must be after start time');
+          return;
+        }
+      }
+    }
+
+    try {
+      setIsSavingDetails(true);
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const token = getTokenFromCookie('authToken');
+
+      if (!baseUrl) {
+        alert('Backend URL not configured');
+        console.error('NEXT_PUBLIC_BACKEND_URL is not set');
+        return;
+      }
+
+      if (!token) {
+        alert('You are not logged in. Please login first.');
+        console.error('Auth token not found in cookies');
+        return;
+      }
+
+      const payload: any = {
+        exam_name: editFormData.name,
+        // Normal Proctoring
+        controlDesktopApps: editFormData.controlDesktopApps,
+        screenCountDetection: editFormData.screenCountDetection,
+        safeBrowser: editFormData.safeBrowser,
+        tabSwitchDetection: editFormData.tabSwitchDetection,
+        microphoneDetection: editFormData.microphoneDetection,
+        normalProctoring: editFormData.normalProctoring,
+        // AI Powered Proctoring
+        thirdEye: editFormData.thirdEye,
+        multiPerson: editFormData.multiPerson,
+        eyeBall: editFormData.eyeBall,
+        objectDetect: editFormData.objectDetect,
+        headDirection: editFormData.headDirection,
+        faceAuthentication: editFormData.faceAuthentication,
+        aiPoweredProctoring: editFormData.aiPoweredProctoring,
+        // Recorded Manual Proctoring
+        flagNotifications: editFormData.flagNotifications,
+        videoRecording: editFormData.videoRecording,
+        proctorFeedToTestTaker: editFormData.proctorFeedToTestTaker,
+        screenSharing: editFormData.screenSharing,
+        recordedManualProctoring: editFormData.recordedManualProctoring,
+      };
+
+      if (useDuration) {
+        // Use duration mode
+        payload.durationMinutes = editFormData.durationMinutes;
+      } else {
+        // Use start/end time mode
+        if (editFormData.startTime) {
+          payload.startTime = new Date(editFormData.startTime).toISOString();
+        }
+        if (editFormData.endTime) {
+          payload.endTime = new Date(editFormData.endTime).toISOString();
+        }
+      }
+
+      console.log('📤 Sending update request:', {
+        url: `${baseUrl}/exam/${exam.id}`,
+        payload
+      });
+
+      const response = await fetch(`${baseUrl}/exam/${exam.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      console.log('📥 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Server error:', errorData);
+        throw new Error(errorData.message || 'Failed to update exam details');
+      }
+
+      alert('Exam details updated successfully!');
+      setShowEditDetailsModal(false);
+      // Refresh the page to show updated data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating exam details:', error);
+      alert('Failed to update exam details. Please try again.');
+    } finally {
+      setIsSavingDetails(false);
+    }
+  };
+
+  const calculateDuration = () => {
+    if (useDuration) {
+      const hours = Math.floor(editFormData.durationMinutes / 60);
+      const minutes = editFormData.durationMinutes % 60;
+      return `${hours}h ${minutes}m`;
+    } else {
+      if (!editFormData.startTime || !editFormData.endTime) return '';
+      const start = new Date(editFormData.startTime);
+      const end = new Date(editFormData.endTime);
+      const diffMs = end.getTime() - start.getTime();
+      if (diffMs <= 0) return 'Invalid';
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      return `${hours}h ${minutes}m`;
     }
   };
 
@@ -468,6 +680,27 @@ const ExamCard: React.FC<Props> = ({
             Manage
           </button>
 
+          <button
+            className={`${styles.button} ${styles.secondaryButton}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              openEditDetailsModal();
+            }}
+            title="Edit exam details (name, time, duration)"
+          >
+            <svg
+              className={styles.buttonIcon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Edit Details
+          </button>
+
           {onEdit && (
             <button
               className={`${styles.button} ${styles.secondaryButton}`}
@@ -483,10 +716,10 @@ const ExamCard: React.FC<Props> = ({
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                <path d="M9 11l3 3L22 4"></path>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
               </svg>
-              Edit
+              Edit Questions
             </button>
           )}
 
@@ -567,6 +800,1123 @@ const ExamCard: React.FC<Props> = ({
       </div>
 
       <StudentsModal />
+
+      {/* Edit Exam Details Modal */}
+      {showEditDetailsModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "var(--overlay-bg)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setShowEditDetailsModal(false)}
+        >
+          <div
+            style={{
+              background: "var(--modal-bg)",
+              borderRadius: "20px",
+              width: "100%",
+              maxWidth: "600px",
+              maxHeight: "90vh",
+              overflow: "hidden",
+              boxShadow: "0 25px 50px var(--shadow)",
+              border: "1px solid var(--border-color)",
+              backdropFilter: "blur(20px)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: "24px",
+                borderBottom: "1px solid var(--border-color)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    margin: 0,
+                    color: "var(--text-primary)",
+                    fontSize: "20px",
+                    fontWeight: "700",
+                  }}
+                >
+                  ✏️ Edit Exam Details
+                </h3>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    color: "var(--text-secondary)",
+                    fontSize: "14px",
+                  }}
+                >
+                  Update exam name, start time, end time, and duration
+                </p>
+              </div>
+              <button
+                onClick={() => setShowEditDetailsModal(false)}
+                disabled={isSavingDetails}
+                style={{
+                  background: "var(--button-bg)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "10px",
+                  width: "40px",
+                  height: "40px",
+                  cursor: isSavingDetails ? "not-allowed" : "pointer",
+                  color: "var(--text-secondary)",
+                  fontSize: "20px",
+                  transition: "all 0.2s",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: isSavingDetails ? 0.5 : 1,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div
+              style={{
+                padding: "24px",
+                maxHeight: "calc(90vh - 180px)",
+                overflowY: "auto",
+              }}
+            >
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSaveExamDetails();
+                }}
+              >
+                {/* Exam Name */}
+                <div style={{ marginBottom: "20px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    Exam Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.name}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, name: e.target.value })
+                    }
+                    disabled={isSavingDetails}
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      background: "var(--secondary-bg)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "10px",
+                      fontSize: "14px",
+                      color: "var(--text-primary)",
+                      outline: "none",
+                      transition: "border-color 0.2s",
+                      boxSizing: "border-box",
+                    }}
+                    onFocus={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--accent-color)")
+                    }
+                    onBlur={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--border-color)")
+                    }
+                    placeholder="Enter exam name"
+                  />
+                </div>
+
+                {/* Scheduling Mode Toggle */}
+                <div style={{ marginBottom: "24px" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      padding: "8px",
+                      background: "var(--secondary-bg)",
+                      borderRadius: "10px",
+                      border: "1px solid var(--border-color)",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setUseDuration(false)}
+                      disabled={isSavingDetails}
+                      style={{
+                        flex: 1,
+                        padding: "10px 16px",
+                        background: !useDuration ? "var(--accent-color)" : "transparent",
+                        border: "none",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        color: !useDuration ? "white" : "var(--text-secondary)",
+                        cursor: isSavingDetails ? "not-allowed" : "pointer",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      📅 Start/End Time
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUseDuration(true)}
+                      disabled={isSavingDetails}
+                      style={{
+                        flex: 1,
+                        padding: "10px 16px",
+                        background: useDuration ? "var(--accent-color)" : "transparent",
+                        border: "none",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        color: useDuration ? "white" : "var(--text-secondary)",
+                        cursor: isSavingDetails ? "not-allowed" : "pointer",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      ⏱️ Duration
+                    </button>
+                  </div>
+                </div>
+
+                {!useDuration ? (
+                  <>
+                    {/* Start Time */}
+                    <div style={{ marginBottom: "20px" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          marginBottom: "8px",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        Start Time
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={editFormData.startTime}
+                        onChange={(e) =>
+                          setEditFormData({
+                            ...editFormData,
+                            startTime: e.target.value,
+                          })
+                        }
+                        disabled={isSavingDetails}
+                        style={{
+                          width: "100%",
+                          padding: "12px 16px",
+                          background: "var(--secondary-bg)",
+                          border: "1px solid var(--border-color)",
+                          borderRadius: "10px",
+                          fontSize: "14px",
+                          color: "var(--text-primary)",
+                          outline: "none",
+                          transition: "border-color 0.2s",
+                          boxSizing: "border-box",
+                        }}
+                        onFocus={(e) =>
+                          (e.currentTarget.style.borderColor = "var(--accent-color)")
+                        }
+                        onBlur={(e) =>
+                          (e.currentTarget.style.borderColor = "var(--border-color)")
+                        }
+                      />
+                    </div>
+
+                    {/* End Time */}
+                    <div style={{ marginBottom: "20px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    End Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={editFormData.endTime}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        endTime: e.target.value,
+                      })
+                    }
+                    disabled={isSavingDetails}
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      background: "var(--secondary-bg)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "10px",
+                      fontSize: "14px",
+                      color: "var(--text-primary)",
+                      outline: "none",
+                      transition: "border-color 0.2s",
+                      boxSizing: "border-box",
+                    }}
+                    onFocus={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--accent-color)")
+                    }
+                    onBlur={(e) =>
+                      (e.currentTarget.style.borderColor = "var(--border-color)")
+                    }
+                      />
+                    </div>
+
+                    {/* Duration Display for Start/End Time Mode */}
+                    {editFormData.startTime && editFormData.endTime && (
+                      <div
+                        style={{
+                          marginBottom: "20px",
+                          padding: "16px",
+                          background: "var(--info-bg)",
+                          border: "1px solid var(--info-color)",
+                          borderRadius: "10px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            color: "var(--info-color)",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12,6 12,12 16,14"></polyline>
+                          </svg>
+                          <span>Duration: {calculateDuration()}</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Duration Input Mode */}
+                    <div style={{ marginBottom: "20px" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          marginBottom: "8px",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        Exam Duration
+                      </label>
+                      <div style={{ display: "flex", gap: "12px" }}>
+                        <div style={{ flex: 1 }}>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "6px",
+                              fontSize: "12px",
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Hours
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="24"
+                            value={Math.floor(editFormData.durationMinutes / 60)}
+                            onChange={(e) => {
+                              const hours = parseInt(e.target.value) || 0;
+                              const minutes = editFormData.durationMinutes % 60;
+                              setEditFormData({
+                                ...editFormData,
+                                durationMinutes: hours * 60 + minutes,
+                              });
+                            }}
+                            disabled={isSavingDetails}
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              background: "var(--secondary-bg)",
+                              border: "1px solid var(--border-color)",
+                              borderRadius: "10px",
+                              fontSize: "14px",
+                              color: "var(--text-primary)",
+                              outline: "none",
+                              transition: "border-color 0.2s",
+                              boxSizing: "border-box",
+                            }}
+                            onFocus={(e) =>
+                              (e.currentTarget.style.borderColor = "var(--accent-color)")
+                            }
+                            onBlur={(e) =>
+                              (e.currentTarget.style.borderColor = "var(--border-color)")
+                            }
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "6px",
+                              fontSize: "12px",
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Minutes
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="59"
+                            value={editFormData.durationMinutes % 60}
+                            onChange={(e) => {
+                              const hours = Math.floor(editFormData.durationMinutes / 60);
+                              const minutes = parseInt(e.target.value) || 0;
+                              setEditFormData({
+                                ...editFormData,
+                                durationMinutes: hours * 60 + minutes,
+                              });
+                            }}
+                            disabled={isSavingDetails}
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              background: "var(--secondary-bg)",
+                              border: "1px solid var(--border-color)",
+                              borderRadius: "10px",
+                              fontSize: "14px",
+                              color: "var(--text-primary)",
+                              outline: "none",
+                              transition: "border-color 0.2s",
+                              boxSizing: "border-box",
+                            }}
+                            onFocus={(e) =>
+                              (e.currentTarget.style.borderColor = "var(--accent-color)")
+                            }
+                            onBlur={(e) =>
+                              (e.currentTarget.style.borderColor = "var(--border-color)")
+                            }
+                          />
+                        </div>
+                      </div>
+                      {/* Total Duration Display */}
+                      <div
+                        style={{
+                          marginTop: "12px",
+                          padding: "12px 16px",
+                          background: "var(--info-bg)",
+                          border: "1px solid var(--info-color)",
+                          borderRadius: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <polyline points="12,6 12,12 16,14"></polyline>
+                        </svg>
+                        <span
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            color: "var(--info-color)",
+                          }}
+                        >
+                          Total: {calculateDuration()} ({editFormData.durationMinutes} minutes)
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Proctoring Settings Section */}
+                <div style={{ marginTop: "32px", marginBottom: "20px" }}>
+                  <h4
+                    style={{
+                      margin: "0 0 20px 0",
+                      fontSize: "18px",
+                      fontWeight: "700",
+                      color: "var(--text-primary)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Proctoring Settings
+                  </h4>
+
+                  {/* Normal Proctoring */}
+                  <div
+                    style={{
+                      marginBottom: "16px",
+                      padding: "16px",
+                      background: "var(--card-bg)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "12px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ fontSize: "20px" }}>🖥️</span>
+                        <div>
+                          <div
+                            style={{
+                              fontSize: "15px",
+                              fontWeight: "700",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            Normal Proctoring
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Basic monitoring and browser control features
+                          </div>
+                        </div>
+                      </div>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          cursor: isSavingDetails ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={editFormData.normalProctoring}
+                          onChange={(e) => {
+                            const enabled = e.target.checked;
+                            setEditFormData({
+                              ...editFormData,
+                              normalProctoring: enabled,
+                              controlDesktopApps: enabled,
+                              screenCountDetection: enabled,
+                              safeBrowser: enabled,
+                              tabSwitchDetection: enabled,
+                              microphoneDetection: enabled,
+                            });
+                          }}
+                          disabled={isSavingDetails}
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            cursor: isSavingDetails ? "not-allowed" : "pointer",
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                        gap: "10px",
+                        paddingTop: "12px",
+                        borderTop: "1px solid var(--border-color)",
+                      }}
+                    >
+                      {[
+                        {
+                          key: "controlDesktopApps",
+                          label: "Control Desktop Apps",
+                          icon: "🖥️",
+                        },
+                        {
+                          key: "screenCountDetection",
+                          label: "Screen Count Detection",
+                          icon: "📺",
+                        },
+                        { key: "safeBrowser", label: "Safe Browser", icon: "🔒" },
+                        {
+                          key: "tabSwitchDetection",
+                          label: "Tab Switch Detection",
+                          icon: "🔄",
+                        },
+                        {
+                          key: "microphoneDetection",
+                          label: "Microphone Detection",
+                          icon: "🎤",
+                        },
+                      ].map((item) => (
+                        <label
+                          key={item.key}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "10px",
+                            background: "var(--secondary-bg)",
+                            border: "1px solid var(--border-color)",
+                            borderRadius: "8px",
+                            cursor:
+                              isSavingDetails || !editFormData.normalProctoring
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity: !editFormData.normalProctoring ? 0.5 : 1,
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSavingDetails && editFormData.normalProctoring) {
+                              e.currentTarget.style.borderColor =
+                                "var(--accent-color)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "var(--border-color)";
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={
+                              editFormData[
+                                item.key as keyof typeof editFormData
+                              ] as boolean
+                            }
+                            onChange={(e) =>
+                              setEditFormData({
+                                ...editFormData,
+                                [item.key]: e.target.checked,
+                              })
+                            }
+                            disabled={
+                              isSavingDetails || !editFormData.normalProctoring
+                            }
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              cursor:
+                                isSavingDetails || !editFormData.normalProctoring
+                                  ? "not-allowed"
+                                  : "pointer",
+                            }}
+                          />
+                          <span
+                            style={{
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* AI Powered Proctoring */}
+                  <div
+                    style={{
+                      marginBottom: "16px",
+                      padding: "16px",
+                      background: "var(--card-bg)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "12px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ fontSize: "20px" }}>🤖</span>
+                        <div>
+                          <div
+                            style={{
+                              fontSize: "15px",
+                              fontWeight: "700",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            AI Powered Proctoring
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Advanced AI-based monitoring and detection
+                          </div>
+                        </div>
+                      </div>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          cursor: isSavingDetails ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={editFormData.aiPoweredProctoring}
+                          onChange={(e) => {
+                            const enabled = e.target.checked;
+                            setEditFormData({
+                              ...editFormData,
+                              aiPoweredProctoring: enabled,
+                              thirdEye: enabled,
+                              multiPerson: enabled,
+                              eyeBall: enabled,
+                              objectDetect: enabled,
+                              headDirection: enabled,
+                              faceAuthentication: enabled,
+                            });
+                          }}
+                          disabled={isSavingDetails}
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            cursor: isSavingDetails ? "not-allowed" : "pointer",
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                        gap: "10px",
+                        paddingTop: "12px",
+                        borderTop: "1px solid var(--border-color)",
+                      }}
+                    >
+                      {[
+                        { key: "thirdEye", label: "Third Eye", icon: "👁️" },
+                        {
+                          key: "multiPerson",
+                          label: "Multiple Person Detection",
+                          icon: "👥",
+                        },
+                        { key: "eyeBall", label: "Eyeball Detection", icon: "👀" },
+                        { key: "objectDetect", label: "Object Detection", icon: "📦" },
+                        { key: "headDirection", label: "Head Direction", icon: "🔄" },
+                        {
+                          key: "faceAuthentication",
+                          label: "Face Authentication",
+                          icon: "🔐",
+                        },
+                      ].map((item) => (
+                        <label
+                          key={item.key}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "10px",
+                            background: "var(--secondary-bg)",
+                            border: "1px solid var(--border-color)",
+                            borderRadius: "8px",
+                            cursor:
+                              isSavingDetails || !editFormData.aiPoweredProctoring
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity: !editFormData.aiPoweredProctoring ? 0.5 : 1,
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (
+                              !isSavingDetails &&
+                              editFormData.aiPoweredProctoring
+                            ) {
+                              e.currentTarget.style.borderColor =
+                                "var(--accent-color)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "var(--border-color)";
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={
+                              editFormData[
+                                item.key as keyof typeof editFormData
+                              ] as boolean
+                            }
+                            onChange={(e) =>
+                              setEditFormData({
+                                ...editFormData,
+                                [item.key]: e.target.checked,
+                              })
+                            }
+                            disabled={
+                              isSavingDetails || !editFormData.aiPoweredProctoring
+                            }
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              cursor:
+                                isSavingDetails || !editFormData.aiPoweredProctoring
+                                  ? "not-allowed"
+                                  : "pointer",
+                            }}
+                          />
+                          <span
+                            style={{
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Recorded Manual Proctoring */}
+                  <div
+                    style={{
+                      marginBottom: "16px",
+                      padding: "16px",
+                      background: "var(--card-bg)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "12px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ fontSize: "20px" }}>📹</span>
+                        <div>
+                          <div
+                            style={{
+                              fontSize: "15px",
+                              fontWeight: "700",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            Recorded Manual Proctoring
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Recording and manual review capabilities
+                          </div>
+                        </div>
+                      </div>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          cursor: isSavingDetails ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={editFormData.recordedManualProctoring}
+                          onChange={(e) => {
+                            const enabled = e.target.checked;
+                            setEditFormData({
+                              ...editFormData,
+                              recordedManualProctoring: enabled,
+                              flagNotifications: enabled,
+                              videoRecording: enabled,
+                              proctorFeedToTestTaker: enabled,
+                              screenSharing: enabled,
+                            });
+                          }}
+                          disabled={isSavingDetails}
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            cursor: isSavingDetails ? "not-allowed" : "pointer",
+                          }}
+                        />
+                      </label>
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                        gap: "10px",
+                        paddingTop: "12px",
+                        borderTop: "1px solid var(--border-color)",
+                      }}
+                    >
+                      {[
+                        {
+                          key: "flagNotifications",
+                          label: "Flag Notifications",
+                          icon: "🚩",
+                        },
+                        {
+                          key: "videoRecording",
+                          label: "Video Recording",
+                          icon: "🎥",
+                        },
+                        {
+                          key: "proctorFeedToTestTaker",
+                          label: "Proctor Feed to Test Taker",
+                          icon: "📹",
+                        },
+                        {
+                          key: "screenSharing",
+                          label: "Screen Sharing",
+                          icon: "🖥️",
+                        },
+                      ].map((item) => (
+                        <label
+                          key={item.key}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "10px",
+                            background: "var(--secondary-bg)",
+                            border: "1px solid var(--border-color)",
+                            borderRadius: "8px",
+                            cursor:
+                              isSavingDetails ||
+                              !editFormData.recordedManualProctoring
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity: !editFormData.recordedManualProctoring ? 0.5 : 1,
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (
+                              !isSavingDetails &&
+                              editFormData.recordedManualProctoring
+                            ) {
+                              e.currentTarget.style.borderColor =
+                                "var(--accent-color)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "var(--border-color)";
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={
+                              editFormData[
+                                item.key as keyof typeof editFormData
+                              ] as boolean
+                            }
+                            onChange={(e) =>
+                              setEditFormData({
+                                ...editFormData,
+                                [item.key]: e.target.checked,
+                              })
+                            }
+                            disabled={
+                              isSavingDetails ||
+                              !editFormData.recordedManualProctoring
+                            }
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              cursor:
+                                isSavingDetails ||
+                                !editFormData.recordedManualProctoring
+                                  ? "not-allowed"
+                                  : "pointer",
+                            }}
+                          />
+                          <span
+                            style={{
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Info Note */}
+                <div
+                  style={{
+                    marginTop: "20px",
+                    padding: "12px 16px",
+                    background: "var(--warning-bg)",
+                    border: "1px solid var(--warning-color)",
+                    borderRadius: "10px",
+                    fontSize: "13px",
+                    color: "var(--text-secondary)",
+                    lineHeight: "1.5",
+                  }}
+                >
+                  <strong style={{ color: "var(--warning-color)" }}>Note:</strong>{" "}
+                  Changing the exam schedule may affect students who have already
+                  registered. Make sure to notify them of any changes.
+                </div>
+              </form>
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                padding: "20px 24px",
+                borderTop: "1px solid var(--border-color)",
+                display: "flex",
+                gap: "12px",
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                onClick={() => setShowEditDetailsModal(false)}
+                disabled={isSavingDetails}
+                style={{
+                  padding: "12px 24px",
+                  background: "var(--button-bg)",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "10px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: "var(--text-secondary)",
+                  cursor: isSavingDetails ? "not-allowed" : "pointer",
+                  transition: "all 0.2s",
+                  opacity: isSavingDetails ? 0.5 : 1,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveExamDetails}
+                disabled={isSavingDetails}
+                style={{
+                  padding: "12px 24px",
+                  background: isSavingDetails
+                    ? "var(--text-secondary)"
+                    : "var(--accent-color)",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: "white",
+                  cursor: isSavingDetails ? "not-allowed" : "pointer",
+                  transition: "all 0.2s",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                {isSavingDetails ? (
+                  <>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: "14px",
+                        height: "14px",
+                        border: "2px solid white",
+                        borderTopColor: "transparent",
+                        borderRadius: "50%",
+                        animation: "spin 0.6s linear infinite",
+                      }}
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                      <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                      <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <style jsx>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </>
   );
 };
