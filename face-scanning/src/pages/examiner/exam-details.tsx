@@ -54,7 +54,9 @@ const ExamDetailsPage: React.FC = () => {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [violationFilter, setViolationFilter] = useState<string>("");
   const [regNoFilter, setRegNoFilter] = useState<string>("");
-  const [selectedRiskLevel, setSelectedRiskLevel] = useState<string>("all");
+  
+  // Sort state for risk score
+  const [riskScoreSortOrder, setRiskScoreSortOrder] = useState<"none" | "asc" | "desc">("none");
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -142,7 +144,7 @@ const ExamDetailsPage: React.FC = () => {
     new Set(examDetails?.attendances?.map(a => a.user.dept).filter(Boolean) || [])
   ).sort();
 
-  const filteredParticipants = examDetails?.attendances?.filter(attendance => {
+  const filteredParticipants = (examDetails?.attendances?.filter(attendance => {
     const stats = participantStats[attendance.user.id];
     
     // Search filter (name or email)
@@ -166,24 +168,31 @@ const ExamDetailsPage: React.FC = () => {
       violationFilter === "" || 
       violationCount.toString().includes(violationFilter);
     
-    // Risk Level filter
-    const riskScore = stats?.riskScore;
-    let matchesRiskLevel = true;
-    
-    if (selectedRiskLevel !== "all" && riskScore !== null && riskScore !== undefined) {
-      if (selectedRiskLevel === "low") {
-        matchesRiskLevel = riskScore <= 30;
-      } else if (selectedRiskLevel === "medium") {
-        matchesRiskLevel = riskScore > 30 && riskScore <= 60;
-      } else if (selectedRiskLevel === "high") {
-        matchesRiskLevel = riskScore > 60;
+    return matchesSearch && matchesDepartment && matchesRegNo && matchesViolations;
+  }) || []).sort((a, b) => {
+    // Apply risk score sorting if active
+    if (riskScoreSortOrder !== "none") {
+      const statsA = participantStats[a.user.id];
+      const statsB = participantStats[b.user.id];
+      const scoreA = statsA?.riskScore ?? -1; // Treat null/undefined as -1 to push to end
+      const scoreB = statsB?.riskScore ?? -1;
+      
+      if (riskScoreSortOrder === "asc") {
+        // Ascending: lower scores first, nulls at end
+        if (scoreA === -1 && scoreB === -1) return 0;
+        if (scoreA === -1) return 1;
+        if (scoreB === -1) return -1;
+        return scoreA - scoreB;
+      } else {
+        // Descending: higher scores first, nulls at end
+        if (scoreA === -1 && scoreB === -1) return 0;
+        if (scoreA === -1) return 1;
+        if (scoreB === -1) return -1;
+        return scoreB - scoreA;
       }
-    } else if (selectedRiskLevel !== "all" && (riskScore === null || riskScore === undefined)) {
-      matchesRiskLevel = false; // Exclude participants without risk scores when filter is active
     }
-    
-    return matchesSearch && matchesDepartment && matchesRegNo && matchesViolations && matchesRiskLevel;
-  }) || [];
+    return 0;
+  });
 
   const fetchParticipantScore = async (userId: number, examId: number) => {
     try {
@@ -1102,7 +1111,7 @@ const ExamDetailsPage: React.FC = () => {
           </div>
 
           {/* Active Filters Info */}
-          {(selectedDepartment !== "all" || regNoFilter !== "" || violationFilter !== "" || selectedRiskLevel !== "all") && (
+          {(selectedDepartment !== "all" || regNoFilter !== "" || violationFilter !== "") && (
             <div style={{
               display: "flex",
               alignItems: "center",
@@ -1212,44 +1221,11 @@ const ExamDetailsPage: React.FC = () => {
                   </button>
                 </span>
               )}
-              {selectedRiskLevel !== "all" && (
-                <span style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "4px 10px",
-                  background: "var(--accent-color)",
-                  color: "white",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  fontWeight: "600"
-                }}>
-                  Risk: {selectedRiskLevel.charAt(0).toUpperCase() + selectedRiskLevel.slice(1)}
-                  <button
-                    onClick={() => setSelectedRiskLevel("all")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "white",
-                      cursor: "pointer",
-                      padding: "0",
-                      display: "flex",
-                      alignItems: "center"
-                    }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                </span>
-              )}
               <button
                 onClick={() => {
                   setSelectedDepartment("all");
                   setRegNoFilter("");
                   setViolationFilter("");
-                  setSelectedRiskLevel("all");
                 }}
                 style={{
                   padding: "4px 10px",
@@ -1525,85 +1501,60 @@ const ExamDetailsPage: React.FC = () => {
                   }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                       Risk Score
-                      <div style={{ position: "relative", display: "inline-block" }}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const dropdown = e.currentTarget.nextElementSibling as HTMLElement;
-                            if (dropdown) {
-                              dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-                            }
-                          }}
-                          style={{
-                            background: selectedRiskLevel !== "all" ? "var(--accent-color)" : "transparent",
-                            border: "none",
-                            padding: "4px",
-                            cursor: "pointer",
-                            borderRadius: "4px",
-                            display: "flex",
-                            alignItems: "center",
-                            color: selectedRiskLevel !== "all" ? "white" : "var(--text-secondary)",
-                            transition: "all 0.2s ease"
-                          }}
-                          onMouseEnter={(e) => {
-                            if (selectedRiskLevel === "all") {
-                              e.currentTarget.style.color = "var(--accent-color)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (selectedRiskLevel === "all") {
-                              e.currentTarget.style.color = "var(--text-secondary)";
-                            }
-                          }}
-                        >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRiskScoreSortOrder(prev => {
+                            if (prev === "none") return "asc";
+                            if (prev === "asc") return "desc";
+                            return "none";
+                          });
+                        }}
+                        style={{
+                          background: riskScoreSortOrder !== "none" ? "var(--accent-color)" : "transparent",
+                          border: "none",
+                          padding: "4px",
+                          cursor: "pointer",
+                          borderRadius: "4px",
+                          display: "flex",
+                          alignItems: "center",
+                          color: riskScoreSortOrder !== "none" ? "white" : "var(--text-secondary)",
+                          transition: "all 0.2s ease"
+                        }}
+                        onMouseEnter={(e) => {
+                          if (riskScoreSortOrder === "none") {
+                            e.currentTarget.style.background = "var(--secondary-bg)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (riskScoreSortOrder === "none") {
+                            e.currentTarget.style.background = "transparent";
+                          }
+                        }}
+                        title={
+                          riskScoreSortOrder === "none" 
+                            ? "Sort by risk score" 
+                            : riskScoreSortOrder === "asc" 
+                            ? "Sorted ascending (click for descending)" 
+                            : "Sorted descending (click to clear)"
+                        }
+                      >
+                        {riskScoreSortOrder === "none" && (
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                            <path d="M12 5v14M5 12l7 7 7-7"/>
                           </svg>
-                        </button>
-                        <div
-                          data-filter-dropdown
-                          style={{
-                            display: "none",
-                            position: "absolute",
-                            top: "100%",
-                            right: "0",
-                            marginTop: "8px",
-                            background: "var(--card-bg)",
-                            border: "1px solid var(--border-color)",
-                            borderRadius: "8px",
-                            padding: "8px",
-                            minWidth: "160px",
-                            boxShadow: "0 4px 12px var(--shadow)",
-                            zIndex: 1000
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <select
-                            value={selectedRiskLevel}
-                            onChange={(e) => {
-                              setSelectedRiskLevel(e.target.value);
-                              const dropdown = e.currentTarget.parentElement as HTMLElement;
-                              if (dropdown) dropdown.style.display = "none";
-                            }}
-                            style={{
-                              width: "100%",
-                              padding: "8px",
-                              background: "var(--secondary-bg)",
-                              border: "1px solid var(--border-color)",
-                              borderRadius: "6px",
-                              fontSize: "13px",
-                              color: "var(--text-primary)",
-                              cursor: "pointer",
-                              outline: "none"
-                            }}
-                          >
-                            <option value="all">All Risk Levels</option>
-                            <option value="low">Low (0-30%)</option>
-                            <option value="medium">Medium (31-60%)</option>
-                            <option value="high">High (61-100%)</option>
-                          </select>
-                        </div>
-                      </div>
+                        )}
+                        {riskScoreSortOrder === "asc" && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 19V5M5 12l7-7 7 7"/>
+                          </svg>
+                        )}
+                        {riskScoreSortOrder === "desc" && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 5v14M5 12l7 7 7-7"/>
+                          </svg>
+                        )}
+                      </button>
                     </div>
                   </th>
                   <th style={{
