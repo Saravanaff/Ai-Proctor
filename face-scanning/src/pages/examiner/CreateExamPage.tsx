@@ -30,8 +30,17 @@ const CreateExam = () => {
     (config) => {
       const token = getTokenFromCookie();
       if (token) {
-        config.headers = config.headers || {};
-        config.headers["Authorization"] = `Bearer ${token}`;
+        // ensure headers exists and use a safe cast to avoid incompatible type assignment
+        config.headers = config.headers ?? ({} as any);
+
+        // Axios may use AxiosHeaders instance or plain object; handle both safely
+        if (typeof (config.headers as any).set === "function") {
+          // AxiosHeaders API
+          (config.headers as any).set("Authorization", `Bearer ${token}`);
+        } else {
+          // plain object
+          (config.headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+        }
       }
       return config;
     },

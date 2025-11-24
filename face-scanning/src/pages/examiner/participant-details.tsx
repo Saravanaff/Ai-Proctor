@@ -320,11 +320,12 @@ const ParticipantDetailsPage: React.FC = () => {
   });
 
   axios.interceptors.request.use(
-    (config) => {
+    (config: any) => {
       const token = getTokenFromCookie();
       if (token) {
+        // Ensure headers object exists and assign header using a cast to avoid AxiosHeaders type issues
         config.headers = config.headers || {};
-        config.headers["Authorization"] = `Bearer ${token}`;
+        (config.headers as any)["Authorization"] = `Bearer ${token}`;
       }
       return config;
     },

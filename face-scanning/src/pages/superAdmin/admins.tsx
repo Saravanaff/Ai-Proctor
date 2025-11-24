@@ -40,8 +40,8 @@ const SuperAdminDashboard = () => {
   axios.interceptors.request.use((config) => {
     const token = getTokenFromCookie();
     if (token) {
-      config.headers = config.headers || {};
-      config.headers["Authorization"] = `Bearer ${token}`;
+      config.headers = config.headers || ({} as any);
+      (config.headers as any)["Authorization"] = `Bearer ${token}`;
     }
     return config;
   });

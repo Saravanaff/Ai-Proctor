@@ -17,8 +17,10 @@ const JoinExam = () => {
     (config) => {
       const token = getTokenFromCookie();
       if (token) {
-        config.headers = config.headers || {};
-        config.headers["Authorization"] = `Bearer ${token}`;
+        if (!config.headers) {
+          config.headers = {} as any;
+        }
+        (config.headers as any)["Authorization"] = `Bearer ${token}`;
       }
       return config;
     },

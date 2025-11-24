@@ -47,8 +47,11 @@ export default function StudentsManagement() {
   axios.interceptors.request.use((config) => {
     const token = getTokenFromCookie();
     if (token) {
-      config.headers = config.headers || {};
-      config.headers["Authorization"] = `Bearer ${token}`;
+      // Merge existing headers and set Authorization in a way that satisfies Axios/TS types
+      config.headers = {
+        ...(config.headers as Record<string, unknown>),
+        Authorization: `Bearer ${token}`,
+      } as any;
     }
     return config;
   });
