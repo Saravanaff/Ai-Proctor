@@ -69,6 +69,9 @@ const ExamPreview = () => {
 
       const payload = {
         exam_name: examData.examName,
+        start_time: examData.startTime || null,
+        end_time: examData.endTime || null,
+        duration: examData.duration || null,
         third_eye_enabled: examData.thirdEye,
         multiple_person_detection_enabled: examData.multiPerson,
         eyeball_detection_enabled: examData.eyeBall,
