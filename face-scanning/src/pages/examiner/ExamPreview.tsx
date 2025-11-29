@@ -16,10 +16,8 @@ const ExamPreview = () => {
   const [examData, setExamData] = useState<any>(null);
 
   useEffect(() => {
-    // Get exam data from sessionStorage
     const storedData = sessionStorage.getItem("examPreviewData");
     if (!storedData) {
-      // If no data, redirect back to create page
       router.push("/examiner/CreateExamPage");
       return;
     }
@@ -48,7 +46,7 @@ const ExamPreview = () => {
       return {
         question_text: q.question,
         answer: correctIndex.toString(),
-        marks: 1,
+        marks: q.marks || 1, // Use the marks from the question, default to 1 if not set
         options: q.options.map((opt) => ({
           option_text: opt.text,
           is_correct: opt.id === q.correctOptionId,

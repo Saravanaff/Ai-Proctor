@@ -32,6 +32,7 @@ const MCQQuestionEditor: React.FC<MCQQuestionEditorProps> = ({
   const [correctOptionId, setCorrectOptionId] = useState(
     initialQuestion?.correctOptionId || ""
   );
+  const [marks, setMarks] = useState(initialQuestion?.marks || 1);
   const [showPreview, setShowPreview] = useState(false);
 
   const handleAddOption = () => {
@@ -80,6 +81,7 @@ const MCQQuestionEditor: React.FC<MCQQuestionEditorProps> = ({
       question: questionText,
       options: filledOptions,
       correctOptionId,
+      marks: marks || 1,
     };
 
     onSave(question);
@@ -188,6 +190,46 @@ const MCQQuestionEditor: React.FC<MCQQuestionEditorProps> = ({
                 resize: "vertical",
               }}
             />
+          </div>
+
+          {/* Marks Input */}
+          <div style={{ marginBottom: "20px" }}>
+            <label
+              className="theme-transition"
+              style={{
+                display: "block",
+                marginBottom: "8px",
+                color: "var(--text-secondary)",
+                fontSize: "14px",
+                fontWeight: 500,
+              }}
+            >
+              Marks *
+            </label>
+            <input
+              type="number"
+              min="0.5"
+              step="0.5"
+              value={marks}
+              onChange={(e) => setMarks(parseFloat(e.target.value) || 1)}
+              placeholder="Enter marks for this question"
+              className="input-theme theme-transition"
+              style={{
+                width: "150px",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                fontSize: "14px",
+              }}
+            />
+            <span
+              style={{
+                marginLeft: "12px",
+                fontSize: "13px",
+                color: "var(--text-tertiary)",
+              }}
+            >
+              Points for this question
+            </span>
           </div>
 
           {/* Options */}
@@ -333,17 +375,31 @@ const MCQQuestionEditor: React.FC<MCQQuestionEditorProps> = ({
           }}
         >
           <div style={{ marginBottom: "20px" }}>
-            <h5
-              className="theme-transition"
-              style={{
-                margin: "0 0 12px",
-                color: "var(--text-primary)",
-                fontSize: "15px",
-                fontWeight: 600,
-              }}
-            >
-              Question Preview:
-            </h5>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+              <h5
+                className="theme-transition"
+                style={{
+                  margin: 0,
+                  color: "var(--text-primary)",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                }}
+              >
+                Question Preview:
+              </h5>
+              <span
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: "6px",
+                  background: "var(--accent-color)",
+                  color: "white",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                }}
+              >
+                {marks} {marks === 1 ? 'mark' : 'marks'}
+              </span>
+            </div>
             <LatexRenderer
               content={questionText || "No question text"}
               style={{

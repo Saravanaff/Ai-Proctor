@@ -3,11 +3,11 @@ import styles from "../../styles/CreateExamPage.module.css";
 import { useRouter } from "next/router";
 import MCQQuestionEditor from "../../components/exam/MCQQuestionEditor";
 import MCQQuestionList from "../../components/exam/MCQQuestionList";
-import PDFQuestionUploader from "../../components/exam/PDFQuestionUploader";
 import { MCQQuestion } from "../../types/mcq";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import LatexRenderer from "../../components/exam/LatexRenderer";
 import { ExaminerGuard } from "@/components/guards";
+import * as XLSX from 'xlsx';
 
 const NewExam = () => {
   const router = useRouter();
@@ -47,10 +47,11 @@ const NewExam = () => {
   // MCQ Questions state
   const [mcqQuestions, setMcqQuestions] = useState<MCQQuestion[]>([]);
   const [showQuestionEditor, setShowQuestionEditor] = useState(false);
-  const [showPDFUploader, setShowPDFUploader] = useState(false);
+  const [showFileUploader, setShowFileUploader] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<
     MCQQuestion | undefined
   >(undefined);
+  const [uploadError, setUploadError] = useState<string>("");
 
   // Restore data from sessionStorage when component mounts (for back navigation from preview)
   useEffect(() => {
@@ -171,13 +172,145 @@ const NewExam = () => {
     setEditingQuestion(undefined);
   };
 
-  const handlePDFQuestionsExtracted = (questions: MCQQuestion[]) => {
-    setMcqQuestions((prev) => [...prev, ...questions]);
-    setShowPDFUploader(false);
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    if (fileExtension !== 'xlsx' && fileExtension !== 'xls' && fileExtension !== 'csv') {
+      setUploadError('Please upload a valid Excel (.xlsx, .xls) or CSV file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        if (jsonData.length === 0) {
+          setUploadError('No data found in file');
+          return;
+        }
+
+        const extractedQuestions: MCQQuestion[] = [];
+        
+        jsonData.forEach((row, index) => {
+          const questionText = row['Question'] || row['question'];
+          const option1 = row['Option 1'] || row['option1'] || row['Option1'];
+          const option2 = row['Option 2'] || row['option2'] || row['Option2'];
+          const option3 = row['Option 3'] || row['option3'] || row['Option3'];
+          const option4 = row['Option 4'] || row['option4'] || row['Option4'];
+          const correctAnswer = (row['Correct Answer'] || row['correctAnswer'] || row['CorrectAnswer'] || '').toString().toUpperCase();
+          const marks = parseFloat(row['Marks'] || row['marks'] || '1');
+
+          if (!questionText) {
+            console.warn(`Row ${index + 2}: Missing question text`);
+            return;
+          }
+
+          if (!option1 || !option2) {
+            console.warn(`Row ${index + 2}: Insufficient options`);
+            return;
+          }
+
+          if (!['A', 'B', 'C', 'D'].includes(correctAnswer)) {
+            console.warn(`Row ${index + 2}: Invalid correct answer (must be A, B, C, or D)`);
+            return;
+          }
+
+          const options = [
+            { id: `${Date.now()}-${index}-1`, text: option1, isCorrect: correctAnswer === 'A' },
+            { id: `${Date.now()}-${index}-2`, text: option2, isCorrect: correctAnswer === 'B' },
+          ];
+
+          if (option3) {
+            options.push({ id: `${Date.now()}-${index}-3`, text: option3, isCorrect: correctAnswer === 'C' });
+          }
+          if (option4) {
+            options.push({ id: `${Date.now()}-${index}-4`, text: option4, isCorrect: correctAnswer === 'D' });
+          }
+
+          const correctOption = options.find(opt => opt.isCorrect);
+          
+          extractedQuestions.push({
+            id: `q-${Date.now()}-${index}`,
+            question: questionText,
+            options: options.map(opt => ({ id: opt.id, text: opt.text })),
+            correctOptionId: correctOption?.id || options[0].id,
+          });
+        });
+
+        if (extractedQuestions.length === 0) {
+          setUploadError('No valid questions found. Please check the format.');
+          return;
+        }
+
+        setMcqQuestions((prev) => [...prev, ...extractedQuestions]);
+        setShowFileUploader(false);
+        setUploadError('');
+        
+        // Reset file input
+        event.target.value = '';
+      } catch (error) {
+        console.error('Error parsing file:', error);
+        setUploadError('Error parsing file. Please check the format.');
+      }
+    };
+
+    reader.readAsBinaryString(file);
   };
 
-  const handleCancelPDFUploader = () => {
-    setShowPDFUploader(false);
+  const downloadSampleTemplate = () => {
+    const sampleData = [
+      {
+        'Question': 'What is 2 + 2?',
+        'Option 1': '3',
+        'Option 2': '4',
+        'Option 3': '5',
+        'Option 4': '6',
+        'Correct Answer': 'B',
+        'Marks': 1
+      },
+      {
+        'Question': 'Which planet is known as the Red Planet?',
+        'Option 1': 'Venus',
+        'Option 2': 'Mars',
+        'Option 3': 'Jupiter',
+        'Option 4': 'Saturn',
+        'Correct Answer': 'B',
+        'Marks': 2
+      },
+      {
+        'Question': 'What is the capital of France?',
+        'Option 1': 'London',
+        'Option 2': 'Berlin',
+        'Option 3': 'Paris',
+        'Option 4': 'Rome',
+        'Correct Answer': 'C',
+        'Marks': 1
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Questions');
+    
+    // Set column widths
+    worksheet['!cols'] = [
+      { wch: 50 }, // Question
+      { wch: 20 }, // Option 1
+      { wch: 20 }, // Option 2
+      { wch: 20 }, // Option 3
+      { wch: 20 }, // Option 4
+      { wch: 15 }, // Correct Answer
+      { wch: 10 }  // Marks
+    ];
+
+    XLSX.writeFile(workbook, 'exam_questions_template.xlsx');
   };
 
   const handlePreview = () => {
@@ -884,11 +1017,248 @@ const NewExam = () => {
                   isOpen={mcqSectionOpen}
                   onToggle={() => setMcqSectionOpen(!mcqSectionOpen)}
                 >
-                  {showPDFUploader && (
-                    <PDFQuestionUploader
-                      onQuestionsExtracted={handlePDFQuestionsExtracted}
-                      onClose={handleCancelPDFUploader}
-                    />
+                  {showFileUploader && (
+                    <div
+                      className="theme-transition"
+                      style={{
+                        padding: "24px",
+                        background: "var(--secondary-bg)",
+                        borderRadius: "12px",
+                        border: "2px dashed var(--border-color)",
+                        marginBottom: "16px",
+                      }}
+                    >
+                      <div style={{ marginBottom: "20px" }}>
+                        <h4
+                          style={{
+                            margin: "0 0 8px 0",
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            color: "var(--text-primary)",
+                          }}
+                        >
+                          📊 Upload Excel/CSV File
+                        </h4>
+                        <p
+                          style={{
+                            margin: "0 0 16px 0",
+                            fontSize: "13px",
+                            color: "var(--text-secondary)",
+                          }}
+                        >
+                          Upload an Excel (.xlsx, .xls) or CSV file with your questions. 
+                          Download the sample template to see the required format.
+                        </p>
+
+                        {/* Sample Format Info */}
+                        <div
+                          style={{
+                            background: "var(--card-bg)",
+                            padding: "16px",
+                            borderRadius: "8px",
+                            border: "1px solid var(--border-color)",
+                            marginBottom: "16px",
+                          }}
+                        >
+                          <h5
+                            style={{
+                              margin: "0 0 12px 0",
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            Required Format:
+                          </h5>
+                          <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                            <table
+                              style={{
+                                width: "100%",
+                                borderCollapse: "collapse",
+                                fontSize: "11px",
+                              }}
+                            >
+                              <thead>
+                                <tr style={{ background: "var(--secondary-bg)" }}>
+                                  <th style={{ padding: "8px", textAlign: "left", border: "1px solid var(--border-color)" }}>Column Name</th>
+                                  <th style={{ padding: "8px", textAlign: "left", border: "1px solid var(--border-color)" }}>Description</th>
+                                  <th style={{ padding: "8px", textAlign: "left", border: "1px solid var(--border-color)" }}>Example</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Question</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>The question text</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>What is 2 + 2?</td>
+                                </tr>
+                                <tr>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Option 1</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>First option (required)</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>3</td>
+                                </tr>
+                                <tr>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Option 2</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>Second option (required)</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>4</td>
+                                </tr>
+                                <tr>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Option 3</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>Third option (optional)</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>5</td>
+                                </tr>
+                                <tr>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Option 4</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>Fourth option (optional)</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>6</td>
+                                </tr>
+                                <tr>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Correct Answer</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>A, B, C, or D</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>B</td>
+                                </tr>
+                                <tr>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Marks</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>Points for question</td>
+                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>1</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Download Template Button */}
+                        <button
+                          type="button"
+                          onClick={downloadSampleTemplate}
+                          className="theme-transition"
+                          style={{
+                            padding: "10px 16px",
+                            borderRadius: "8px",
+                            border: "1px solid var(--accent-color)",
+                            background: "var(--accent-color)",
+                            color: "white",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            marginBottom: "16px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          <span>📥</span> Download Sample Template
+                        </button>
+
+                        {uploadError && (
+                          <div
+                            style={{
+                              padding: "12px",
+                              background: "#fee",
+                              border: "1px solid #fcc",
+                              borderRadius: "8px",
+                              color: "#c33",
+                              fontSize: "13px",
+                              marginBottom: "16px",
+                            }}
+                          >
+                            ⚠️ {uploadError}
+                          </div>
+                        )}
+
+                        {/* File Input */}
+                        <div
+                          style={{
+                            border: "2px dashed var(--accent-color)",
+                            borderRadius: "8px",
+                            padding: "32px",
+                            textAlign: "center",
+                            background: "var(--card-bg)",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.style.background = "var(--secondary-bg)";
+                          }}
+                          onDragLeave={(e) => {
+                            e.currentTarget.style.background = "var(--card-bg)";
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.style.background = "var(--card-bg)";
+                            const files = e.dataTransfer.files;
+                            if (files.length > 0) {
+                              const input = document.getElementById('file-upload') as HTMLInputElement;
+                              if (input) {
+                                input.files = files;
+                                handleFileUpload({ target: input } as any);
+                              }
+                            }
+                          }}
+                        >
+                          <input
+                            id="file-upload"
+                            type="file"
+                            accept=".xlsx,.xls,.csv"
+                            onChange={handleFileUpload}
+                            style={{ display: "none" }}
+                          />
+                          <label
+                            htmlFor="file-upload"
+                            style={{
+                              cursor: "pointer",
+                              display: "block",
+                            }}
+                          >
+                            <div style={{ fontSize: "48px", marginBottom: "12px" }}>📁</div>
+                            <p
+                              style={{
+                                margin: "0 0 8px 0",
+                                fontSize: "14px",
+                                fontWeight: 600,
+                                color: "var(--text-primary)",
+                              }}
+                            >
+                              Click to upload or drag and drop
+                            </p>
+                            <p
+                              style={{
+                                margin: 0,
+                                fontSize: "12px",
+                                color: "var(--text-secondary)",
+                              }}
+                            >
+                              Excel (.xlsx, .xls) or CSV files
+                            </p>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowFileUploader(false);
+                            setUploadError('');
+                          }}
+                          className="theme-transition"
+                          style={{
+                            padding: "10px 20px",
+                            borderRadius: "8px",
+                            border: "1px solid var(--border-color)",
+                            background: "var(--secondary-bg)",
+                            color: "var(--text-primary)",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            flex: 1,
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
                   )}
 
                   {showQuestionEditor && (
@@ -900,7 +1270,7 @@ const NewExam = () => {
                   )}
 
                   {!showQuestionEditor &&
-                    !showPDFUploader &&
+                    !showFileUploader &&
                     mcqQuestions.length > 0 && (
                       <MCQQuestionList
                         questions={mcqQuestions}
@@ -910,7 +1280,7 @@ const NewExam = () => {
                     )}
 
                   {!showQuestionEditor &&
-                    !showPDFUploader &&
+                    !showFileUploader &&
                     mcqQuestions.length === 0 && (
                       <div
                         className="theme-transition"
@@ -921,12 +1291,12 @@ const NewExam = () => {
                           fontSize: "14px",
                         }}
                       >
-                        No questions added yet. Upload a PDF or add questions
+                        No questions added yet. Upload an Excel/CSV file or add questions
                         manually.
                       </div>
                     )}
 
-                  {!showQuestionEditor && !showPDFUploader && (
+                  {!showQuestionEditor && !showFileUploader && (
                     <div
                       style={{
                         display: "flex",
@@ -936,7 +1306,7 @@ const NewExam = () => {
                     >
                       <button
                         type="button"
-                        onClick={() => setShowPDFUploader(true)}
+                        onClick={() => setShowFileUploader(true)}
                         className="theme-transition"
                         style={{
                           padding: "12px 20px",
@@ -951,7 +1321,7 @@ const NewExam = () => {
                           transition: "all 0.2s ease",
                         }}
                       >
-                        📄 Upload PDF
+                        � Upload Excel/CSV
                       </button>
                       <button
                         type="button"

@@ -67,20 +67,36 @@ const MCQQuestionList: React.FC<MCQQuestionListProps> = ({
             }}
           >
             <div style={{ flex: 1 }}>
-              <div
-                className="theme-transition"
-                style={{
-                  display: "inline-block",
-                  padding: "4px 10px",
-                  borderRadius: "6px",
-                  background: "var(--accent-color)",
-                  color: "#fff",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  marginBottom: "12px",
-                }}
-              >
-                Question {qIndex + 1}
+              <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+                <div
+                  className="theme-transition"
+                  style={{
+                    display: "inline-block",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    background: "var(--accent-color)",
+                    color: "#fff",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                  }}
+                >
+                  Question {qIndex + 1}
+                </div>
+                <div
+                  className="theme-transition"
+                  style={{
+                    display: "inline-block",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    background: "var(--secondary-bg)",
+                    border: "1px solid var(--border-color)",
+                    color: "var(--text-primary)",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                  }}
+                >
+                  {question.marks || 1} {(question.marks || 1) === 1 ? 'mark' : 'marks'}
+                </div>
               </div>
               <LatexRenderer
                 content={question.question}

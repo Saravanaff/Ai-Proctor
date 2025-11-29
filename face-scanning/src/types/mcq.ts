@@ -14,6 +14,7 @@ export interface MCQQuestion {
   question: string;
   options: MCQOption[];
   correctOptionId: string;
+  marks?: number; // Optional marks field for each question
 }
 
 // Final format for API submission
