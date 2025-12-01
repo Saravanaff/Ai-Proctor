@@ -360,6 +360,15 @@
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .examCard {
   animation: slideIn 0.3s ease-out;
 }
@@ -373,4 +382,37 @@
 .button:focus {
   outline: 2px solid var(--accent-color);
   outline-offset: 2px;
+}
+
+/* List View Styles */
+.examListItem {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.examListItem:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 20px var(--shadow);
+  border-color: var(--accent-color);
+}
+
+.examListItem:active {
+  transform: translateX(2px);
+}
+
+/* Spin animation for loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

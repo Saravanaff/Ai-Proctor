@@ -8,16 +8,16 @@ interface ExamsGridProps {
   exams: Exam[];
   formatRange: (start?: string, end?: string) => string;
   onViewResults?: (exam: Exam) => void;
-  onStatusChange?: (examId: number, newStatus: string) => void;
   onDelete?: (examId: number) => void;
+  viewMode?: 'grid' | 'list';
 }
 
 const ExamsGrid: React.FC<ExamsGridProps> = ({
   exams,
   formatRange,
   onViewResults,
-  onStatusChange,
   onDelete,
+  viewMode = 'list',
 }) => {
   const router = useRouter();
   const [selectedExam, setSelectedExam] = useState<any>(null);
@@ -48,6 +48,203 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({
     setSelectedExam(null);
   };
 
+  if (viewMode === 'list') {
+    return (
+      <>
+        <div className={styles.examsList}>
+          {exams.map((exam) => (
+            <ExamCard
+              key={exam.id}
+              exam={exam}
+              formatRange={formatRange}
+              onViewDetails={handleViewDetails}
+              onEdit={handleEdit}
+              onManage={handleManageModal}
+              onViewResults={onViewResults}
+              onDelete={onDelete}
+              viewMode="list"
+            />
+          ))}
+        </div>
+
+        {/* Manage Modal */}
+        {showModal && selectedExam && (
+          <div
+            className={styles.modalOverlay}
+            onClick={closeModal}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+              backdropFilter: "blur(4px)",
+            }}
+          >
+            <div
+              className={styles.modalContent}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: "var(--card-bg)",
+                borderRadius: "16px",
+                padding: "32px",
+                maxWidth: "600px",
+                width: "90%",
+                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "24px",
+                }}
+              >
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "24px",
+                    fontWeight: "700",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  {selectedExam.exam_name || selectedExam.name || "Exam"}
+                </h2>
+                <button
+                  onClick={closeModal}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    fontSize: "24px",
+                    cursor: "pointer",
+                    color: "var(--text-secondary)",
+                    padding: "4px",
+                    borderRadius: "8px",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--secondary-bg)";
+                    e.currentTarget.style.color = "var(--text-primary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "120px 1fr",
+                    gap: "12px",
+                    marginBottom: "24px",
+                  }}
+                >
+                  <strong style={{ color: "var(--text-primary)" }}>
+                    Exam ID:
+                  </strong>
+                  <span>{selectedExam.id}</span>
+
+                  <strong style={{ color: "var(--text-primary)" }}>
+                    Access Key:
+                  </strong>
+                  <span
+                    style={{
+                      fontWeight: "600",
+                      color: "var(--accent-color)",
+                    }}
+                  >
+                    {selectedExam.key || selectedExam.exam_key}
+                  </span>
+
+                  <strong style={{ color: "var(--text-primary)" }}>
+                    Status:
+                  </strong>
+                  <span style={{ textTransform: "capitalize" }}>
+                    {selectedExam.status}
+                  </span>
+
+                  <strong style={{ color: "var(--text-primary)" }}>
+                    Participants:
+                  </strong>
+                  <span>{selectedExam.participants || 0}</span>
+
+                  <strong style={{ color: "var(--text-primary)" }}>
+                    Schedule:
+                  </strong>
+                  <span>
+                    {formatRange(
+                      selectedExam.startTime || selectedExam.start_time,
+                      selectedExam.endTime || selectedExam.end_time
+                    )}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    marginTop: "24px",
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      closeModal();
+                      handleViewDetails(selectedExam);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: "12px",
+                      background: "var(--accent-color)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    View Full Details
+                  </button>
+                  <button
+                    onClick={closeModal}
+                    style={{
+                      flex: 1,
+                      padding: "12px",
+                      background: "transparent",
+                      color: "var(--text-primary)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Grid view (existing implementation)
   // Helper functions for modal
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -91,7 +288,6 @@ const ExamsGrid: React.FC<ExamsGridProps> = ({
             onEdit={handleEdit}
             onManage={handleManageModal}
             onViewResults={onViewResults}
-            onStatusChange={onStatusChange}
             onDelete={onDelete}
           />
         ))}

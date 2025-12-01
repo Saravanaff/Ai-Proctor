@@ -10,8 +10,8 @@ interface Props {
   onEdit?: (exam: Exam) => void;
   onManage?: (exam: Exam) => void;
   onViewResults?: (exam: Exam) => void;
-  onStatusChange?: (examId: number, newStatus: string) => void;
   onDelete?: (examId: number) => void;
+  viewMode?: 'grid' | 'list';
 }
 
 const ExamCard: React.FC<Props> = ({
@@ -21,13 +21,14 @@ const ExamCard: React.FC<Props> = ({
   onEdit,
   onManage,
   onViewResults,
-  onStatusChange,
   onDelete,
+  viewMode = 'grid',
 }) => {
   const [copied, setCopied] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [showEditDetailsModal, setShowEditDetailsModal] = useState(false);
+  const [isLoadingExamDetails, setIsLoadingExamDetails] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: '',
     startTime: '',
@@ -138,56 +139,84 @@ const ExamCard: React.FC<Props> = ({
     }
   };
 
-  const openEditDetailsModal = () => {
-    // Format dates for datetime-local input
-    const formatForInput = (dateStr: string | undefined) => {
-      if (!dateStr) return '';
-      const date = new Date(dateStr);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
-    };
+  const openEditDetailsModal = async () => {
+    try {
+      setIsLoadingExamDetails(true);
+      // Fetch complete exam details from backend
+      const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const token = getTokenFromCookie();
+      
+      const response = await fetch(`${baseUrl}/exam/${exam.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch exam details');
+      }
+      
+      const data = await response.json();
+      const fullExam = data.exam;
+      
+      // Format dates for datetime-local input
+      const formatForInput = (dateStr: string | undefined) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      };
 
-    // Calculate duration if both times exist
-    let durationMins = 0;
-    if (startTime && endTime) {
-      const start = new Date(startTime);
-      const end = new Date(endTime);
-      durationMins = Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+      const examStartTime = fullExam.start_time || fullExam.startTime;
+      const examEndTime = fullExam.end_time || fullExam.endTime;
+
+      // Calculate duration if both times exist
+      let durationMins = 0;
+      if (examStartTime && examEndTime) {
+        const start = new Date(examStartTime);
+        const end = new Date(examEndTime);
+        durationMins = Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+      }
+
+      setEditFormData({
+        name: fullExam.exam_name || examName,
+        startTime: formatForInput(examStartTime),
+        endTime: formatForInput(examEndTime),
+        durationMinutes: durationMins > 0 ? durationMins : (fullExam.duration || 60),
+        // Normal Proctoring - use actual values from database
+        controlDesktopApps: fullExam.control_desktop_apps_enabled || false,
+        screenCountDetection: fullExam.screen_count_detection_enabled || false,
+        safeBrowser: fullExam.safe_browser_enabled || false,
+        tabSwitchDetection: fullExam.tab_switch_detection_enabled || false,
+        microphoneDetection: fullExam.microphone_detection_enabled || false,
+        normalProctoring: fullExam.normal_proctoring || false,
+        // AI Powered Proctoring - use actual values from database
+        thirdEye: fullExam.third_eye_enabled || false,
+        multiPerson: fullExam.multiple_person_detection_enabled || false,
+        eyeBall: fullExam.eyeball_detection_enabled || false,
+        objectDetect: fullExam.object_detection_enabled || false,
+        headDirection: fullExam.head_direction_enabled || false,
+        faceAuthentication: fullExam.face_authentication_enabled || false,
+        aiPoweredProctoring: fullExam.ai_powered_proctoring || false,
+        // Recorded Manual Proctoring - use actual values from database
+        flagNotifications: fullExam.flag_notifications_enabled || false,
+        videoRecording: fullExam.video_recording_enabled || false,
+        proctorFeedToTestTaker: fullExam.proctor_feed_to_test_taker_enabled || false,
+        screenSharing: fullExam.screen_sharing_enabled || false,
+        recordedManualProctoring: fullExam.recorded_manual_proctoring || false,
+      });
+      setUseDuration(false);
+      setShowEditDetailsModal(true);
+    } catch (error) {
+      console.error('Error fetching exam details:', error);
+      alert('Failed to load exam details. Please try again.');
+    } finally {
+      setIsLoadingExamDetails(false);
     }
-
-    setEditFormData({
-      name: examName,
-      startTime: formatForInput(startTime),
-      endTime: formatForInput(endTime),
-      durationMinutes: durationMins > 0 ? durationMins : ((exam as any).duration || 60),
-      // Normal Proctoring (map from snake_case backend fields)
-      controlDesktopApps: (exam as any).control_desktop_apps_enabled ?? false,
-      screenCountDetection: (exam as any).screen_count_detection_enabled ?? false,
-      safeBrowser: (exam as any).safe_browser_enabled ?? false,
-      tabSwitchDetection: (exam as any).tab_switch_detection_enabled ?? false,
-      microphoneDetection: (exam as any).microphone_detection_enabled ?? false,
-      normalProctoring: (exam as any).normal_proctoring ?? true,
-      // AI Powered Proctoring (map from snake_case backend fields)
-      thirdEye: (exam as any).third_eye_enabled ?? true,
-      multiPerson: (exam as any).multiple_person_detection_enabled ?? true,
-      eyeBall: (exam as any).eyeball_detection_enabled ?? true,
-      objectDetect: (exam as any).object_detection_enabled ?? true,
-      headDirection: (exam as any).head_direction_enabled ?? true,
-      faceAuthentication: (exam as any).face_authentication_enabled ?? true,
-      aiPoweredProctoring: (exam as any).ai_powered_proctoring ?? true,
-      // Recorded Manual Proctoring (map from snake_case backend fields)
-      flagNotifications: (exam as any).flag_notifications_enabled ?? true,
-      videoRecording: (exam as any).video_recording_enabled ?? true,
-      proctorFeedToTestTaker: (exam as any).proctor_feed_to_test_taker_enabled ?? true,
-      screenSharing: (exam as any).screen_sharing_enabled ?? true,
-      recordedManualProctoring: (exam as any).recorded_manual_proctoring ?? true,
-    });
-    setUseDuration(false);
-    setShowEditDetailsModal(true);
   };
 
   const handleSaveExamDetails = async () => {
@@ -501,9 +530,359 @@ const ExamCard: React.FC<Props> = ({
     );
   };
 
-  return (
-    <>
-      <div className={styles.examCard}>
+  // List View
+  const listView = (
+    <div 
+          className={styles.examListItem}
+          style={{
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            padding: '20px 24px',
+            marginBottom: '12px',
+            transition: 'all 0.3s ease',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '20px',
+            position: 'relative',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateX(4px)';
+            e.currentTarget.style.boxShadow = '0 4px 20px var(--shadow)';
+            e.currentTarget.style.borderColor = 'var(--accent-color)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateX(0)';
+            e.currentTarget.style.boxShadow = 'none';
+            e.currentTarget.style.borderColor = 'var(--border-color)';
+          }}
+        >
+          {/* Status Badge */}
+          <div
+            style={{
+              minWidth: '100px',
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            <span
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: '600',
+                textTransform: 'capitalize',
+                color: getStatusColor(displayStatus),
+                backgroundColor: getStatusBg(displayStatus),
+                border: `1px solid ${getStatusColor(displayStatus)}`,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {displayStatus}
+            </span>
+          </div>
+
+          {/* Exam Info */}
+          <div style={{ flex: 1, minWidth: '0' }}>
+            <h3
+              style={{
+                margin: '0 0 8px 0',
+                fontSize: '16px',
+                fontWeight: '700',
+                color: 'var(--text-primary)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {examName}
+            </h3>
+            <div
+              style={{
+                display: 'flex',
+                gap: '20px',
+                fontSize: '13px',
+                color: 'var(--text-secondary)',
+                flexWrap: 'wrap',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <strong style={{ color: 'var(--text-primary)' }}>Key:</strong>
+                <span style={{ fontFamily: 'monospace', fontWeight: '600', color: 'var(--accent-color)' }}>
+                  {examKey}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    copyToClipboard();
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '2px',
+                    color: 'var(--text-secondary)',
+                    fontSize: '14px',
+                  }}
+                  title={copied ? "Copied!" : "Copy exam key"}
+                >
+                  {copied ? "✓" : "📋"}
+                </button>
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                {participantCount} participants
+              </span>
+              {(startTime || endTime) && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  {formatRange(startTime, endTime)}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '8px',
+              flexShrink: 0,
+              alignItems: 'center',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {onViewDetails && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewDetails(exam);
+                }}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--secondary-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--accent-color)';
+                  e.currentTarget.style.color = 'white';
+                  e.currentTarget.style.borderColor = 'var(--accent-color)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--secondary-bg)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                }}
+                title="View exam details"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Details
+              </button>
+            )}
+
+            {onEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(exam);
+                }}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--secondary-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--primary-color)';
+                  e.currentTarget.style.color = 'white';
+                  e.currentTarget.style.borderColor = 'var(--primary-color)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--secondary-bg)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                }}
+                title="Edit questions"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit
+              </button>
+            )}
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openEditDetailsModal();
+              }}
+              disabled={isLoadingExamDetails}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                background: 'var(--secondary-bg)',
+                color: 'var(--text-primary)',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: isLoadingExamDetails ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                whiteSpace: 'nowrap',
+                opacity: isLoadingExamDetails ? 0.6 : 1,
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoadingExamDetails) {
+                  e.currentTarget.style.background = 'var(--info-color)';
+                  e.currentTarget.style.color = 'white';
+                  e.currentTarget.style.borderColor = 'var(--info-color)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isLoadingExamDetails) {
+                  e.currentTarget.style.background = 'var(--secondary-bg)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                }
+              }}
+              title="Edit exam settings"
+            >
+              {isLoadingExamDetails ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                  </svg>
+                  ...
+                </>
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m5.5-11.5l-4.2 4.2m0 4.6l4.2 4.2M23 12h-6m-6 0H5m11.5-5.5l-4.2 4.2m0 4.6l4.2 4.2"></path>
+                  </svg>
+                  Settings
+                </>
+              )}
+            </button>
+
+            {onViewResults && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewResults(exam);
+                }}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--secondary-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--success-color)';
+                  e.currentTarget.style.color = 'white';
+                  e.currentTarget.style.borderColor = 'var(--success-color)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--secondary-bg)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                }}
+                title="View exam results"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 3v18h18"></path>
+                  <path d="m19 9-5 5-4-4-5 5"></path>
+                </svg>
+                Results
+              </button>
+            )}
+
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(exam.id);
+                }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--secondary-bg)',
+                  color: 'var(--text-secondary)',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--error-bg)';
+                  e.currentTarget.style.color = 'var(--error-color)';
+                  e.currentTarget.style.borderColor = 'var(--error-color)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--secondary-bg)';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                }}
+                title="Delete exam"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+      );
+
+  // Grid View (existing card view)
+  const gridView = (
+    <div className={styles.examCard}>
         {/* Status Badge */}
         <div className={styles.statusContainer}>
           <span
@@ -686,19 +1065,39 @@ const ExamCard: React.FC<Props> = ({
               e.stopPropagation();
               openEditDetailsModal();
             }}
+            disabled={isLoadingExamDetails}
             title="Edit exam details (name, time, duration)"
+            style={{ opacity: isLoadingExamDetails ? 0.6 : 1 }}
           >
-            <svg
-              className={styles.buttonIcon}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            Edit Details
+            {isLoadingExamDetails ? (
+              <>
+                <svg
+                  className={styles.buttonIcon}
+                  style={{ animation: 'spin 1s linear infinite' }}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                </svg>
+                Loading...
+              </>
+            ) : (
+              <>
+                <svg
+                  className={styles.buttonIcon}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit Details
+              </>
+            )}
           </button>
 
           {onEdit && (
@@ -720,32 +1119,6 @@ const ExamCard: React.FC<Props> = ({
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
               </svg>
               Edit Questions
-            </button>
-          )}
-
-          {isSuspended && onStatusChange && (
-            <button
-              className={`${styles.button} ${styles.secondaryButton}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsReactivating(true);
-                onStatusChange(exam.id, "active");
-                setTimeout(() => setIsReactivating(false), 1000);
-              }}
-              disabled={isReactivating}
-            >
-              <svg
-                className={styles.buttonIcon}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M23 4v6h-6"></path>
-                <path d="M1 20v-6h6"></path>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-              </svg>
-              {isReactivating ? "Activating..." : "Reactivate"}
             </button>
           )}
 
@@ -798,6 +1171,12 @@ const ExamCard: React.FC<Props> = ({
           )}
         </div>
       </div>
+  );
+
+  // Render the appropriate view
+  return (
+    <>
+      {viewMode === 'list' ? listView : gridView}
 
       <StudentsModal />
 

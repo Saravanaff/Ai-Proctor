@@ -272,6 +272,7 @@ const CreateExam = () => {
             left: 0,
             top: 0,
             zIndex: 100,
+            overflowY: "auto",
           }}
         >
           {/* Logo/Brand */}
@@ -742,7 +743,6 @@ const CreateExam = () => {
                         .exam_name || exam.name,
                   });
                 }}
-                onStatusChange={handleStatusChange}
                 onDelete={handleDeleteExam}
               />
             )}
