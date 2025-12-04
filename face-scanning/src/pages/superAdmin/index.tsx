@@ -213,7 +213,75 @@ const SuperAdminDashboard = () => {
 
   return (
     <SuperAdminGuard>
-      <div style={{ display: "flex", minHeight: "100vh", background: "var(--background)" }}>
+      <style jsx global>{`
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.5;
+            transform: scale(1.2);
+          }
+        }
+        .sidebar-nav-button {
+          padding: 12px 16px;
+          background: transparent;
+          color: var(--text-secondary);
+          border: none;
+          border-radius: 10px;
+          text-align: left;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          position: relative;
+          transition: all 0.2s ease;
+        }
+        .sidebar-nav-button:hover {
+          background: var(--secondary-bg);
+          color: var(--text-primary);
+          padding-left: 20px;
+        }
+        .sidebar-nav-button.active {
+          background: var(--accent-color);
+          color: white;
+        }
+        .sidebar-logout-button {
+          width: 100%;
+          padding: 12px 16px;
+          background: transparent;
+          color: var(--text-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 10px;
+          text-align: left;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          transition: all 0.2s ease;
+        }
+        .sidebar-logout-button:hover {
+          background: var(--danger-bg);
+          color: var(--danger-color);
+          border-color: var(--danger-color);
+        }
+      `}</style>
+      <div style={{ display: "flex", minHeight: "100vh", background: "var(--background)", overflow: "hidden" }}>
         {/* Sidebar */}
         <aside
           style={{
@@ -230,12 +298,7 @@ const SuperAdminDashboard = () => {
             top: 0,
             zIndex: 100,
             overflowY: "auto",
-            willChange: "transform",
-            transform: "translateZ(0)",
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden",
-            perspective: 1000,
-            WebkitPerspective: 1000,
+            willChange: "contents",
           }}
         >
           {/* Logo/Brand */}
@@ -280,22 +343,7 @@ const SuperAdminDashboard = () => {
             <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               <button
                 onClick={() => router.push("/superAdmin")}
-                style={{
-                  padding: "12px 16px",
-                  background: "var(--accent-color)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "10px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
+                className="sidebar-nav-button active"
               >
                 <span style={{ flex: 1 }}>Dashboard</span>
                 <div
@@ -312,61 +360,13 @@ const SuperAdminDashboard = () => {
               </button>
               <button
                 onClick={() => router.push("/superAdmin/admins")}
-                style={{
-                  padding: "12px 16px",
-                  background: "transparent",
-                  color: "var(--text-secondary)",
-                  border: "none",
-                  borderRadius: "10px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  position: "relative",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--secondary-bg)";
-                  e.currentTarget.style.color = "var(--text-primary)";
-                  e.currentTarget.style.paddingLeft = "20px";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "var(--text-secondary)";
-                  e.currentTarget.style.paddingLeft = "16px";
-                }}
+                className="sidebar-nav-button"
               >
                 Admin Management
               </button>
               <button
                 onClick={() => router.push("/superAdmin/students")}
-                style={{
-                  padding: "12px 16px",
-                  background: "transparent",
-                  color: "var(--text-secondary)",
-                  border: "none",
-                  borderRadius: "10px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  position: "relative",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--secondary-bg)";
-                  e.currentTarget.style.color = "var(--text-primary)";
-                  e.currentTarget.style.paddingLeft = "20px";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "var(--text-secondary)";
-                  e.currentTarget.style.paddingLeft = "16px";
-                }}
+                className="sidebar-nav-button"
               >
                 Student Management
               </button>
@@ -377,31 +377,7 @@ const SuperAdminDashboard = () => {
           <div>
             <button
               onClick={handleLogout}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                background: "transparent",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border-color)",
-                borderRadius: "10px",
-                textAlign: "left",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--danger-bg)";
-                e.currentTarget.style.color = "var(--danger-color)";
-                e.currentTarget.style.borderColor = "var(--danger-color)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = "var(--text-secondary)";
-                e.currentTarget.style.borderColor = "var(--border-color)";
-              }}
+              className="sidebar-logout-button"
             >
               Logout
             </button>
@@ -409,19 +385,14 @@ const SuperAdminDashboard = () => {
         </aside>
 
         {/* Main Content */}
-        <div style={{ marginLeft: "260px", flex: 1, padding: "32px" }}>
-          <style jsx>{`
-            @keyframes slideIn {
-              from {
-                opacity: 0;
-                transform: translateX(-20px);
-              }
-              to {
-                opacity: 1;
-                transform: translateX(0);
-              }
-            }
-          `}</style>
+        <div style={{ 
+          marginLeft: "260px", 
+          flex: 1, 
+          padding: "32px",
+          height: "100vh",
+          overflowY: "auto",
+          overflowX: "hidden"
+        }}>
           {/* Modern Header */}
           <header style={{ marginBottom: "32px" }}>
             <div
@@ -1098,19 +1069,6 @@ const SuperAdminDashboard = () => {
               </>
             )}
           </div>
-
-          <style jsx>{`
-            @keyframes pulse {
-              0%, 100% {
-                opacity: 1;
-                transform: scale(1);
-              }
-              50% {
-                opacity: 0.5;
-                transform: scale(1.2);
-              }
-            }
-          `}</style>
 
           {/* Floating Theme Toggle */}
           <div
