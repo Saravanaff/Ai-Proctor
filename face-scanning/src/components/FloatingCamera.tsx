@@ -25,6 +25,8 @@ import {
 import { headPos } from "@/utils/aiModel/headPos";
 import { eye_direction } from "@/utils/aiModel/eyePos";
 import { detector } from "@/utils/aiModel/objDetector";
+import { loadFaceModel } from "@/lib/facemodel";
+import { getEmbeddings, clearEmbeddings } from "@/utils/datastore";
 
 const userId = getUserId() || "unknown";
 let examId = getExamId();
@@ -69,7 +71,7 @@ const waitForPendingFaceChunks = (pendingChunksRef: React.MutableRefObject<Set<n
         resolve();
       }
     }, 100); // Check every 100ms
-    
+
     // Safety timeout (10 seconds max)
     setTimeout(() => {
       if (pendingChunksRef.current.size > 0) {
@@ -122,6 +124,7 @@ const FloatingCamera = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
   const objectDetectorRef = useRef<ObjectDetector | null>(null);
+  const faceAuthRef = useRef<any | null>(null);
   const lastVideoTimeRef = useRef<number>(-1);
   const lastObjTimeRef = useRef<number>(-1);
   const endExamSentRef = useRef(false);
@@ -176,7 +179,7 @@ const FloatingCamera = ({
 
 
 
-  const NOTIFICATION_THROTTLE_MS = 2000; 
+  const NOTIFICATION_THROTTLE_MS = 2000;
   const CONTINUOUS_VIOLATION_THRESHOLD_MS = 2000; // ✅ Changed from 4 seconds to 2 seconds
 
 
@@ -261,10 +264,10 @@ const FloatingCamera = ({
 
   useEffect(() => {
     console.log(`📊 FloatingCamera: examSubmitted changed to: ${examSubmitted}`);
-    
+
     // ✅ Update ref immediately when examSubmitted changes
     examSubmittedRef.current = examSubmitted;
-    
+
     if (examSubmitted && !isStoppingRef.current) {
       isStoppingRef.current = true;
       console.log("🛑 Exam Submitted - Stopping all recordings");
@@ -448,12 +451,12 @@ const FloatingCamera = ({
             );
 
             // ✅ Conditionally load models based on exam settings
-            const shouldLoadFaceLandmarker = 
-              examSettings?.head_direction_enabled || 
+            const shouldLoadFaceLandmarker =
+              examSettings?.head_direction_enabled ||
               examSettings?.eyeball_detection_enabled;
-            
-            const shouldLoadObjectDetector = 
-              examSettings?.object_detection_enabled || 
+
+            const shouldLoadObjectDetector =
+              examSettings?.object_detection_enabled ||
               examSettings?.multiple_person_detection_enabled;
 
             const modelPromises: Promise<any>[] = [];
@@ -463,19 +466,19 @@ const FloatingCamera = ({
               modelPromises.push(
                 !faceLandmarkerRef.current
                   ? FaceLandmarker.createFromOptions(vision, {
-                      baseOptions: {
-                        modelAssetPath:
-                          "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-                        delegate: "GPU",
-                      },
-                      runningMode: "VIDEO",
-                      numFaces: 1,
-                      minFaceDetectionConfidence: 0.5,
-                      minFacePresenceConfidence: 0.5,
-                      minTrackingConfidence: 0.5,
-                      outputFaceBlendshapes: false,
-                      outputFacialTransformationMatrixes: false,
-                    })
+                    baseOptions: {
+                      modelAssetPath:
+                        "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+                      delegate: "GPU",
+                    },
+                    runningMode: "VIDEO",
+                    numFaces: 1,
+                    minFaceDetectionConfidence: 0.5,
+                    minFacePresenceConfidence: 0.5,
+                    minTrackingConfidence: 0.5,
+                    outputFaceBlendshapes: false,
+                    outputFacialTransformationMatrixes: false,
+                  })
                   : Promise.resolve(faceLandmarkerRef.current)
               );
             } else {
@@ -488,13 +491,13 @@ const FloatingCamera = ({
               modelPromises.push(
                 !objectDetectorRef.current
                   ? ObjectDetector.createFromOptions(vision, {
-                      baseOptions: {
-                        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite`,
-                      },
-                      scoreThreshold: 0.4,
-                      runningMode: "VIDEO",
-                      maxResults: 10,
-                    })
+                    baseOptions: {
+                      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite`,
+                    },
+                    scoreThreshold: 0.4,
+                    runningMode: "VIDEO",
+                    maxResults: 10,
+                  })
                   : Promise.resolve(objectDetectorRef.current)
               );
             } else {
@@ -503,6 +506,7 @@ const FloatingCamera = ({
             }
 
             const [faceLandmarker, objectDetector] = await Promise.all(modelPromises);
+            const faceAuth = await loadFaceModel();
 
             if (faceLandmarker && !faceLandmarkerRef.current) {
               faceLandmarkerRef.current = faceLandmarker;
@@ -511,6 +515,10 @@ const FloatingCamera = ({
             if (objectDetector && !objectDetectorRef.current) {
               objectDetectorRef.current = objectDetector;
               console.log("✅ MediaPipe Object Detector initialized");
+            }
+            if (faceAuth && !faceAuthRef.current) {
+              faceAuthRef.current = faceAuth;
+              console.log("✅ Face Authentication model initialized");
             }
 
             // ✅ Notify parent component that models are loaded
@@ -522,7 +530,7 @@ const FloatingCamera = ({
             console.error("❌ Failed to initialize Models:", error);
             objectDetectorRef.current = null;
             faceLandmarkerRef.current = null;
-            
+
             // ✅ Notify parent even on error so exam can proceed
             if (onModelsLoaded) {
               onModelsLoaded(false);
@@ -542,7 +550,7 @@ const FloatingCamera = ({
           mediaRecorderRef.current.ondataavailable = (e: any) => {
             if (e.data.size > 0) {
               const chunkNum = faceChunkCounterRef.current++;
-              
+
               // ✅ Track this chunk as pending (both internal and external refs)
               pendingFaceChunksRef.current.add(chunkNum);
               if (pendingChunksRef?.current) {
@@ -552,7 +560,7 @@ const FloatingCamera = ({
               e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
                 // ✅ Check if MediaRecorder is inactive (meaning this is likely the final chunk)
                 const isFinalChunk = mediaRecorderRef.current?.state === 'inactive';
-                
+
                 const chunkData: VideoChunkData = {
                   user_id: userId,
                   exam_id: examId,
@@ -566,13 +574,13 @@ const FloatingCamera = ({
                   totalChunks: isFinalChunk ? chunkNum + 1 : undefined,
                 };
                 socket.emit("recorder-add-video-stream-chunk", chunkData);
-                
+
                 if (isFinalChunk) {
                   console.log(`🏁 Sent FINAL face camera chunk #${chunkNum} (${buffer.byteLength} bytes)`);
                 } else {
                   console.log(`📹 Sent face camera chunk #${chunkNum} (${buffer.byteLength} bytes)`);
                 }
-                
+
                 // ✅ Remove from pending after successful emit (both refs)
                 pendingFaceChunksRef.current.delete(chunkNum);
                 if (pendingChunksRef?.current) {
@@ -602,11 +610,11 @@ const FloatingCamera = ({
               console.log(`⏳ Waiting for ${pendingFaceChunksRef.current.size} pending face chunks...`);
               await waitForPendingFaceChunks(pendingFaceChunksRef);
               console.log("✅ All face chunks sent!");
-              
+
               // ✅ Additional 500ms delay to ensure chunks are transmitted over network
               console.log("⏳ Additional 500ms network safety delay for face camera...");
               await new Promise(resolve => setTimeout(resolve, 500));
-              
+
               // ✅ NOW emit stream-listener-off AFTER all chunks are sent
               console.log("📤 Emitting stream-listener-off for face_camera");
               socket.emit("stream-listener-off", {
@@ -617,7 +625,7 @@ const FloatingCamera = ({
                 totalChunks: faceChunkCounterRef.current,
                 isFinal: true,
               });
-              
+
               console.log(`✅ Face camera recording complete - ${faceChunkCounterRef.current} chunks sent`);
             } else {
               console.warn("⚠️ Face camera stopped but examSubmittedRef.current is false - not emitting stream-listener-off");
@@ -683,6 +691,30 @@ const FloatingCamera = ({
 
                   const headPos = calculateHeadPosition(landmarks);
                   console.log(`📍 Head Position: ${headPos}`);
+
+                  const liveDetection = await faceAuthRef.current
+                    .detectSingleFace(videoRef.current, new faceAuthRef.current.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+                  const reference = getEmbeddings();
+                  console.log("Reference embeddings loaded:", reference ? reference.length : 0);
+
+                  let isAuth = false;
+                  if (liveDetection && reference && reference.length > 0) {
+                    for (let i = 0; i < reference.length; i++) {
+                      const refEmbedding = new Float32Array(reference[i]);
+                      console.log("refEmbedding:", refEmbedding);
+                      const labeledDescriptor = new faceAuthRef.current.LabeledFaceDescriptors("User", [refEmbedding,]);
+                      const matcher = new faceAuthRef.current.FaceMatcher(labeledDescriptor, 0.6);
+                      const bestMatch = matcher.findBestMatch(liveDetection.descriptor);
+                      if (bestMatch.label === "User") {
+                        isAuth = true;
+                        break;
+                      }
+                    }
+                  }
+                  console.log("Face Authentication : ", isAuth);
 
                   // ✅ NEW: Track continuous head position violation (only if enabled)
                   if (examSettings?.head_direction_enabled) {
@@ -987,7 +1019,7 @@ const FloatingCamera = ({
         if (mediaRecorderRef.current.state !== "inactive") {
           mediaRecorderRef.current.stop();
         }
-        
+
         // ✅ FIX: Set to null to prevent memory leaks
         mediaRecorderRef.current = null;
       }

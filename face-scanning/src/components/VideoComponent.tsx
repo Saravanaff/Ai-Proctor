@@ -27,6 +27,7 @@ import { headPos } from "@/utils/aiModel/headPos";
 import { eye_direction } from "@/utils/aiModel/eyePos";
 import { loadFaceModel } from "@/lib/facemodel"
 
+import { storeEmbedding } from "@/utils/datastore";
 interface CircleMetadata {
   x: number;
   y: number;
@@ -88,6 +89,8 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
   const faceLandmarkerRef = useRef<any | null>(null);
   const objectDetectorRef = useRef<any | null>(null);
   const faceRegRef = useRef<any | null>(null);
+  const embeddingsRef = useRef([]);
+
 
 
   // Centralized cleanup function
@@ -247,6 +250,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
         console.log("✅ Models ready (stored in refs)");
 
         const userId: string | null = getUserId();
+        const examId: string | null = getExamId();
         const onInterval = (
           video: HTMLVideoElement,
           userId: string | null,
@@ -335,28 +339,7 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 
         console.log("Loading reference image...");
 
-        let profilePhotoUrl = `${baseUrl}/uploads/profile_pics/${userId}.jpg`
 
-        if (!profilePhotoUrl) {
-          console.error("No profile photo URL available");
-          return;
-        }
-        console.log("Profile photo URL:", profilePhotoUrl);
-
-        const referenceImage = await faceRegRef.current.fetchImage(profilePhotoUrl);
-
-        const referenceDetection = await faceRegRef.current
-          .detectSingleFace(referenceImage, new faceRegRef.current.TinyFaceDetectorOptions())
-          .withFaceLandmarks()
-          .withFaceDescriptor();
-
-        if (!referenceDetection) {
-          console.error("No face found in reference image!");
-          return;
-        }
-
-        faceRegRef.current.referenceDescriptor = referenceDetection.descriptor;
-        console.log("✅ Reference face descriptor loaded");
 
         const detectFrame = async () => {
           if (!videoRef.current || !faceLandmarkerRef.current || !faceRegRef.current) return;
@@ -385,22 +368,11 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                   .withFaceLandmarks()
                   .withFaceDescriptor();
 
-                if (liveDetection && faceRegRef.current.referenceDescriptor) {
-                  const labeledDescriptor = new faceRegRef.current.LabeledFaceDescriptors("User", [
-                    faceRegRef.current.referenceDescriptor,
-                  ]);
-                  const matcher = new faceRegRef.current.FaceMatcher(labeledDescriptor, 0.6);
-                  const bestMatch = matcher.findBestMatch(liveDetection.descriptor);
 
-                  if (bestMatch.label === "User") {
-                    console.log("✅ Face matched with stored profile");
-                    match = true;
-                  } else {
-                    console.log("❌ Face not matched");
-                  }
-                } else {
-                  console.log("⚠️ No live face detected");
-                }
+
+
+
+
 
                 if (headPos !== "unknown") {
                   setFaceVisible(true);
@@ -409,8 +381,16 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                   setFaceVisible(false);
                 }
 
+                if (!liveDetection) {
+                  console.warn("❌ No face descriptor detected in this frame.");
+                  return;
+                }
+
                 if (headPos.toString().toLowerCase() ===
-                  faceDirectionSequence.current[stage.current] && match) {
+                  faceDirectionSequence.current[stage.current]) {
+                  const descriptor = Array.from(liveDetection.descriptor);
+                  embeddingsRef.current.push(descriptor);
+                  console.log(embeddingsRef.current);
                   setStoredFaceDirection((prev) => [
                     ...prev,
                     headPos.toString().toLowerCase(),
@@ -418,8 +398,10 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
                   stage.current++;
                   counter.current = 0;
 
-                  if (stage.current >= faceDirectionSequence.current.length && match) {
+                  if (stage.current >= faceDirectionSequence.current.length) {
                     console.log("Face direction sequence complete");
+                    console.log("Final embeddings:", embeddingsRef.current);
+                    storeEmbedding(embeddingsRef.current);
                     setIsComplete(true);
                     setShowOverlay(true);
                   }

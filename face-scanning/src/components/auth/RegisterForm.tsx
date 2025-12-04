@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import styles from "../../styles/RegisterForm.module.css";
@@ -17,8 +17,6 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
   const [dob, setDob] = useState("");
   const [reg, setReg] = useState("");
   const role = "student";
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,105 +24,8 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
-  const [showPhotoModal, setShowPhotoModal] = useState(false);
-  const [capturing, setCapturing] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [webcamError, setWebcamError] = useState("");
 
   const router = useRouter();
-
-  // Set higher resolution for webcam capture
-  const VIDEO_WIDTH = 480;
-  const VIDEO_HEIGHT = 640;
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-
-    if (!file) return;
-
-    if (!["image/jpeg", "image/png"].includes(file.type)) {
-      setError("Only JPG or PNG format is allowed.");
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      setError("Image size must be less than 2 MB.");
-      return;
-    }
-
-    setPhoto(file);
-    setPhotoPreview(URL.createObjectURL(file));
-    setError("");
-    setShowPhotoModal(false);
-  };
-
-  const openWebcam = async () => {
-    setWebcamError("");
-    setCapturing(true);
-    setShowPhotoModal(true);
-    // Stop any previous stream
-    if (videoRef.current && videoRef.current.srcObject) {
-      const oldStream = videoRef.current.srcObject as MediaStream;
-      oldStream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: VIDEO_WIDTH, height: VIDEO_HEIGHT },
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.width = VIDEO_WIDTH;
-        videoRef.current.height = VIDEO_HEIGHT;
-        videoRef.current.play();
-      }
-    } catch (err) {
-      setWebcamError("Unable to access webcam.");
-      setCapturing(false);
-    }
-  };
-
-  const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const context = canvasRef.current.getContext("2d");
-      if (context) {
-        // Set canvas size to match video
-        canvasRef.current.width = VIDEO_WIDTH;
-        canvasRef.current.height = VIDEO_HEIGHT;
-        context.drawImage(videoRef.current, 0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
-        canvasRef.current.toBlob(
-          (blob) => {
-            if (blob) {
-              const file = new File(
-                [blob],
-                "webcam-photo.jpg",
-                { type: "image/jpeg" }
-              );
-              setPhoto(file);
-              setPhotoPreview(URL.createObjectURL(file));
-              setShowPhotoModal(false);
-              // Stop webcam
-              const stream = videoRef.current?.srcObject as MediaStream;
-              stream?.getTracks().forEach((track) => track.stop());
-            }
-          },
-          "image/jpeg"
-        );
-      }
-    }
-  };
-
-  const closePhotoModal = () => {
-    setShowPhotoModal(false);
-    setCapturing(false);
-    setWebcamError("");
-    // Stop webcam if open
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-    }
-  };
 
   const validatePassword = () => {
     const passwordChecks = {
@@ -151,10 +52,6 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
       // Validate all required fields
       if (!name || !email || !password || !dept || !dob || !reg) {
         throw new Error("Please fill in all required fields.");
-      }
-
-      if (role === "student" && !photo) {
-        throw new Error("Photo is required for students.");
       }
 
       if (!validatePassword()) {
@@ -251,10 +148,6 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
       payload.append("dob", dob);
       payload.append("reg", reg);
 
-      if (role === "student" && photo) {
-        payload.append("photo", photo);
-      }
-
       const config = {
         headers: { "Content-Type": "multipart/form-data" },
         withCredentials: false,
@@ -309,31 +202,6 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
 
   return (
     <div className={styles.container}>
-      {/* Photo Modal */}
-      {showPhotoModal && (
-        <div className={styles.photoModalOverlay}>
-          <div className={styles.photoModal}>
-            <button className={styles.photoModalClose} onClick={closePhotoModal}>&times;</button>
-            {!capturing ? (
-              <>
-                <h3>Select Photo Option</h3>
-                <button className={styles.photoModalBtn} onClick={openWebcam} type="button">Capture from Webcam</button>
-              </>
-            ) : (
-              <div style={{ textAlign: 'center' }}>
-                <h4>Webcam Capture</h4>
-                {webcamError && <div className={styles.error}>{webcamError}</div>}
-                <video ref={videoRef} width={VIDEO_WIDTH} height={VIDEO_HEIGHT} style={{ borderRadius: 8, background: '#222', maxWidth: '100%', maxHeight: '60vh' }} />
-                <div style={{ margin: '10px 0' }}>
-                  <button type="button" className={styles.photoModalBtn} onClick={capturePhoto}>Capture</button>
-                  <button type="button" className={styles.photoModalBtn} onClick={closePhotoModal}>Cancel</button>
-                </div>
-                <canvas ref={canvasRef} width={VIDEO_WIDTH} height={VIDEO_HEIGHT} style={{ display: 'none' }} />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       <div className={styles.content}>
         <div className={styles.header}>
           <div className={styles.logo}>
@@ -372,45 +240,6 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
               }}
               className={styles.form}
             >
-              {/* Photo Upload for Students (always student) */}
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>Upload Formal Photo</label>
-                <div className={styles.photoUpload}>
-                  <div className={styles.photoFrame}>
-                    {photoPreview ? (
-                      <img
-                        src={photoPreview}
-                        alt="Preview"
-                        className={styles.photoPreview}
-                      />
-                    ) : (
-                      <div className={styles.photoPlaceholder}>
-                        <svg
-                          width="40"
-                          height="40"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <rect x="3" y="3" width="18" height="18" rx="2" />
-                          <circle cx="8.5" cy="8.5" r="1.5" />
-                          <path d="M21 15l-5-5L5 21" />
-                        </svg>
-                        <span>No Photo</span>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.photoUploadButton}
-                    onClick={openWebcam}
-                  >
-                    <span>Capture Photo</span>
-                  </button>
-                  <p className={styles.photoHint}>JPG or PNG, max 2MB</p>
-                </div>
-              </div>
               {/* Name */}
               <div className={styles.inputGroup}>
                 <label className={styles.label}>Full Name</label>

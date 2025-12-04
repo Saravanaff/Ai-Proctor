@@ -48,8 +48,8 @@ async function startServer() {
   });
   app.use("/uploads", express.static(path.join(process.cwd(), "..", "uploads")));
   app.use("/", authRoutes);
-  app.use("/otp", otpRoutes); 
-  app.use("/api/video", videoRoutes); 
+  app.use("/otp", otpRoutes);
+  app.use("/api/video", videoRoutes);
   app.use(authMiddleware);
   app.use("/", superAdminRoutes);
   app.use("/", examRoutes);
