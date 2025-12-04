@@ -874,83 +874,141 @@ const NewExam = () => {
             backdropFilter: "blur(12px)",
             WebkitBackdropFilter: "blur(12px)",
             borderBottom: "1px solid var(--border-color)",
-            padding: "16px 32px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+            padding: "0 32px",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-            <button
-              onClick={() => router.push("/examiner/CreateExamPage")}
-              className="theme-transition"
-              style={{
-                background: "var(--secondary-bg)",
-                border: "1px solid var(--border-color)",
-                borderRadius: "10px",
-                padding: "10px 16px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                cursor: "pointer",
-                color: "var(--text-primary)",
-                fontSize: "14px",
-                fontWeight: 500,
-                transition: "all 0.2s ease",
-              }}
-            >
-              <span>←</span> Back
-            </button>
-            <div>
-              <h1
+          <div
+            style={{
+              maxWidth: "1400px",
+              margin: "0 auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              height: "72px",
+              padding: "0 16px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+              <button
+                onClick={() => router.push("/examiner/CreateExamPage")}
                 className="theme-transition"
                 style={{
-                  fontSize: "24px",
-                  fontWeight: 700,
-                  color: "var(--text-primary)",
-                  margin: 0,
-                  marginBottom: "4px",
-                }}
-              >
-                Create New Exam - Step {currentStep} of 2
-              </h1>
-              <p
-                className="theme-transition"
-                style={{
-                  fontSize: "13px",
+                  background: "transparent",
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "8px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  cursor: "pointer",
                   color: "var(--text-secondary)",
-                  margin: 0,
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.background = "var(--secondary-bg)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.background = "transparent";
                 }}
               >
-                {currentStep === 1 && "Setup exam name and questions"}
-                {currentStep === 2 &&
-                  `Configure exam settings • ${
-                    mcqQuestions.length
-                  } questions • ${getEnabledFeaturesCount()} features enabled`}
-              </p>
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            {/* Step Indicator */}
-            <div style={{ display: "flex", gap: "8px", marginRight: "16px" }}>
-              {[1, 2].map((step) => (
-                <div
-                  key={step}
+                <ArrowLeft size={18} /> Back
+              </button>
+              
+              <div style={{ height: "32px", width: "1px", background: "var(--border-color)" }} />
+              
+              <div>
+                <h1
+                  className="theme-transition"
                   style={{
-                    width: currentStep === step ? "32px" : "10px",
-                    height: "10px",
-                    borderRadius: "5px",
-                    background:
-                      currentStep >= step
-                        ? "var(--accent-color)"
-                        : "var(--border-color)",
-                    transition: "all 0.3s ease",
+                    fontSize: "20px",
+                    fontWeight: 700,
+                    color: "var(--text-primary)",
+                    margin: 0,
+                    letterSpacing: "-0.02em",
                   }}
-                />
-              ))}
+                >
+                  Create New Exam
+                </h1>
+              </div>
             </div>
-            <ThemeToggle />
+
+            <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+              {/* Enhanced Step Indicator */}
+              <div 
+                style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "8px",
+                  background: "var(--secondary-bg)",
+                  padding: "6px 16px",
+                  borderRadius: "100px",
+                }}
+              >
+                {[
+                  { step: 1, label: "Details" },
+                  { step: 2, label: "Settings" },
+                ].map(({ step, label }, index) => (
+                  <React.Fragment key={step}>
+                    {index > 0 && (
+                      <div
+                        style={{
+                          width: "24px",
+                          height: "2px",
+                          background: currentStep >= step ? "var(--accent-color)" : "var(--border-color)",
+                          transition: "all 0.3s ease",
+                        }}
+                      />
+                    )}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        padding: "4px 8px",
+                        borderRadius: "100px",
+                        background: currentStep === step ? "var(--accent-color)" : "transparent",
+                        transition: "all 0.3s ease",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "22px",
+                          height: "22px",
+                          borderRadius: "50%",
+                          background: currentStep >= step 
+                            ? currentStep === step ? "white" : "var(--accent-color)"
+                            : "var(--border-color)",
+                          color: currentStep === step ? "var(--accent-color)" : currentStep > step ? "white" : "var(--text-tertiary)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        {currentStep > step ? <Check size={12} /> : step}
+                      </div>
+                      <span
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: 600,
+                          color: currentStep === step ? "white" : "var(--text-secondary)",
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        {label}
+                      </span>
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+              <ThemeToggle />
+            </div>
           </div>
         </header>
 
@@ -2520,7 +2578,7 @@ const NewExam = () => {
                   }}
                 >
                   <button
-                    onClick={handleBackToSettings}
+                    onClick={handleBackToQuestions}
                     className={`${styles.btn} ${styles.btnGhost} theme-transition`}
                     style={{
                       padding: "14px 28px",
@@ -2537,11 +2595,10 @@ const NewExam = () => {
                       transition: "all 0.2s ease",
                     }}
                   >
-                    ← Back to Settings
+                    ← Back to Questions
                   </button>
                   <button
                     onClick={handleFinalSubmit}
-                    disabled={students.length === 0}
                     className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
                     style={{
                       flex: 1,
