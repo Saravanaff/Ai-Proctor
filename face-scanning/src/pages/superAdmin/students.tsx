@@ -159,20 +159,12 @@ export default function StudentsManagement() {
             {/* Logo */}
             <div className={styles.logoSection}>
               <div className={styles.logoIcon}>
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M12 2L2 7V11C2 16.55 6.84 21.74 12 23C17.16 21.74 22 16.55 22 11V7L12 2Z"
-                    fill="currentColor"
-                  />
-                </svg>
+                SA
               </div>
-              <span className={styles.logoText}>AI Proctor</span>
+              <div>
+                <div className={styles.logoText}>Super Admin</div>
+                <div className={styles.logoSubtext}>Admin Portal</div>
+              </div>
             </div>
 
             {/* Navigation */}
