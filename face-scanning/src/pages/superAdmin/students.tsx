@@ -229,16 +229,63 @@ export default function StudentsManagement() {
 
         {/* Main Content */}
         <main className={styles.mainContent}>
-          {/* Header */}
-          <header className={styles.header}>
-            <div>
-              <h1 className={styles.pageTitle}>Student Management</h1>
-              <p className={styles.pageSubtitle}>
-                View and manage all registered students
-              </p>
-            </div>
-            <div className={styles.headerActions}>
-              <ThemeToggle />
+          {/* Modern Header */}
+          <header style={{ marginBottom: "32px" }}>
+            <div
+              style={{
+                background: "linear-gradient(135deg, var(--card-bg), var(--secondary-bg))",
+                borderRadius: "24px",
+                padding: "32px",
+                border: "1px solid var(--border-color)",
+                boxShadow: "0 8px 32px var(--shadow)",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "5px",
+                  background: "linear-gradient(90deg, var(--accent-color), var(--primary-color))",
+                }}
+              />
+              
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                  <div
+                    style={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "16px",
+                      background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "28px",
+                      fontWeight: "700",
+                      color: "white",
+                      boxShadow: "0 8px 24px rgba(14, 165, 233, 0.4)",
+                    }}
+                  >
+                    SA
+                  </div>
+                  <div>
+                    <h1 style={{ margin: "0 0 8px 0", fontSize: "28px", fontWeight: "700", color: "var(--text-primary)" }}>
+                      Student Management
+                    </h1>
+                    <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "14px" }}>
+                      View and manage all registered students
+                    </p>
+                  </div>
+                </div>
+                
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <ThemeToggle />
+                </div>
+              </div>
             </div>
           </header>
 
