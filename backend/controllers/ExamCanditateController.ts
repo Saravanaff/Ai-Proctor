@@ -456,3 +456,81 @@ export const getUserAnswersByAdmin = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const markExamExit = async (req: Request, res: Response) => {
+  try {
+    const { userId, examId, endTime, exitType } = req.body;
+
+    console.log("🚪 Marking exam exit:", {
+      userId,
+      examId,
+      endTime,
+      exitType,
+    });
+
+    if (!userId || !examId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId and examId are required",
+      });
+    }
+
+    // Find the attendance record
+    const attendance = await Attend.findOne({
+      where: {
+        user_id: Number(userId),
+        exam_id: Number(examId),
+      },
+    });
+
+    if (!attendance) {
+      console.log("⚠️ No attendance record found for user:", userId, "exam:", examId);
+      return res.status(404).json({
+        success: false,
+        message: "Attendance record not found",
+      });
+    }
+
+    // Only update if endTime is not already set (prevent overwriting legitimate submission)
+    if (!attendance.endTime) {
+      attendance.endTime = endTime ? new Date(endTime) : new Date();
+      await attendance.save();
+
+      console.log("✅ Exam exit marked successfully:", {
+        userId,
+        examId,
+        endTime: attendance.endTime,
+        exitType,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Exam exit time marked successfully",
+        data: {
+          userId,
+          examId,
+          endTime: attendance.endTime,
+          exitType,
+        },
+      });
+    } else {
+      console.log("ℹ️ End time already set, skipping update");
+      return res.status(200).json({
+        success: true,
+        message: "End time already recorded",
+        data: {
+          userId,
+          examId,
+          endTime: attendance.endTime,
+        },
+      });
+    }
+  } catch (err: any) {
+    console.error("❌ Error marking exam exit:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Error marking exam exit",
+      error: err.message,
+    });
+  }
+};

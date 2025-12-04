@@ -323,6 +323,79 @@ const ExamPage = ({
     }
   };
 
+  // ✅ Track when user exits exam (browser close, tab close, navigation away)
+  useEffect(() => {
+    const handleExamExit = async () => {
+      // Only track exit if exam has started and not yet submitted
+      if (!examStarted || examSubmitted) return;
+
+      const exitTime = new Date();
+      console.log("🚪 User exiting exam - marking end time:", exitTime);
+
+      try {
+        // ✅ Use sendBeacon for reliable delivery even during page unload
+        const exitData = JSON.stringify({
+          userId: Number(userId),
+          examId: Number(examId),
+          endTime: exitTime.toISOString(),
+          exitType: "unexpected_exit",
+        });
+
+        const beaconSent = navigator.sendBeacon(
+          `${baseUrl}/markExamExit`,
+          new Blob([exitData], { type: "application/json" })
+        );
+
+        if (beaconSent) {
+          console.log("✅ Exam exit beacon sent successfully");
+        } else {
+          console.warn("⚠️ Beacon failed, trying synchronous request");
+          // Fallback to synchronous AJAX if beacon fails
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", `${baseUrl}/markExamExit`, false); // synchronous
+          xhr.setRequestHeader("Content-Type", "application/json");
+          xhr.setRequestHeader("Authorization", `Bearer ${getTokenFromCookie()}`);
+          xhr.send(exitData);
+        }
+
+        // Also emit socket event as backup
+        socket.emit("exam-unexpected-exit", {
+          user_id: userId,
+          exam_id: examId,
+          exit_time: exitTime,
+          timestamp: exitTime,
+        });
+      } catch (error) {
+        console.error("❌ Failed to mark exam exit:", error);
+      }
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      handleExamExit();
+      // Show confirmation dialog
+      e.preventDefault();
+      e.returnValue = ""; // Chrome requires returnValue to be set
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && examStarted && !examSubmitted) {
+        console.log("⚠️ User switched tab/minimized browser");
+        handleExamExit();
+      }
+    };
+
+    // Listen for page unload events
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("unload", handleExamExit);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("unload", handleExamExit);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [examStarted, examSubmitted, userId, examId, baseUrl]);
+
   useEffect(() => {
     try {
       const preventActions: any = (e: any) => {
