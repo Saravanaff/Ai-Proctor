@@ -150,6 +150,26 @@ export function initSocket(server: HttpServer) {
       
     });
 
+    // ✅ Handle unexpected exam exits (browser close, refresh, navigation)
+    socket.on("exam-unexpected-exit", async(data: any) => {
+      console.log("🚪 EXAM-UNEXPECTED-EXIT received from frontend:", {
+        user_id: data.user_id,
+        exam_id: data.exam_id,
+        exit_time: data.exit_time,
+        timestamp: data.timestamp
+      });
+      
+      // Call the unexpected-exit handler if exported; otherwise fallback to the end handler or warn.
+      if ((examSession as any)?.handleExamUnexpectedExit) {
+        await (examSession as any).handleExamUnexpectedExit(data);
+      } else if (typeof (examSession as any)?.handleExamEnd === "function") {
+        console.warn("handleExamUnexpectedExit not found; falling back to handleExamEnd");
+        await (examSession as any).handleExamEnd(data);
+      } else {
+        console.warn("No handler available for exam unexpected exit:", data);
+      }
+    });
+
     socket.on("stream-listener-off",async(data)=>{
       console.log("⏹️ Received stream-listener-off from frontend:", {
         user_id: data.user_id,

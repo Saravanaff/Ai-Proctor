@@ -13,10 +13,12 @@ import {
 import {
   getExamSettings,
   saveUserAnswers,
+  markExamExit,
 } from "../controllers/ExamCanditateController";
 import {
   requireExaminerRole,
   requireStudentRole,
+  requireExaminerOrHeadRole,
 } from "../middleware/roleMiddleware";
 import {
   getQuestionsByExam,
@@ -27,7 +29,7 @@ import authMiddleware from "../middleware/authMiddleware";
 
 const router = Router();
 
-router.get("/exam", authMiddleware, requireExaminerRole, getExam);
+router.get("/exam", authMiddleware, requireExaminerOrHeadRole, getExam);
 router.get("/getExamSettings", getExamSettings);
 router.get("/exam/:examId", requireExaminerRole, getSingleExam);
 router.post("/examCreate", requireExaminerRole, createExam);
@@ -43,6 +45,9 @@ router.put(
 );
 
 router.post("/saveUserAnswers", requireStudentRole, saveUserAnswers);
+
+// ✅ Mark exam exit when user leaves unexpectedly (no auth required for beacon/unload events)
+router.post("/markExamExit", markExamExit);
 
 router.get("/exam/:examId/results", getExamResults);
 router.get("/exam/:examId/student/:userId/answers", getStudentAnswers);

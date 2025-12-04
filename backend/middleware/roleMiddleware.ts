@@ -53,3 +53,4 @@ export const requireRole = (allowedRoles: string | string[]) => {
 export const requireExaminerRole = requireRole('examiner');
 export const requireAdminRole = requireRole('head');
 export const requireStudentRole = requireRole('student');
+export const requireExaminerOrHeadRole = requireRole(['examiner', 'head', 'HEAD']);
