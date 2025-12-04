@@ -8,6 +8,7 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import LatexRenderer from "../../components/exam/LatexRenderer";
 import { ExaminerGuard } from "@/components/guards";
 import * as XLSX from 'xlsx';
+import { AlertTriangle, PenLine, Monitor, HelpCircle, Bot, Video, FileSpreadsheet } from "lucide-react";
 
 const NewExam = () => {
   const router = useRouter();
@@ -444,7 +445,7 @@ const NewExam = () => {
     masterEnabled?: boolean;
     onMasterToggle?: () => void;
     children: React.ReactNode;
-    icon: string;
+    icon: React.ReactNode;
   }) => (
     <div
       className="theme-transition"
@@ -1013,7 +1014,7 @@ const NewExam = () => {
                 <CollapsibleSection
                   title="MCQ Questions"
                   subtitle={`Add multiple choice questions (${mcqQuestions.length} questions added)`}
-                  icon="❓"
+                  icon={<HelpCircle size={24} color="var(--accent-color)" />}
                   isOpen={mcqSectionOpen}
                   onToggle={() => setMcqSectionOpen(!mcqSectionOpen)}
                 >
@@ -1035,9 +1036,12 @@ const NewExam = () => {
                             fontSize: "16px",
                             fontWeight: 600,
                             color: "var(--text-primary)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
                           }}
                         >
-                          📊 Upload Excel/CSV File
+                          <FileSpreadsheet size={18} /> Upload Excel/CSV File
                         </h4>
                         <p
                           style={{
@@ -1160,9 +1164,12 @@ const NewExam = () => {
                               color: "#c33",
                               fontSize: "13px",
                               marginBottom: "16px",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
                             }}
                           >
-                            ⚠️ {uploadError}
+                            <AlertTriangle size={16} /> {uploadError}
                           </div>
                         )}
 
@@ -1338,9 +1345,13 @@ const NewExam = () => {
                           cursor: "pointer",
                           flex: 1,
                           transition: "all 0.2s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
                         }}
                       >
-                        ✍️ Add Manually
+                        <PenLine size={16} /> Add Manually
                       </button>
                     </div>
                   )}
@@ -1397,7 +1408,7 @@ const NewExam = () => {
                 <CollapsibleSection
                   title="Normal Proctoring"
                   subtitle="Basic monitoring and browser control features"
-                  icon="🖥️"
+                  icon={<Monitor size={24} color="var(--accent-color)" />}
                   isOpen={normalProctoringOpen}
                   onToggle={() =>
                     setNormalProctoringOpen(!normalProctoringOpen)
@@ -1450,7 +1461,7 @@ const NewExam = () => {
                 <CollapsibleSection
                   title="AI Powered Proctoring"
                   subtitle="Advanced AI-based monitoring and detection"
-                  icon="🤖"
+                  icon={<Bot size={24} color="var(--accent-color)" />}
                   isOpen={aiProctoringOpen}
                   onToggle={() => setAiProctoringOpen(!aiProctoringOpen)}
                   masterToggle
@@ -1507,7 +1518,7 @@ const NewExam = () => {
                 <CollapsibleSection
                   title="Recorded Manual Proctoring"
                   subtitle="Recording and manual review capabilities"
-                  icon="📹"
+                  icon={<Video size={24} color="var(--accent-color)" />}
                   isOpen={manualProctoringOpen}
                   onToggle={() =>
                     setManualProctoringOpen(!manualProctoringOpen)

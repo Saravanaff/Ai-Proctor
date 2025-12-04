@@ -5,6 +5,7 @@ import LoadingIndicator from "../../components/LoadingIndicator";
 import styles from "../../styles/ExamDetailsPage.module.css";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { ExaminerGuard } from "@/components/guards";
+import { BarChart3 } from "lucide-react";
 interface User {
   id: number;
   name: string;
@@ -742,7 +743,7 @@ const ExamDetailsPage: React.FC = () => {
             </div>
           ) : (
             <div style={{ textAlign: "center", padding: "40px 20px", color: "#065F46" }}>
-              <div style={{ fontSize: "48px", marginBottom: "12px" }}>📊</div>
+              <div style={{ fontSize: "48px", marginBottom: "12px", display: "flex", justifyContent: "center" }}><BarChart3 size={48} /></div>
               <p style={{ margin: 0, fontSize: "14px", fontWeight: "700" }}>No data yet</p>
             </div>
           )}
@@ -852,7 +853,7 @@ const ExamDetailsPage: React.FC = () => {
             </div>
           ) : (
             <div style={{ textAlign: "center", padding: "40px 20px", color: "#92400E" }}>
-              <div style={{ fontSize: "48px", marginBottom: "12px" }}>📊</div>
+              <div style={{ fontSize: "48px", marginBottom: "12px", display: "flex", justifyContent: "center" }}><BarChart3 size={48} /></div>
               <p style={{ margin: 0, fontSize: "14px", fontWeight: "700" }}>No data yet</p>
             </div>
           )}
@@ -962,7 +963,7 @@ const ExamDetailsPage: React.FC = () => {
             </div>
           ) : (
             <div style={{ textAlign: "center", padding: "40px 20px", color: "#7F1D1D" }}>
-              <div style={{ fontSize: "48px", marginBottom: "12px" }}>📊</div>
+              <div style={{ fontSize: "48px", marginBottom: "12px", display: "flex", justifyContent: "center" }}><BarChart3 size={48} /></div>
               <p style={{ margin: 0, fontSize: "14px", fontWeight: "700" }}>No data yet</p>
             </div>
           )}

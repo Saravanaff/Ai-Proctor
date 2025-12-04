@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Exam } from "../../types/exam";
 import styles from "./ExamCard.module.css";
 import { getTokenFromCookie } from "../../constants/AuthStore";
+import { Copy, Check, Pencil, Clock, Monitor } from "lucide-react";
 
 interface Props {
   exam: Exam;
@@ -627,7 +628,7 @@ const ExamCard: React.FC<Props> = ({
                   }}
                   title={copied ? "Copied!" : "Copy exam key"}
                 >
-                  {copied ? "✓" : "📋"}
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
                 </button>
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -925,7 +926,7 @@ const ExamCard: React.FC<Props> = ({
                 }}
                 title={copied ? "Copied!" : "Copy exam key"}
               >
-                {copied ? "✓" : "📋"}
+                {copied ? <Check size={12} /> : <Copy size={12} />}
               </button>
             </div>
           </div>
@@ -1229,9 +1230,12 @@ const ExamCard: React.FC<Props> = ({
                     color: "var(--text-primary)",
                     fontSize: "20px",
                     fontWeight: "700",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
                   }}
                 >
-                  ✏️ Edit Exam Details
+                  <Pencil size={20} /> Edit Exam Details
                 </h3>
                 <p
                   style={{
@@ -1369,9 +1373,12 @@ const ExamCard: React.FC<Props> = ({
                         color: useDuration ? "white" : "var(--text-secondary)",
                         cursor: isSavingDetails ? "not-allowed" : "pointer",
                         transition: "all 0.2s",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
                       }}
                     >
-                      ⏱️ Duration
+                      <Clock size={14} /> Duration
                     </button>
                   </div>
                 </div>
@@ -1694,7 +1701,7 @@ const ExamCard: React.FC<Props> = ({
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <span style={{ fontSize: "20px" }}>🖥️</span>
+                        <Monitor size={20} color="var(--accent-color)" />
                         <div>
                           <div
                             style={{

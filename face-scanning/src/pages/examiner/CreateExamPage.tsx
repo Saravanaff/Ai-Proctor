@@ -10,6 +10,7 @@ import { ExaminerGuard } from "../../components/guards";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { useRouter } from "next/router";
+import { LayoutDashboard, Plus } from "lucide-react";
 
 const CreateExam = () => {
   const router = useRouter();
@@ -346,7 +347,7 @@ const CreateExam = () => {
                   overflow: "hidden",
                 }}
               >
-                <span style={{ fontSize: "18px" }}>📊</span>
+                <LayoutDashboard size={18} />
                 <span style={{ flex: 1 }}>Dashboard</span>
                 <div
                   style={{
@@ -389,7 +390,7 @@ const CreateExam = () => {
                   e.currentTarget.style.paddingLeft = "16px";
                 }}
               >
-                <span style={{ fontSize: "18px" }}>➕</span>
+                <Plus size={18} />
                 New Exam
               </button>
             </nav>
@@ -723,8 +724,9 @@ const CreateExam = () => {
                     <button
                       onClick={() => router.push("/examiner/NewExam")}
                       className={`${styles.btn} ${styles.btnPrimary}`}
+                      style={{ display: "flex", alignItems: "center", gap: "8px" }}
                     >
-                      ➕ Create Exam
+                      <Plus size={16} /> Create Exam
                     </button>
                   )}
                 </div>

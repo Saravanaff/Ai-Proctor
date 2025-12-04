@@ -9,6 +9,7 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { ExaminerGuard } from "@/components/guards";
+import { Plus, FileText } from "lucide-react";
 
 const EditExamQuestions = () => {
   const router = useRouter();
@@ -318,9 +319,9 @@ const EditExamQuestions = () => {
                   setShowQuestionEditor(true);
                 }}
                 className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
-                style={{ fontSize: "14px", padding: "8px 16px" }}
+                style={{ fontSize: "14px", padding: "8px 16px", display: "flex", alignItems: "center", gap: "6px" }}
               >
-                ➕ Add Question
+                <Plus size={16} /> Add Question
               </button>
             </div>
           </div>
@@ -334,7 +335,7 @@ const EditExamQuestions = () => {
                 color: "var(--text-secondary)",
               }}
             >
-              <div style={{ fontSize: "48px", marginBottom: "16px" }}>📝</div>
+              <div style={{ fontSize: "48px", marginBottom: "16px", display: "flex", justifyContent: "center" }}><FileText size={48} /></div>
               <h3
                 className="theme-transition"
                 style={{
