@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import styles from "../../styles/CreateExamPage.module.css";
+import styles from "../../styles/SuperAdminPage.module.css";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { SuperAdminGuard } from "../../components/guards";
 import axios from "axios";
@@ -37,6 +37,12 @@ const SuperAdminDashboard = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importResults, setImportResults] = useState<any>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const adminsPerPage = 10;
 
   axios.interceptors.request.use((config) => {
     const token = getTokenFromCookie();
@@ -50,7 +56,7 @@ const SuperAdminDashboard = () => {
   const fetchAdmins = async () => {
     try {
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const res = await axios.get(`${base}/admin/emails`);
+      const res = await axios.get(`${base}/admin/emails?page=${currentPage}&limit=${adminsPerPage}`);
       if (res.data?.success) {
         const adminsWithStatus = res.data.data.admins.map((admin: Admin) => ({
           ...admin,
@@ -58,6 +64,8 @@ const SuperAdminDashboard = () => {
           status: admin.isActive === false ? "Suspended" : "Active",
         }));
         setAdmins(adminsWithStatus);
+        setTotalPages(res.data.data.totalPages || 1);
+        setTotalCount(res.data.data.totalCount || 0);
       }
     } catch (e) {
       console.error(e);
@@ -68,7 +76,7 @@ const SuperAdminDashboard = () => {
 
   useEffect(() => {
     fetchAdmins();
-  }, []);
+  }, [currentPage]);
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,236 +234,84 @@ const SuperAdminDashboard = () => {
 
   return (
     <SuperAdminGuard>
-      <div style={{ display: "flex", minHeight: "100vh", background: "var(--background)" }}>
+      <div className={styles.dashboardContainer}>
         {/* Sidebar */}
-        <aside
-          style={{
-            width: "260px",
-            background: "var(--card-bg)",
-            borderRight: "1px solid var(--border-color)",
-            padding: "24px 16px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            position: "fixed",
-            height: "100vh",
-            left: 0,
-            top: 0,
-            zIndex: 100,
-            overflowY: "auto",
-            willChange: "transform",
-            transform: "translateZ(0)",
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden",
-            perspective: 1000,
-            WebkitPerspective: 1000,
-          }}
-        >
-          {/* Logo/Brand */}
+        <aside className={styles.sidebar}>
           <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                marginBottom: "32px",
-                padding: "0 8px",
-              }}
-            >
-              <div
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "12px",
-                  background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "20px",
-                  fontWeight: "700",
-                  color: "white",
-                  boxShadow: "0 4px 12px rgba(14, 165, 233, 0.3)",
-                }}
-              >
+            {/* Logo */}
+            <div className={styles.logoSection}>
+              <div className={styles.logoIcon}>
                 SA
               </div>
               <div>
-                <div style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-primary)" }}>
-                  Super Admin
-                </div>
-                <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                  Admin Portal
-                </div>
+                <div className={styles.logoText}>Super Admin</div>
+                <div className={styles.logoSubtext}>Admin Portal</div>
               </div>
             </div>
 
             {/* Navigation */}
-            <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <nav className={styles.nav}>
               <button
                 onClick={() => router.push("/superAdmin")}
-                style={{
-                  padding: "12px 16px",
-                  background: "transparent",
-                  color: "var(--text-secondary)",
-                  border: "none",
-                  borderRadius: "10px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  position: "relative",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--secondary-bg)";
-                  e.currentTarget.style.color = "var(--text-primary)";
-                  e.currentTarget.style.paddingLeft = "20px";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "var(--text-secondary)";
-                  e.currentTarget.style.paddingLeft = "16px";
-                }}
+                className={styles.navButton}
               >
                 Dashboard
               </button>
               <button
                 onClick={() => router.push("/superAdmin/admins")}
-                style={{
-                  padding: "12px 16px",
-                  background: "var(--accent-color)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "10px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
+                className={`${styles.navButton} ${styles.active}`}
               >
-                <span style={{ flex: 1 }}>Admin Management</span>
-                <div
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: "4px",
-                    background: "white",
-                    borderRadius: "10px 0 0 10px",
-                  }}
-                />
+                Admin Management
               </button>
               <button
                 onClick={() => router.push("/superAdmin/students")}
-                style={{
-                  padding: "12px 16px",
-                  background: "transparent",
-                  color: "var(--text-secondary)",
-                  border: "none",
-                  borderRadius: "10px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  position: "relative",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--secondary-bg)";
-                  e.currentTarget.style.color = "var(--text-primary)";
-                  e.currentTarget.style.paddingLeft = "20px";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "var(--text-secondary)";
-                  e.currentTarget.style.paddingLeft = "16px";
-                }}
+                className={styles.navButton}
               >
                 Student Management
               </button>
             </nav>
           </div>
 
-          {/* Logout at bottom */}
+          {/* Logout Button */}
           <div>
-            <button
-              onClick={handleLogout}
-              style={{
-                width: "100%",
-                padding: "12px 16px",
-                background: "transparent",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border-color)",
-                borderRadius: "10px",
-                textAlign: "left",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--danger-bg)";
-                e.currentTarget.style.color = "var(--danger-color)";
-                e.currentTarget.style.borderColor = "var(--danger-color)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = "var(--text-secondary)";
-                e.currentTarget.style.borderColor = "var(--border-color)";
-              }}
-            >
+            <button onClick={handleLogout} className={styles.logoutButton}>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M7.5 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M13.3333 14.1667L17.5 10L13.3333 5.83334"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M17.5 10H7.5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
               Logout
             </button>
           </div>
         </aside>
 
         {/* Main Content */}
-        <div style={{ marginLeft: "260px", flex: 1, padding: "32px" }}>
-          <style jsx>{`
-            @keyframes slideIn {
-              from {
-                opacity: 0;
-                transform: translateX(-20px);
-              }
-              to {
-                opacity: 1;
-                transform: translateX(0);
-              }
-            }
-            
-            @keyframes modalFadeIn {
-              from {
-                opacity: 0;
-              }
-              to {
-                opacity: 1;
-              }
-            }
-            
-            @keyframes modalSlideUp {
-              from {
-                opacity: 0;
-                transform: translateY(30px) scale(0.95);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-              }
-            }
-          `}</style>
-      {/* Modern Header */}
+        <main className={styles.mainContent}>
+          {/* Modern Header */}
       <header style={{ marginBottom: "32px" }}>
         <div
           style={{
@@ -900,6 +756,50 @@ const SuperAdminDashboard = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      
+      {/* Pagination Controls */}
+      {!loading && filtered.length > 0 && (
+        <div className={styles.paginationSection}>
+          <div className={styles.paginationInfo}>
+            Showing {((currentPage - 1) * adminsPerPage) + 1} to {Math.min(currentPage * adminsPerPage, totalCount)} of {totalCount} admins
+          </div>
+          <div className={styles.paginationControls}>
+            <button
+              className={styles.paginationButton}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              style={{ opacity: currentPage === 1 ? 0.5 : 1, cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+            >
+              Previous
+            </button>
+            
+            <div className={styles.pageNumbers}>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  className={`${styles.pageNumber} ${currentPage === page ? styles.activePage : ''}`}
+                  onClick={() => setCurrentPage(page)}
+                  style={{
+                    background: currentPage === page ? 'var(--primary-color)' : 'var(--card-bg)',
+                    color: currentPage === page ? '#fff' : 'var(--text-color)',
+                  }}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              className={styles.paginationButton}
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              style={{ opacity: currentPage === totalPages ? 0.5 : 1, cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
 
@@ -1548,7 +1448,7 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
             <ThemeToggle />
           </div>
         </div>
-        </div>
+        </main>
       </div>
     </SuperAdminGuard>
   );

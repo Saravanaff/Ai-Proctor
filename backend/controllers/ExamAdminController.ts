@@ -9,6 +9,8 @@ import { UserAnswer } from "../models/UserAnswer";
 import { ViolationLog } from "../models/ViolationLog";
 import { Scores } from "../models/Scores";
 import { getUserIdFromToken } from "../utils/jwt";
+import bcrypt from "bcrypt";
+import { sendStudentExamInvitationEmail } from "../utils/emailService";
 
 export const createExam = async (req: Request, res: Response) => {
   try {
@@ -121,7 +123,11 @@ export const createExam = async (req: Request, res: Response) => {
     res.status(201).json({
       success: true,
       message: "Exam Created Successfully",
-      key: nextKey,
+      exam: {
+        id: newExam.id,
+        exam_name: newExam.exam_name,
+        key: nextKey,
+      },
     });
   } catch (err: any) {
     console.error("Error creating exam:", err);
@@ -742,3 +748,160 @@ export const updateExamStatus = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const inviteStudentsToExam = async (req: Request, res: Response) => {
+  try {
+    console.log("📨 Received student invitation request");
+    const { examId, students } = req.body;
+    const user_id = getUserIdFromToken(req);
+
+    // Validation
+    if (!examId || !students || !Array.isArray(students) || students.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Exam ID and students array are required",
+      });
+    }
+
+    // Verify exam exists and belongs to the user
+    const exam = await Exam.findOne({
+      where: { id: examId, user_id },
+    });
+
+    if (!exam) {
+      return res.status(404).json({
+        success: false,
+        message: "Exam not found or you don't have permission",
+      });
+    }
+
+    const results = {
+      success: [] as any[],
+      errors: [] as any[],
+      emailsFailed: [] as any[],
+    };
+
+    // Process each student
+    for (const student of students) {
+      try {
+        const { email, password, name } = student;
+
+        if (!email || !password) {
+          results.errors.push({
+            email,
+            error: "Email and password are required",
+          });
+          continue;
+        }
+
+        // Check if user already exists
+        let user = await User.findOne({
+          where: { email: email.toLowerCase() },
+        });
+
+        let isNewUser = false;
+
+        if (!user) {
+          // Create new student account
+          const hashedPassword = await bcrypt.hash(password, 10);
+          
+          user = await User.create({
+            name: name || email.split('@')[0], // Use email prefix if name not provided
+            email: email.toLowerCase(),
+            password: hashedPassword,
+            role: "student",
+            dept: "N/A", // Default values since they're required
+            dob: "2000-01-01",
+            reg: email.toLowerCase(), // Use email as reg number
+          } as any);
+
+          isNewUser = true;
+          console.log(`✅ Created new student account: ${email}`);
+        } else {
+          console.log(`ℹ️  Student account already exists: ${email}`);
+        }
+
+        // Send invitation email
+        try {
+          await sendStudentExamInvitationEmail(
+            email,
+            user.name,
+            email,
+            password, // Send the plain password (only in email, stored hashed)
+            exam.exam_name,
+            exam.key.toString(),
+            exam.start_time.toString(),
+            exam.end_time.toString(),
+            exam.duration
+          );
+
+          results.success.push({
+            email,
+            name: user.name,
+            isNewUser,
+            emailSent: true,
+          });
+
+          console.log(`✅ Invitation email sent to: ${email}`);
+        } catch (emailError: any) {
+          console.error(`⚠️  Failed to send email to ${email}:`, emailError.message);
+          
+          results.success.push({
+            email,
+            name: user.name,
+            isNewUser,
+            emailSent: false,
+          });
+
+          results.emailsFailed.push({
+            email,
+            error: emailError.message,
+          });
+        }
+
+      } catch (studentError: any) {
+        console.error(`❌ Error processing student ${student.email}:`, studentError.message);
+        results.errors.push({
+          email: student.email,
+          error: studentError.message,
+        });
+      }
+    }
+
+    // Prepare response
+    const response: any = {
+      success: true,
+      message: `Processed ${students.length} students`,
+      results: {
+        total: students.length,
+        successful: results.success.length,
+        failed: results.errors.length,
+        emailsFailed: results.emailsFailed.length,
+      },
+      details: results,
+    };
+
+    // If all failed, return error status
+    if (results.success.length === 0) {
+      response.success = false;
+      response.message = "Failed to invite any students";
+      return res.status(400).json(response);
+    }
+
+    // If some failed, return partial success
+    if (results.errors.length > 0 || results.emailsFailed.length > 0) {
+      response.message = `Partially successful: ${results.success.length} invited, ${results.errors.length} failed, ${results.emailsFailed.length} emails failed`;
+    }
+
+    return res.status(200).json(response);
+
+  } catch (err: any) {
+    console.error("❌ Error inviting students:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Error inviting students to exam",
+      error: err.message,
+    });
+  }
+};
+

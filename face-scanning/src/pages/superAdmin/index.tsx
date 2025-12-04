@@ -6,6 +6,7 @@ import { SuperAdminGuard } from "../../components/guards";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { Users, GraduationCap, FileText, CheckCircle, Plus } from "lucide-react";
+import { useDashboardStats } from "@/hooks/useSuperAdmin";
 
 interface DashboardStats {
   totalAdmins: number;
@@ -16,13 +17,9 @@ interface DashboardStats {
 
 const SuperAdminDashboard = () => {
   const router = useRouter();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalAdmins: 0,
-    activeAdmins: 0,
-    totalStudents: 0,
-    totalExams: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  
+  // Use SWR hook for cached data fetching
+  const { stats, isLoading, refresh } = useDashboardStats();
 
   axios.interceptors.request.use((config) => {
     const token = getTokenFromCookie();
@@ -32,51 +29,6 @@ const SuperAdminDashboard = () => {
     }
     return config;
   });
-
-  const fetchDashboardStats = async () => {
-    try {
-      const base = process.env.NEXT_PUBLIC_BACKEND_URL;
-      
-      // Fetch admins
-      const adminsRes = await axios.get(`${base}/admin/emails`);
-      const admins = adminsRes.data?.data?.admins || [];
-      
-      // Fetch students
-      const studentsRes = await axios.get(`${base}/admin/students`);
-      const students = studentsRes.data?.data?.students || [];
-      
-      // Fetch examiners to count their exams
-      const examinersRes = await axios.get(`${base}/examiner/emails`);
-      const examiners = examinersRes.data?.data?.examiners || [];
-      
-      // Fetch exams for each examiner and count total
-      let totalExams = 0;
-      for (const examiner of examiners) {
-        try {
-          const examsRes = await axios.get(`${base}/admin/${examiner.email}/exams`);
-          const exams = examsRes.data?.data?.exams || [];
-          totalExams += exams.length;
-        } catch (err) {
-          console.error(`Error fetching exams for ${examiner.email}:`, err);
-        }
-      }
-      
-      setStats({
-        totalAdmins: admins.length,
-        activeAdmins: admins.filter((a: any) => a.isActive !== false).length,
-        totalStudents: students.length,
-        totalExams: totalExams,
-      });
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDashboardStats();
-  }, []);
 
   const handleLogout = () => {
     document.cookie = "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
@@ -397,10 +349,10 @@ const SuperAdminDashboard = () => {
                   Total Admins
                 </p>
                 <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "var(--text-primary)" }}>
-                  {loading ? "..." : stats.totalAdmins}
+                  {isLoading ? "..." : stats?.totalAdmins || 0}
                 </h3>
                 <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "var(--success-color)" }}>
-                  {stats.activeAdmins} Active
+                  {stats?.activeAdmins || 0} Active
                 </p>
               </div>
             </div>
@@ -445,7 +397,7 @@ const SuperAdminDashboard = () => {
                   Total Students
                 </p>
                 <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "var(--text-primary)" }}>
-                  {loading ? "..." : stats.totalStudents}
+                  {isLoading ? "..." : stats?.totalStudents || 0}
                 </h3>
                 <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
                   Across all exams
@@ -493,7 +445,7 @@ const SuperAdminDashboard = () => {
                   Total Exams
                 </p>
                 <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "var(--text-primary)" }}>
-                  {loading ? "..." : stats.totalExams}
+                  {isLoading ? "..." : stats?.totalExams || 0}
                 </h3>
                 <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
                   All time
@@ -541,7 +493,7 @@ const SuperAdminDashboard = () => {
                   Active Admins
                 </p>
                 <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "var(--text-primary)" }}>
-                  {loading ? "..." : stats.activeAdmins}
+                  {isLoading ? "..." : stats?.activeAdmins || 0}
                 </h3>
                 <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "var(--success-color)" }}>
                   Currently online

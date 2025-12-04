@@ -9,11 +9,15 @@ import {
   bulkCreateAdmins,
   getAllStudents,
   getStudentExams,
+  getDashboardStats,
 } from "../controllers/SuperController";
 import { requireAdminRole } from "../middleware/roleMiddleware";
 import authMiddleware from "../middleware/authMiddleware";
 
 const router = Router();
+
+// Get dashboard statistics (optimized single query)
+router.get("/dashboard/stats", getDashboardStats);
 
 // Get all admin emails
 router.get("/admin/emails", getAdminEmails);

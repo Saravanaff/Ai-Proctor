@@ -7,7 +7,6 @@ import styles from "../../styles/ParticipantDetailsPage.module.css";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import VideoPlayer from "../../components/VideoPlayer";
 import { ExaminerGuard } from "@/components/guards";
-import { Play, Square } from "lucide-react";
 
 const PDF_CONSTANTS = {
   SUPER_PROCTOR_FEED: 0,
@@ -1763,12 +1762,9 @@ const ParticipantDetailsPage: React.FC = () => {
                             fontSize: "16px",
                             width: "24px",
                             textAlign: "center",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
                           }}
                         >
-                          <Play size={16} color="#10b981" />
+                          ▶️
                         </span>
                         <div>
                           <div
@@ -1855,12 +1851,9 @@ const ParticipantDetailsPage: React.FC = () => {
                             fontSize: "16px",
                             width: "24px",
                             textAlign: "center",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
                           }}
                         >
-                          <Square size={16} color="#ef4444" />
+                          ⏹️
                         </span>
                         <div>
                           <div

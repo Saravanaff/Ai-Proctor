@@ -43,6 +43,12 @@ export default function StudentsManagement() {
   const [studentExams, setStudentExams] = useState<ExamAttendance[]>([]);
   const [showExamsModal, setShowExamsModal] = useState(false);
   const [loadingExams, setLoadingExams] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const studentsPerPage = 10;
 
   axios.interceptors.request.use((config) => {
     const token = getTokenFromCookie();
@@ -58,7 +64,7 @@ export default function StudentsManagement() {
 
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     filterStudents();
@@ -68,10 +74,12 @@ export default function StudentsManagement() {
     try {
       setLoading(true);
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const response = await axios.get(`${base}/admin/students`);
+      const response = await axios.get(`${base}/admin/students?page=${currentPage}&limit=${studentsPerPage}`);
       
       if (response.data.success) {
         setStudents(response.data.data.students || []);
+        setTotalPages(response.data.data.totalPages || 1);
+        setTotalCount(response.data.data.totalCount || 0);
       }
     } catch (error) {
       console.error("Failed to fetch students:", error);
@@ -498,6 +506,50 @@ export default function StudentsManagement() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+            
+            {/* Pagination Controls */}
+            {!loading && filteredStudents.length > 0 && (
+              <div className={styles.paginationSection}>
+                <div className={styles.paginationInfo}>
+                  Showing {((currentPage - 1) * studentsPerPage) + 1} to {Math.min(currentPage * studentsPerPage, totalCount)} of {totalCount} students
+                </div>
+                <div className={styles.paginationControls}>
+                  <button
+                    className={styles.paginationButton}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    style={{ opacity: currentPage === 1 ? 0.5 : 1, cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+                  >
+                    Previous
+                  </button>
+                  
+                  <div className={styles.pageNumbers}>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        className={`${styles.pageNumber} ${currentPage === page ? styles.activePage : ''}`}
+                        onClick={() => setCurrentPage(page)}
+                        style={{
+                          background: currentPage === page ? 'var(--primary-color)' : 'var(--card-bg)',
+                          color: currentPage === page ? '#fff' : 'var(--text-color)',
+                        }}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <button
+                    className={styles.paginationButton}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    style={{ opacity: currentPage === totalPages ? 0.5 : 1, cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             )}
           </div>

@@ -91,11 +91,74 @@ const ExamPreview = () => {
         questions: formattedQuestions,
       };
 
+      // Create the exam
       const res = await axios.post(`${base}/examCreate`, payload, {
         headers: {
           Authorization: `Bearer ${getTokenFromCookie()}`,
         },
       });
+
+      console.log("✅ Exam created successfully:", res.data);
+
+      // If students were added, invite them
+      if (examData.students && Array.isArray(examData.students) && examData.students.length > 0) {
+        try {
+          const examId = res.data.exam?.id;
+          if (!examId) {
+            console.error("❌ No exam ID in response");
+            alert("Exam created but could not invite students: No exam ID returned");
+          } else {
+            console.log(`📧 Inviting ${examData.students.length} students to exam ${examId}...`);
+            
+            const inviteRes = await axios.post(
+              `${base}/exam/${examId}/invite-students`,
+              {
+                examId,
+                students: examData.students,
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${getTokenFromCookie()}`,
+                },
+              }
+            );
+
+            console.log("✅ Student invitation response:", inviteRes.data);
+
+            // Show detailed results
+            if (inviteRes.data.success) {
+              const { results, details } = inviteRes.data;
+              let message = `Exam created successfully!\n\n`;
+              message += `Students invited: ${results.successful}/${results.total}\n`;
+              
+              if (results.failed > 0) {
+                message += `Failed: ${results.failed}\n`;
+              }
+              
+              if (results.emailsFailed > 0) {
+                message += `\nEmail delivery failed for ${results.emailsFailed} student(s). Accounts were created but emails could not be sent.`;
+              }
+
+              if (details.emailsFailed.length > 0) {
+                message += `\n\nEmails failed for: ${details.emailsFailed.map((e: any) => e.email).join(', ')}`;
+              }
+
+              alert(message);
+            } else {
+              alert("Exam created but failed to invite students. Please check the console for details.");
+            }
+          }
+        } catch (inviteError: any) {
+          console.error("❌ Error inviting students:", inviteError);
+          alert(
+            `Exam created successfully but failed to invite students:\n${
+              inviteError?.response?.data?.message || inviteError.message
+            }`
+          );
+        }
+      } else {
+        alert("Exam created successfully!");
+      }
 
       // Clear session storage
       sessionStorage.removeItem("examPreviewData");

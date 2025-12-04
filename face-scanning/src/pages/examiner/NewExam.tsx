@@ -8,11 +8,17 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import LatexRenderer from "../../components/exam/LatexRenderer";
 import { ExaminerGuard } from "@/components/guards";
 import * as XLSX from 'xlsx';
-import { AlertTriangle, PenLine, Monitor, HelpCircle, Bot, Video, FileSpreadsheet } from "lucide-react";
+import { AlertTriangle, PenLine, Monitor, HelpCircle, Bot, Video, FileSpreadsheet, Users, Mail } from "lucide-react";
+
+interface Student {
+  email: string;
+  password: string;
+  name?: string;
+}
 
 const NewExam = () => {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1); // 1: Name & Questions, 2: Settings
+  const [currentStep, setCurrentStep] = useState(1); // 1: Name & Questions, 2: Settings, 3: Students
   const [examName, setExamName] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -23,6 +29,15 @@ const NewExam = () => {
   const [aiProctoringOpen, setAiProctoringOpen] = useState(true);
   const [manualProctoringOpen, setManualProctoringOpen] = useState(true);
   const [mcqSectionOpen, setMcqSectionOpen] = useState(true);
+  const [studentsSectionOpen, setStudentsSectionOpen] = useState(true);
+
+  // Students state
+  const [students, setStudents] = useState<Student[]>([]);
+  const [showStudentForm, setShowStudentForm] = useState(false);
+  const [newStudentEmail, setNewStudentEmail] = useState("");
+  const [newStudentPassword, setNewStudentPassword] = useState("");
+  const [newStudentName, setNewStudentName] = useState("");
+  const [studentUploadError, setStudentUploadError] = useState("");
 
   // Proctoring feature toggles (defaults ON)
   const [thirdEye, setThirdEye] = useState(true);
@@ -83,6 +98,7 @@ const NewExam = () => {
         setRecordedManualProctoring(data.recordedManualProctoring ?? true);
         setFaceAuthentication(data.faceAuthentication ?? true);
         setMcqQuestions(data.mcqQuestions || []);
+        setStudents(data.students || []);
 
         // Always start on step 1 (questions page)
         setCurrentStep(1);
@@ -91,6 +107,134 @@ const NewExam = () => {
       }
     }
   }, []);
+
+  // Student management handlers
+  const handleAddStudent = () => {
+    if (!newStudentEmail.trim() || !newStudentPassword.trim()) {
+      setStudentUploadError("Email and password are required");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newStudentEmail)) {
+      setStudentUploadError("Invalid email format");
+      return;
+    }
+
+    if (students.some(s => s.email === newStudentEmail)) {
+      setStudentUploadError("Student with this email already added");
+      return;
+    }
+
+    setStudents(prev => [...prev, {
+      email: newStudentEmail.trim(),
+      password: newStudentPassword.trim(),
+      name: newStudentName.trim() || undefined
+    }]);
+
+    setNewStudentEmail("");
+    setNewStudentPassword("");
+    setNewStudentName("");
+    setStudentUploadError("");
+    setShowStudentForm(false);
+  };
+
+  const handleDeleteStudent = (email: string) => {
+    setStudents(prev => prev.filter(s => s.email !== email));
+  };
+
+  const handleStudentFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    if (fileExtension !== 'xlsx' && fileExtension !== 'xls' && fileExtension !== 'csv') {
+      setStudentUploadError('Please upload a valid Excel (.xlsx, .xls) or CSV file');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        if (jsonData.length === 0) {
+          setStudentUploadError('No data found in file');
+          return;
+        }
+
+        const extractedStudents: Student[] = [];
+        
+        jsonData.forEach((row, index) => {
+          const email = row['Email'] || row['email'];
+          const password = row['Password'] || row['password'];
+          const name = row['Name'] || row['name'];
+
+          if (!email || !password) {
+            console.warn(`Row ${index + 2}: Missing email or password`);
+            return;
+          }
+
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+            console.warn(`Row ${index + 2}: Invalid email format`);
+            return;
+          }
+
+          extractedStudents.push({
+            email: email.trim(),
+            password: password.trim(),
+            name: name?.trim()
+          });
+        });
+
+        if (extractedStudents.length === 0) {
+          setStudentUploadError('No valid students found. Please check the format.');
+          return;
+        }
+
+        setStudents(prev => [...prev, ...extractedStudents]);
+        setStudentUploadError('');
+        event.target.value = '';
+      } catch (error) {
+        console.error('Error parsing file:', error);
+        setStudentUploadError('Error parsing file. Please check the format.');
+      }
+    };
+
+    reader.readAsBinaryString(file);
+  };
+
+  const downloadStudentsTemplate = () => {
+    const sampleData = [
+      {
+        'Email': 'student1@example.com',
+        'Password': 'password123',
+        'Name': 'John Doe'
+      },
+      {
+        'Email': 'student2@example.com',
+        'Password': 'password456',
+        'Name': 'Jane Smith'
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+    
+    worksheet['!cols'] = [
+      { wch: 30 }, // Email
+      { wch: 15 }, // Password
+      { wch: 25 }  // Name
+    ];
+
+    XLSX.writeFile(workbook, 'students_template.xlsx');
+  };
 
   // Handler for AI Proctoring toggle that controls related features
   const handleAiProctoringToggle = () => {
@@ -323,6 +467,15 @@ const NewExam = () => {
     setCurrentStep(1);
   };
 
+  const handleSettingsToStudents = () => {
+    // Move to step 3 (Students)
+    setCurrentStep(3);
+  };
+
+  const handleBackToSettings = () => {
+    setCurrentStep(2);
+  };
+
   const handleFinalSubmit = () => {
     sessionStorage.setItem(
       "examPreviewData",
@@ -350,6 +503,7 @@ const NewExam = () => {
         recordedManualProctoring,
         faceAuthentication,
         mcqQuestions,
+        students,
       })
     );
     router.push("/examiner/ExamPreview");
@@ -648,7 +802,7 @@ const NewExam = () => {
                   marginBottom: "4px",
                 }}
               >
-                Create New Exam - Step {currentStep} of 2
+                Create New Exam - Step {currentStep} of 3
               </h1>
               <p
                 className="theme-transition"
@@ -663,13 +817,15 @@ const NewExam = () => {
                   `Configure exam settings • ${
                     mcqQuestions.length
                   } questions • ${getEnabledFeaturesCount()} features enabled`}
+                {currentStep === 3 &&
+                  `Add students to this exam • ${students.length} students added`}
               </p>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             {/* Step Indicator */}
             <div style={{ display: "flex", gap: "8px", marginRight: "16px" }}>
-              {[1, 2].map((step) => (
+              {[1, 2, 3].map((step) => (
                 <div
                   key={step}
                   style={{
@@ -1584,7 +1740,7 @@ const NewExam = () => {
                     ← Back to Questions
                   </button>
                   <button
-                    onClick={handleFinalSubmit}
+                    onClick={handleSettingsToStudents}
                     className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
                     style={{
                       padding: "10px 20px",
@@ -1592,6 +1748,462 @@ const NewExam = () => {
                       fontSize: "14px",
                       fontWeight: 600,
                       cursor: "pointer",
+                    }}
+                  >
+                    Next: Add Students →
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 3: Add Students */}
+            {currentStep === 3 && (
+              <>
+                {/* Students Section */}
+                <CollapsibleSection
+                  title="Add Students"
+                  subtitle={`Invite students to this exam (${students.length} students added)`}
+                  icon={<Users size={24} color="var(--accent-color)" />}
+                  isOpen={studentsSectionOpen}
+                  onToggle={() => setStudentsSectionOpen(!studentsSectionOpen)}
+                >
+                  {/* Student Form */}
+                  {showStudentForm && (
+                    <div
+                      className="theme-transition"
+                      style={{
+                        padding: "24px",
+                        background: "var(--secondary-bg)",
+                        borderRadius: "12px",
+                        border: "2px solid var(--border-color)",
+                        marginBottom: "16px",
+                      }}
+                    >
+                      <h4
+                        style={{
+                          margin: "0 0 16px 0",
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        Add Student Manually
+                      </h4>
+
+                      {studentUploadError && (
+                        <div
+                          style={{
+                            padding: "12px",
+                            background: "#fee",
+                            border: "1px solid #fcc",
+                            borderRadius: "8px",
+                            color: "#c33",
+                            fontSize: "13px",
+                            marginBottom: "16px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <AlertTriangle size={16} /> {studentUploadError}
+                        </div>
+                      )}
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "8px",
+                              fontSize: "14px",
+                              fontWeight: 500,
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Student Name (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={newStudentName}
+                            onChange={(e) => setNewStudentName(e.target.value)}
+                            placeholder="Enter student name"
+                            className="input-theme theme-transition"
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              borderRadius: "10px",
+                              border: "1px solid var(--border-color)",
+                              background: "var(--card-bg)",
+                              color: "var(--text-primary)",
+                              fontSize: "14px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "8px",
+                              fontSize: "14px",
+                              fontWeight: 500,
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Email Address *
+                          </label>
+                          <input
+                            type="email"
+                            value={newStudentEmail}
+                            onChange={(e) => setNewStudentEmail(e.target.value)}
+                            placeholder="student@example.com"
+                            className="input-theme theme-transition"
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              borderRadius: "10px",
+                              border: "1px solid var(--border-color)",
+                              background: "var(--card-bg)",
+                              color: "var(--text-primary)",
+                              fontSize: "14px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "8px",
+                              fontSize: "14px",
+                              fontWeight: 500,
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Password *
+                          </label>
+                          <input
+                            type="text"
+                            value={newStudentPassword}
+                            onChange={(e) => setNewStudentPassword(e.target.value)}
+                            placeholder="Enter password for student account"
+                            className="input-theme theme-transition"
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              borderRadius: "10px",
+                              border: "1px solid var(--border-color)",
+                              background: "var(--card-bg)",
+                              color: "var(--text-primary)",
+                              fontSize: "14px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowStudentForm(false);
+                            setNewStudentEmail("");
+                            setNewStudentPassword("");
+                            setNewStudentName("");
+                            setStudentUploadError("");
+                          }}
+                          className="theme-transition"
+                          style={{
+                            padding: "10px 20px",
+                            borderRadius: "8px",
+                            border: "1px solid var(--border-color)",
+                            background: "var(--secondary-bg)",
+                            color: "var(--text-primary)",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            flex: 1,
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddStudent}
+                          className="theme-transition"
+                          style={{
+                            padding: "10px 20px",
+                            borderRadius: "8px",
+                            border: "none",
+                            background: "var(--accent-color)",
+                            color: "white",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            flex: 1,
+                          }}
+                        >
+                          Add Student
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Students List */}
+                  {students.length > 0 && (
+                    <div
+                      style={{
+                        marginBottom: "16px",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "12px",
+                        overflow: "hidden",
+                        background: "var(--card-bg)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          padding: "12px 16px",
+                          background: "var(--secondary-bg)",
+                          borderBottom: "1px solid var(--border-color)",
+                          fontWeight: 600,
+                          fontSize: "14px",
+                          color: "var(--text-primary)",
+                          display: "grid",
+                          gridTemplateColumns: "2fr 2fr 1fr auto",
+                          gap: "16px",
+                        }}
+                      >
+                        <div>Name</div>
+                        <div>Email</div>
+                        <div>Password</div>
+                        <div>Action</div>
+                      </div>
+                      {students.map((student, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            padding: "12px 16px",
+                            borderBottom:
+                              index < students.length - 1
+                                ? "1px solid var(--border-color)"
+                                : "none",
+                            display: "grid",
+                            gridTemplateColumns: "2fr 2fr 1fr auto",
+                            gap: "16px",
+                            alignItems: "center",
+                            fontSize: "14px",
+                            color: "var(--text-primary)",
+                          }}
+                        >
+                          <div>{student.name || "-"}</div>
+                          <div>{student.email}</div>
+                          <div style={{ fontFamily: "monospace" }}>
+                            {student.password}
+                          </div>
+                          <button
+                            onClick={() => handleDeleteStudent(student.email)}
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              border: "1px solid var(--danger-color)",
+                              background: "transparent",
+                              color: "var(--danger-color)",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {students.length === 0 && !showStudentForm && (
+                    <div
+                      className="theme-transition"
+                      style={{
+                        textAlign: "center",
+                        padding: "40px 20px",
+                        color: "var(--text-secondary)",
+                        fontSize: "14px",
+                      }}
+                    >
+                      No students added yet. Add students manually or upload from Excel/CSV.
+                    </div>
+                  )}
+
+                  {/* Add Student Buttons */}
+                  {!showStudentForm && (
+                    <div style={{ display: "flex", gap: "12px" }}>
+                      <label
+                        htmlFor="student-file-upload"
+                        className="theme-transition"
+                        style={{
+                          padding: "12px 20px",
+                          borderRadius: 10,
+                          border: "2px dashed var(--accent-color)",
+                          background: "transparent",
+                          color: "var(--accent-color)",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          flex: 1,
+                          textAlign: "center",
+                          transition: "all 0.2s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <FileSpreadsheet size={16} /> Upload Excel/CSV
+                      </label>
+                      <input
+                        id="student-file-upload"
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={handleStudentFileUpload}
+                        style={{ display: "none" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={downloadStudentsTemplate}
+                        className="theme-transition"
+                        style={{
+                          padding: "12px 20px",
+                          borderRadius: 10,
+                          border: "1px solid var(--border-color)",
+                          background: "var(--secondary-bg)",
+                          color: "var(--text-primary)",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        📥 Download Template
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowStudentForm(true)}
+                        className="theme-transition"
+                        style={{
+                          padding: "12px 20px",
+                          borderRadius: 10,
+                          border: "2px dashed var(--accent-color)",
+                          background: "transparent",
+                          color: "var(--accent-color)",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          flex: 1,
+                          transition: "all 0.2s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <PenLine size={16} /> Add Manually
+                      </button>
+                    </div>
+                  )}
+                </CollapsibleSection>
+
+                {/* Info Box */}
+                <div
+                  style={{
+                    padding: "16px",
+                    background: "var(--secondary-bg)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "12px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <Mail size={20} color="var(--accent-color)" />
+                    <div style={{ flex: 1 }}>
+                      <h4
+                        style={{
+                          margin: "0 0 8px 0",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        Student Accounts & Notifications
+                      </h4>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "13px",
+                          color: "var(--text-secondary)",
+                          lineHeight: "1.6",
+                        }}
+                      >
+                        When you create the exam, accounts will be automatically created for students who don't exist. 
+                        Each student will receive an email notification with:
+                      </p>
+                      <ul
+                        style={{
+                          margin: "8px 0 0 0",
+                          paddingLeft: "20px",
+                          fontSize: "13px",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        <li>Exam name and schedule (start time & end time)</li>
+                        <li>Their login credentials (email & password)</li>
+                        <li>Exam key to join the exam</li>
+                        <li>Duration and important instructions</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    marginTop: "24px",
+                  }}
+                >
+                  <button
+                    onClick={handleBackToSettings}
+                    className={`${styles.btn} ${styles.btnGhost} theme-transition`}
+                    style={{
+                      padding: "10px 18px",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    ← Back to Settings
+                  </button>
+                  <button
+                    onClick={handleFinalSubmit}
+                    disabled={students.length === 0}
+                    className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: students.length === 0 ? "not-allowed" : "pointer",
+                      opacity: students.length === 0 ? 0.6 : 1,
                     }}
                   >
                     Preview & Create Exam →

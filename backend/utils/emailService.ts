@@ -337,3 +337,319 @@ export const sendAdminCreationEmail = async (
   }
 };
 
+export const sendStudentExamInvitationEmail = async (
+  to: string,
+  studentName: string,
+  email: string,
+  password: string,
+  examName: string,
+  examKey: string,
+  startTime: string,
+  endTime: string,
+  duration: number
+): Promise<void> => {
+  const loginUrl = process.env.FRONTEND_URL || "https://localhost:3000";
+  
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to,
+    subject: `Exam Invitation: ${examName} - AI Proctor`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+          }
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+          }
+          .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+          }
+          .content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+          }
+          .exam-details {
+            background-color: #f8f9fa;
+            border-left: 4px solid #4CAF50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+          }
+          .detail-item {
+            margin: 12px 0;
+            display: flex;
+            align-items: center;
+          }
+          .detail-label {
+            font-weight: bold;
+            color: #555;
+            min-width: 140px;
+            display: inline-block;
+          }
+          .detail-value {
+            color: #4CAF50;
+            font-weight: 600;
+          }
+          .exam-key {
+            background-color: #fff3cd;
+            border: 2px dashed #ffc107;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            margin: 20px 0;
+          }
+          .exam-key-label {
+            font-size: 12px;
+            color: #856404;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+          .exam-key-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #856404;
+            letter-spacing: 3px;
+            font-family: monospace;
+            margin-top: 8px;
+          }
+          .credentials-box {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+          }
+          .credential-item {
+            margin: 10px 0;
+          }
+          .credential-label {
+            font-weight: bold;
+            color: #555;
+            display: inline-block;
+            width: 100px;
+          }
+          .credential-value {
+            color: #2196F3;
+            font-family: monospace;
+            font-size: 16px;
+          }
+          .login-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 20px 0;
+            font-size: 16px;
+          }
+          .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+          }
+          .important {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            color: #721c24;
+          }
+          .instructions {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #777;
+            font-size: 12px;
+          }
+          ul {
+            padding-left: 20px;
+          }
+          li {
+            margin: 8px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>📝 Exam Invitation</h1>
+            <p style="margin: 10px 0 0 0; font-size: 16px;">You're invited to take an exam</p>
+          </div>
+          <div class="content">
+            <h2>Hello ${studentName}! 👋</h2>
+            <p>You have been scheduled to take the following exam on <strong>AI Proctor</strong>. Please read all the details carefully.</p>
+            
+            <div class="exam-details">
+              <h3 style="margin-top: 0; color: #4CAF50;">📋 Exam Details</h3>
+              <div class="detail-item">
+                <span class="detail-label">Exam Name:</span>
+                <span class="detail-value">${examName}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Start Time:</span>
+                <span class="detail-value">${new Date(startTime).toLocaleString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric', 
+                  hour: '2-digit', 
+                  minute: '2-digit'
+                })}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">End Time:</span>
+                <span class="detail-value">${new Date(endTime).toLocaleString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric', 
+                  hour: '2-digit', 
+                  minute: '2-digit'
+                })}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Duration:</span>
+                <span class="detail-value">${duration} minutes</span>
+              </div>
+            </div>
+
+            <div class="exam-key">
+              <div class="exam-key-label">🔑 Your Exam Key</div>
+              <div class="exam-key-value">${examKey}</div>
+            </div>
+
+            <div class="credentials-box">
+              <h3 style="margin-top: 0; color: #2196F3;">🔐 Login Credentials</h3>
+              <p style="margin-bottom: 15px;">Use these credentials to log in to the platform:</p>
+              <div class="credential-item">
+                <span class="credential-label">Email:</span>
+                <span class="credential-value">${email}</span>
+              </div>
+              <div class="credential-item">
+                <span class="credential-label">Password:</span>
+                <span class="credential-value">${password}</span>
+              </div>
+            </div>
+
+            <div class="important">
+              <strong>⚠️ IMPORTANT:</strong> Please attend the exam before the end time. Late submissions will not be accepted.
+            </div>
+
+            <div class="instructions">
+              <h3 style="margin-top: 0; color: #17a2b8;">📌 Instructions</h3>
+              <ul>
+                <li>Log in to AI Proctor at least 15 minutes before the exam start time</li>
+                <li>Enter the exam key provided above to access the exam</li>
+                <li>Ensure you have a stable internet connection</li>
+                <li>Have your webcam and microphone ready for proctoring</li>
+                <li>Close all unnecessary applications and browser tabs</li>
+                <li>Find a quiet, well-lit place to take the exam</li>
+              </ul>
+            </div>
+
+            <div class="warning">
+              <strong>🔒 Security Note:</strong> Please change your password after your first login for security purposes.
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+              <a href="${loginUrl}" class="login-button">Login to AI Proctor</a>
+            </div>
+
+            <p style="margin-top: 30px;">If you have any questions or face any technical issues, please contact your exam administrator immediately.</p>
+            
+            <p>Good luck! 🎯<br><strong>The AI Proctor Team</strong></p>
+          </div>
+          <div class="footer">
+            <p>This is an automated email. Please do not reply.</p>
+            <p>© ${new Date().getFullYear()} AI Proctor. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `
+      Exam Invitation - AI Proctor
+      
+      Hello ${studentName}!
+      
+      You have been scheduled to take the following exam:
+      
+      EXAM DETAILS:
+      -------------
+      Exam Name: ${examName}
+      Start Time: ${new Date(startTime).toLocaleString()}
+      End Time: ${new Date(endTime).toLocaleString()}
+      Duration: ${duration} minutes
+      
+      EXAM KEY: ${examKey}
+      
+      LOGIN CREDENTIALS:
+      ------------------
+      Email: ${email}
+      Password: ${password}
+      
+      IMPORTANT: Please attend the exam before the end time. Late submissions will not be accepted.
+      
+      INSTRUCTIONS:
+      - Log in at least 15 minutes before the exam
+      - Enter the exam key to access the exam
+      - Ensure stable internet connection
+      - Have webcam and microphone ready
+      - Close unnecessary applications
+      - Find a quiet, well-lit place
+      
+      Login URL: ${loginUrl}
+      
+      Good luck!
+      The AI Proctor Team
+    `,
+  };
+
+  try {
+    if (!transporter) {
+      throw new Error("Email transporter not initialized. Please check your email configuration.");
+    }
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Exam invitation email sent successfully to ${to}`);
+  } catch (error: any) {
+    console.error("❌ Error sending exam invitation email:", error);
+    
+    if (error.code === 'EAUTH') {
+      throw new Error("Email authentication failed. Please check your EMAIL_USER and EMAIL_PASSWORD. For Gmail, use an App Password.");
+    } else if (error.code === 'ESOCKET') {
+      throw new Error("Could not connect to email server. Check your internet connection.");
+    } else if (error.code === 'EENVELOPE') {
+      throw new Error("Invalid email address format.");
+    } else {
+      throw new Error(`Failed to send exam invitation email: ${error.message}`);
+    }
+  }
+};
+

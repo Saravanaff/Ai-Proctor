@@ -13,15 +13,32 @@ import bcrypt from "bcrypt";
 
 export const getAdminEmails = async (req: Request, res: Response) => {
   try {
+    // Extract pagination parameters from query
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
+
+    // Count total admins
+    const totalAdmins = await User.count({
+      where: {
+        role: "examiner",
+      },
+    });
+
+    // Fetch paginated admins
     const admins = await User.findAll({
       where: {
         role: "examiner",
       },
       attributes: ["id", "name", "email", "createdAt", "isActive"],
       order: [["createdAt", "DESC"]],
+      limit: limit,
+      offset: offset,
     });
 
-    console.log(`📧 Found ${admins.length} admin(s)`);
+    const totalPages = Math.ceil(totalAdmins / limit);
+
+    console.log(`📧 Found ${admins.length} admin(s) on page ${page}/${totalPages} (Total: ${totalAdmins})`);
 
     const adminEmails = admins.map((admin) => admin.email);
 
@@ -30,6 +47,9 @@ export const getAdminEmails = async (req: Request, res: Response) => {
       message: `Found ${admins.length} admin(s)`,
       data: {
         count: admins.length,
+        totalCount: totalAdmins,
+        totalPages: totalPages,
+        currentPage: page,
         emails: adminEmails,
         admins: admins.map((admin) => ({
           id: admin.id,
@@ -607,21 +627,41 @@ export const bulkCreateAdmins = async (req: Request, res: Response) => {
 // Get all students
 export const getAllStudents = async (req: Request, res: Response) => {
   try {
+    // Extract pagination parameters from query
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
+
+    // Count total students
+    const totalStudents = await User.count({
+      where: {
+        role: "student",
+      },
+    });
+
+    // Fetch paginated students
     const students = await User.findAll({
       where: {
         role: "student",
       },
       attributes: ["id", "name", "email", "dept", "dob", "reg", "createdAt"],
       order: [["createdAt", "DESC"]],
+      limit: limit,
+      offset: offset,
     });
 
-    console.log(`🎓 Found ${students.length} student(s)`);
+    const totalPages = Math.ceil(totalStudents / limit);
+
+    console.log(`🎓 Found ${students.length} student(s) on page ${page}/${totalPages} (Total: ${totalStudents})`);
 
     return res.status(200).json({
       success: true,
       message: `Found ${students.length} student(s)`,
       data: {
         count: students.length,
+        totalCount: totalStudents,
+        totalPages: totalPages,
+        currentPage: page,
         students: students.map((student) => ({
           id: student.id,
           name: student.name,
@@ -705,6 +745,57 @@ export const getStudentExams = async (req: Request, res: Response) => {
       message: "Failed to fetch student exams",
       error: error.message,
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
+  }
+};
+
+// Get dashboard statistics in a single optimized query
+export const getDashboardStats = async (req: Request, res: Response) => {
+  try {
+    console.log("📊 Fetching dashboard statistics...");
+
+    // Use Promise.all to run all queries in parallel for better performance
+    const [totalAdmins, activeAdmins, totalStudents, totalExams] = await Promise.all([
+      // Count total admins
+      User.count({
+        where: { role: "examiner" }
+      }),
+      
+      // Count active admins
+      User.count({
+        where: { 
+          role: "examiner",
+          isActive: true
+        }
+      }),
+      
+      // Count total students
+      User.count({
+        where: { role: "student" }
+      }),
+      
+      // Count total exams
+      Exam.count()
+    ]);
+
+    console.log(`✅ Stats fetched: ${totalAdmins} admins (${activeAdmins} active), ${totalStudents} students, ${totalExams} exams`);
+
+    return res.status(200).json({
+      success: true,
+      message: "Dashboard statistics fetched successfully",
+      data: {
+        totalAdmins,
+        activeAdmins,
+        totalStudents,
+        totalExams
+      },
+    });
+  } catch (error: any) {
+    console.error("❌ Error fetching dashboard stats:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch dashboard statistics",
+      error: error.message,
     });
   }
 };
