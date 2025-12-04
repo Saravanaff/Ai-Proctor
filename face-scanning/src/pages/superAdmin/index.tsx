@@ -40,11 +40,31 @@ const SuperAdminDashboard = () => {
       const adminsRes = await axios.get(`${base}/admin/emails`);
       const admins = adminsRes.data?.data?.admins || [];
       
+      // Fetch students
+      const studentsRes = await axios.get(`${base}/admin/students`);
+      const students = studentsRes.data?.data?.students || [];
+      
+      // Fetch examiners to count their exams
+      const examinersRes = await axios.get(`${base}/examiner/emails`);
+      const examiners = examinersRes.data?.data?.examiners || [];
+      
+      // Fetch exams for each examiner and count total
+      let totalExams = 0;
+      for (const examiner of examiners) {
+        try {
+          const examsRes = await axios.get(`${base}/admin/${examiner.email}/exams`);
+          const exams = examsRes.data?.data?.exams || [];
+          totalExams += exams.length;
+        } catch (err) {
+          console.error(`Error fetching exams for ${examiner.email}:`, err);
+        }
+      }
+      
       setStats({
         totalAdmins: admins.length,
-        activeAdmins: admins.filter((a: any) => a.status === "Active").length,
-        totalStudents: 0, // You can add endpoint for students
-        totalExams: 0, // You can add endpoint for total exams
+        activeAdmins: admins.filter((a: any) => a.isActive !== false).length,
+        totalStudents: students.length,
+        totalExams: totalExams,
       });
     } catch (e) {
       console.error(e);

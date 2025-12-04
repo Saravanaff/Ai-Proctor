@@ -141,7 +141,7 @@ export default function StudentsManagement() {
 
   const handleExamClick = (examId: number, userId: number) => {
     // Navigate to participant details page
-    router.push(`/examiner/participant-details?examId=${examId}&candidateUserId=${userId}`);
+    router.push(`/examiner/participant-details?examId=${examId}&userId=${userId}`);
   };
 
   const closeExamsModal = () => {
