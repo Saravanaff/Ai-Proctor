@@ -18,6 +18,7 @@ import {
 import {
   requireExaminerRole,
   requireStudentRole,
+  requireExaminerOrHeadRole,
 } from "../middleware/roleMiddleware";
 import {
   getQuestionsByExam,
@@ -28,7 +29,7 @@ import authMiddleware from "../middleware/authMiddleware";
 
 const router = Router();
 
-router.get("/exam", authMiddleware, requireExaminerRole, getExam);
+router.get("/exam", authMiddleware, requireExaminerOrHeadRole, getExam);
 router.get("/getExamSettings", getExamSettings);
 router.get("/exam/:examId", requireExaminerRole, getSingleExam);
 router.post("/examCreate", requireExaminerRole, createExam);

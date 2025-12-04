@@ -8,7 +8,7 @@ import { QuestionOption } from "../models/QuestionOption";
 import { UserAnswer } from "../models/UserAnswer";
 import { ViolationLog } from "../models/ViolationLog";
 import { Scores } from "../models/Scores";
-import { getUserIdFromToken } from "../utils/jwt";
+import { getUserIdFromToken, getRoleFromToken } from "../utils/jwt";
 import bcrypt from "bcrypt";
 import { sendStudentExamInvitationEmail } from "../utils/emailService";
 
@@ -146,15 +146,24 @@ export const createExam = async (req: Request, res: Response) => {
 
 export const getExam = async (req: Request, res: Response) => {
   const user_id = getUserIdFromToken(req);
+  const user_role = getRoleFromToken(req);
+  
   if (!user_id) {
     return res.status(400).json({
       success: false,
       message: "User ID is required",
     });
   }
+  
   try {
+    // Super Admin (HEAD role) can see all exams
+    const whereClause = (user_role === 'HEAD' || user_role === 'head') ? {} : { user_id };
+    
+    console.log("Fetching exams for user:", user_id, "with role:", user_role);
+    console.log("Where clause:", whereClause);
+    
     const exams = await Exam.findAll({
-      where: { user_id },
+      where: whereClause,
       attributes: [
         "id",
         "exam_name",
@@ -167,7 +176,7 @@ export const getExam = async (req: Request, res: Response) => {
       include: [
         {
           model: Attend,
-          attributes: ["user_id", "exam_id"],
+          attributes: ["user_id", "exam_id", "startTime", "endTime"],
           include: [
             {
               model: User,
@@ -177,12 +186,19 @@ export const getExam = async (req: Request, res: Response) => {
         },
       ],
     });
+    
+    console.log("Found exams:", exams.length);
+    if (exams.length > 0) {
+      console.log("First exam sample:", JSON.stringify(exams[0], null, 2));
+    }
+    
     res.status(200).json({
       success: true,
       message: "Exam names fetched successfully",
       exams,
     });
   } catch (err: any) {
+    console.error("Error fetching exams:", err);
     res.status(500).json({
       success: false,
       message: "Error fetching exams",
