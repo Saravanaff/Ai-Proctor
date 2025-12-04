@@ -17,6 +17,13 @@
   left: 0;
   top: 0;
   z-index: 100;
+  overflow-y: auto;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
 }
 
 .logoSection {

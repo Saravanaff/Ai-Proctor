@@ -277,14 +277,17 @@ const ExamDetailsPage: React.FC = () => {
       // Calculate score
       let correctCount = 0;
       userAnswers.forEach((answer: any) => {
-        const question = questions.find((q: any) => q.id === answer.question_id);
-        if (question && question.QuestionOptions) {
-          const selectedOption = question.QuestionOptions.find(
-            (opt: any) => opt.id === answer.option_id
-          );
-          if (selectedOption?.is_correct) {
-            correctCount++;
-          }
+        // ✅ Use selected_option from backend JOIN (includes is_correct field)
+        const selectedOption = answer.selected_option;
+        
+        // ✅ Check is_correct with all possible boolean formats (MySQL can return 1, "1", true, "true")
+        const isCorrect = selectedOption?.is_correct === true || 
+                         selectedOption?.is_correct === 1 || 
+                         selectedOption?.is_correct === "1" ||
+                         selectedOption?.is_correct === "true";
+        
+        if (isCorrect) {
+          correctCount++;
         }
       });
 
@@ -628,106 +631,79 @@ const ExamDetailsPage: React.FC = () => {
       {/* Analytics Graphs Section */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
         gap: "20px",
         marginBottom: "32px",
         animation: "fadeIn 0.8s ease-out 0.3s backwards"
       }}>
-        {/* Risk Distribution Pie Chart */}
+        {/* Low Risk Pie Chart */}
         <div style={{
-          background: "var(--card-bg)",
+          background: "linear-gradient(135deg, #DCFCE7 0%, #F0FDF4 100%)",
           borderRadius: "16px",
           padding: "28px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 4px 16px var(--shadow)"
-        }}>
+          border: "2px solid #10b981",
+          boxShadow: "0 2px 8px rgba(16, 185, 129, 0.12)",
+          transition: "all 0.3s ease"
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-2px)";
+          e.currentTarget.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.18)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "0 2px 8px rgba(16, 185, 129, 0.12)";
+        }}
+        >
           <h3 style={{
-            margin: "0 0 24px 0",
-            fontSize: "18px",
+            margin: "0 0 20px 0",
+            fontSize: "16px",
             fontWeight: "700",
-            color: "var(--text-primary)"
+            color: "#065F46"
           }}>
-            Risk Level Distribution
+            Low Risk Students
           </h3>
           
           {participantsWithScores > 0 ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
-              {/* Pie Chart */}
-              <div style={{ position: "relative", width: "200px", height: "200px" }}>
-                <svg width="200" height="200" viewBox="0 0 200 200" style={{ transform: "rotate(-90deg)" }}>
+              {/* Low Risk Pie Chart */}
+              <div style={{ position: "relative", width: "220px", height: "220px" }}>
+                <svg width="220" height="220" viewBox="0 0 220 220" style={{ transform: "rotate(-90deg)" }}>
                   {(() => {
                     const total = participantsWithScores;
-                    const radius = 80;
+                    const radius = 90;
                     const circumference = 2 * Math.PI * radius;
-                    
-                    // Calculate percentages
-                    const highPercent = (highRiskCount / total) * 100;
-                    const mediumPercent = (mediumRiskCount / total) * 100;
                     const lowPercent = (lowRiskCount / total) * 100;
-                    
-                    // Calculate stroke dash values
-                    const highDash = (highPercent / 100) * circumference;
-                    const mediumDash = (mediumPercent / 100) * circumference;
+                    const restPercent = 100 - lowPercent;
                     const lowDash = (lowPercent / 100) * circumference;
-                    
-                    let currentOffset = 0;
+                    const restDash = (restPercent / 100) * circumference;
                     
                     return (
                       <>
-                        {/* Low Risk (Green) */}
+                        {/* Background (Rest) - Darker Gray for contrast */}
+                        <circle
+                          cx="110"
+                          cy="110"
+                          r={radius}
+                          fill="none"
+                          stroke="#D1D5DB"
+                          strokeWidth="32"
+                        />
+                        {/* Low Risk Progress */}
                         {lowRiskCount > 0 && (
                           <circle
-                            cx="100"
-                            cy="100"
+                            cx="110"
+                            cy="110"
                             r={radius}
                             fill="none"
                             stroke="#10b981"
-                            strokeWidth="40"
+                            strokeWidth="32"
                             strokeDasharray={`${lowDash} ${circumference - lowDash}`}
-                            strokeDashoffset={-currentOffset}
-                            style={{ transition: "all 0.5s ease" }}
+                            strokeLinecap="round"
+                            style={{ 
+                              transition: "all 0.8s ease"
+                            }}
                           />
                         )}
-                        
-                        {/* Medium Risk (Orange) */}
-                        {mediumRiskCount > 0 && (() => {
-                          const offset = currentOffset;
-                          currentOffset += lowDash;
-                          return (
-                            <circle
-                              cx="100"
-                              cy="100"
-                              r={radius}
-                              fill="none"
-                              stroke="#f59e0b"
-                              strokeWidth="40"
-                              strokeDasharray={`${mediumDash} ${circumference - mediumDash}`}
-                              strokeDashoffset={-currentOffset}
-                              style={{ transition: "all 0.5s ease" }}
-                            />
-                          );
-                        })()}
-                        
-                        {/* High Risk (Red) */}
-                        {highRiskCount > 0 && (() => {
-                          currentOffset += mediumDash;
-                          return (
-                            <circle
-                              cx="100"
-                              cy="100"
-                              r={radius}
-                              fill="none"
-                              stroke="#ef4444"
-                              strokeWidth="40"
-                              strokeDasharray={`${highDash} ${circumference - highDash}`}
-                              strokeDashoffset={-currentOffset}
-                              style={{ transition: "all 0.5s ease" }}
-                            />
-                          );
-                        })()}
-                        
-                        {/* Center circle for donut effect */}
-                        <circle cx="100" cy="100" r="55" fill="#ffffff" />
                       </>
                     );
                   })()}
@@ -739,59 +715,268 @@ const ExamDetailsPage: React.FC = () => {
                   top: "50%",
                   left: "50%",
                   transform: "translate(-50%, -50%)",
-                  textAlign: "center",
-                  zIndex: 10
+                  textAlign: "center"
                 }}>
-                  <div style={{ fontSize: "32px", fontWeight: "700", color: "#1f2937", textShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
-                    {participantsWithScores}
+                  <div style={{ fontSize: "42px", fontWeight: "900", color: "#10b981", lineHeight: "1" }}>
+                    {lowRiskCount}
                   </div>
-                  <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px", fontWeight: "600" }}>
+                  <div style={{ fontSize: "12px", color: "#065F46", marginTop: "4px", fontWeight: "700", letterSpacing: "0.5px" }}>
                     Students
                   </div>
                 </div>
               </div>
               
-              {/* Legend */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <div style={{ width: "12px", height: "12px", borderRadius: "3px", background: "#10b981" }}></div>
-                    <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>Low Risk</span>
-                  </div>
-                  <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-primary)" }}>
-                    {lowRiskCount} ({participantsWithScores > 0 ? ((lowRiskCount / participantsWithScores) * 100).toFixed(0) : 0}%)
-                  </span>
+              {/* Percentage */}
+              <div style={{
+                background: "linear-gradient(135deg, #DCFCE7 0%, #F0FDF4 100%)",
+                padding: "14px 28px",
+                borderRadius: "14px"
+              }}>
+                <div style={{ fontSize: "32px", fontWeight: "900", color: "#10b981", textAlign: "center", lineHeight: "1" }}>
+                  {participantsWithScores > 0 ? ((lowRiskCount / participantsWithScores) * 100).toFixed(1) : 0}%
                 </div>
-                
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <div style={{ width: "12px", height: "12px", borderRadius: "3px", background: "#f59e0b" }}></div>
-                    <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>Medium Risk</span>
-                  </div>
-                  <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-primary)" }}>
-                    {mediumRiskCount} ({participantsWithScores > 0 ? ((mediumRiskCount / participantsWithScores) * 100).toFixed(0) : 0}%)
-                  </span>
-                </div>
-                
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <div style={{ width: "12px", height: "12px", borderRadius: "3px", background: "#ef4444" }}></div>
-                    <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-primary)" }}>High Risk</span>
-                  </div>
-                  <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-primary)" }}>
-                    {highRiskCount} ({participantsWithScores > 0 ? ((highRiskCount / participantsWithScores) * 100).toFixed(0) : 0}%)
-                  </span>
+                <div style={{ fontSize: "11px", color: "#065F46", marginTop: "6px", fontWeight: "700", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  of total students
                 </div>
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--text-secondary)" }}>
-              <div style={{ fontSize: "48px", marginBottom: "8px" }}>📊</div>
-              <p style={{ margin: 0, fontSize: "14px" }}>No risk data available yet</p>
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "#065F46" }}>
+              <div style={{ fontSize: "48px", marginBottom: "12px" }}>📊</div>
+              <p style={{ margin: 0, fontSize: "14px", fontWeight: "700" }}>No data yet</p>
             </div>
           )}
         </div>
 
+        {/* Medium Risk Pie Chart */}
+        <div style={{
+          background: "linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%)",
+          borderRadius: "16px",
+          padding: "28px",
+          border: "2px solid #f59e0b",
+          boxShadow: "0 2px 8px rgba(245, 158, 11, 0.12)",
+          transition: "all 0.3s ease"
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-2px)";
+          e.currentTarget.style.boxShadow = "0 4px 12px rgba(245, 158, 11, 0.18)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "0 2px 8px rgba(245, 158, 11, 0.12)";
+        }}
+        >
+          <h3 style={{
+            margin: "0 0 20px 0",
+            fontSize: "16px",
+            fontWeight: "700",
+            color: "#92400E"
+          }}>
+            Medium Risk Students
+          </h3>
+          
+          {participantsWithScores > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
+              {/* Medium Risk Pie Chart */}
+              <div style={{ position: "relative", width: "220px", height: "220px" }}>
+                <svg width="220" height="220" viewBox="0 0 220 220" style={{ transform: "rotate(-90deg)" }}>
+                  {(() => {
+                    const total = participantsWithScores;
+                    const radius = 90;
+                    const circumference = 2 * Math.PI * radius;
+                    const mediumPercent = (mediumRiskCount / total) * 100;
+                    const mediumDash = (mediumPercent / 100) * circumference;
+                    
+                    return (
+                      <>
+                        {/* Background - Darker Gray for contrast */}
+                        <circle
+                          cx="110"
+                          cy="110"
+                          r={radius}
+                          fill="none"
+                          stroke="#D1D5DB"
+                          strokeWidth="32"
+                        />
+                        {/* Medium Risk Progress */}
+                        {mediumRiskCount > 0 && (
+                          <circle
+                            cx="110"
+                            cy="110"
+                            r={radius}
+                            fill="none"
+                            stroke="#f59e0b"
+                            strokeWidth="32"
+                            strokeDasharray={`${mediumDash} ${circumference - mediumDash}`}
+                            strokeLinecap="round"
+                            style={{ 
+                              transition: "all 0.8s ease"
+                            }}
+                          />
+                        )}
+                      </>
+                    );
+                  })()}
+                </svg>
+                
+                {/* Center text */}
+                <div style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: "42px", fontWeight: "900", color: "#f59e0b", lineHeight: "1" }}>
+                    {mediumRiskCount}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#92400E", marginTop: "4px", fontWeight: "700", letterSpacing: "0.5px" }}>
+                    Students
+                  </div>
+                </div>
+              </div>
+              
+              {/* Percentage */}
+              <div style={{
+                background: "linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%)",
+                padding: "14px 28px",
+                borderRadius: "14px"
+              }}>
+                <div style={{ fontSize: "32px", fontWeight: "900", color: "#f59e0b", textAlign: "center", lineHeight: "1" }}>
+                  {participantsWithScores > 0 ? ((mediumRiskCount / participantsWithScores) * 100).toFixed(1) : 0}%
+                </div>
+                <div style={{ fontSize: "11px", color: "#92400E", marginTop: "6px", fontWeight: "700", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  of total students
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "#92400E" }}>
+              <div style={{ fontSize: "48px", marginBottom: "12px" }}>📊</div>
+              <p style={{ margin: 0, fontSize: "14px", fontWeight: "700" }}>No data yet</p>
+            </div>
+          )}
+        </div>
+
+        {/* High Risk Pie Chart */}
+        <div style={{
+          background: "linear-gradient(135deg, #FEE2E2 0%, #FEF2F2 100%)",
+          borderRadius: "16px",
+          padding: "28px",
+          border: "2px solid #ef4444",
+          boxShadow: "0 2px 8px rgba(239, 68, 68, 0.12)",
+          transition: "all 0.3s ease"
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-2px)";
+          e.currentTarget.style.boxShadow = "0 4px 12px rgba(239, 68, 68, 0.18)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "0 2px 8px rgba(239, 68, 68, 0.12)";
+        }}
+        >
+          <h3 style={{
+            margin: "0 0 20px 0",
+            fontSize: "16px",
+            fontWeight: "700",
+            color: "#7F1D1D"
+          }}>
+            High Risk Students
+          </h3>
+          
+          {participantsWithScores > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
+              {/* High Risk Pie Chart */}
+              <div style={{ position: "relative", width: "220px", height: "220px" }}>
+                <svg width="220" height="220" viewBox="0 0 220 220" style={{ transform: "rotate(-90deg)" }}>
+                  {(() => {
+                    const total = participantsWithScores;
+                    const radius = 90;
+                    const circumference = 2 * Math.PI * radius;
+                    const highPercent = (highRiskCount / total) * 100;
+                    const highDash = (highPercent / 100) * circumference;
+                    
+                    return (
+                      <>
+                        {/* Background - Darker Gray for contrast */}
+                        <circle
+                          cx="110"
+                          cy="110"
+                          r={radius}
+                          fill="none"
+                          stroke="#D1D5DB"
+                          strokeWidth="32"
+                        />
+                        {/* High Risk Progress */}
+                        {highRiskCount > 0 && (
+                          <circle
+                            cx="110"
+                            cy="110"
+                            r={radius}
+                            fill="none"
+                            stroke="#ef4444"
+                            strokeWidth="32"
+                            strokeDasharray={`${highDash} ${circumference - highDash}`}
+                            strokeLinecap="round"
+                            style={{ 
+                              transition: "all 0.8s ease"
+                            }}
+                          />
+                        )}
+                      </>
+                    );
+                  })()}
+                </svg>
+                
+                {/* Center text */}
+                <div style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: "42px", fontWeight: "900", color: "#ef4444", lineHeight: "1" }}>
+                    {highRiskCount}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#7F1D1D", marginTop: "4px", fontWeight: "700", letterSpacing: "0.5px" }}>
+                    Students
+                  </div>
+                </div>
+              </div>
+              
+              {/* Percentage */}
+              <div style={{
+                background: "linear-gradient(135deg, #FEE2E2 0%, #FEF2F2 100%)",
+                padding: "14px 28px",
+                borderRadius: "14px"
+              }}>
+                <div style={{ fontSize: "32px", fontWeight: "900", color: "#ef4444", textAlign: "center", lineHeight: "1" }}>
+                  {participantsWithScores > 0 ? ((highRiskCount / participantsWithScores) * 100).toFixed(1) : 0}%
+                </div>
+                <div style={{ fontSize: "11px", color: "#7F1D1D", marginTop: "6px", fontWeight: "700", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  of total students
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "#7F1D1D" }}>
+              <div style={{ fontSize: "48px", marginBottom: "12px" }}>📊</div>
+              <p style={{ margin: 0, fontSize: "14px", fontWeight: "700" }}>No data yet</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Performance Bar Chart Section - Keep the existing one */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr",
+        gap: "20px",
+        marginBottom: "32px",
+        animation: "fadeIn 0.8s ease-out 0.4s backwards"
+      }}>
         {/* Performance Bar Chart */}
         <div style={{
           background: "var(--card-bg)",
@@ -1654,6 +1839,18 @@ const ExamDetailsPage: React.FC = () => {
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
                   }}>
+                    Exam Score
+                  </th>
+                  <th style={{
+                    padding: "16px",
+                    textAlign: "center",
+                    fontWeight: "700",
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    whiteSpace: "nowrap"
+                  }}>
                     Action
                   </th>
                 </tr>
@@ -1803,6 +2000,35 @@ const ExamDetailsPage: React.FC = () => {
                         }}>
                           {stats?.loading ? "..." : stats?.violationCount || 0}
                         </span>
+                      </td>
+                      <td style={{
+                        padding: "16px",
+                        textAlign: "center",
+                        whiteSpace: "nowrap"
+                      }}>
+                        {stats?.loading ? (
+                          <span style={{ color: "var(--text-secondary)" }}>...</span>
+                        ) : stats?.examScore !== null && stats?.examScore !== undefined ? (
+                          <span style={{
+                            display: "inline-block",
+                            padding: "6px 14px",
+                            borderRadius: "8px",
+                            fontSize: "15px",
+                            fontWeight: "700",
+                            background: stats.examScore >= 70 ? "#DCFCE7" : stats.examScore >= 40 ? "#FEF3C7" : "#FEE2E2",
+                            color: stats.examScore >= 70 ? "#10b981" : stats.examScore >= 40 ? "#f59e0b" : "#ef4444"
+                          }}>
+                            {stats.examScore}%
+                          </span>
+                        ) : (
+                          <span style={{
+                            color: "var(--text-secondary)",
+                            fontSize: "13px",
+                            fontStyle: "italic"
+                          }}>
+                            No score
+                          </span>
+                        )}
                       </td>
                       <td style={{
                         padding: "16px",

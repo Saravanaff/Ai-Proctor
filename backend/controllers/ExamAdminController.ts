@@ -652,6 +652,7 @@ export const getStudentAnswers = async (req: Request, res: Response) => {
     });
   }
 
+  console.log()
   try {
     // Verify exam belongs to the examiner
     const exam = await Exam.findOne({
@@ -671,7 +672,6 @@ export const getStudentAnswers = async (req: Request, res: Response) => {
     // Get student's answers
     const answers = await UserAnswer.findAll({
       where: {
-        user_id: Number(userId),
         exam_id: Number(examId),
       },
       include: [
@@ -688,7 +688,6 @@ export const getStudentAnswers = async (req: Request, res: Response) => {
       success: true,
       message: "Student answers retrieved successfully",
       data: {
-        user_id: userId,
         exam_id: examId,
         totalAnswers: answers.length,
         answers,

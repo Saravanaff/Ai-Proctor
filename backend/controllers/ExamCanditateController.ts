@@ -376,7 +376,24 @@ export const getUserAnswersByAdmin = async (req: Request, res: Response) => {
     let totalAnswered = userAnswers.length;
 
     const answersWithDetails = userAnswers.map((answer) => {
-      const isCorrect = answer.selected_option?.is_correct || false;
+      // ✅ FIX: Properly check if answer is correct by comparing IDs
+      const selectedOption = answer.selected_option;
+      const allOptions = answer.question?.options || [];
+      const correctOption = allOptions.find((opt: any) => opt.is_correct === true || opt.is_correct === 1);
+      
+      const isCorrect = selectedOption && correctOption 
+        ? (selectedOption.id === correctOption.id || Number(selectedOption.id) === Number(correctOption.id))
+        : false;
+      
+      console.log(`Question ${answer.question_id} evaluation:`, {
+        selectedOptionId: selectedOption?.id,
+        selectedOptionText: selectedOption?.option_text,
+        selectedIsCorrect: selectedOption?.is_correct,
+        correctOptionId: correctOption?.id,
+        correctOptionText: correctOption?.option_text,
+        comparisonResult: isCorrect
+      });
+      
       if (isCorrect) {
         correctAnswers++;
         obtainedScore += answer.question?.marks || 0;

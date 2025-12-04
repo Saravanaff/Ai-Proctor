@@ -241,6 +241,13 @@ const SuperAdminDashboard = () => {
             left: 0,
             top: 0,
             zIndex: 100,
+            overflowY: "auto",
+            willChange: "transform",
+            transform: "translateZ(0)",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            perspective: 1000,
+            WebkitPerspective: 1000,
           }}
         >
           {/* Logo/Brand */}
@@ -298,7 +305,6 @@ const SuperAdminDashboard = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   position: "relative",
                 }}
                 onMouseEnter={(e) => {
@@ -316,7 +322,7 @@ const SuperAdminDashboard = () => {
                   if (icon) icon.style.transform = "scale(1)";
                 }}
               >
-                <span style={{ fontSize: "18px", transition: "transform 0.3s ease" }}>📊</span>
+                <span style={{ fontSize: "18px" }}>📊</span>
                 Dashboard
               </button>
               <button
@@ -334,12 +340,11 @@ const SuperAdminDashboard = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   position: "relative",
                   overflow: "hidden",
                 }}
               >
-                <span style={{ fontSize: "18px", transition: "transform 0.3s ease" }}>👥</span>
+                <span style={{ fontSize: "18px" }}>👥</span>
                 <span style={{ flex: 1 }}>Admin Management</span>
                 <div
                   style={{
@@ -368,7 +373,6 @@ const SuperAdminDashboard = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                   position: "relative",
                 }}
                 onMouseEnter={(e) => {
@@ -386,7 +390,7 @@ const SuperAdminDashboard = () => {
                   if (icon) icon.style.transform = "scale(1)";
                 }}
               >
-                <span style={{ fontSize: "18px", transition: "transform 0.3s ease" }}>🎓</span>
+                <span style={{ fontSize: "18px" }}>🎓</span>
                 Student Management
               </button>
             </nav>
@@ -410,7 +414,6 @@ const SuperAdminDashboard = () => {
                 display: "flex",
                 alignItems: "center",
                 gap: "12px",
-                transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "var(--danger-bg)";

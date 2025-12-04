@@ -358,9 +358,8 @@ const FloatingCamera = ({
     }
 
     if (isSoundDetected && !prevSoundDetected) {
-      // ✅ Log violation immediately when sound is detected
-      console.log("🚨 Sound detected - Logging violation immediately");
-      logViolation("sound_detected");
+      // ✅ Only show notification, do NOT log to backend
+      console.log("� Sound detected - Showing notification only (no backend logging)");
 
       // Show notification (throttled)
       if (
@@ -369,7 +368,7 @@ const FloatingCamera = ({
       ) {
         toast({
           title: "Sound Detected",
-          description: "Audio detected during exam",
+          description: `Audio level: ${audioLevel.toFixed(0)}% - Keep average level for indication`,
           variant: "destructive",
         });
         lastNotificationRef.current.soundDetected = now;
@@ -379,7 +378,7 @@ const FloatingCamera = ({
       setBorderColor("white");
     }
     setPrevSoundDetected(isSoundDetected);
-  }, [isSoundDetected, prevSoundDetected, toast]);
+  }, [isSoundDetected, prevSoundDetected, audioLevel, toast]);
 
   useEffect(() => {
     handleSoundDetection();

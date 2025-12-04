@@ -59,6 +59,7 @@ const ExamPage = ({
   const { toast } = useToast();
   const [face, setFace] = useState(0);
   const [examSubmitted, setExamSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [headDirection, setHeadDirection] = useState(false);
   const [examSettings, setExamSettings] = useState<ExamSettings>({});
   const [faceAuthenticationComplete, setFaceAuthenticationComplete] =
@@ -452,6 +453,14 @@ const ExamPage = ({
     console.log("🚀 Submit button clicked - initiating exam submission");
     console.log(`📊 Current examSubmitted state: ${examSubmitted}`);
 
+    // Prevent double submission
+    if (isSubmitting) {
+      console.log("⏳ Submission already in progress - ignoring duplicate click");
+      return;
+    }
+
+    setIsSubmitting(true);
+
     if (screenStreamRef && screenStreamRef.current) {
       try {
         console.log("🖥️ Stopping screen stream tracks...");
@@ -533,33 +542,87 @@ const ExamPage = ({
       answers: submissionAnswers,
     });
 
-    // Save user answers to database
-    try {
-      console.log("💾 Saving user answers to database...");
-      const response = await axios.post(
-        `${baseUrl}/saveUserAnswers`,
-        {
-          exam_id: Number(examId),
-          answers: submissionAnswers,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${getTokenFromCookie()}`,
+    // ✅ CRITICAL: Save user answers to database with retry logic
+    let answersSaved = false;
+    const maxRetries = 3;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`💾 Saving user answers to database (Attempt ${attempt}/${maxRetries})...`);
+        
+        // Validate answers before submission
+        const validatedAnswers = submissionAnswers.map(answer => ({
+          question_id: Number(answer.question_id),
+          option_id: Number(answer.option_id),
+          option_text: String(answer.option_text || ''),
+        }));
+
+        console.log("Validated answers:", validatedAnswers);
+        
+        const response = await axios.post(
+          `${baseUrl}/saveUserAnswers`,
+          {
+            exam_id: Number(examId),
+            answers: validatedAnswers,
           },
+          {
+            headers: {
+              Authorization: `Bearer ${getTokenFromCookie()}`,
+            },
+            timeout: 10000, // 10 second timeout
+          }
+        );
+        
+        if (response.data.success) {
+          console.log("✅ Answers saved successfully:", response.data);
+          console.log(`✅ Total answers saved: ${response.data.data?.totalAnswers || validatedAnswers.length}`);
+          answersSaved = true;
+          
+          toast({
+            title: "Success",
+            description: `Exam submitted! ${validatedAnswers.length} answers saved.`,
+            variant: "default",
+          });
+          break; // Success - exit retry loop
+        } else {
+          throw new Error(response.data.message || "Failed to save answers");
         }
-      );
-      console.log("✅ Answers saved successfully:", response.data);
-    } catch (error: any) {
-      console.error(
-        "❌ Error saving answers:",
-        error.response?.data || error.message
-      );
-      toast({
-        title: "Warning",
-        description:
-          "Failed to save some answers. Your exam will still be submitted.",
-        variant: "destructive",
-      });
+      } catch (error: any) {
+        console.error(
+          `❌ Error saving answers (Attempt ${attempt}/${maxRetries}):`,
+          error.response?.data || error.message
+        );
+        
+        // If this is the last attempt, show error to user
+        if (attempt === maxRetries) {
+          toast({
+            title: "Error",
+            description:
+              "Failed to save your answers after multiple attempts. Please contact your examiner immediately with your exam ID.",
+            variant: "destructive",
+          });
+        } else {
+          // Wait before retrying (exponential backoff)
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        }
+      }
+    }
+
+    // Log final status
+    if (answersSaved) {
+      console.log("✅ ANSWERS SUCCESSFULLY SAVED TO DATABASE");
+    } else {
+      console.error("❌ CRITICAL: ANSWERS NOT SAVED - Manual intervention required");
+      console.error("Exam ID:", examId);
+      console.error("User ID:", userId);
+      console.error("Answers that failed to save:", submissionAnswers);
+      
+      // ✅ Reset submitting state so user can retry
+      setIsSubmitting(false);
+      
+      // ✅ DO NOT PROCEED if answers failed to save
+      // Keep user on exam page and show blocking modal
+      return;
     }
 
     try {
@@ -820,6 +883,84 @@ const ExamPage = ({
           >
             Please wait while we prepare your exam.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Show submitting overlay during exam submission
+  if (isSubmitting) {
+    return (
+      <div className={`${styles.overlay} theme-transition`}>
+        <div
+          className="theme-transition"
+          style={{
+            background: "var(--card-bg)",
+            color: "var(--text-primary)",
+            padding: "40px",
+            borderRadius: "16px",
+            boxShadow: "0 20px 50px var(--shadow)",
+            border: "1px solid var(--border-color)",
+            textAlign: "center",
+            maxWidth: "450px",
+            transition: "all 0.3s ease",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "64px",
+              marginBottom: "20px",
+              animation: "pulse 2s ease-in-out infinite",
+            }}
+          >
+            📤
+          </div>
+          <h3
+            className="theme-transition"
+            style={{
+              marginBottom: "16px",
+              color: "var(--text-primary)",
+              fontSize: "24px",
+              fontWeight: 700,
+              transition: "color 0.3s ease",
+            }}
+          >
+            Submitting Your Exam...
+          </h3>
+          <p
+            className="theme-transition"
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "15px",
+              lineHeight: 1.6,
+              margin: 0,
+              marginBottom: "20px",
+              transition: "color 0.3s ease",
+            }}
+          >
+            Please wait while we save your answers securely to the database.
+            <br />
+            <strong>Do not close this window.</strong>
+          </p>
+          <div
+            style={{
+              width: "100%",
+              height: "4px",
+              background: "var(--border-color)",
+              borderRadius: "2px",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: "70%",
+                height: "100%",
+                background: "var(--accent-color)",
+                borderRadius: "2px",
+                animation: "shimmer 1.5s ease-in-out infinite",
+              }}
+            />
+          </div>
         </div>
       </div>
     );
@@ -1279,32 +1420,39 @@ const ExamPage = ({
           <button
             className={`${styles.submitButton} theme-transition`}
             onClick={handleSubmit}
+            disabled={isSubmitting}
             style={{
-              background:
-                "linear-gradient(135deg, var(--accent-color) 0%, #0284c7 100%)",
+              background: isSubmitting
+                ? "linear-gradient(135deg, #94a3b8 0%, #64748b 100%)"
+                : "linear-gradient(135deg, var(--accent-color) 0%, #0284c7 100%)",
               border: "none",
               color: "white",
               padding: "16px 48px",
               borderRadius: "12px",
               fontSize: "16px",
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: isSubmitting ? "not-allowed" : "pointer",
               boxShadow: "0 4px 14px rgba(14, 165, 233, 0.25)",
               transition: "all 0.3s ease",
               minWidth: "200px",
+              opacity: isSubmitting ? 0.6 : 1,
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow =
-                "0 6px 20px rgba(14, 165, 233, 0.35)";
+              if (!isSubmitting) {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow =
+                  "0 6px 20px rgba(14, 165, 233, 0.35)";
+              }
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow =
-                "0 4px 14px rgba(14, 165, 233, 0.25)";
+              if (!isSubmitting) {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 14px rgba(14, 165, 233, 0.25)";
+              }
             }}
           >
-            🚀 Submit Exam
+            {isSubmitting ? "⏳ Submitting..." : "🚀 Submit Exam"}
           </button>
         </div>
       </main>

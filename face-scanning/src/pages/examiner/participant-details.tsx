@@ -102,15 +102,17 @@ const ParticipantDetailsPage: React.FC = () => {
 
         const questions = examRes.data.questions || [];
         
+        // ✅ FIX: Use userId from router query (student's ID), not user.id (admin's ID)
         const answersRes = await axios.get(
-          `${base}/exam/${examDetails.id}/student/${user.id}/answers`,
+          `${base}/exam/${examDetails.id}/student/${userId}/answers`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        const userAnswers = answersRes.data.data?.answers || [];
+        // ✅ FIX: API returns answers directly in data.answers
+        const rawUserAnswers = answersRes.data.data?.answers || [];
         
         const detailedAnswers = questions.map((question: any) => {
-          const userAnswer = userAnswers.find(
+          const userAnswer = rawUserAnswers.find(
             (ans: any) => ans.question_id === question.id
           );
           
@@ -118,11 +120,27 @@ const ParticipantDetailsPage: React.FC = () => {
             ? question.QuestionOptions
             : [];
 
-          const selectedOption = questionOptions.find(
-            (opt: any) => opt.id === userAnswer?.option_id
+          // Find the correct option for this question
+          const correctOption = questionOptions.find(
+            (opt: any) => opt.is_correct === true || opt.is_correct === 1 || opt.is_correct === "1"
           );
-          const correctOption = questionOptions.find((opt: any) => opt.is_correct);
-          const isCorrect = userAnswer ? selectedOption?.is_correct || false : false;
+          
+          // ✅ Get user's selected option
+          // First try to get it from the JOIN (selected_option from backend)
+          let selectedOption = userAnswer?.selected_option;
+          
+          // If not available, find it from question options using option_id
+          if (!selectedOption && userAnswer?.option_id) {
+            selectedOption = questionOptions.find(
+              (opt: any) => Number(opt.id) === Number(userAnswer.option_id)
+            );
+          }
+          
+          // ✅ SIMPLIFIED: Use is_correct directly from selected_option (no need for ID comparison)
+          const isCorrect = selectedOption?.is_correct === true || 
+                           selectedOption?.is_correct === 1 || 
+                           selectedOption?.is_correct === "1" ||
+                           selectedOption?.is_correct === "true";
 
           return {
             question,
@@ -133,13 +151,19 @@ const ParticipantDetailsPage: React.FC = () => {
           };
         });
 
+        // Calculate score based on marks
+        const totalMarks = questions.reduce((sum: number, q: any) => sum + (q.marks || 0), 0);
+        const obtainedMarks = detailedAnswers.reduce((sum: number, a: any) => {
+          return sum + (a.isCorrect ? (a.question.marks || 0) : 0);
+        }, 0);
+
         const stats = {
           totalQuestions: questions.length,
-          answered: userAnswers.length,
+          answered: rawUserAnswers.length,
           correct: detailedAnswers.filter((a: any) => a.isCorrect).length,
           wrong: detailedAnswers.filter((a: any) => a.userAnswer && !a.isCorrect).length,
-          unanswered: questions.length - userAnswers.length,
-          score: scoreDetails?.data ? `${scoreDetails.data}` : "0",
+          unanswered: questions.length - rawUserAnswers.length,
+          score: `${obtainedMarks}/${totalMarks}`,
         };
 
         results = { answers: detailedAnswers, stats };
@@ -574,8 +598,9 @@ const ParticipantDetailsPage: React.FC = () => {
         }
       );
 
+      // ✅ FIX: Use userId from router query (student's ID), not user.id (admin's ID)
       const answersRes = await axios.get(
-        `${base}/exam/${examDetails.id}/student/${user.id}/answers`,
+        `${base}/exam/${examDetails.id}/student/${userId}/answers`,
         {
           headers: { Authorization: `Bearer ${token}` },
           timeout: 10000,
@@ -583,26 +608,167 @@ const ParticipantDetailsPage: React.FC = () => {
         }
       );
 
+      console.log("🔍 RAW API Response:", answersRes.data);
+      console.log("🔍 answersRes.data.data:", answersRes.data.data);
+      console.log("🔍 answersRes.data.data?.answers:", answersRes.data.data?.answers);
+
       const questions = questionsRes.data.questions || [];
-      const userAnswers = answersRes.data.data?.answers || [];
+      // ✅ FIX: The API returns answers directly in data.answers (from ExamAdminController.getStudentAnswers)
+      const rawUserAnswers = answersRes.data.data?.answers || [];
+
+      console.log("📊 Exam Results Debug:", {
+        totalQuestions: questions.length,
+        totalUserAnswers: rawUserAnswers.length,
+        sampleQuestion: questions[0],
+        sampleRawUserAnswer: rawUserAnswers[0]
+      });
+
+      console.log("🔍 All Questions with Options:");
+      questions.forEach((q: any, idx: number) => {
+        console.log(`Q${idx + 1} (ID: ${q.id}):`, {
+          text: q.question_text,
+          marks: q.marks,
+          optionsCount: q.QuestionOptions?.length || 0,
+          options: q.QuestionOptions?.map((opt: any) => ({
+            id: opt.id,
+            text: opt.option_text,
+            is_correct: opt.is_correct,
+            is_correct_type: typeof opt.is_correct,
+            is_correct_raw: JSON.stringify(opt.is_correct)
+          }))
+        });
+      });
+
+      console.log("🔍 Raw User Answers from Database:");
+      rawUserAnswers.forEach((ans: any, idx: number) => {
+        console.log(`Answer ${idx + 1}:`, {
+          id: ans.id,
+          question_id: ans.question_id,
+          option_id: ans.option_id,
+          written_answer: ans.written_answer,
+          selected_option: ans.selected_option,
+          selected_option_details: ans.selected_option ? {
+            id: ans.selected_option.id,
+            text: ans.selected_option.option_text,
+            is_correct: ans.selected_option.is_correct,
+            is_correct_type: typeof ans.selected_option.is_correct
+          } : null
+        });
+      });
 
       const detailedAnswers = questions.map((question: any) => {
         const questionOptions = Array.isArray(question.QuestionOptions)
           ? question.QuestionOptions
           : [];
 
-        const userAnswer = userAnswers.find(
+        // ✅ Find the user's answer from the raw database response
+        const userAnswer = rawUserAnswers.find(
           (ans: any) => ans.question_id === question.id
         );
-        const selectedOption = userAnswer
+        
+        // Find the correct option for this question (where is_correct = true)
+        // IMPORTANT: MySQL boolean stored as tinyint(1) - can be 1, "1", true, or "true"
+        const correctOption = questionOptions.find(
+          (opt: any) => {
+            const isCorrectValue = opt.is_correct;
+            return isCorrectValue === true || 
+                   isCorrectValue === 1 || 
+                   isCorrectValue === "1" || 
+                   isCorrectValue === "true" ||
+                   String(isCorrectValue).toLowerCase() === "true";
+          }
+        );
+        
+        console.log(`📋 Question ${question.id} - ALL Options:`, {
+          questionText: question.question_text,
+          totalOptions: questionOptions.length,
+          allOptions: questionOptions.map((opt: any) => ({
+            id: opt.id,
+            text: opt.option_text?.substring(0, 40) + "...",
+            is_correct: opt.is_correct,
+            is_correct_type: typeof opt.is_correct,
+            is_correct_value: JSON.stringify(opt.is_correct),
+            is_correct_raw: opt.is_correct,
+            // Test all possible truthy checks
+            checks: {
+              "=== true": opt.is_correct === true,
+              "=== 1": opt.is_correct === 1,
+              "=== '1'": opt.is_correct === "1",
+              "== true": opt.is_correct == true,
+              "Boolean()": Boolean(opt.is_correct)
+            }
+          })),
+          correctOptionFound: !!correctOption,
+          correctOption: correctOption ? {
+            id: correctOption.id,
+            text: correctOption.option_text,
+            is_correct: correctOption.is_correct
+          } : null
+        });
+        
+        // ✅ CRITICAL FIX: Use option_id from UserAnswer table (not selected_option_id)
+        const userSelectedOptionId = userAnswer?.option_id;  // ← Direct field from UserAnswer table!
+        
+        console.log(`🔍 Question ${question.id} - Finding selected option:`, {
+          questionId: question.id,
+          userSelectedOptionId: userSelectedOptionId,
+          availableOptionIds: questionOptions.map((opt: any) => opt.id),
+          userAnswerObject: userAnswer,
+          hasSelectedOptionFromJoin: !!userAnswer?.selected_option
+        });
+        
+        // Try to find the option in the question's options
+        let selectedOption = userSelectedOptionId
           ? questionOptions.find(
-              (opt: any) => opt.id === userAnswer.option_id
+              (opt: any) => Number(opt.id) === Number(userSelectedOptionId)
             )
           : null;
-        const correctOption = questionOptions.find(
-          (opt: any) => opt.is_correct
-        );
-        const isCorrect = selectedOption?.is_correct || false;
+        
+        // ✅ FALLBACK: If not found but we have selected_option from the backend JOIN, use it
+        if (!selectedOption && userAnswer?.selected_option) {
+          console.warn(`⚠️ Using selected_option from backend JOIN for Question ${question.id}`);
+          selectedOption = userAnswer.selected_option;
+        }
+        
+        console.log(`🔍 Question ${question.id} - Selected option result:`, {
+          selectedOption: selectedOption,
+          selectedOptionFound: !!selectedOption,
+          selectedOptionText: selectedOption?.option_text,
+          selectedOptionIsCorrect: selectedOption?.is_correct
+        });
+        
+        // ⚠️ WARNING: If selectedOption is null but user has an answer, there's a data mismatch!
+        if (userAnswer && userSelectedOptionId && !selectedOption) {
+          console.error(`❌ DATA MISMATCH for Question ${question.id}:`, {
+            error: "User selected an option that doesn't exist in this question's options",
+            userSelectedOptionId: userSelectedOptionId,
+            availableOptions: questionOptions.map((opt: any) => ({ id: opt.id, text: opt.option_text })),
+            possibleCauses: [
+              "Option was deleted after user answered",
+              "Wrong option_id was saved to UserAnswers table",
+              "Question's options were changed/replaced"
+            ]
+          });
+        }
+        
+        // ✅ SIMPLIFIED FIX: Use is_correct directly from selected_option (already included via JOIN in backend)
+        // The backend returns selected_option with is_correct, so we can directly use it
+        const isCorrect = selectedOption?.is_correct === true || 
+                         selectedOption?.is_correct === 1 || 
+                         selectedOption?.is_correct === "1" ||
+                         selectedOption?.is_correct === "true";
+        
+        console.log(`✅ Question ${question.id} Evaluation:`, {
+          questionText: question.question_text?.substring(0, 60) + "...",
+          marks: question.marks,
+          userSelectedOptionId: userSelectedOptionId,
+          selectedOptionText: selectedOption?.option_text?.substring(0, 60),
+          selectedOption_is_correct: selectedOption?.is_correct,
+          selectedOption_is_correct_type: typeof selectedOption?.is_correct,
+          correctOptionText: correctOption?.option_text?.substring(0, 60),
+          FINAL_isCorrect: isCorrect,
+          verdict: isCorrect ? "✅ CORRECT" : "❌ WRONG"
+        });
 
         return {
           question: {
@@ -616,15 +782,23 @@ const ParticipantDetailsPage: React.FC = () => {
         };
       });
 
+      // Calculate score based on marks
+      const totalMarks = questions.reduce((sum: number, q: any) => sum + (q.marks || 0), 0);
+      const obtainedMarks = detailedAnswers.reduce((sum: number, a: any) => {
+        return sum + (a.isCorrect ? (a.question.marks || 0) : 0);
+      }, 0);
+
       const stats = {
         totalQuestions: questions.length,
-        answered: userAnswers.length,
+        answered: rawUserAnswers.length,
         correct: detailedAnswers.filter((a: any) => a.isCorrect).length,
         wrong: detailedAnswers.filter((a: any) => a.userAnswer && !a.isCorrect)
           .length,
-        unanswered: questions.length - userAnswers.length,
-        score: scoreDetails?.data ? `${scoreDetails.data}` : "0",
+        unanswered: questions.length - rawUserAnswers.length,
+        score: `${obtainedMarks}/${totalMarks}`,
       };
+
+      console.log("📊 Final Stats:", stats);
 
       setExamResults({
         answers: detailedAnswers,
@@ -3164,6 +3338,22 @@ const ParticipantDetailsPage: React.FC = () => {
                       {examResults.stats.unanswered}
                     </div>
                   </div>
+                  <div className={styles.statCard} style={{
+                    background: "linear-gradient(135deg, var(--accent-color) 0%, #0284c7 100%)",
+                    color: "white",
+                    gridColumn: "1 / -1"
+                  }}>
+                    <div className={styles.statLabel} style={{ color: "rgba(255,255,255,0.9)" }}>
+                      Total Score
+                    </div>
+                    <div className={styles.statValue} style={{ 
+                      color: "white",
+                      fontSize: "2rem",
+                      fontWeight: 700
+                    }}>
+                      {examResults.stats.score}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Questions list */}
@@ -3184,26 +3374,56 @@ const ParticipantDetailsPage: React.FC = () => {
                         <span className={styles.questionNumber}>
                           Q{index + 1}
                         </span>
-                        <span
-                          className={`${styles.questionStatus} ${
-                            item.isCorrect
-                              ? styles.statusCorrect
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <span style={{ 
+                            fontSize: "14px", 
+                            fontWeight: 600,
+                            color: "var(--text-secondary)",
+                            padding: "4px 12px",
+                            background: "var(--secondary-bg)",
+                            borderRadius: "6px"
+                          }}>
+                            {item.isCorrect ? item.question.marks : 0}/{item.question.marks} marks
+                          </span>
+                          <span
+                            className={`${styles.questionStatus} ${
+                              item.isCorrect
+                                ? styles.statusCorrect
+                                : item.userAnswer
+                                ? styles.statusWrong
+                                : styles.statusUnanswered
+                            }`}
+                          >
+                            {item.isCorrect
+                              ? "✓ Correct"
                               : item.userAnswer
-                              ? styles.statusWrong
-                              : styles.statusUnanswered
-                          }`}
-                        >
-                          {item.isCorrect
-                            ? "✓ Correct"
-                            : item.userAnswer
-                            ? "✗ Wrong"
-                            : "— Not Answered"}
-                        </span>
+                              ? "✗ Wrong"
+                              : "— Not Answered"}
+                          </span>
+                        </div>
                       </div>
 
                       <div className={styles.questionText}>
                         {item.question.question_text}
                       </div>
+
+                      {/* Show user's selected answer */}
+                      {item.userAnswer && item.selectedOption && (
+                        <div style={{
+                          padding: "12px 16px",
+                          background: item.isCorrect ? "var(--success-bg)" : "var(--error-bg)",
+                          border: `2px solid ${item.isCorrect ? "var(--success-color)" : "var(--error-color)"}`,
+                          borderRadius: "8px",
+                          marginBottom: "12px"
+                        }}>
+                          <div style={{ fontSize: "13px", fontWeight: 600, marginBottom: "4px", color: "var(--text-secondary)" }}>
+                            Student's Answer:
+                          </div>
+                          <div style={{ fontSize: "15px", fontWeight: 500, color: "var(--text-primary)" }}>
+                            {item.selectedOption.option_text}
+                          </div>
+                        </div>
+                      )}
 
                       <div className={styles.optionsList}>
                         {item.question.QuestionOptions.map((option: any) => (
@@ -3212,7 +3432,7 @@ const ParticipantDetailsPage: React.FC = () => {
                             className={`${styles.optionItem} ${
                               option.is_correct
                                 ? styles.correctOption
-                                : option.id === item.userAnswer?.option_id
+                                : Number(option.id) === Number(item.userAnswer?.option_id)
                                 ? styles.selectedOption
                                 : ""
                             }`}
@@ -3226,7 +3446,7 @@ const ParticipantDetailsPage: React.FC = () => {
                               </span>
                             )}
                             {!option.is_correct &&
-                              option.id === item.userAnswer?.option_id && (
+                              Number(option.id) === Number(item.userAnswer?.option_id) && (
                                 <span className={styles.selectedBadge}>
                                   Your Answer
                                 </span>

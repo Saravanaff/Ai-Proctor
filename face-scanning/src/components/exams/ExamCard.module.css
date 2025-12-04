@@ -348,7 +348,6 @@
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
 }
 
-/* Animation keyframes */
 @keyframes slideIn {
   from {
     opacity: 0;

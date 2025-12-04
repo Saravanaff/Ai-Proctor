@@ -340,3 +340,17 @@ textarea:focus-visible {
     opacity: 1;
   }
 }
+
+/* Prevent sidebar flickering during page transitions */
+aside[style*="position: fixed"],
+.sidebar {
+  will-change: contents;
+  contain: layout style paint;
+  content-visibility: auto;
+}
+
+/* Force GPU acceleration for fixed position elements */
+aside[style*="position: fixed"] {
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+}
