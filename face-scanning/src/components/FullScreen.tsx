@@ -4,21 +4,18 @@ import FloatingCamera from "./FloatingCamera";
 import socket from "./socket";
 import { useRouter } from "next/router";
 import { useToast } from "@/hooks/use-toast";
-import { getExamId, getUserId } from "@/constants/AuthStore";
+import { getExamId, getUserId, hasValidExamId, hasValidUserId } from "@/constants/AuthStore";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { Brain, FileText, Loader, Upload, CheckCircle } from "lucide-react";
+import { useExamState } from "@/hooks/useExamState";
+import ExamStateError from "./ExamStateError";
 
 // const questions = Array.from({ length: 10 }, (_, i) => ({
 //   id: i + 1,
 //   question: `Sample Question ${i + 1}?`,
 //   options: ["Option A", "Option B", "Option C", "Option D"],
 // }));f
-
-const examId = getExamId();
-
-const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-const userId = getUserId() || "unknown";
 
 type ExamSettings = {
   face_authentication_enabled?: boolean;
@@ -49,6 +46,9 @@ const ExamPage = ({
   pendingScreenChunksRef,
   pendingFaceChunksRef,
 }: any) => {
+  // ✅ Use exam state hook for validation and error handling
+  const examState = useExamState();
+  
   const [answers, setAnswers] = useState<{ [key: number]: Answer }>({});
   const [blocked, setBlocked] = useState(false);
   const [lookAlert, setlookAlert] = useState(false);
@@ -82,6 +82,12 @@ const ExamPage = ({
 
   const router = useRouter();
 
+  // ✅ Get validated exam data
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const userId = examState.userId || "unknown";
+  const examId = examState.examId;
+
+  // 🔥 CRITICAL: Move all hooks BEFORE conditional returns to comply with Rules of Hooks
   // Handle models loaded callback from FloatingCamera
   const handleModelsLoaded = useCallback((success: boolean) => {
     console.log("🤖 AI Models loading result:", success ? "Success" : "Failed");
@@ -98,6 +104,8 @@ const ExamPage = ({
 
   // Fetch exam questions - runs once on mount
   useEffect(() => {
+    // Don't fetch if exam state is not valid
+    if (!examState.isValid || examState.isLoading) return;
     const fetchExamQuestions = async () => {
       try {
         setIsLoadingQuestions(true);
@@ -1224,6 +1232,77 @@ const ExamPage = ({
               }}
             />
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔥 CRITICAL: Check for error/loading INSIDE the return, not before hooks
+  // This ensures all hooks are called in the same order every render
+  
+  // ✅ Show error screen if exam state is invalid
+  if (examState.error) {
+    return (
+      <ExamStateError
+        type={examState.error.type}
+        message={examState.error.message}
+        recoverable={examState.error.recoverable}
+        onRetry={examState.retry}
+      />
+    );
+  }
+
+  // ✅ Show loading while validating
+  if (examState.isLoading) {
+    return (
+      <div className={`${styles.overlay} theme-transition`}>
+        <div
+          className="theme-transition"
+          style={{
+            background: "var(--card-bg)",
+            color: "var(--text-primary)",
+            padding: "32px",
+            borderRadius: "16px",
+            boxShadow: "0 20px 50px var(--shadow)",
+            border: "1px solid var(--border-color)",
+            textAlign: "center",
+            maxWidth: "400px",
+            transition: "all 0.3s ease",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <Loader size={48} color="var(--accent-color)" strokeWidth={1.5} style={{ animation: "spin 1s linear infinite" }} />
+          </div>
+          <h3
+            className="theme-transition"
+            style={{
+              marginBottom: "12px",
+              color: "var(--text-primary)",
+              fontSize: "20px",
+              fontWeight: "600",
+              transition: "color 0.3s ease",
+            }}
+          >
+            Validating Exam Session...
+          </h3>
+          <p
+            className="theme-transition"
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "14px",
+              lineHeight: 1.5,
+              margin: 0,
+              transition: "color 0.3s ease",
+            }}
+          >
+            Please wait while we restore your exam session.
+          </p>
         </div>
       </div>
     );

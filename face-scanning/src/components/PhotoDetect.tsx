@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import styles from "../styles/PhotoDetect.module.css";
 import { useRouter } from "next/router";
 import axios from "axios";
-import { getExamId, getUserId } from "@/constants/AuthStore";
+import { getExamId, getUserId, hasValidExamId, hasValidUserId } from "@/constants/AuthStore";
 import { setExamSettings } from "@/constants/examSettingsConsts";
+import { useExamState } from "@/hooks/useExamState";
+import ExamStateError from "./ExamStateError";
 
 type Status = "pending" | "checking" | "success" | "denied";
 
@@ -156,6 +158,10 @@ const ResultCard = ({ isVerified, allDone }: { isVerified: boolean; allDone: boo
 };
 
 export default function PhotoDetect() {
+  // ✅ Use exam state hook for validation and error handling
+  const examState = useExamState();
+  const router = useRouter();
+  
   const [permissions, setPermissions] = useState<DevicePermission[]>([
     {
       type: "camera",
@@ -172,7 +178,6 @@ export default function PhotoDetect() {
   ]);
   const [allDone, setAllDone] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
-  const router = useRouter();
 
   const checkPermissions = async (retryAttempt = false) => {
     if (retryAttempt) {
@@ -239,8 +244,12 @@ export default function PhotoDetect() {
   };
 
   useEffect(() => {
-    checkPermissions();
-  }, []);
+    // Only check permissions if exam state is valid
+    if (examState.isValid && !examState.isLoading) {
+      checkPermissions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examState.isValid, examState.isLoading]);
 
   const isVerified = permissions.every(p => p.status === "success");
 
@@ -251,8 +260,15 @@ export default function PhotoDetect() {
   const handleContinue = async () => {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const userId = getUserId();
-      const examId = getExamId();
+      const userId = examState.userId; // ✅ Use from exam state
+      const examId = examState.examId; // ✅ Use from exam state
+
+      // ✅ Validate before proceeding
+      if (!userId || !examId) {
+        console.error('Missing userId or examId');
+        examState.validateExamState();
+        return;
+      }
 
       const response = await axios.get(`${baseUrl}/getExamSettings`, {
         params: {
@@ -278,6 +294,7 @@ export default function PhotoDetect() {
       }
     } catch (error) {
       console.error("Error fetching exam settings:", error);
+      // ✅ Fallback to video page if settings fetch fails
       router.push('/video');
     }
   };
@@ -289,6 +306,33 @@ export default function PhotoDetect() {
     }
   };
 
+  // ✅ Show error screen if exam state is invalid (AFTER all hooks)
+  if (examState.error) {
+    return (
+      <ExamStateError
+        type={examState.error.type}
+        message={examState.error.message}
+        recoverable={examState.error.recoverable}
+        onRetry={examState.retry}
+      />
+    );
+  }
+
+  // ✅ Show loading while validating (AFTER all hooks)
+  if (examState.isLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <div className={styles.header}>
+            <h1 className={styles.title}>Initializing...</h1>
+            <p className={styles.subtitle}>
+              Please wait while we prepare your exam session.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={styles.container}>
       <div className={`${styles.content} ${isRetrying ? styles.retrying : ''}`}>

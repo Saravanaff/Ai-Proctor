@@ -2,28 +2,44 @@ import React, { useEffect, useState, useRef } from 'react';
 import ExamPage from "@/components/FullScreen";
 import styles from "../styles/ExamPage.module.css";
 import { sleep } from '@/utils/delay';
-import { getExamId, getUserId } from '@/constants/AuthStore';
+import { getExamId, getUserId, hasValidExamId, hasValidUserId } from '@/constants/AuthStore';
 import socket from "@/components/socket";
 import { useTheme } from "@/contexts/ThemeContext";
 import useMicrophoneDevices from '@/hooks/useMicrophoneDevices';
 import axios from 'axios';
 import { getExamSettings } from '@/constants/examSettingsConsts';
 import { setNumberOfMicrophones } from '@/constants/violationConsts';
-
-
-const userId = getUserId() || "unknown";
-const examId = getExamId();
-const examSettings = getExamSettings();
-console.log("User ID:", userId);
+import { useExamState } from '@/hooks/useExamState';
+import ExamStateError from '@/components/ExamStateError';
 
 
 const fullscreen = () => {
+    // 1️⃣ Call ALL hooks first - before any conditional returns
+    const examState = useExamState();
+    
     const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
     const [rulesAccepted, setRulesAccepted] = useState(false);
     const [screenShareError, setScreenShareError] = useState(false);
     const { theme } = useTheme();
     const { getMicrophoneCount } = useMicrophoneDevices();
 
+    // All useRef hooks must be called before any conditional returns
+    const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
+    const screenStreamRef = useRef<MediaStream | null>(null);
+    const pendingScreenChunksRef = useRef<Set<number>>(new Set());
+    const screenChunkCounterRef = useRef<number>(0);
+    const pendingFaceChunksRef = useRef<Set<number>>(new Set());
+
+    // ✅ Get validated data from exam state
+    const userId = examState.userId || "unknown";
+    const examId = examState.examId;
+    const examSettings = examState.examSettings || getExamSettings();
+
+    console.log("User ID:", userId);
+    console.log("Exam ID:", examId);
+
+    // 🔥 CRITICAL: ALL useEffect hooks MUST be called before ANY conditional returns
+    // useEffect #1: Get microphone count
     useEffect(() => {
         const getCount = async() => {
             let cnt = await getMicrophoneCount();
@@ -32,13 +48,87 @@ const fullscreen = () => {
         getCount().then(cnt => {
             setNumberOfMicrophones(cnt);
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     },[])
 
-    const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
-    const screenStreamRef = useRef<MediaStream | null>(null);
-    const pendingScreenChunksRef = useRef<Set<number>>(new Set());
-    const screenChunkCounterRef = useRef<number>(0);
-    const pendingFaceChunksRef = useRef<Set<number>>(new Set());
+    // useEffect #2: Track fullscreen state changes
+    useEffect(() => {
+        const onFsChange = () => {
+            const active = !!(
+                document.fullscreenElement ||
+                (document as any).webkitFullscreenElement ||
+                (document as any).msFullscreenElement
+            );
+            setFullscreenAllowed(active);
+        };
+        document.addEventListener('fullscreenchange', onFsChange);
+        document.addEventListener('webkitfullscreenchange', onFsChange);
+        document.addEventListener('msfullscreenchange', onFsChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', onFsChange);
+            document.removeEventListener('webkitfullscreenchange', onFsChange);
+            document.removeEventListener('msfullscreenchange', onFsChange);
+        };
+    }, []);
+
+    // useEffect #3: Cleanup screen recording and tracks when this page unmounts
+    useEffect(() => {
+        return () => {
+            try {
+                if (screenRecorderMediaRecorderRef.current) {
+                    try {
+                        if (screenRecorderMediaRecorderRef.current.state !== 'inactive') {
+                            screenRecorderMediaRecorderRef.current.stop();
+                        }
+                    } catch (e) {
+                        // ignore stop errors
+                    }
+                    screenRecorderMediaRecorderRef.current.ondataavailable = null;
+                    screenRecorderMediaRecorderRef.current.onstop = null;
+                    screenRecorderMediaRecorderRef.current.onerror = null;
+                    screenRecorderMediaRecorderRef.current = null;
+                }
+
+                if (screenStreamRef.current) {
+                    try {
+                        screenStreamRef.current.getTracks().forEach((t) => t.stop());
+                    } catch (e) {
+                        // ignore
+                    }
+                    screenStreamRef.current = null;
+                }
+            } catch (err) {
+                console.warn('Error during screen recording cleanup', err);
+            }
+        };
+    }, []);
+
+    // 2️⃣ NOW conditional returns are safe - after ALL hooks
+    // ✅ Show error screen if exam state is invalid
+    if (examState.error) {
+        return (
+            <ExamStateError
+                type={examState.error.type}
+                message={examState.error.message}
+                recoverable={examState.error.recoverable}
+                onRetry={examState.retry}
+            />
+        );
+    }
+
+    // ✅ Show loading while validating
+    if (examState.isLoading) {
+        return (
+            <div className={`${styles.examGuidelinesContainer} theme-transition`} data-theme={theme}>
+                <div className={`${styles.guidelinesCard} card-theme`}>
+                    <div className={styles.header}>
+                        <h1>Initializing Exam...</h1>
+                        <p>Please wait while we prepare your exam session</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // ✅ Helper function to wait for all pending chunks to complete
     const waitForPendingScreenChunks = (): Promise<void> => {
@@ -225,56 +315,7 @@ const fullscreen = () => {
     };
 
 
-
-    useEffect(() => {
-        const onFsChange = () => {
-            const doc: any = document as any;
-            const active = !!(document.fullscreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement);
-            setFullscreenAllowed(active);
-        };
-        document.addEventListener('fullscreenchange', onFsChange);
-        document.addEventListener('webkitfullscreenchange', onFsChange);
-        document.addEventListener('msfullscreenchange', onFsChange);
-        return () => {
-            document.removeEventListener('fullscreenchange', onFsChange);
-            document.removeEventListener('webkitfullscreenchange', onFsChange);
-            document.removeEventListener('msfullscreenchange', onFsChange);
-        };
-    }, []);
-
-    // Cleanup screen recording and tracks when this page unmounts
-    useEffect(() => {
-        return () => {
-            try {
-                if (screenRecorderMediaRecorderRef.current) {
-                    try {
-                        if (screenRecorderMediaRecorderRef.current.state !== 'inactive') {
-                            screenRecorderMediaRecorderRef.current.stop();
-                        }
-                    } catch (e) {
-                        // ignore stop errors
-                    }
-                    screenRecorderMediaRecorderRef.current.ondataavailable = null;
-                    screenRecorderMediaRecorderRef.current.onstop = null;
-                    screenRecorderMediaRecorderRef.current.onerror = null;
-                    screenRecorderMediaRecorderRef.current = null;
-                }
-
-                if (screenStreamRef.current) {
-                    try {
-                        screenStreamRef.current.getTracks().forEach((t) => t.stop());
-                    } catch (e) {
-                        // ignore
-                    }
-                    screenStreamRef.current = null;
-                }
-            } catch (err) {
-                console.warn('Error during screen recording cleanup', err);
-            }
-        };
-    }, []);
-
-
+    // ✅ Conditional return: Show guidelines if screen sharing not yet allowed
     if (!fullscreenAllowed) {
         return (
             <div className={`${styles.examGuidelinesContainer} theme-transition`} data-theme={theme}>
