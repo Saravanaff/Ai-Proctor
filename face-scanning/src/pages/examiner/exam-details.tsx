@@ -642,7 +642,7 @@ const ExamDetailsPage: React.FC = () => {
           background: "linear-gradient(135deg, #DCFCE7 0%, #F0FDF4 100%)",
           borderRadius: "16px",
           padding: "28px",
-          border: "2px solid #10b981",
+          border: "none",
           boxShadow: "0 2px 8px rgba(16, 185, 129, 0.12)",
           transition: "all 0.3s ease"
         }}
@@ -754,7 +754,7 @@ const ExamDetailsPage: React.FC = () => {
           background: "linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%)",
           borderRadius: "16px",
           padding: "28px",
-          border: "2px solid #f59e0b",
+          border: "none",
           boxShadow: "0 2px 8px rgba(245, 158, 11, 0.12)",
           transition: "all 0.3s ease"
         }}
@@ -864,7 +864,7 @@ const ExamDetailsPage: React.FC = () => {
           background: "linear-gradient(135deg, #FEE2E2 0%, #FEF2F2 100%)",
           borderRadius: "16px",
           padding: "28px",
-          border: "2px solid #ef4444",
+          border: "none",
           boxShadow: "0 2px 8px rgba(239, 68, 68, 0.12)",
           transition: "all 0.3s ease"
         }}

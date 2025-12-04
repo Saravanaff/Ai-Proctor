@@ -108,6 +108,7 @@ const FloatingCamera = ({
   screenRecorderMediaRecorderRef,
   settings = {},
   pendingChunksRef,
+  onModelsLoaded,
 }: any) => {
   const isInitialized = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -168,6 +169,10 @@ const FloatingCamera = ({
     noCandidate: false,
     soundDetected: false,
   });
+
+  // ✅ NEW: Frame counters for mobile phone detection
+  const mobileFrameCountRef = useRef(0);
+  const MOBILE_FRAME_THRESHOLD = 3; // 3 consecutive frames
 
 
 
@@ -507,10 +512,21 @@ const FloatingCamera = ({
               objectDetectorRef.current = objectDetector;
               console.log("✅ MediaPipe Object Detector initialized");
             }
+
+            // ✅ Notify parent component that models are loaded
+            console.log("✅ All AI models loaded successfully");
+            if (onModelsLoaded) {
+              onModelsLoaded(true);
+            }
           } catch (error) {
             console.error("❌ Failed to initialize Models:", error);
             objectDetectorRef.current = null;
             faceLandmarkerRef.current = null;
+            
+            // ✅ Notify parent even on error so exam can proceed
+            if (onModelsLoaded) {
+              onModelsLoaded(false);
+            }
           }
         };
 
@@ -787,24 +803,19 @@ const FloatingCamera = ({
 
                   const now = Date.now();
 
-                  // ✅ NEW: Track continuous phone detection violation (only if enabled)
+                  // ✅ UPDATED: Track mobile phone detection by frames (3 consecutive frames to flag)
                   if (examSettings?.object_detection_enabled && detection.phone > 0) {
-                    // Start tracking if not already tracking
-                    if (violationStartTimeRef.current.deviceDetected === null) {
-                      violationStartTimeRef.current.deviceDetected = now;
-                      violationLoggedRef.current.deviceDetected = false;
-                      console.log("⚠️ Phone detection violation started");
-                    }
+                    // Increment frame counter for consecutive detections
+                    mobileFrameCountRef.current += 1;
+                    console.log(`📱 Mobile phone detected - Frame count: ${mobileFrameCountRef.current}/${MOBILE_FRAME_THRESHOLD}`);
 
-                    // Check if violation has been continuous for 4 seconds
-                    const violationDuration =
-                      now - violationStartTimeRef.current.deviceDetected;
+                    // Flag only after 3 consecutive frames
                     if (
-                      violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
+                      mobileFrameCountRef.current >= MOBILE_FRAME_THRESHOLD &&
                       !violationLoggedRef.current.deviceDetected
                     ) {
                       console.log(
-                        `🚨 Phone detection violation continuous for ${violationDuration}ms - Logging`
+                        `🚨 Mobile phone detected for ${mobileFrameCountRef.current} consecutive frames - Logging violation`
                       );
                       logViolation("object_detection_violation");
                       violationLoggedRef.current.deviceDetected = true;
@@ -818,12 +829,25 @@ const FloatingCamera = ({
                         changeColor();
                         lastNotificationRef.current.deviceDetected = now;
                       }
+                    } else if (mobileFrameCountRef.current < MOBILE_FRAME_THRESHOLD) {
+                      // Show notification but don't flag yet
+                      if (
+                        now - lastNotificationRef.current.deviceDetected >=
+                        NOTIFICATION_THROTTLE_MS
+                      ) {
+                        toast({
+                          title: "Mobile Phone Detected",
+                          description: `Warning ${mobileFrameCountRef.current}/${MOBILE_FRAME_THRESHOLD} - Keep device away`,
+                          variant: "destructive",
+                        });
+                        lastNotificationRef.current.deviceDetected = now;
+                      }
                     }
                   } else {
-                    // ✅ Reset tracking when phone is no longer detected
-                    if (violationStartTimeRef.current.deviceDetected !== null) {
-                      console.log("✅ Phone detection violation ended");
-                      violationStartTimeRef.current.deviceDetected = null;
+                    // ✅ Reset frame counter when phone is no longer detected
+                    if (mobileFrameCountRef.current > 0) {
+                      console.log(`✅ Mobile phone no longer detected - Resetting counter from ${mobileFrameCountRef.current}`);
+                      mobileFrameCountRef.current = 0;
                       violationLoggedRef.current.deviceDetected = false;
                     }
                   }

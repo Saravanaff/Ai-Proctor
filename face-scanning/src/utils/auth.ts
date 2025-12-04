@@ -61,6 +61,9 @@ export const getUserInfo = () => {
 };
 
 export const logout = () => {
+  if (typeof document === "undefined" || typeof window === "undefined") {
+    return;
+  }
   document.cookie = "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
   window.location.href = "/login";
 };

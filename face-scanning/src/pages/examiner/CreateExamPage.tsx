@@ -201,15 +201,21 @@ const CreateExam = () => {
   const handleLogout = () => {
     try {
       // clear token cookie (adjust cookie name if different)
-      document.cookie =
-        "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      if (typeof document !== "undefined") {
+        document.cookie =
+          "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      }
       // clear known localStorage keys (if your AuthStore uses others, remove them too)
-      localStorage.removeItem("userId");
-      localStorage.removeItem("userEmail");
-      localStorage.removeItem("globalName");
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userEmail");
+        localStorage.removeItem("globalName");
+      }
     } finally {
       // redirect to login page
-      window.location.href = "/";
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
     }
   };
 
@@ -253,204 +259,194 @@ const CreateExam = () => {
     <ExaminerGuard>
       <div
         style={{
-          display: "flex",
           minHeight: "100vh",
           background: "var(--background)",
         }}
       >
-        {/* Sidebar */}
-        <aside
+        {/* Top Navigation Bar */}
+        <header
           style={{
-            width: "260px",
-            background: "var(--card-bg)",
-            borderRight: "1px solid var(--border-color)",
-            padding: "24px 16px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            position: "fixed",
-            height: "100vh",
-            left: 0,
+            position: "sticky",
             top: 0,
             zIndex: 100,
-            overflowY: "auto",
+            background: "var(--card-bg)",
+            borderBottom: "1px solid var(--border-color)",
+            padding: "16px 32px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            boxShadow: "0 2px 8px var(--shadow)",
           }}
         >
-          {/* Logo/Brand */}
-          <div>
+          {/* Logo and Title */}
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div
               style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "12px",
+                background:
+                  "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
-                marginBottom: "32px",
-                padding: "0 8px",
+                justifyContent: "center",
+                fontSize: "20px",
+                fontWeight: "700",
+                color: "white",
+                boxShadow: "0 4px 12px rgba(14, 165, 233, 0.3)",
               }}
             >
-              <div
+              EX
+            </div>
+            <div>
+              <h1
                 style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "12px",
-                  background:
-                    "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  margin: 0,
                   fontSize: "20px",
                   fontWeight: "700",
-                  color: "white",
-                  boxShadow: "0 4px 12px rgba(14, 165, 233, 0.3)",
+                  color: "var(--text-primary)",
                 }}
               >
-                EX
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "700",
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  Examiner
-                </div>
-                <div
-                  style={{ fontSize: "12px", color: "var(--text-secondary)" }}
-                >
-                  Exam Portal
-                </div>
-              </div>
-            </div>
-
-            {/* Navigation */}
-            <nav
-              style={{ display: "flex", flexDirection: "column", gap: "4px" }}
-            >
-              <button
-                onClick={() => router.push("/examiner")}
+                Exam Dashboard
+              </h1>
+              <p
                 style={{
-                  padding: "12px 16px",
-                  background: "var(--accent-color)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "10px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                <LayoutDashboard size={18} />
-                <span style={{ flex: 1 }}>Dashboard</span>
-                <div
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: "4px",
-                    background: "white",
-                    borderRadius: "10px 0 0 10px",
-                  }}
-                />
-              </button>
-              <button
-                onClick={() => router.push("/examiner/NewExam")}
-                style={{
-                  padding: "12px 16px",
-                  background: "transparent",
+                  margin: 0,
+                  fontSize: "12px",
                   color: "var(--text-secondary)",
-                  border: "none",
-                  borderRadius: "10px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                  position: "relative",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--secondary-bg)";
-                  e.currentTarget.style.color = "var(--text-primary)";
-                  e.currentTarget.style.paddingLeft = "20px";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "var(--text-secondary)";
-                  e.currentTarget.style.paddingLeft = "16px";
                 }}
               >
-                <Plus size={18} />
-                New Exam
-              </button>
-            </nav>
+                Examiner Portal
+              </p>
+            </div>
           </div>
 
-          {/* Logout at bottom */}
-          <div>
-            <div style={{ marginBottom: "16px", padding: "0 8px" }}>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "12px" }}
-              >
-                <div
-                  style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "50%",
-                    background: "var(--accent-color)",
-                    color: "white",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                  }}
-                >
-                  {profileInitials}
-                </div>
-                <div style={{ overflow: "hidden" }}>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "var(--text-primary)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {profileName || "User"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
+          {/* Right Side - Navigation, Theme Toggle, Profile, Logout */}
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            {/* Navigation Buttons */}
             <button
-              onClick={handleLogout}
+              onClick={() => router.push("/examiner")}
               style={{
-                width: "100%",
-                padding: "12px 16px",
-                background: "transparent",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border-color)",
-                borderRadius: "10px",
-                textAlign: "left",
+                padding: "10px 20px",
+                background: "var(--accent-color)",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
                 fontSize: "14px",
                 fontWeight: "600",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
+                gap: "8px",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <LayoutDashboard size={16} />
+              Dashboard
+            </button>
+
+            <button
+              onClick={() => router.push("/examiner/NewExam")}
+              style={{
+                padding: "10px 20px",
+                background: "transparent",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--secondary-bg)";
+                e.currentTarget.style.borderColor = "var(--accent-color)";
+                e.currentTarget.style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.borderColor = "var(--border-color)";
+                e.currentTarget.style.color = "var(--text-secondary)";
+              }}
+            >
+              <Plus size={16} />
+              New Exam
+            </button>
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
+            {/* Divider */}
+            <div
+              style={{
+                width: "1px",
+                height: "32px",
+                background: "var(--border-color)",
+              }}
+            />
+
+            {/* User Profile */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  background: "var(--accent-color)",
+                  color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                  boxShadow: "0 2px 8px rgba(14, 165, 233, 0.3)",
+                }}
+              >
+                {profileInitials}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "var(--text-primary)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: "150px",
+                  }}
+                >
+                  {profileName || "User"}
+                </div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  Examiner
+                </div>
+              </div>
+            </div>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: "10px 16px",
+                background: "transparent",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
                 transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => {
@@ -464,125 +460,14 @@ const CreateExam = () => {
                 e.currentTarget.style.borderColor = "var(--border-color)";
               }}
             >
-              <span style={{ fontSize: "18px" }}>🚪</span>
+              <span>🚪</span>
               Logout
             </button>
           </div>
-        </aside>
+        </header>
 
-        {/* Main Content */}
-        <div style={{ marginLeft: "260px", flex: 1, padding: "32px" }}>
-          <style jsx>{`
-            @keyframes slideIn {
-              from {
-                opacity: 0;
-                transform: translateX(-20px);
-              }
-              to {
-                opacity: 1;
-                transform: translateX(0);
-              }
-            }
-          `}</style>
-          {/* Header */}
-          <header style={{ marginBottom: "32px" }}>
-            <div
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--card-bg), var(--secondary-bg))",
-                borderRadius: "24px",
-                padding: "32px",
-                border: "1px solid var(--border-color)",
-                boxShadow: "0 8px 32px var(--shadow)",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: "5px",
-                  background:
-                    "linear-gradient(90deg, var(--accent-color), var(--primary-color))",
-                }}
-              />
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "20px",
-                }}
-              >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "20px" }}
-                >
-                  <div
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      borderRadius: "16px",
-                      background:
-                        "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "28px",
-                      fontWeight: "700",
-                      color: "white",
-                      boxShadow: "0 8px 24px rgba(14, 165, 233, 0.4)",
-                    }}
-                  >
-                    EX
-                  </div>
-                  <div>
-                    <h1
-                      style={{
-                        margin: "0 0 8px 0",
-                        fontSize: "28px",
-                        fontWeight: "700",
-                        color: "var(--text-primary)",
-                      }}
-                    >
-                      Exam Management
-                    </h1>
-                    <p
-                      style={{
-                        margin: 0,
-                        color: "var(--text-secondary)",
-                        fontSize: "14px",
-                      }}
-                    >
-                      Create, monitor and manage assessments
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  style={{ display: "flex", gap: "16px", alignItems: "center" }}
-                >
-                  <ThemeToggle />
-                  <button
-                    onClick={() => router.push("/examiner/NewExam")}
-                    className={`${styles.btn} ${styles.btnPrimary}`}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <span>+</span> New Exam
-                  </button>
-                </div>
-              </div>
-            </div>
-          </header>
-
+        {/* Main Content - Full Width */}
+        <div style={{ padding: "32px", maxWidth: "1600px", margin: "0 auto" }}>
           {/* Stats */}
           <div style={{ marginBottom: "32px" }}>
             <ExamStats stats={stats} />

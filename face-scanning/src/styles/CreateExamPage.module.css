@@ -12,6 +12,29 @@
   transition: background 0.3s ease;
 }
 
+/* Custom Scrollbar for Sidebar Navigation */
+.customScrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.customScrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.customScrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.customScrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.customScrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
 /* Light Theme */
 .lightTheme {
   background: #f8fafc;
@@ -1066,11 +1089,11 @@
 }
 
 .elevated {
-  /* placeholder for potential elevation tweaks */
+  position: relative;
 }
 
 .hoverLift {
-  /* base hook for :hover styles already present */
+  transition: transform 0.2s ease;
 }
 
 /* Base small input style used for search */
@@ -1092,7 +1115,7 @@
 }
 
 .examsSection {
-  /* ensure class exists for module use */
+  margin-top: 20px;
 }
 
 .emptyIcon {

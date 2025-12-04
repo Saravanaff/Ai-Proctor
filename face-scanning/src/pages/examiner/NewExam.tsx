@@ -6,6 +6,7 @@ import { MCQQuestion } from "../../types/mcq";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { ExaminerGuard } from "@/components/guards";
 import * as XLSX from 'xlsx';
+import styles from "../../styles/NewExam.module.css";
 import { 
   AlertTriangle, 
   Monitor, 
@@ -25,13 +26,16 @@ import {
   FolderOpen,
   Plus,
   Check,
-  X
+  X,
+  PenLine
 } from "lucide-react";
 
 interface Student {
   email: string;
   password: string;
   name?: string;
+  reg?: string;
+  dept?: string;
 }
 
 const NewExam = () => {
@@ -55,7 +59,12 @@ const NewExam = () => {
   const [newStudentEmail, setNewStudentEmail] = useState("");
   const [newStudentPassword, setNewStudentPassword] = useState("");
   const [newStudentName, setNewStudentName] = useState("");
+  const [newStudentReg, setNewStudentReg] = useState("");
+  const [newStudentDept, setNewStudentDept] = useState("");
   const [studentUploadError, setStudentUploadError] = useState("");
+  const [sendEmailInvitations, setSendEmailInvitations] = useState(true);
+  const [isSendingEmails, setIsSendingEmails] = useState(false);
+  const [emailSendResult, setEmailSendResult] = useState<any>(null);
 
   // Proctoring feature toggles (defaults ON)
   const [thirdEye, setThirdEye] = useState(true);
@@ -147,12 +156,16 @@ const NewExam = () => {
     setStudents(prev => [...prev, {
       email: newStudentEmail.trim(),
       password: newStudentPassword.trim(),
-      name: newStudentName.trim() || undefined
+      name: newStudentName.trim() || undefined,
+      reg: newStudentReg.trim() || undefined,
+      dept: newStudentDept.trim() || undefined
     }]);
 
     setNewStudentEmail("");
     setNewStudentPassword("");
     setNewStudentName("");
+    setNewStudentReg("");
+    setNewStudentDept("");
     setStudentUploadError("");
     setShowStudentForm(false);
   };
@@ -191,6 +204,8 @@ const NewExam = () => {
           const email = row['Email'] || row['email'];
           const password = row['Password'] || row['password'];
           const name = row['Name'] || row['name'];
+          const reg = row['Registration Number'] || row['Reg'] || row['reg'] || row['registration'] || row['Registration'];
+          const dept = row['Department'] || row['Dept'] || row['dept'] || row['department'];
 
           if (!email || !password) {
             console.warn(`Row ${index + 2}: Missing email or password`);
@@ -206,7 +221,9 @@ const NewExam = () => {
           extractedStudents.push({
             email: email.trim(),
             password: password.trim(),
-            name: name?.trim()
+            name: name?.trim(),
+            reg: reg?.trim(),
+            dept: dept?.trim()
           });
         });
 
@@ -232,12 +249,16 @@ const NewExam = () => {
       {
         'Email': 'student1@example.com',
         'Password': 'password123',
-        'Name': 'John Doe'
+        'Name': 'John Doe',
+        'Registration Number': 'REG001',
+        'Department': 'Computer Science'
       },
       {
         'Email': 'student2@example.com',
         'Password': 'password456',
-        'Name': 'Jane Smith'
+        'Name': 'Jane Smith',
+        'Registration Number': 'REG002',
+        'Department': 'Information Technology'
       }
     ];
 
@@ -248,7 +269,9 @@ const NewExam = () => {
     worksheet['!cols'] = [
       { wch: 30 }, // Email
       { wch: 15 }, // Password
-      { wch: 25 }  // Name
+      { wch: 25 }, // Name
+      { wch: 20 }, // Registration Number
+      { wch: 30 }  // Department
     ];
 
     XLSX.writeFile(workbook, 'students_template.xlsx');
@@ -494,36 +517,53 @@ const NewExam = () => {
     setCurrentStep(2);
   };
 
-  const handleFinalSubmit = () => {
-    sessionStorage.setItem(
-      "examPreviewData",
-      JSON.stringify({
-        examName,
-        startTime,
-        endTime,
-        duration,
-        thirdEye,
-        multiPerson,
-        eyeBall,
-        objectDetect,
-        headDirection,
-        flagNotifications,
-        videoRecording,
-        tabSwitchDetection,
-        microphoneDetection,
-        safeBrowser,
-        proctorFeedToTestTaker,
-        screenSharing,
-        screenCountDetection,
-        controlDesktopApps,
-        normalProctoring,
-        aiPoweredProctoring,
-        recordedManualProctoring,
-        faceAuthentication,
-        mcqQuestions,
-        students,
-      })
-    );
+  const handleFinalSubmit = async () => {
+    // Store data in session storage
+    const examData = {
+      examName,
+      startTime,
+      endTime,
+      duration,
+      thirdEye,
+      multiPerson,
+      eyeBall,
+      objectDetect,
+      headDirection,
+      flagNotifications,
+      videoRecording,
+      tabSwitchDetection,
+      microphoneDetection,
+      safeBrowser,
+      proctorFeedToTestTaker,
+      screenSharing,
+      screenCountDetection,
+      controlDesktopApps,
+      normalProctoring,
+      aiPoweredProctoring,
+      recordedManualProctoring,
+      faceAuthentication,
+      mcqQuestions,
+      students,
+      sendEmailInvitations,
+    };
+
+    sessionStorage.setItem("examPreviewData", JSON.stringify(examData));
+
+    // If user wants to send emails and there are students, send them now
+    if (sendEmailInvitations && students.length > 0) {
+      setIsSendingEmails(true);
+      try {
+        // First, we need to create the exam to get the exam ID
+        // For now, we'll store the flag and handle it in ExamPreview
+        // The actual email sending will happen after exam creation
+        console.log("Email invitations will be sent after exam creation");
+      } catch (error) {
+        console.error("Error preparing email invitations:", error);
+      } finally {
+        setIsSendingEmails(false);
+      }
+    }
+
     router.push("/examiner/ExamPreview");
   };
 
@@ -2125,7 +2165,7 @@ const NewExam = () => {
                     <ArrowLeft size={18} /> Back to Questions
                   </button>
                   <button
-                    onClick={handleFinalSubmit}
+                    onClick={handleSettingsToStudents}
                     className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
                     style={{
                       flex: 1,
@@ -2151,471 +2191,6 @@ const NewExam = () => {
               </>
             )}
 
-            {/* STEP 3: Add Students */}
-            {currentStep === 3 && (
-              <>
-                {/* Students Section */}
-                <CollapsibleSection
-                  title="Add Students"
-                  subtitle={`Invite students to this exam (${students.length} students added)`}
-                  icon={<Users size={24} color="var(--accent-color)" />}
-                  isOpen={studentsSectionOpen}
-                  onToggle={() => setStudentsSectionOpen(!studentsSectionOpen)}
-                >
-                  {/* Student Form */}
-                  {showStudentForm && (
-                    <div
-                      className="theme-transition"
-                      style={{
-                        padding: "24px",
-                        background: "var(--secondary-bg)",
-                        borderRadius: "12px",
-                        border: "2px solid var(--border-color)",
-                        marginBottom: "16px",
-                      }}
-                    >
-                      <h4
-                        style={{
-                          margin: "0 0 16px 0",
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "var(--text-primary)",
-                        }}
-                      >
-                        Add Student Manually
-                      </h4>
-
-                      {studentUploadError && (
-                        <div
-                          style={{
-                            padding: "12px",
-                            background: "#fee",
-                            border: "1px solid #fcc",
-                            borderRadius: "8px",
-                            color: "#c33",
-                            fontSize: "13px",
-                            marginBottom: "16px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <AlertTriangle size={16} /> {studentUploadError}
-                        </div>
-                      )}
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                        <div>
-                          <label
-                            style={{
-                              display: "block",
-                              marginBottom: "8px",
-                              fontSize: "14px",
-                              fontWeight: 500,
-                              color: "var(--text-secondary)",
-                            }}
-                          >
-                            Student Name (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            value={newStudentName}
-                            onChange={(e) => setNewStudentName(e.target.value)}
-                            placeholder="Enter student name"
-                            className="input-theme theme-transition"
-                            style={{
-                              width: "100%",
-                              padding: "12px 16px",
-                              borderRadius: "10px",
-                              border: "1px solid var(--border-color)",
-                              background: "var(--card-bg)",
-                              color: "var(--text-primary)",
-                              fontSize: "14px",
-                              outline: "none",
-                            }}
-                          />
-                        </div>
-
-                        <div>
-                          <label
-                            style={{
-                              display: "block",
-                              marginBottom: "8px",
-                              fontSize: "14px",
-                              fontWeight: 500,
-                              color: "var(--text-secondary)",
-                            }}
-                          >
-                            Email Address *
-                          </label>
-                          <input
-                            type="email"
-                            value={newStudentEmail}
-                            onChange={(e) => setNewStudentEmail(e.target.value)}
-                            placeholder="student@example.com"
-                            className="input-theme theme-transition"
-                            style={{
-                              width: "100%",
-                              padding: "12px 16px",
-                              borderRadius: "10px",
-                              border: "1px solid var(--border-color)",
-                              background: "var(--card-bg)",
-                              color: "var(--text-primary)",
-                              fontSize: "14px",
-                              outline: "none",
-                            }}
-                          />
-                        </div>
-
-                        <div>
-                          <label
-                            style={{
-                              display: "block",
-                              marginBottom: "8px",
-                              fontSize: "14px",
-                              fontWeight: 500,
-                              color: "var(--text-secondary)",
-                            }}
-                          >
-                            Password *
-                          </label>
-                          <input
-                            type="text"
-                            value={newStudentPassword}
-                            onChange={(e) => setNewStudentPassword(e.target.value)}
-                            placeholder="Enter password for student account"
-                            className="input-theme theme-transition"
-                            style={{
-                              width: "100%",
-                              padding: "12px 16px",
-                              borderRadius: "10px",
-                              border: "1px solid var(--border-color)",
-                              background: "var(--card-bg)",
-                              color: "var(--text-primary)",
-                              fontSize: "14px",
-                              outline: "none",
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowStudentForm(false);
-                            setNewStudentEmail("");
-                            setNewStudentPassword("");
-                            setNewStudentName("");
-                            setStudentUploadError("");
-                          }}
-                          className="theme-transition"
-                          style={{
-                            padding: "10px 20px",
-                            borderRadius: "8px",
-                            border: "1px solid var(--border-color)",
-                            background: "var(--secondary-bg)",
-                            color: "var(--text-primary)",
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            flex: 1,
-                          }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleAddStudent}
-                          className="theme-transition"
-                          style={{
-                            padding: "10px 20px",
-                            borderRadius: "8px",
-                            border: "none",
-                            background: "var(--accent-color)",
-                            color: "white",
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            flex: 1,
-                          }}
-                        >
-                          Add Student
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Students List */}
-                  {students.length > 0 && (
-                    <div
-                      style={{
-                        marginBottom: "16px",
-                        border: "1px solid var(--border-color)",
-                        borderRadius: "12px",
-                        overflow: "hidden",
-                        background: "var(--card-bg)",
-                      }}
-                    >
-                      <div
-                        style={{
-                          padding: "12px 16px",
-                          background: "var(--secondary-bg)",
-                          borderBottom: "1px solid var(--border-color)",
-                          fontWeight: 600,
-                          fontSize: "14px",
-                          color: "var(--text-primary)",
-                          display: "grid",
-                          gridTemplateColumns: "2fr 2fr 1fr auto",
-                          gap: "16px",
-                        }}
-                      >
-                        <div>Name</div>
-                        <div>Email</div>
-                        <div>Password</div>
-                        <div>Action</div>
-                      </div>
-                      {students.map((student, index) => (
-                        <div
-                          key={index}
-                          style={{
-                            padding: "12px 16px",
-                            borderBottom:
-                              index < students.length - 1
-                                ? "1px solid var(--border-color)"
-                                : "none",
-                            display: "grid",
-                            gridTemplateColumns: "2fr 2fr 1fr auto",
-                            gap: "16px",
-                            alignItems: "center",
-                            fontSize: "14px",
-                            color: "var(--text-primary)",
-                          }}
-                        >
-                          <div>{student.name || "-"}</div>
-                          <div>{student.email}</div>
-                          <div style={{ fontFamily: "monospace" }}>
-                            {student.password}
-                          </div>
-                          <button
-                            onClick={() => handleDeleteStudent(student.email)}
-                            style={{
-                              padding: "6px 12px",
-                              borderRadius: "6px",
-                              border: "1px solid var(--danger-color)",
-                              background: "transparent",
-                              color: "var(--danger-color)",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              cursor: "pointer",
-                            }}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Empty State */}
-                  {students.length === 0 && !showStudentForm && (
-                    <div
-                      className="theme-transition"
-                      style={{
-                        textAlign: "center",
-                        padding: "40px 20px",
-                        color: "var(--text-secondary)",
-                        fontSize: "14px",
-                      }}
-                    >
-                      No students added yet. Add students manually or upload from Excel/CSV.
-                    </div>
-                  )}
-
-                  {/* Add Student Buttons */}
-                  {!showStudentForm && (
-                    <div style={{ display: "flex", gap: "12px" }}>
-                      <label
-                        htmlFor="student-file-upload"
-                        className="theme-transition"
-                        style={{
-                          padding: "12px 20px",
-                          borderRadius: 10,
-                          border: "2px dashed var(--accent-color)",
-                          background: "transparent",
-                          color: "var(--accent-color)",
-                          fontSize: 14,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          flex: 1,
-                          textAlign: "center",
-                          transition: "all 0.2s ease",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <FileSpreadsheet size={16} /> Upload Excel/CSV
-                      </label>
-                      <input
-                        id="student-file-upload"
-                        type="file"
-                        accept=".xlsx,.xls,.csv"
-                        onChange={handleStudentFileUpload}
-                        style={{ display: "none" }}
-                      />
-                      <button
-                        type="button"
-                        onClick={downloadStudentsTemplate}
-                        className="theme-transition"
-                        style={{
-                          padding: "12px 20px",
-                          borderRadius: 10,
-                          border: "1px solid var(--border-color)",
-                          background: "var(--secondary-bg)",
-                          color: "var(--text-primary)",
-                          fontSize: 14,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          transition: "all 0.2s ease",
-                        }}
-                      >
-                        📥 Download Template
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowStudentForm(true)}
-                        className="theme-transition"
-                        style={{
-                          padding: "12px 20px",
-                          borderRadius: 10,
-                          border: "2px dashed var(--accent-color)",
-                          background: "transparent",
-                          color: "var(--accent-color)",
-                          fontSize: 14,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          flex: 1,
-                          transition: "all 0.2s ease",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <PenLine size={16} /> Add Manually
-                      </button>
-                    </div>
-                  )}
-                </CollapsibleSection>
-
-                {/* Info Box */}
-                <div
-                  style={{
-                    padding: "16px",
-                    background: "var(--secondary-bg)",
-                    border: "1px solid var(--border-color)",
-                    borderRadius: "12px",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "12px",
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <Mail size={20} color="var(--accent-color)" />
-                    <div style={{ flex: 1 }}>
-                      <h4
-                        style={{
-                          margin: "0 0 8px 0",
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: "var(--text-primary)",
-                        }}
-                      >
-                        Student Accounts & Notifications
-                      </h4>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: "13px",
-                          color: "var(--text-secondary)",
-                          lineHeight: "1.6",
-                        }}
-                      >
-                        When you create the exam, accounts will be automatically created for students who don't exist. 
-                        Each student will receive an email notification with:
-                      </p>
-                      <ul
-                        style={{
-                          margin: "8px 0 0 0",
-                          paddingLeft: "20px",
-                          fontSize: "13px",
-                          color: "var(--text-secondary)",
-                        }}
-                      >
-                        <li>Exam name and schedule (start time & end time)</li>
-                        <li>Their login credentials (email & password)</li>
-                        <li>Exam key to join the exam</li>
-                        <li>Duration and important instructions</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "16px",
-                    marginTop: "32px",
-                    paddingTop: "24px",
-                    borderTop: "1px solid var(--border-color)",
-                  }}
-                >
-                  <button
-                    onClick={handleBackToQuestions}
-                    className={`${styles.btn} ${styles.btnGhost} theme-transition`}
-                    style={{
-                      padding: "14px 28px",
-                      borderRadius: "12px",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      background: "transparent",
-                      border: "1px solid var(--border-color)",
-                      color: "var(--text-secondary)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      transition: "all 0.2s ease",
-                    }}
-                  >
-                    ← Back to Questions
-                  </button>
-                  <button
-                    onClick={handleFinalSubmit}
-                    className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
-                    style={{
-                      flex: 1,
-                      padding: "14px 28px",
-                      borderRadius: "12px",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                      boxShadow: "0 4px 16px rgba(var(--accent-color-rgb), 0.3)",
-                    }}
-                  >
-                    Next: Add Students →
-                  </button>
-                </div>
-              </>
-            )}
 
             {/* STEP 3: Add Students */}
             {currentStep === 3 && (
@@ -2766,6 +2341,70 @@ const NewExam = () => {
                       </div>
 
                       <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
+                        <div style={{ flex: 1 }}>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "8px",
+                              fontSize: "14px",
+                              fontWeight: 500,
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Registration Number
+                          </label>
+                          <input
+                            type="text"
+                            value={newStudentReg}
+                            onChange={(e) => setNewStudentReg(e.target.value)}
+                            placeholder="REG001"
+                            className="input-theme theme-transition"
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              borderRadius: "10px",
+                              border: "1px solid var(--border-color)",
+                              background: "var(--card-bg)",
+                              color: "var(--text-primary)",
+                              fontSize: "14px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ flex: 1 }}>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "8px",
+                              fontSize: "14px",
+                              fontWeight: 500,
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Department
+                          </label>
+                          <input
+                            type="text"
+                            value={newStudentDept}
+                            onChange={(e) => setNewStudentDept(e.target.value)}
+                            placeholder="Computer Science"
+                            className="input-theme theme-transition"
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              borderRadius: "10px",
+                              border: "1px solid var(--border-color)",
+                              background: "var(--card-bg)",
+                              color: "var(--text-primary)",
+                              fontSize: "14px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
                         <button
                           type="button"
                           onClick={() => {
@@ -2773,6 +2412,8 @@ const NewExam = () => {
                             setNewStudentEmail("");
                             setNewStudentPassword("");
                             setNewStudentName("");
+                            setNewStudentReg("");
+                            setNewStudentDept("");
                             setStudentUploadError("");
                           }}
                           className="theme-transition"
@@ -2832,13 +2473,15 @@ const NewExam = () => {
                           fontSize: "14px",
                           color: "var(--text-primary)",
                           display: "grid",
-                          gridTemplateColumns: "2fr 2fr 1fr auto",
-                          gap: "16px",
+                          gridTemplateColumns: "1.5fr 2fr 1fr 1.5fr 1.5fr auto",
+                          gap: "12px",
                         }}
                       >
                         <div>Name</div>
                         <div>Email</div>
                         <div>Password</div>
+                        <div>Reg No</div>
+                        <div>Department</div>
                         <div>Action</div>
                       </div>
                       {students.map((student, index) => (
@@ -2851,8 +2494,8 @@ const NewExam = () => {
                                 ? "1px solid var(--border-color)"
                                 : "none",
                             display: "grid",
-                            gridTemplateColumns: "2fr 2fr 1fr auto",
-                            gap: "16px",
+                            gridTemplateColumns: "1.5fr 2fr 1fr 1.5fr 1.5fr auto",
+                            gap: "12px",
                             alignItems: "center",
                             fontSize: "14px",
                             color: "var(--text-primary)",
@@ -2863,6 +2506,8 @@ const NewExam = () => {
                           <div style={{ fontFamily: "monospace" }}>
                             {student.password}
                           </div>
+                          <div>{student.reg || "-"}</div>
+                          <div>{student.dept || "-"}</div>
                           <button
                             onClick={() => handleDeleteStudent(student.email)}
                             style={{

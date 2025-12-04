@@ -69,12 +69,18 @@ const JoinExam = () => {
 
   const handleLogout = () => {
     try {
-      document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-      localStorage.removeItem("userId");
-      localStorage.removeItem("userEmail");
-      localStorage.removeItem("globalName");
+      if (typeof document !== "undefined") {
+        document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      }
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userEmail");
+        localStorage.removeItem("globalName");
+      }
     } finally {
-      window.location.href = "/";
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
     }
   };
 

@@ -44,7 +44,9 @@ const AuthForm = ({
   ) {
     setGlobalIdentity(userName, userEmail, userId);
 
-    localStorage.setItem("examId", examId || "unknown");
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("examId", examId || "unknown");
+    }
     setExamId(examId || "unknown");
     router.push(redirect);
   }

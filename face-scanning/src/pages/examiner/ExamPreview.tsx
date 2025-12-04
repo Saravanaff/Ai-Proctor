@@ -6,6 +6,7 @@ import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import styles from "../../styles/CreateExamPage.module.css";
 import { ExaminerGuard } from "@/components/guards";
+import { FileText, Mail, CheckCircle, Loader } from "lucide-react";
 
 const ExamPreview = () => {
   const router = useRouter();
@@ -14,6 +15,8 @@ const ExamPreview = () => {
   >({});
   const [isCreating, setIsCreating] = useState(false);
   const [examData, setExamData] = useState<any>(null);
+  const [loadingStep, setLoadingStep] = useState<'exam' | 'students' | 'done' | null>(null);
+  const [studentProgress, setStudentProgress] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
     const storedData = sessionStorage.getItem("examPreviewData");
@@ -59,6 +62,8 @@ const ExamPreview = () => {
     if (!examData) return;
 
     setIsCreating(true);
+    setLoadingStep('exam');
+    
     try {
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
       const formattedQuestions = convertQuestionsToSubmitFormat(
@@ -102,6 +107,9 @@ const ExamPreview = () => {
 
       // If students were added, invite them
       if (examData.students && Array.isArray(examData.students) && examData.students.length > 0) {
+        setLoadingStep('students');
+        setStudentProgress({ current: 0, total: examData.students.length });
+        
         try {
           const examId = res.data.exam?.id;
           if (!examId) {
@@ -124,6 +132,18 @@ const ExamPreview = () => {
             );
 
             console.log("✅ Student invitation response:", inviteRes.data);
+            
+            // Update progress
+            setStudentProgress({ 
+              current: examData.students.length, 
+              total: examData.students.length 
+            });
+
+            // Mark as done
+            setLoadingStep('done');
+            
+            // Wait a moment to show the success state
+            await new Promise(resolve => setTimeout(resolve, 1500));
 
             // Show detailed results
             if (inviteRes.data.success) {
@@ -157,6 +177,8 @@ const ExamPreview = () => {
           );
         }
       } else {
+        setLoadingStep('done');
+        await new Promise(resolve => setTimeout(resolve, 1000));
         alert("Exam created successfully!");
       }
 
@@ -174,6 +196,8 @@ const ExamPreview = () => {
       );
     } finally {
       setIsCreating(false);
+      setLoadingStep(null);
+      setStudentProgress({ current: 0, total: 0 });
     }
   };
 
@@ -316,160 +340,138 @@ const ExamPreview = () => {
           </div>
         ) : (
           <div
+            className="theme-transition"
             style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "24px",
+              padding: "32px",
+              background: "var(--card-bg)",
+              borderRadius: "16px",
+              border: "2px solid var(--border-color)",
               marginBottom: "24px",
             }}
           >
-            {mcqQuestions.map((question: MCQQuestion, qIndex: number) => (
+            <h2
+              style={{
+                margin: "0 0 20px 0",
+                fontSize: "20px",
+                fontWeight: 700,
+                color: "var(--text-primary)",
+              }}
+            >
+              📚 Questions Summary
+            </h2>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "16px",
+              }}
+            >
               <div
-                key={question.id}
-                className="theme-transition"
                 style={{
-                  padding: "32px",
-                  background: "var(--card-bg)",
-                  borderRadius: "16px",
-                  border: "2px solid var(--border-color)",
+                  padding: "16px",
+                  background: "var(--secondary-bg)",
+                  borderRadius: "12px",
+                  border: "1px solid var(--border-color)",
                 }}
               >
-                {/* Question Header */}
-                <div style={{ marginBottom: "24px" }}>
-                  <div
-                    className="theme-transition"
-                    style={{
-                      display: "inline-block",
-                      padding: "8px 16px",
-                      background: "var(--accent-color)",
-                      color: "#fff",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      fontWeight: 700,
-                      marginBottom: "16px",
-                    }}
-                  >
-                    Question {qIndex + 1}
-                  </div>
-                  <LatexRenderer
-                    content={question.question}
-                    style={{
-                      color: "var(--text-primary)",
-                      fontSize: "18px",
-                      fontWeight: 500,
-                      lineHeight: "1.7",
-                    }}
-                  />
-                </div>
-
-                {/* Options */}
                 <div
                   style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
+                    fontSize: "32px",
+                    fontWeight: 700,
+                    color: "var(--accent-color)",
+                    marginBottom: "4px",
                   }}
                 >
-                  {question.options.map((option, oIndex) => {
-                    const isSelected =
-                      selectedAnswers[question.id] === option.id;
-                    const isCorrect = option.id === question.correctOptionId;
-
-                    return (
-                      <label
-                        key={option.id}
-                        className="theme-transition"
-                        style={{
-                          display: "flex",
-                          alignItems: "start",
-                          gap: "16px",
-                          padding: "16px 20px",
-                          background: isSelected
-                            ? "rgba(99, 102, 241, 0.1)"
-                            : "var(--secondary-bg)",
-                          border: `2px solid ${
-                            isSelected
-                              ? "var(--accent-color)"
-                              : "var(--border-color)"
-                          }`,
-                          borderRadius: "12px",
-                          cursor: "pointer",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor =
-                              "var(--accent-color)";
-                            e.currentTarget.style.background =
-                              "rgba(99, 102, 241, 0.05)";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor =
-                              "var(--border-color)";
-                            e.currentTarget.style.background =
-                              "var(--secondary-bg)";
-                          }
-                        }}
-                      >
-                        <input
-                          type="radio"
-                          name={`preview-question-${question.id}`}
-                          checked={isSelected}
-                          onChange={() =>
-                            handleOptionSelect(question.id, option.id)
-                          }
-                          style={{
-                            marginTop: "4px",
-                            width: "22px",
-                            height: "22px",
-                            cursor: "pointer",
-                            accentColor: "var(--accent-color)",
-                          }}
-                        />
-                        <div style={{ flex: 1 }}>
-                          <span
-                            className="theme-transition"
-                            style={{
-                              color: "var(--text-secondary)",
-                              fontSize: "16px",
-                              fontWeight: 700,
-                              marginRight: "12px",
-                            }}
-                          >
-                            {String.fromCharCode(65 + oIndex)}.
-                          </span>
-                          <LatexRenderer
-                            content={option.text}
-                            style={{
-                              color: "var(--text-primary)",
-                              fontSize: "16px",
-                              display: "inline",
-                            }}
-                          />
-                          {isCorrect && (
-                            <span
-                              style={{
-                                marginLeft: "16px",
-                                padding: "4px 12px",
-                                background: "#22c55e",
-                                color: "#fff",
-                                borderRadius: "6px",
-                                fontSize: "12px",
-                                fontWeight: 700,
-                              }}
-                            >
-                              ✓ Correct Answer
-                            </span>
-                          )}
-                        </div>
-                      </label>
-                    );
-                  })}
+                  {mcqQuestions.length}
+                </div>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "var(--text-secondary)",
+                    fontWeight: 500,
+                  }}
+                >
+                  Total Questions
                 </div>
               </div>
-            ))}
+              <div
+                style={{
+                  padding: "16px",
+                  background: "var(--secondary-bg)",
+                  borderRadius: "12px",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "32px",
+                    fontWeight: 700,
+                    color: "#10b981",
+                    marginBottom: "4px",
+                  }}
+                >
+                  {mcqQuestions.reduce((sum, q) => sum + (q.marks || 1), 0)}
+                </div>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "var(--text-secondary)",
+                    fontWeight: 500,
+                  }}
+                >
+                  Total Marks
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: "16px",
+                  background: "var(--secondary-bg)",
+                  borderRadius: "12px",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "32px",
+                    fontWeight: 700,
+                    color: "#f59e0b",
+                    marginBottom: "4px",
+                  }}
+                >
+                  MCQ
+                </div>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "var(--text-secondary)",
+                    fontWeight: 500,
+                  }}
+                >
+                  Question Type
+                </div>
+              </div>
+            </div>
+            
+            <div
+              style={{
+                marginTop: "20px",
+                padding: "16px",
+                background: "var(--secondary-bg)",
+                borderRadius: "12px",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "14px",
+                  color: "var(--text-secondary)",
+                  lineHeight: "1.6",
+                }}
+              >
+                💡 All {mcqQuestions.length} questions have been added to your exam. Students will see them one by one during the test with answer options but without the correct answer indicators.
+              </p>
+            </div>
           </div>
         )}
 
@@ -493,8 +495,12 @@ const ExamPreview = () => {
               background: "rgba(59, 130, 246, 0.1)",
               borderRadius: "10px",
               border: "1px solid rgba(59, 130, 246, 0.3)",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
             }}
           >
+            <span style={{ fontSize: "18px" }}>ℹ️</span>
             <span
               className="theme-transition"
               style={{
@@ -502,8 +508,7 @@ const ExamPreview = () => {
                 fontSize: "14px",
               }}
             >
-              💡 This is a preview. The green "Correct Answer" tags won't be
-              visible to students.
+              This is a preview. Questions are ready and configured for the exam.
             </span>
           </div>
 
@@ -550,6 +555,285 @@ const ExamPreview = () => {
           </div>
         </div>
       </div>
+
+      {/* Loading Modal */}
+      {loadingStep && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.8)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            className="theme-transition"
+            style={{
+              background: "var(--card-bg)",
+              borderRadius: "20px",
+              padding: "48px",
+              maxWidth: "500px",
+              width: "90%",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
+            {/* Header */}
+            <div style={{ textAlign: "center", marginBottom: "32px" }}>
+              <div
+                style={{
+                  fontSize: "48px",
+                  marginBottom: "16px",
+                  display: "flex",
+                  justifyContent: "center",
+                  color: "var(--accent-color)",
+                }}
+              >
+                {loadingStep === 'exam' && <FileText size={64} strokeWidth={2} />}
+                {loadingStep === 'students' && <Mail size={64} strokeWidth={2} />}
+                {loadingStep === 'done' && <CheckCircle size={64} strokeWidth={2} color="#10b981" />}
+              </div>
+              <h2
+                style={{
+                  margin: "0 0 8px 0",
+                  fontSize: "24px",
+                  fontWeight: 700,
+                  color: "var(--text-primary)",
+                }}
+              >
+                {loadingStep === 'exam' && "Creating Exam..."}
+                {loadingStep === 'students' && "Sending Invitations..."}
+                {loadingStep === 'done' && "All Done!"}
+              </h2>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "14px",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                {loadingStep === 'exam' && "Setting up your exam with all questions and settings"}
+                {loadingStep === 'students' && `Sending invitation emails to ${studentProgress.total} student${studentProgress.total !== 1 ? 's' : ''}`}
+                {loadingStep === 'done' && "Exam created and invitations sent successfully!"}
+              </p>
+            </div>
+
+            {/* Progress Indicator */}
+            <div style={{ marginBottom: "24px" }}>
+              {loadingStep === 'students' && (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "8px",
+                      fontSize: "13px",
+                      color: "var(--text-secondary)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <span>Progress</span>
+                    <span>{studentProgress.current} / {studentProgress.total}</span>
+                  </div>
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "8px",
+                      background: "var(--secondary-bg)",
+                      borderRadius: "4px",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        background: "linear-gradient(90deg, var(--accent-color), #10b981)",
+                        borderRadius: "4px",
+                        width: `${(studentProgress.current / studentProgress.total) * 100}%`,
+                        transition: "width 0.3s ease",
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+              
+              {(loadingStep === 'exam' || (loadingStep === 'students' && studentProgress.current === 0)) && (
+                <div style={{ textAlign: "center", display: "flex", justifyContent: "center" }}>
+                  <Loader 
+                    size={60} 
+                    strokeWidth={3}
+                    color="var(--accent-color)"
+                    style={{
+                      animation: "spin 1s linear infinite",
+                    }}
+                  />
+                </div>
+              )}
+
+              {loadingStep === 'done' && (
+                <div
+                  style={{
+                    textAlign: "center",
+                    display: "flex",
+                    justifyContent: "center",
+                    color: "#10b981",
+                  }}
+                >
+                  <CheckCircle 
+                    size={80} 
+                    strokeWidth={2.5}
+                    style={{
+                      animation: "scaleIn 0.5s ease",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Status Steps */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "12px",
+                  background: loadingStep === 'exam' || loadingStep === 'students' || loadingStep === 'done' 
+                    ? "var(--secondary-bg)" 
+                    : "transparent",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <div
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    borderRadius: "50%",
+                    background: loadingStep === 'students' || loadingStep === 'done'
+                      ? "#10b981"
+                      : "var(--accent-color)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {loadingStep === 'students' || loadingStep === 'done' ? "✓" : "1"}
+                </div>
+                <span
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Exam Creation
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "12px",
+                  background: loadingStep === 'students' || loadingStep === 'done'
+                    ? "var(--secondary-bg)"
+                    : "transparent",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-color)",
+                  opacity: loadingStep === 'exam' ? 0.5 : 1,
+                }}
+              >
+                <div
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    borderRadius: "50%",
+                    background: loadingStep === 'done'
+                      ? "#10b981"
+                      : loadingStep === 'students'
+                      ? "var(--accent-color)"
+                      : "var(--border-color)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {loadingStep === 'done' ? "✓" : "2"}
+                </div>
+                <span
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Sending Invitations
+                </span>
+              </div>
+            </div>
+
+            {/* Note */}
+            <div
+              style={{
+                marginTop: "24px",
+                padding: "12px 16px",
+                background: "var(--secondary-bg)",
+                borderRadius: "8px",
+                fontSize: "12px",
+                color: "var(--text-secondary)",
+                textAlign: "center",
+                border: "1px solid var(--border-color)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+              }}
+            >
+              <span style={{ fontSize: "16px" }}>⚠️</span>
+              <span>Please don't close this window while we process your request</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        @keyframes scaleIn {
+          0% { transform: scale(0); }
+          50% { transform: scale(1.2); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
     </div>
     </ExaminerGuard>
   );

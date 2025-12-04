@@ -18,6 +18,41 @@
   box-shadow: 2px 0 5px var(--shadow);
   border-right: 1px solid var(--border-color);
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 50;
+}
+
+.questionNavigation {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  margin-top: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.questionNavigation::-webkit-scrollbar {
+  width: 6px;
+}
+
+.questionNavigation::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.questionNavigation::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.questionNavigation::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
 .sidebar h3 {
@@ -51,6 +86,7 @@
   padding: 30px;
   overflow-y: auto;
   background: var(--background);
+  margin-left: 200px;
 }
 
 .questionBlock {
@@ -119,7 +155,7 @@
 }
 
 .overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
   z-index: 9999;
@@ -129,6 +165,15 @@
   color: white;
   font-size: 24px;
   font-weight: bold;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.overlay > * {
+  margin: auto;
+  flex-shrink: 0;
 }
 
 .blockScreen {
@@ -495,3 +540,34 @@
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
+
+/* ✅ AI Model Loading Screen Animations */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+

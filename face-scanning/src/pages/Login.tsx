@@ -20,7 +20,7 @@ export default function AuthPage() {
     ) {
       setGlobalIdentity(name, email, userId);
 
-      if (examId) {
+      if (examId && typeof window !== "undefined" && window.localStorage) {
         localStorage.setItem("examId", examId);
         setExamId(examId);
       }

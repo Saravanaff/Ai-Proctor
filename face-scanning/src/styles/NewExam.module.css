@@ -1,0 +1,44 @@
+/* NewExam.module.css */
+
+.btn {
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.btnPrimary {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 16px rgba(var(--accent-color-rgb), 0.3);
+}
+
+.btnPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(var(--accent-color-rgb), 0.4);
+}
+
+.btnPrimary:disabled {
+  background: var(--border-color);
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.btnGhost {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+.btnGhost:hover {
+  background: var(--secondary-bg);
+  color: var(--text-primary);
+}

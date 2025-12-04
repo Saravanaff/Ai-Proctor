@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import styles from "../styles/ExamPage.module.css";
 import FloatingCamera from "./FloatingCamera";
 import socket from "./socket";
@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getExamId, getUserId } from "@/constants/AuthStore";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { Brain, FileText, Loader, Upload, CheckCircle } from "lucide-react";
 
 // const questions = Array.from({ length: 10 }, (_, i) => ({
 //   id: i + 1,
@@ -68,6 +69,9 @@ const ExamPage = ({
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [modelsLoadingError, setModelsLoadingError] = useState(false);
+  const [isUploadingChunks, setIsUploadingChunks] = useState(false);
 
   // ✅ REMOVED: lastAlertRef - No longer needed (throttling handled in FloatingCamera)
   // ✅ REMOVED: ALERT_THROTTLE_MS - No longer needed (throttling handled in FloatingCamera)
@@ -77,6 +81,20 @@ const ExamPage = ({
   const frontCameraMediaRecorderRef = useRef<MediaRecorder>(null);
 
   const router = useRouter();
+
+  // Handle models loaded callback from FloatingCamera
+  const handleModelsLoaded = useCallback((success: boolean) => {
+    console.log("🤖 AI Models loading result:", success ? "Success" : "Failed");
+    setModelsLoaded(true);
+    if (!success) {
+      setModelsLoadingError(true);
+      toast({
+        title: "Warning",
+        description: "AI proctoring models failed to load. Exam will proceed with basic monitoring.",
+        variant: "default",
+      });
+    }
+  }, [toast]);
 
   // Fetch exam questions - runs once on mount
   useEffect(() => {
@@ -252,7 +270,7 @@ const ExamPage = ({
     console.log("✅ Face authenticated - User detected");
 
     if (examSettings.face_authentication_enabled) {
-      if (!faceAuthenticationComplete && !examStarted) {
+      if (!faceAuthenticationComplete && !examStarted && modelsLoaded) { // ✅ Check modelsLoaded
         console.log(
           "✅ First face authentication detected - Starting exam now"
         );
@@ -460,7 +478,12 @@ const ExamPage = ({
     }
 
     setIsSubmitting(true);
+    setIsUploadingChunks(true); // ✅ Show upload loading screen
 
+    // ✅ STOP ALL MEDIA STREAMS AND RECORDINGS IMMEDIATELY
+    console.log("🛑 Stopping all media streams and recordings...");
+
+    // 1. Stop screen stream tracks
     if (screenStreamRef && screenStreamRef.current) {
       try {
         console.log("🖥️ Stopping screen stream tracks...");
@@ -473,13 +496,13 @@ const ExamPage = ({
             track.stop();
           });
         screenStreamRef.current = null;
-        console.log("✅ Screen sharing turned OFF");
+        console.log("✅ Screen sharing stopped");
       } catch (err) {
         console.error("Error stopping screen stream tracks:", err);
       }
     }
 
-    // ✅ STOP SCREEN RECORDING MEDIARECORDER
+    // 2. Stop screen recording MediaRecorder
     if (
       screenRecorderMediaRecorderRef &&
       screenRecorderMediaRecorderRef.current
@@ -488,19 +511,36 @@ const ExamPage = ({
         if (screenRecorderMediaRecorderRef.current.state !== "inactive") {
           console.log("📹 Stopping screen MediaRecorder...");
           screenRecorderMediaRecorderRef.current.stop();
+          console.log("✅ Screen MediaRecorder stopped");
         }
       } catch (err) {
         console.error("Error stopping screen recorder:", err);
       }
     }
 
+    // 3. Stop face camera recording MediaRecorder
+    if (
+      frontCameraMediaRecorderRef &&
+      frontCameraMediaRecorderRef.current
+    ) {
+      try {
+        if (frontCameraMediaRecorderRef.current.state !== "inactive") {
+          console.log("📹 Stopping face camera MediaRecorder...");
+          frontCameraMediaRecorderRef.current.stop();
+          console.log("✅ Face camera MediaRecorder stopped");
+        }
+      } catch (err) {
+        console.error("Error stopping face camera recorder:", err);
+      }
+    }
+
     console.log("🎯 Setting examSubmitted to TRUE");
     setExamSubmitted(true);
-    console.log("✅ examSubmitted state updated");
+    console.log("✅ examSubmitted state updated - this will trigger FloatingCamera to stop camera/mic");
 
     // ✅ Wait for ALL pending chunks from BOTH recorders to complete
     const waitForAllChunks = async () => {
-      const maxWaitTime = 10000; // 10 seconds max
+      const maxWaitTime = 30000; // 30 seconds max
       const startTime = Date.now();
 
       console.log("⏳ Waiting for all chunks to complete...");
@@ -518,7 +558,7 @@ const ExamPage = ({
         console.log(
           `📊 Pending chunks - Screen: ${screenPending}, Face: ${facePending}, Total: ${totalPending}`
         );
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
 
       console.warn("⚠️ Timeout waiting for chunks - proceeding anyway");
@@ -529,6 +569,8 @@ const ExamPage = ({
     // Additional safety delay
     console.log("⏳ Additional 1 second safety delay...");
     await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    setIsUploadingChunks(false); // ✅ Hide upload loading screen
 
     console.log(
       "✅ All recordings stopped and events emitted from onstop handlers"
@@ -617,8 +659,10 @@ const ExamPage = ({
       console.error("User ID:", userId);
       console.error("Answers that failed to save:", submissionAnswers);
       
-      // ✅ Reset submitting state so user can retry
+      // ✅ Reset all submission states so user can retry
       setIsSubmitting(false);
+      setIsUploadingChunks(false);
+      setExamSubmitted(false);
       
       // ✅ DO NOT PROCEED if answers failed to save
       // Keep user on exam page and show blocking modal
@@ -834,6 +878,105 @@ const ExamPage = ({
     );
   }
 
+  // ✅ Show upload loading screen while chunks are being uploaded
+  if (isUploadingChunks) {
+    return (
+      <div className={`${styles.overlay} theme-transition`}>
+        <div
+          className="theme-transition"
+          style={{
+            background: "var(--card-bg)",
+            color: "var(--text-primary)",
+            padding: "48px",
+            borderRadius: "16px",
+            boxShadow: "0 20px 50px var(--shadow)",
+            border: "1px solid var(--border-color)",
+            textAlign: "center",
+            maxWidth: "450px",
+            transition: "all 0.3s ease",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: "24px",
+            }}
+          >
+            <Upload size={64} color="var(--accent-color)" strokeWidth={1.5} style={{ animation: "pulse 2s ease-in-out infinite" }} />
+          </div>
+          <h3
+            className="theme-transition"
+            style={{
+              marginBottom: "16px",
+              color: "var(--text-primary)",
+              fontSize: "24px",
+              fontWeight: 700,
+              transition: "color 0.3s ease",
+            }}
+          >
+            Submitting Your Exam...
+          </h3>
+          <p
+            className="theme-transition"
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "16px",
+              lineHeight: 1.6,
+              margin: "0 0 28px 0",
+              transition: "color 0.3s ease",
+            }}
+          >
+            Please wait while we securely upload your exam recordings and save your answers.
+            <br />
+            <strong>Do not close this window.</strong>
+          </p>
+
+          {/* Animated Progress Bar */}
+          <div
+            style={{
+              width: "100%",
+              height: "6px",
+              background: "var(--border-color)",
+              borderRadius: "3px",
+              overflow: "hidden",
+              marginBottom: "24px",
+            }}
+          >
+            <div
+              style={{
+                width: "70%",
+                height: "100%",
+                background: "var(--accent-color)",
+                borderRadius: "3px",
+                animation: "shimmer 1.5s ease-in-out infinite",
+              }}
+            />
+          </div>
+
+          {/* Info Box */}
+          <div
+            style={{
+              padding: "16px",
+              background: "rgba(59, 130, 246, 0.1)",
+              borderRadius: "8px",
+              fontSize: "14px",
+              color: "var(--text-secondary)",
+              border: "1px solid rgba(59, 130, 246, 0.3)",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              justifyContent: "center",
+            }}
+          >
+            <Loader size={18} style={{ animation: "spin 1s linear infinite", flexShrink: 0 }} />
+            <span>All cameras and screen sharing have been stopped</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoadingQuestions) {
     return (
       <div className={`${styles.overlay} theme-transition`}>
@@ -853,11 +996,12 @@ const ExamPage = ({
         >
           <div
             style={{
-              fontSize: "48px",
+              display: "flex",
+              justifyContent: "center",
               marginBottom: "16px",
             }}
           >
-            📝
+            <FileText size={48} color="var(--accent-color)" strokeWidth={1.5} />
           </div>
           <h3
             className="theme-transition"
@@ -883,6 +1027,125 @@ const ExamPage = ({
           >
             Please wait while we prepare your exam.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Show loading screen while AI models are initializing
+  if (!modelsLoaded && (examSettings?.head_direction_enabled || 
+      examSettings?.eyeball_detection_enabled || 
+      examSettings?.object_detection_enabled || 
+      examSettings?.multiple_person_detection_enabled)) {
+    return (
+      <div className={`${styles.overlay} theme-transition`}>
+        <div
+          className="theme-transition"
+          style={{
+            background: "var(--card-bg)",
+            color: "var(--text-primary)",
+            padding: "40px",
+            borderRadius: "16px",
+            boxShadow: "0 20px 50px var(--shadow)",
+            border: "1px solid var(--border-color)",
+            textAlign: "center",
+            maxWidth: "450px",
+            transition: "all 0.3s ease",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: "20px",
+              animation: "pulse 2s ease-in-out infinite",
+            }}
+          >
+            <Brain size={56} color="var(--accent-color)" strokeWidth={1.5} />
+          </div>
+          <h3
+            className="theme-transition"
+            style={{
+              marginBottom: "16px",
+              color: "var(--text-primary)",
+              fontSize: "22px",
+              fontWeight: 700,
+              transition: "color 0.3s ease",
+            }}
+          >
+            Initializing AI Proctoring...
+          </h3>
+          <p
+            className="theme-transition"
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "15px",
+              lineHeight: 1.6,
+              margin: "0 0 20px 0",
+              transition: "color 0.3s ease",
+            }}
+          >
+            Loading AI models for advanced monitoring.
+            <br />
+            <strong>This may take a few moments.</strong>
+          </p>
+          <div
+            style={{
+              width: "100%",
+              height: "4px",
+              background: "var(--border-color)",
+              borderRadius: "2px",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: "60%",
+                height: "100%",
+                background: "var(--accent-color)",
+                borderRadius: "2px",
+                animation: "shimmer 1.5s ease-in-out infinite",
+              }}
+            />
+          </div>
+          <div
+            style={{
+              marginTop: "20px",
+              padding: "12px",
+              background: "var(--secondary-bg)",
+              borderRadius: "8px",
+              fontSize: "13px",
+              color: "var(--text-secondary)",
+              border: "1px solid var(--border-color)",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              justifyContent: "center",
+            }}
+          >
+            <Loader size={16} style={{ animation: "spin 1s linear infinite" }} />
+            <span>Please ensure your camera is enabled and you&apos;re in a well-lit area</span>
+          </div>
+        </div>
+        
+        {/* Hidden FloatingCamera to trigger model loading */}
+        <div style={{ display: "none" }}>
+          <FloatingCamera
+            settings={examSettings}
+            socket={socket}
+            onLookingAway={() => {}}
+            detect={() => {}}
+            number={() => {}}
+            onAuthFaceMissing={() => {}}
+            onHeadDirection={() => {}}
+            examSubmitted={false}
+            mediaRecorderRef={frontCameraMediaRecorderRef}
+            screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
+            onAuthPause={() => {}}
+            onAuthResume={() => {}}
+            pendingChunksRef={pendingFaceChunksRef}
+            onModelsLoaded={handleModelsLoaded}
+          />
         </div>
       </div>
     );
@@ -1473,6 +1736,7 @@ const ExamPage = ({
           onAuthPause={handleAuthPause}
           onAuthResume={handleAuthResume}
           pendingChunksRef={pendingFaceChunksRef}
+          onModelsLoaded={handleModelsLoaded}
         />
       </div>
 
