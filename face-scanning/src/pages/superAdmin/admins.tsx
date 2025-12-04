@@ -5,6 +5,7 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import { SuperAdminGuard } from "../../components/guards";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
 interface Admin {
   id: number;
@@ -1468,8 +1469,8 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
 
             {importResults.successful?.length > 0 && (
               <div style={{ marginBottom: "20px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "var(--success-color)" }}>
-                  ✅ Successfully Created ({importResults.successful.length})
+                <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "var(--success-color)", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <CheckCircle size={18} /> Successfully Created ({importResults.successful.length})
                 </h3>
                 <div style={{ maxHeight: "200px", overflowY: "auto", background: "var(--secondary-bg)", padding: "12px", borderRadius: "8px" }}>
                   {importResults.successful.map((admin: any, index: number) => (
@@ -1480,7 +1481,7 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                     }}>
                       <strong>{admin.name}</strong> ({admin.email})
                       {!admin.emailSent && (
-                        <span style={{ color: "var(--warning-color)", marginLeft: "8px" }}>⚠️ Email not sent</span>
+                        <span style={{ color: "var(--warning-color)", marginLeft: "8px", display: "inline-flex", alignItems: "center", gap: "4px" }}><AlertTriangle size={14} /> Email not sent</span>
                       )}
                     </div>
                   ))}
@@ -1490,8 +1491,8 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
 
             {importResults.failed?.length > 0 && (
               <div style={{ marginBottom: "20px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "var(--danger-color)" }}>
-                  ❌ Failed ({importResults.failed.length})
+                <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "var(--danger-color)", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <XCircle size={18} /> Failed ({importResults.failed.length})
                 </h3>
                 <div style={{ maxHeight: "200px", overflowY: "auto", background: "var(--secondary-bg)", padding: "12px", borderRadius: "8px" }}>
                   {importResults.failed.map((admin: any, index: number) => (

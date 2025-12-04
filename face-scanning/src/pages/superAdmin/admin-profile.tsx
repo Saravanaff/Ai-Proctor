@@ -5,6 +5,7 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import { SuperAdminGuard } from "../../components/guards";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { Check, Mail, User, FileText, Users } from "lucide-react";
 
 interface Exam {
   id: number;
@@ -149,7 +150,7 @@ const AdminProfilePage = () => {
                 border: "1.5px solid var(--success-color)",
               }}
             >
-              ✓ Active
+              <Check size={16} /> Active
             </div>
           </div>
 
@@ -214,7 +215,7 @@ const AdminProfilePage = () => {
                     border: "1px solid var(--border-color)",
                   }}
                 >
-                  <span style={{ fontSize: "16px" }}>📧</span>
+                  <Mail size={16} />
                   {admin?.email}
                 </div>
                 <div
@@ -231,7 +232,7 @@ const AdminProfilePage = () => {
                     border: "1px solid var(--accent-color)",
                   }}
                 >
-                  <span style={{ fontSize: "16px" }}>👤</span>
+                  <User size={16} />
                   Administrator
                 </div>
                 <div
@@ -248,7 +249,7 @@ const AdminProfilePage = () => {
                     border: "1px solid var(--border-color)",
                   }}
                 >
-                  <span style={{ fontSize: "16px" }}>📝</span>
+                  <FileText size={16} />
                   {exams.length} Exams
                 </div>
               </div>
@@ -517,7 +518,7 @@ const AdminProfilePage = () => {
                     border: "1px solid var(--accent-color)",
                   }}
                 >
-                  <span style={{ fontSize: "14px" }}>👥</span>
+                  <Users size={14} />
                   {exam.totalParticipants}
                 </span>
               </div>

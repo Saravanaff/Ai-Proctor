@@ -5,6 +5,7 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import { SuperAdminGuard } from "../../components/guards";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { Users, GraduationCap, FileText, CheckCircle, Plus } from "lucide-react";
 
 interface DashboardStats {
   totalAdmins: number;
@@ -388,7 +389,7 @@ const SuperAdminDashboard = () => {
                     fontSize: "24px",
                   }}
                 >
-                  👥
+                  <Users size={24} color="white" />
                 </div>
               </div>
               <div>
@@ -436,7 +437,7 @@ const SuperAdminDashboard = () => {
                     fontSize: "24px",
                   }}
                 >
-                  🎓
+                  <GraduationCap size={24} color="white" />
                 </div>
               </div>
               <div>
@@ -484,7 +485,7 @@ const SuperAdminDashboard = () => {
                     fontSize: "24px",
                   }}
                 >
-                  📝
+                  <FileText size={24} color="white" />
                 </div>
               </div>
               <div>
@@ -532,7 +533,7 @@ const SuperAdminDashboard = () => {
                     fontSize: "24px",
                   }}
                 >
-                  ✅
+                  <CheckCircle size={24} color="white" />
                 </div>
               </div>
               <div>
@@ -593,7 +594,7 @@ const SuperAdminDashboard = () => {
                   e.currentTarget.style.transform = "translateY(0)";
                 }}
               >
-                <span style={{ fontSize: "20px" }}>➕</span>
+                <Plus size={20} />
                 <div>
                   <div style={{ fontWeight: "600" }}>Add New Admin</div>
                   <div style={{ fontSize: "12px", opacity: 0.8 }}>Create administrator account</div>
@@ -630,7 +631,7 @@ const SuperAdminDashboard = () => {
                   e.currentTarget.style.transform = "translateY(0)";
                 }}
               >
-                <span style={{ fontSize: "20px" }}>👥</span>
+                <Users size={20} />
                 <div>
                   <div style={{ fontWeight: "600" }}>View All Admins</div>
                   <div style={{ fontSize: "12px", opacity: 0.8 }}>Manage administrator list</div>
