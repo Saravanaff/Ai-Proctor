@@ -1,6 +1,7 @@
 import React from "react";
 import { MCQQuestion } from "../../types/mcq";
 import LatexRenderer from "./LatexRenderer";
+import { Pencil, Trash2, FileText, Check } from "lucide-react";
 
 interface MCQQuestionListProps {
   questions: MCQQuestion[];
@@ -29,7 +30,9 @@ const MCQQuestionList: React.FC<MCQQuestionListProps> = ({
           background: "var(--secondary-bg)",
         }}
       >
-        <div style={{ fontSize: "48px", marginBottom: "12px" }}>📝</div>
+        <div style={{ marginBottom: "12px" }}>
+          <FileText size={48} color="var(--text-tertiary)" strokeWidth={1.5} />
+        </div>
         <p
           className="theme-transition"
           style={{
@@ -128,7 +131,7 @@ const MCQQuestionList: React.FC<MCQQuestionListProps> = ({
                 }}
                 title="Edit question"
               >
-                ✏️ Edit
+                <Pencil size={14} /> Edit
               </button>
               <button
                 type="button"
@@ -153,7 +156,7 @@ const MCQQuestionList: React.FC<MCQQuestionListProps> = ({
                 }}
                 title="Delete question"
               >
-                🗑️ Delete
+                <Trash2 size={14} /> Delete
               </button>
             </div>
           </div>
@@ -209,9 +212,12 @@ const MCQQuestionList: React.FC<MCQQuestionListProps> = ({
                         color: "#fff",
                         fontSize: "11px",
                         fontWeight: 600,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
                       }}
                     >
-                      ✓ Correct
+                      <Check size={12} /> Correct
                     </span>
                   )}
                 </div>

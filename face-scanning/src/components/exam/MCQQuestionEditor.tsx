@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import LatexRenderer from "./LatexRenderer";
 import { MCQOption, MCQQuestion } from "../../types/mcq";
+import { Eye, Edit3, Lightbulb, Check } from "lucide-react";
 
 interface MCQQuestionEditorProps {
   onSave: (question: MCQQuestion) => void;
@@ -137,7 +138,7 @@ const MCQQuestionEditor: React.FC<MCQQuestionEditorProps> = ({
               transition: "all 0.2s ease",
             }}
           >
-            {showPreview ? "📝 Edit" : "👁️ Preview"}
+            {showPreview ? <><Edit3 size={14} /> Edit</> : <><Eye size={14} /> Preview</>}
           </button>
         </div>
       </div>
@@ -154,7 +155,7 @@ const MCQQuestionEditor: React.FC<MCQQuestionEditorProps> = ({
           color: "var(--text-secondary)",
         }}
       >
-        💡 <strong>LaTeX Tips:</strong> Use <code>$formula$</code> for inline
+        <Lightbulb size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> <strong>LaTeX Tips:</strong> Use <code>$formula$</code> for inline
         math (e.g., $x^2$) or <code>$$formula$$</code> for display math (e.g.,
         $$\int_0^1 x^2 dx$$)
       </div>
@@ -465,9 +466,12 @@ const MCQQuestionEditor: React.FC<MCQQuestionEditorProps> = ({
                       color: "#22c55e",
                       fontSize: "12px",
                       fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
                     }}
                   >
-                    ✓ Correct
+                    <Check size={14} /> Correct
                   </span>
                 )}
               </div>

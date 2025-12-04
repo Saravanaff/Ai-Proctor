@@ -1,14 +1,32 @@
 import React, { useState, useEffect } from "react";
-import styles from "../../styles/CreateExamPage.module.css";
 import { useRouter } from "next/router";
 import MCQQuestionEditor from "../../components/exam/MCQQuestionEditor";
 import MCQQuestionList from "../../components/exam/MCQQuestionList";
 import { MCQQuestion } from "../../types/mcq";
 import { ThemeToggle } from "../../components/ThemeToggle";
-import LatexRenderer from "../../components/exam/LatexRenderer";
 import { ExaminerGuard } from "@/components/guards";
 import * as XLSX from 'xlsx';
-import { AlertTriangle, PenLine, Monitor, HelpCircle, Bot, Video, FileSpreadsheet, Users, Mail } from "lucide-react";
+import { 
+  AlertTriangle, 
+  Monitor, 
+  HelpCircle, 
+  Bot, 
+  Video, 
+  FileSpreadsheet, Users, Mail,
+  ArrowLeft,
+  ArrowRight,
+  Calendar,
+  Timer,
+  FileText,
+  ChevronDown,
+  ChevronUp,
+  Upload,
+  Download,
+  FolderOpen,
+  Plus,
+  Check,
+  X
+} from "lucide-react";
 
 interface Student {
   email: string;
@@ -525,57 +543,82 @@ const NewExam = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "10px 14px",
-        borderRadius: 8,
-        background: "var(--secondary-bg)",
-        border: "1px solid var(--border-color)",
-        transition: "all 0.2s ease",
+        padding: "14px 16px",
+        borderRadius: 12,
+        background: enabled && !disabled ? "rgba(var(--accent-color-rgb), 0.08)" : "var(--secondary-bg)",
+        border: enabled && !disabled ? "1px solid rgba(var(--accent-color-rgb), 0.3)" : "1px solid var(--border-color)",
+        transition: "all 0.25s ease",
+        cursor: disabled ? "not-allowed" : "pointer",
       }}
       className="theme-transition"
+      onClick={disabled ? undefined : onToggle}
     >
-      <span
-        className="theme-transition"
-        style={{
-          fontSize: 13,
-          fontWeight: 500,
-          color: disabled ? "var(--text-tertiary)" : "var(--text-primary)",
-          transition: "color 0.3s ease",
-        }}
-      >
-        {label}
-      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: enabled ? "var(--accent-color)" : "var(--text-tertiary)",
+            opacity: disabled ? 0.4 : 1,
+            transition: "all 0.25s ease",
+          }}
+        />
+        <span
+          className="theme-transition"
+          style={{
+            fontSize: 14,
+            fontWeight: 500,
+            color: disabled ? "var(--text-tertiary)" : "var(--text-primary)",
+            transition: "color 0.3s ease",
+          }}
+        >
+          {label}
+        </span>
+      </div>
       <button
         type="button"
-        onClick={disabled ? undefined : onToggle}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!disabled) onToggle();
+        }}
         aria-pressed={enabled}
         disabled={disabled}
         className="theme-transition"
         style={{
           position: "relative",
-          width: 48,
-          height: 26,
+          width: 52,
+          height: 28,
           borderRadius: 999,
           border: "none",
-          background: enabled ? "var(--accent-color)" : "#ddd",
+          background: enabled ? "var(--accent-color)" : "var(--border-color)",
           cursor: disabled ? "not-allowed" : "pointer",
-          transition: "background 0.2s ease",
+          transition: "all 0.25s ease",
           opacity: disabled ? 0.5 : 1,
+          boxShadow: enabled ? "0 2px 8px rgba(var(--accent-color-rgb), 0.3)" : "inset 0 1px 3px rgba(0,0,0,0.1)",
         }}
       >
         <span
           aria-hidden
           style={{
             position: "absolute",
-            top: 2,
-            left: enabled ? 24 : 2,
+            top: 3,
+            left: enabled ? 27 : 3,
             width: 22,
             height: 22,
             borderRadius: "50%",
             background: "#fff",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-            transition: "left 0.2s ease",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+            transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
-        />
+        >
+          {enabled && (
+            <Check size={12} style={{ color: "var(--accent-color)" }} />
+          )}
+        </span>
       </button>
     </div>
   );
@@ -590,6 +633,7 @@ const NewExam = () => {
     onMasterToggle,
     children,
     icon,
+    fullHeight,
   }: {
     title: string;
     subtitle: string;
@@ -600,28 +644,38 @@ const NewExam = () => {
     onMasterToggle?: () => void;
     children: React.ReactNode;
     icon: React.ReactNode;
+    fullHeight?: boolean;
   }) => (
     <div
       className="theme-transition"
       style={{
-        marginBottom: 16,
-        border: "2px solid var(--border-color)",
-        borderRadius: 14,
+        marginBottom: fullHeight ? 0 : 20,
+        borderRadius: 16,
         background: "var(--card-bg)",
+        flex: fullHeight ? 1 : undefined,
+        display: fullHeight ? "flex" : undefined,
+        flexDirection: fullHeight ? "column" : undefined,
         overflow: "hidden",
         transition: "all 0.3s ease",
+        boxShadow: isOpen 
+          ? "0 8px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 16px -4px rgba(0, 0, 0, 0.08)" 
+          : "0 2px 8px -2px rgba(0, 0, 0, 0.08)",
+        border: "1px solid var(--border-color)",
       }}
     >
       {/* Header */}
       <div
         style={{
-          padding: "16px 20px",
+          padding: "20px 24px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: isOpen ? "var(--secondary-bg)" : "transparent",
+          background: isOpen 
+            ? "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.05) 0%, transparent 100%)" 
+            : "transparent",
           borderBottom: isOpen ? "1px solid var(--border-color)" : "none",
           cursor: "pointer",
+          transition: "all 0.3s ease",
         }}
         onClick={onToggle}
       >
@@ -629,19 +683,35 @@ const NewExam = () => {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "12px",
+            gap: "16px",
             flex: 1,
           }}
         >
-          <span style={{ fontSize: "24px" }}>{icon}</span>
-          <div>
+          <div 
+            style={{ 
+              width: 48,
+              height: 48,
+              borderRadius: 12,
+              background: masterEnabled !== false 
+                ? "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.15) 0%, rgba(var(--accent-color-rgb), 0.05) 100%)" 
+                : "var(--secondary-bg)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.3s ease",
+            }}
+          >
+            {icon}
+          </div>
+          <div style={{ flex: 1 }}>
             <h3
               className="theme-transition"
               style={{
                 margin: 0,
-                fontSize: 16,
-                fontWeight: 700,
+                fontSize: 17,
+                fontWeight: 600,
                 color: "var(--text-primary)",
+                letterSpacing: "-0.01em",
               }}
             >
               {title}
@@ -649,10 +719,10 @@ const NewExam = () => {
             <p
               className="theme-transition"
               style={{
-                margin: 0,
-                fontSize: 12,
+                margin: "4px 0 0 0",
+                fontSize: 13,
                 color: "var(--text-secondary)",
-                marginTop: 2,
+                lineHeight: 1.4,
               }}
             >
               {subtitle}
@@ -660,59 +730,98 @@ const NewExam = () => {
           </div>
         </div>
         <div
-          style={{ display: "flex", alignItems: "center", gap: "12px" }}
+          style={{ display: "flex", alignItems: "center", gap: "16px" }}
           onClick={(e) => e.stopPropagation()}
         >
           {masterToggle && (
-            <button
-              type="button"
-              onClick={onMasterToggle}
-              className="theme-transition"
-              style={{
-                position: "relative",
-                width: 52,
-                height: 28,
-                borderRadius: 999,
-                border: "none",
-                background: masterEnabled ? "var(--accent-color)" : "#ddd",
-                cursor: "pointer",
-                transition: "background 0.2s ease",
-              }}
-            >
-              <span
-                style={{
-                  position: "absolute",
-                  top: 2,
-                  left: masterEnabled ? 26 : 2,
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  background: "#fff",
-                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                  transition: "left 0.2s ease",
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span 
+                style={{ 
+                  fontSize: 12, 
+                  fontWeight: 600,
+                  color: masterEnabled ? "var(--accent-color)" : "var(--text-tertiary)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
                 }}
-              />
-            </button>
+              >
+                {masterEnabled ? "Enabled" : "Disabled"}
+              </span>
+              <button
+                type="button"
+                onClick={onMasterToggle}
+                className="theme-transition"
+                style={{
+                  position: "relative",
+                  width: 56,
+                  height: 30,
+                  borderRadius: 999,
+                  border: "none",
+                  background: masterEnabled ? "var(--accent-color)" : "var(--border-color)",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                  boxShadow: masterEnabled 
+                    ? "0 2px 8px rgba(var(--accent-color-rgb), 0.3)" 
+                    : "inset 0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 3,
+                    left: masterEnabled ? 29 : 3,
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    background: "#fff",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                    transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {masterEnabled && (
+                    <Check size={12} style={{ color: "var(--accent-color)" }} />
+                  )}
+                </span>
+              </button>
+            </div>
           )}
-          <button
-            type="button"
+          <div
             style={{
-              background: "transparent",
-              border: "none",
-              fontSize: "20px",
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-              transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 0.3s ease",
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              background: isOpen ? "var(--secondary-bg)" : "transparent",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.3s ease",
             }}
           >
-            ▼
-          </button>
+            {isOpen ? (
+              <ChevronUp size={20} color="var(--text-secondary)" />
+            ) : (
+              <ChevronDown size={20} color="var(--text-secondary)" />
+            )}
+          </div>
         </div>
       </div>
 
       {/* Content */}
-      {isOpen && <div style={{ padding: "20px" }}>{children}</div>}
+      {isOpen && (
+        <div 
+          style={{ 
+            padding: "24px",
+            background: "var(--secondary-bg)",
+            flex: fullHeight ? 1 : undefined,
+            display: fullHeight ? "flex" : undefined,
+            flexDirection: fullHeight ? "column" : undefined,
+          }}
+        >
+          {children}
+        </div>
+      )}
     </div>
   );
 
@@ -754,14 +863,16 @@ const NewExam = () => {
           transition: "background 0.3s ease",
         }}
       >
-        {/* Header */}
+        {/* Modern Header */}
         <header
           className="theme-transition"
           style={{
             position: "sticky",
             top: 0,
             zIndex: 100,
-            background: "var(--card-bg)",
+            background: "rgba(var(--card-bg-rgb), 0.85)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
             borderBottom: "1px solid var(--border-color)",
             padding: "16px 32px",
             display: "flex",
@@ -802,7 +913,7 @@ const NewExam = () => {
                   marginBottom: "4px",
                 }}
               >
-                Create New Exam - Step {currentStep} of 3
+                Create New Exam - Step {currentStep} of 2
               </h1>
               <p
                 className="theme-transition"
@@ -817,15 +928,13 @@ const NewExam = () => {
                   `Configure exam settings • ${
                     mcqQuestions.length
                   } questions • ${getEnabledFeaturesCount()} features enabled`}
-                {currentStep === 3 &&
-                  `Add students to this exam • ${students.length} students added`}
               </p>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             {/* Step Indicator */}
             <div style={{ display: "flex", gap: "8px", marginRight: "16px" }}>
-              {[1, 2, 3].map((step) => (
+              {[1, 2].map((step) => (
                 <div
                   key={step}
                   style={{
@@ -848,45 +957,136 @@ const NewExam = () => {
         {/* Main Content */}
         <main
           style={{
-            display: "flex",
-            gap: "24px",
-            padding: "32px",
-            maxWidth: "1200px",
+            padding: "32px 48px",
+            maxWidth: "1400px",
             margin: "0 auto",
-            alignItems: "flex-start",
           }}
         >
-          {/* Form */}
+          {/* Step Info Banner */}
           <div
+            className="theme-transition"
             style={{
-              flex: "1",
-              maxWidth: "100%",
+              background: "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.1) 0%, rgba(var(--accent-color-rgb), 0.03) 100%)",
+              border: "1px solid rgba(var(--accent-color-rgb), 0.2)",
+              borderRadius: "16px",
+              padding: "20px 24px",
+              marginBottom: "32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            {/* STEP 1: Exam Name & Questions */}
-            {currentStep === 1 && (
-              <>
-                {/* Exam Name */}
-                <div
-                  className={`${styles.glassPanel} theme-transition`}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <div
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "12px",
+                  background: "var(--accent-color)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {currentStep === 1 ? (
+                  <FileText size={24} color="white" />
+                ) : (
+                  <Monitor size={24} color="white" />
+                )}
+              </div>
+              <div>
+                <h2
                   style={{
-                    padding: "24px",
-                    borderRadius: "14px",
-                    marginBottom: "16px",
+                    margin: 0,
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    color: "var(--text-primary)",
                   }}
                 >
-                  <label
-                    className="theme-transition"
-                    style={{
-                      display: "block",
-                      marginBottom: "12px",
-                      color: "var(--text-primary)",
-                      fontWeight: 600,
-                      fontSize: "15px",
-                    }}
-                  >
-                    📝 Exam Name *
-                  </label>
+                  {currentStep === 1 ? "Exam Details & Questions" : "Proctoring Settings"}
+                </h2>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    fontSize: "14px",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  {currentStep === 1 
+                    ? "Enter exam information and add your questions" 
+                    : `Configure monitoring features • ${mcqQuestions.length} questions • ${getEnabledFeaturesCount()} features enabled`}
+                </p>
+              </div>
+            </div>
+            {currentStep === 1 && mcqQuestions.length > 0 && (
+              <div
+                style={{
+                  background: "var(--card-bg)",
+                  padding: "10px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Questions: </span>
+                <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--accent-color)" }}>{mcqQuestions.length}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Form Content */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            {/* STEP 1: Exam Name & Questions */}
+            {currentStep === 1 && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+                {/* Left Column - Exam Details */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                {/* Exam Name Card */}
+                <div
+                  className="theme-transition"
+                  style={{
+                    background: "var(--card-bg)",
+                    borderRadius: "16px",
+                    padding: "28px",
+                    border: "1px solid var(--border-color)",
+                    boxShadow: "0 4px 20px -8px rgba(0, 0, 0, 0.1)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "10px",
+                        background: "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.15) 0%, rgba(var(--accent-color-rgb), 0.05) 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <FileText size={18} color="var(--accent-color)" />
+                    </div>
+                    <div>
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        Exam Name
+                      </h3>
+                      <p
+                        style={{
+                          margin: "2px 0 0 0",
+                          fontSize: "13px",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        Give your exam a descriptive name
+                      </p>
+                    </div>
+                  </div>
                   <input
                     type="text"
                     value={examName}
@@ -907,34 +1107,50 @@ const NewExam = () => {
 
                 {/* Exam Schedule & Duration */}
                 <div
-                  className={`${styles.glassPanel} theme-transition`}
+                  className="theme-transition"
                   style={{
-                    padding: "24px",
-                    borderRadius: "14px",
-                    marginBottom: "16px",
                     background: "var(--card-bg)",
+                    borderRadius: "16px",
+                    padding: "28px",
                     border: "1px solid var(--border-color)",
+                    boxShadow: "0 4px 20px -8px rgba(0, 0, 0, 0.1)",
                   }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      marginBottom: "20px",
-                    }}
-                  >
-                    <span style={{ fontSize: "24px" }}>📅</span>
-                    <h3
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
+                    <div
                       style={{
-                        margin: 0,
-                        fontSize: "18px",
-                        fontWeight: 600,
-                        color: "var(--text-primary)",
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "10px",
+                        background: "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.15) 0%, rgba(var(--accent-color-rgb), 0.05) 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      Schedule & Timing
-                    </h3>
+                      <Calendar size={18} color="var(--accent-color)" />
+                    </div>
+                    <div>
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        Schedule & Timing
+                      </h3>
+                      <p
+                        style={{
+                          margin: "2px 0 0 0",
+                          fontSize: "13px",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        Set the exam window and duration
+                      </p>
+                    </div>
                   </div>
 
                   <div
@@ -1140,7 +1356,7 @@ const NewExam = () => {
                             gap: "8px",
                           }}
                         >
-                          <span style={{ fontSize: "20px" }}>⏱</span>
+                          <Timer size={20} color="var(--accent-color)" />
                           <div>
                             <div
                               style={{
@@ -1165,15 +1381,65 @@ const NewExam = () => {
                     </div>
                   </div>
                 </div>
+                </div>
 
-                {/* Questions Section */}
-                <CollapsibleSection
-                  title="MCQ Questions"
-                  subtitle={`Add multiple choice questions (${mcqQuestions.length} questions added)`}
-                  icon={<HelpCircle size={24} color="var(--accent-color)" />}
-                  isOpen={mcqSectionOpen}
-                  onToggle={() => setMcqSectionOpen(!mcqSectionOpen)}
+                {/* Right Column - Questions */}
+                <div
+                  className="theme-transition"
+                  style={{
+                    background: "var(--card-bg)",
+                    borderRadius: "16px",
+                    padding: "28px",
+                    border: "1px solid var(--border-color)",
+                    boxShadow: "0 4px 20px -8px rgba(0, 0, 0, 0.1)",
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "500px",
+                    minHeight: "500px",
+                    maxHeight: "500px",
+                    overflow: "hidden",
+                  }}
                 >
+                  {/* Header */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px", flexShrink: 0 }}>
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "10px",
+                        background: "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.15) 0%, rgba(var(--accent-color-rgb), 0.05) 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <HelpCircle size={18} color="var(--accent-color)" />
+                    </div>
+                    <div>
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        MCQ Questions
+                      </h3>
+                      <p
+                        style={{
+                          margin: "2px 0 0 0",
+                          fontSize: "13px",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        {mcqQuestions.length} questions added
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Content Area */}
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", minHeight: 0 }}>
                   {showFileUploader && (
                     <div
                       className="theme-transition"
@@ -1307,7 +1573,7 @@ const NewExam = () => {
                             transition: "all 0.2s ease",
                           }}
                         >
-                          <span>📥</span> Download Sample Template
+                          <Download size={16} /> Download Sample Template
                         </button>
 
                         {uploadError && (
@@ -1374,7 +1640,9 @@ const NewExam = () => {
                               display: "block",
                             }}
                           >
-                            <div style={{ fontSize: "48px", marginBottom: "12px" }}>📁</div>
+                            <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}>
+                              <FolderOpen size={48} color="var(--accent-color)" strokeWidth={1.5} />
+                            </div>
                             <p
                               style={{
                                 margin: "0 0 8px 0",
@@ -1452,19 +1720,29 @@ const NewExam = () => {
                           padding: "40px 20px",
                           color: "var(--text-secondary)",
                           fontSize: "14px",
+                          flex: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
                         No questions added yet. Upload an Excel/CSV file or add questions
                         manually.
                       </div>
                     )}
+                  </div>
 
+                  {/* Fixed Footer Buttons - Outside scrollable area */}
                   {!showQuestionEditor && !showFileUploader && (
                     <div
                       style={{
                         display: "flex",
                         gap: "12px",
-                        marginTop: mcqQuestions.length > 0 ? 16 : 0,
+                        marginTop: "16px",
+                        paddingTop: "16px",
+                        borderTop: "1px solid var(--border-color)",
+                        flexShrink: 0,
+                        background: "var(--card-bg)",
                       }}
                     >
                       <button
@@ -1482,9 +1760,13 @@ const NewExam = () => {
                           cursor: "pointer",
                           flex: 1,
                           transition: "all 0.2s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
                         }}
                       >
-                        � Upload Excel/CSV
+                        <Upload size={16} /> Upload Excel/CSV
                       </button>
                       <button
                         type="button"
@@ -1507,54 +1789,82 @@ const NewExam = () => {
                           gap: "8px",
                         }}
                       >
-                        <PenLine size={16} /> Add Manually
+                        <Plus size={16} /> Add Manually
                       </button>
                     </div>
                   )}
-                </CollapsibleSection>
+                </div>
 
-                {/* Action Buttons */}
+                {/* Action Buttons - Full Width */}
                 <div
                   style={{
+                    gridColumn: "1 / -1",
                     display: "flex",
-                    gap: "12px",
-                    marginTop: "24px",
+                    gap: "16px",
+                    marginTop: "16px",
+                    paddingTop: "24px",
+                    borderTop: "1px solid var(--border-color)",
                   }}
                 >
                   <button
                     onClick={() => router.push("/examiner/CreateExamPage")}
-                    className={`${styles.btn} ${styles.btnGhost} theme-transition`}
+                    className="theme-transition"
                     style={{
-                      padding: "10px 18px",
-                      borderRadius: "8px",
+                      padding: "14px 28px",
+                      borderRadius: "12px",
                       fontSize: "14px",
                       fontWeight: 600,
                       cursor: "pointer",
+                      background: "transparent",
+                      border: "1px solid var(--border-color)",
+                      color: "var(--text-secondary)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--secondary-bg)";
+                      e.currentTarget.style.color = "var(--text-primary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "var(--text-secondary)";
                     }}
                   >
-                    Cancel
+                    <X size={18} /> Cancel
                   </button>
                   <button
                     onClick={handlePreview}
                     disabled={!examName.trim() || mcqQuestions.length === 0}
-                    className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
+                    className="theme-transition"
                     style={{
-                      padding: "10px 20px",
-                      borderRadius: "8px",
+                      flex: 1,
+                      padding: "14px 28px",
+                      borderRadius: "12px",
                       fontSize: "14px",
                       fontWeight: 600,
-                      opacity:
-                        !examName.trim() || mcqQuestions.length === 0 ? 0.6 : 1,
-                      cursor:
-                        !examName.trim() || mcqQuestions.length === 0
-                          ? "not-allowed"
-                          : "pointer",
+                      background: !examName.trim() || mcqQuestions.length === 0 
+                        ? "var(--border-color)" 
+                        : "var(--accent-color)",
+                      border: "none",
+                      color: "white",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      opacity: !examName.trim() || mcqQuestions.length === 0 ? 0.6 : 1,
+                      cursor: !examName.trim() || mcqQuestions.length === 0 ? "not-allowed" : "pointer",
+                      transition: "all 0.2s ease",
+                      boxShadow: !examName.trim() || mcqQuestions.length === 0 
+                        ? "none" 
+                        : "0 4px 16px rgba(var(--accent-color-rgb), 0.3)",
                     }}
                   >
-                    Next: Settings →
+                    Continue to Settings <ArrowRight size={18} />
                   </button>
                 </div>
-              </>
+              </div>
             )}
 
             {/* STEP 2: Exam Settings */}
@@ -1577,8 +1887,8 @@ const NewExam = () => {
                     style={{
                       display: "grid",
                       gridTemplateColumns:
-                        "repeat(auto-fill, minmax(250px, 1fr))",
-                      gap: 12,
+                        "repeat(auto-fill, minmax(280px, 1fr))",
+                      gap: 16,
                     }}
                   >
                     <Toggle
@@ -1628,8 +1938,8 @@ const NewExam = () => {
                     style={{
                       display: "grid",
                       gridTemplateColumns:
-                        "repeat(auto-fill, minmax(250px, 1fr))",
-                      gap: 12,
+                        "repeat(auto-fill, minmax(280px, 1fr))",
+                      gap: 16,
                     }}
                   >
                     <Toggle
@@ -1687,8 +1997,8 @@ const NewExam = () => {
                     style={{
                       display: "grid",
                       gridTemplateColumns:
-                        "repeat(auto-fill, minmax(250px, 1fr))",
-                      gap: 12,
+                        "repeat(auto-fill, minmax(280px, 1fr))",
+                      gap: 16,
                     }}
                   >
                     <Toggle
@@ -1722,32 +2032,526 @@ const NewExam = () => {
                 <div
                   style={{
                     display: "flex",
-                    gap: "12px",
-                    marginTop: "24px",
+                    gap: "16px",
+                    marginTop: "32px",
+                    paddingTop: "24px",
+                    borderTop: "1px solid var(--border-color)",
                   }}
                 >
                   <button
                     onClick={handleBackToQuestions}
-                    className={`${styles.btn} ${styles.btnGhost} theme-transition`}
+                    className="theme-transition"
                     style={{
-                      padding: "10px 18px",
-                      borderRadius: "8px",
+                      padding: "14px 28px",
+                      borderRadius: "12px",
                       fontSize: "14px",
                       fontWeight: 600,
                       cursor: "pointer",
+                      background: "transparent",
+                      border: "1px solid var(--border-color)",
+                      color: "var(--text-secondary)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--secondary-bg)";
+                      e.currentTarget.style.color = "var(--text-primary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "var(--text-secondary)";
                     }}
                   >
-                    ← Back to Questions
+                    <ArrowLeft size={18} /> Back to Questions
                   </button>
                   <button
-                    onClick={handleSettingsToStudents}
+                    onClick={handleFinalSubmit}
                     className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
                     style={{
-                      padding: "10px 20px",
-                      borderRadius: "8px",
+                      flex: 1,
+                      padding: "14px 28px",
+                      borderRadius: "12px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      background: "var(--accent-color)",
+                      border: "none",
+                      color: "white",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      boxShadow: "0 4px 16px rgba(var(--accent-color-rgb), 0.3)",
+                    }}
+                  >
+                    Next: Add Students →
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 3: Add Students */}
+            {currentStep === 3 && (
+              <>
+                {/* Students Section */}
+                <CollapsibleSection
+                  title="Add Students"
+                  subtitle={`Invite students to this exam (${students.length} students added)`}
+                  icon={<Users size={24} color="var(--accent-color)" />}
+                  isOpen={studentsSectionOpen}
+                  onToggle={() => setStudentsSectionOpen(!studentsSectionOpen)}
+                >
+                  {/* Student Form */}
+                  {showStudentForm && (
+                    <div
+                      className="theme-transition"
+                      style={{
+                        padding: "24px",
+                        background: "var(--secondary-bg)",
+                        borderRadius: "12px",
+                        border: "2px solid var(--border-color)",
+                        marginBottom: "16px",
+                      }}
+                    >
+                      <h4
+                        style={{
+                          margin: "0 0 16px 0",
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        Add Student Manually
+                      </h4>
+
+                      {studentUploadError && (
+                        <div
+                          style={{
+                            padding: "12px",
+                            background: "#fee",
+                            border: "1px solid #fcc",
+                            borderRadius: "8px",
+                            color: "#c33",
+                            fontSize: "13px",
+                            marginBottom: "16px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
+                          <AlertTriangle size={16} /> {studentUploadError}
+                        </div>
+                      )}
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "8px",
+                              fontSize: "14px",
+                              fontWeight: 500,
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Student Name (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={newStudentName}
+                            onChange={(e) => setNewStudentName(e.target.value)}
+                            placeholder="Enter student name"
+                            className="input-theme theme-transition"
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              borderRadius: "10px",
+                              border: "1px solid var(--border-color)",
+                              background: "var(--card-bg)",
+                              color: "var(--text-primary)",
+                              fontSize: "14px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "8px",
+                              fontSize: "14px",
+                              fontWeight: 500,
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Email Address *
+                          </label>
+                          <input
+                            type="email"
+                            value={newStudentEmail}
+                            onChange={(e) => setNewStudentEmail(e.target.value)}
+                            placeholder="student@example.com"
+                            className="input-theme theme-transition"
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              borderRadius: "10px",
+                              border: "1px solid var(--border-color)",
+                              background: "var(--card-bg)",
+                              color: "var(--text-primary)",
+                              fontSize: "14px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              marginBottom: "8px",
+                              fontSize: "14px",
+                              fontWeight: 500,
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Password *
+                          </label>
+                          <input
+                            type="text"
+                            value={newStudentPassword}
+                            onChange={(e) => setNewStudentPassword(e.target.value)}
+                            placeholder="Enter password for student account"
+                            className="input-theme theme-transition"
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              borderRadius: "10px",
+                              border: "1px solid var(--border-color)",
+                              background: "var(--card-bg)",
+                              color: "var(--text-primary)",
+                              fontSize: "14px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowStudentForm(false);
+                            setNewStudentEmail("");
+                            setNewStudentPassword("");
+                            setNewStudentName("");
+                            setStudentUploadError("");
+                          }}
+                          className="theme-transition"
+                          style={{
+                            padding: "10px 20px",
+                            borderRadius: "8px",
+                            border: "1px solid var(--border-color)",
+                            background: "var(--secondary-bg)",
+                            color: "var(--text-primary)",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            flex: 1,
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddStudent}
+                          className="theme-transition"
+                          style={{
+                            padding: "10px 20px",
+                            borderRadius: "8px",
+                            border: "none",
+                            background: "var(--accent-color)",
+                            color: "white",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            flex: 1,
+                          }}
+                        >
+                          Add Student
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Students List */}
+                  {students.length > 0 && (
+                    <div
+                      style={{
+                        marginBottom: "16px",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "12px",
+                        overflow: "hidden",
+                        background: "var(--card-bg)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          padding: "12px 16px",
+                          background: "var(--secondary-bg)",
+                          borderBottom: "1px solid var(--border-color)",
+                          fontWeight: 600,
+                          fontSize: "14px",
+                          color: "var(--text-primary)",
+                          display: "grid",
+                          gridTemplateColumns: "2fr 2fr 1fr auto",
+                          gap: "16px",
+                        }}
+                      >
+                        <div>Name</div>
+                        <div>Email</div>
+                        <div>Password</div>
+                        <div>Action</div>
+                      </div>
+                      {students.map((student, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            padding: "12px 16px",
+                            borderBottom:
+                              index < students.length - 1
+                                ? "1px solid var(--border-color)"
+                                : "none",
+                            display: "grid",
+                            gridTemplateColumns: "2fr 2fr 1fr auto",
+                            gap: "16px",
+                            alignItems: "center",
+                            fontSize: "14px",
+                            color: "var(--text-primary)",
+                          }}
+                        >
+                          <div>{student.name || "-"}</div>
+                          <div>{student.email}</div>
+                          <div style={{ fontFamily: "monospace" }}>
+                            {student.password}
+                          </div>
+                          <button
+                            onClick={() => handleDeleteStudent(student.email)}
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              border: "1px solid var(--danger-color)",
+                              background: "transparent",
+                              color: "var(--danger-color)",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {students.length === 0 && !showStudentForm && (
+                    <div
+                      className="theme-transition"
+                      style={{
+                        textAlign: "center",
+                        padding: "40px 20px",
+                        color: "var(--text-secondary)",
+                        fontSize: "14px",
+                      }}
+                    >
+                      No students added yet. Add students manually or upload from Excel/CSV.
+                    </div>
+                  )}
+
+                  {/* Add Student Buttons */}
+                  {!showStudentForm && (
+                    <div style={{ display: "flex", gap: "12px" }}>
+                      <label
+                        htmlFor="student-file-upload"
+                        className="theme-transition"
+                        style={{
+                          padding: "12px 20px",
+                          borderRadius: 10,
+                          border: "2px dashed var(--accent-color)",
+                          background: "transparent",
+                          color: "var(--accent-color)",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          flex: 1,
+                          textAlign: "center",
+                          transition: "all 0.2s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <FileSpreadsheet size={16} /> Upload Excel/CSV
+                      </label>
+                      <input
+                        id="student-file-upload"
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={handleStudentFileUpload}
+                        style={{ display: "none" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={downloadStudentsTemplate}
+                        className="theme-transition"
+                        style={{
+                          padding: "12px 20px",
+                          borderRadius: 10,
+                          border: "1px solid var(--border-color)",
+                          background: "var(--secondary-bg)",
+                          color: "var(--text-primary)",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        📥 Download Template
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowStudentForm(true)}
+                        className="theme-transition"
+                        style={{
+                          padding: "12px 20px",
+                          borderRadius: 10,
+                          border: "2px dashed var(--accent-color)",
+                          background: "transparent",
+                          color: "var(--accent-color)",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          flex: 1,
+                          transition: "all 0.2s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <PenLine size={16} /> Add Manually
+                      </button>
+                    </div>
+                  )}
+                </CollapsibleSection>
+
+                {/* Info Box */}
+                <div
+                  style={{
+                    padding: "16px",
+                    background: "var(--secondary-bg)",
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "12px",
+                    marginBottom: "16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "12px",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <Mail size={20} color="var(--accent-color)" />
+                    <div style={{ flex: 1 }}>
+                      <h4
+                        style={{
+                          margin: "0 0 8px 0",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        Student Accounts & Notifications
+                      </h4>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "13px",
+                          color: "var(--text-secondary)",
+                          lineHeight: "1.6",
+                        }}
+                      >
+                        When you create the exam, accounts will be automatically created for students who don't exist. 
+                        Each student will receive an email notification with:
+                      </p>
+                      <ul
+                        style={{
+                          margin: "8px 0 0 0",
+                          paddingLeft: "20px",
+                          fontSize: "13px",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        <li>Exam name and schedule (start time & end time)</li>
+                        <li>Their login credentials (email & password)</li>
+                        <li>Exam key to join the exam</li>
+                        <li>Duration and important instructions</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    marginTop: "32px",
+                    paddingTop: "24px",
+                    borderTop: "1px solid var(--border-color)",
+                  }}
+                >
+                  <button
+                    onClick={handleBackToSettings}
+                    className={`${styles.btn} ${styles.btnGhost} theme-transition`}
+                    style={{
+                      padding: "14px 28px",
+                      borderRadius: "12px",
                       fontSize: "14px",
                       fontWeight: 600,
                       cursor: "pointer",
+                      background: "transparent",
+                      border: "1px solid var(--border-color)",
+                      color: "var(--text-secondary)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    ← Back to Settings
+                  </button>
+                  <button
+                    onClick={handleFinalSubmit}
+                    disabled={students.length === 0}
+                    className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
+                    style={{
+                      flex: 1,
+                      padding: "14px 28px",
+                      borderRadius: "12px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      boxShadow: "0 4px 16px rgba(var(--accent-color-rgb), 0.3)",
                     }}
                   >
                     Next: Add Students →
@@ -2206,7 +3010,7 @@ const NewExam = () => {
                       opacity: students.length === 0 ? 0.6 : 1,
                     }}
                   >
-                    Preview & Create Exam →
+                    Preview & Create Exam <ArrowRight size={18} />
                   </button>
                 </div>
               </>
