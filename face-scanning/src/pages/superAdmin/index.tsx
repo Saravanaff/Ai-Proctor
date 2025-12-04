@@ -168,7 +168,6 @@ const SuperAdminDashboard = () => {
                   overflow: "hidden",
                 }}
               >
-                <span style={{ fontSize: "18px" }}>📊</span>
                 <span style={{ flex: 1 }}>Dashboard</span>
                 <div
                   style={{
@@ -203,18 +202,13 @@ const SuperAdminDashboard = () => {
                   e.currentTarget.style.background = "var(--secondary-bg)";
                   e.currentTarget.style.color = "var(--text-primary)";
                   e.currentTarget.style.paddingLeft = "20px";
-                  const icon = e.currentTarget.querySelector("span") as HTMLElement;
-                  if (icon) icon.style.transform = "scale(1.1)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
                   e.currentTarget.style.color = "var(--text-secondary)";
                   e.currentTarget.style.paddingLeft = "16px";
-                  const icon = e.currentTarget.querySelector("span") as HTMLElement;
-                  if (icon) icon.style.transform = "scale(1)";
                 }}
               >
-                <span style={{ fontSize: "18px" }}>👥</span>
                 Admin Management
               </button>
               <button
@@ -238,18 +232,13 @@ const SuperAdminDashboard = () => {
                   e.currentTarget.style.background = "var(--secondary-bg)";
                   e.currentTarget.style.color = "var(--text-primary)";
                   e.currentTarget.style.paddingLeft = "20px";
-                  const icon = e.currentTarget.querySelector("span") as HTMLElement;
-                  if (icon) icon.style.transform = "scale(1.1)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "transparent";
                   e.currentTarget.style.color = "var(--text-secondary)";
                   e.currentTarget.style.paddingLeft = "16px";
-                  const icon = e.currentTarget.querySelector("span") as HTMLElement;
-                  if (icon) icon.style.transform = "scale(1)";
                 }}
               >
-                <span style={{ fontSize: "18px" }}>🎓</span>
                 Student Management
               </button>
             </nav>
@@ -285,7 +274,6 @@ const SuperAdminDashboard = () => {
                 e.currentTarget.style.borderColor = "var(--border-color)";
               }}
             >
-              <span style={{ fontSize: "18px" }}>🚪</span>
               Logout
             </button>
           </div>

@@ -181,21 +181,18 @@ export default function StudentsManagement() {
                 onClick={() => router.push("/superAdmin")}
                 className={styles.navButton}
               >
-                <span className={styles.navIcon}>📊</span>
                 Dashboard
               </button>
               <button
                 onClick={() => router.push("/superAdmin/admins")}
                 className={styles.navButton}
               >
-                <span className={styles.navIcon}>👥</span>
                 Admin Management
               </button>
               <button
                 onClick={() => router.push("/superAdmin/students")}
                 className={`${styles.navButton} ${styles.active}`}
               >
-                <span className={styles.navIcon}>🎓</span>
                 Student Management
               </button>
             </nav>
