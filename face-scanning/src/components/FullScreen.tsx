@@ -73,6 +73,18 @@ const ExamPage = ({
   const [modelsLoadingError, setModelsLoadingError] = useState(false);
   const [isUploadingChunks, setIsUploadingChunks] = useState(false);
 
+  // ✅ Debug logging
+  useEffect(() => {
+    console.log("📊 Exam State Debug:", {
+      isValid: examState.isValid,
+      isLoading: examState.isLoading,
+      error: examState.error,
+      questionsCount: questions.length,
+      isLoadingQuestions,
+      examSettings: Object.keys(examSettings).length
+    });
+  }, [examState.isValid, examState.isLoading, questions.length, isLoadingQuestions, examSettings]);
+
   // ✅ REMOVED: lastAlertRef - No longer needed (throttling handled in FloatingCamera)
   // ✅ REMOVED: ALERT_THROTTLE_MS - No longer needed (throttling handled in FloatingCamera)
 
@@ -102,10 +114,14 @@ const ExamPage = ({
     }
   }, [toast]);
 
-  // Fetch exam questions - runs once on mount
+  // Fetch exam questions - runs once exam state is valid
   useEffect(() => {
-    // Don't fetch if exam state is not valid
-    if (!examState.isValid || examState.isLoading) return;
+    // Wait for exam state to be valid before fetching
+    if (!examState.isValid || examState.isLoading) {
+      console.log("⏳ Waiting for exam state validation...", { isValid: examState.isValid, isLoading: examState.isLoading });
+      return;
+    }
+    
     const fetchExamQuestions = async () => {
       try {
         setIsLoadingQuestions(true);
@@ -132,12 +148,16 @@ const ExamPage = ({
         console.log("✅ Questions fetched:", response.data);
 
         if (response.data.success && response.data.questions) {
+          console.log("✅ Setting questions:", response.data.questions.length, "questions");
           setQuestions(response.data.questions);
 
           if (response.data.exam && response.data.exam.duration) {
             // Set timer based on duration (in minutes)
+            console.log("⏰ Setting timer:", response.data.exam.duration, "minutes");
             setTimeLeft(response.data.exam.duration * 60);
           }
+        } else {
+          console.warn("⚠️ No questions in response or success=false:", response.data);
         }
       } catch (error) {
         console.error("❌ Failed to fetch exam questions:", error);
@@ -147,12 +167,13 @@ const ExamPage = ({
           variant: "destructive",
         });
       } finally {
+        console.log("✅ Setting isLoadingQuestions to FALSE");
         setIsLoadingQuestions(false);
       }
     };
 
     fetchExamQuestions();
-  }, []); // ✅ FIX: Empty dependency array - run only once on mount
+  }, [examState.isValid, examState.isLoading]); // ✅ Run when exam state becomes valid
 
   // ✅ REMOVE: Axios interceptor moved out of component to prevent repeated requests
 
@@ -165,8 +186,14 @@ const ExamPage = ({
     };
   }, []);
 
-  // Fetch exam settings - runs once on mount
+  // Fetch exam settings - runs once exam state is valid
   useEffect(() => {
+    // Wait for exam state to be valid before fetching
+    if (!examState.isValid || examState.isLoading) {
+      console.log("⏳ Waiting for exam state validation before fetching settings...");
+      return;
+    }
+    
     const fetchExamSettings = async () => {
       try {
         const examId = getExamId();
@@ -193,7 +220,7 @@ const ExamPage = ({
     };
 
     fetchExamSettings();
-  }, []); // ✅ FIX: Empty dependency array - run only once on mount
+  }, [examState.isValid, examState.isLoading]); // ✅ Run when exam state becomes valid
 
   // Start exam automatically if face authentication is disabled
   useEffect(() => {
@@ -775,132 +802,7 @@ const ExamPage = ({
     router.push("/end");
   };
 
-  // Fetch exam questions - runs once on mount
-  useEffect(() => {
-    const fetchExamQuestions = async () => {
-      try {
-        setIsLoadingQuestions(true);
-        const examId = getExamId();
-
-        if (!examId) {
-          console.error("No exam ID found");
-          setIsLoadingQuestions(false);
-          return;
-        }
-
-        console.log("📚 Fetching questions for exam:", examId);
-
-        // ✅ FIX: Use path parameter instead of query parameter
-        const response = await axios.get(
-          `${baseUrl}/getExamQuestions/${examId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${getTokenFromCookie()}`,
-            },
-          }
-        );
-
-        console.log("✅ Questions fetched:", response.data);
-
-        if (response.data.success && response.data.questions) {
-          setQuestions(response.data.questions);
-
-          if (response.data.exam && response.data.exam.duration) {
-            // Set timer based on duration (in minutes)
-            setTimeLeft(response.data.exam.duration * 60);
-          }
-        }
-      } catch (error) {
-        console.error("❌ Failed to fetch exam questions:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load exam questions",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingQuestions(false);
-      }
-    };
-
-    fetchExamQuestions();
-  }, []); // ✅ FIX: Empty dependency array - run only once on mount
-
-  // ✅ REMOVE: Axios interceptor moved out of component to prevent repeated requests
-
-  // Cleanup all timeouts when component unmounts
-  useEffect(() => {
-    return () => {
-      Object.values(timeoutRefs.current).forEach((timeout) => {
-        if (timeout) clearTimeout(timeout);
-      });
-    };
-  }, []);
-
-  // Fetch exam settings - runs once on mount
-  useEffect(() => {
-    const fetchExamSettings = async () => {
-      try {
-        const examId = getExamId();
-
-        if (!examId) {
-          console.error("No exam ID found");
-          return;
-        }
-
-        console.log("⚙️ Fetching exam settings for exam:", examId);
-
-        const response = await axios.get(`${baseUrl}/getExamSettings`, {
-          params: { userId: Number(userId), examId: Number(examId) },
-          headers: {
-            Authorization: `Bearer ${getTokenFromCookie()}`,
-          },
-        });
-
-        console.log("✅ Exam settings fetched:", response.data);
-        setExamSettings(response.data);
-      } catch (error) {
-        console.error("❌ Failed to fetch exam settings:", error);
-      }
-    };
-
-    fetchExamSettings();
-  }, []); // ✅ FIX: Empty dependency array - run only once on mount
-
-  // Start exam automatically if face authentication is disabled
-  useEffect(() => {
-    if (!examSettings || Object.keys(examSettings).length === 0) return;
-
-    if (!examSettings.face_authentication_enabled && !examStarted) {
-      console.log(
-        "✅ Face authentication disabled - Starting exam immediately"
-      );
-
-      socket.emit("start-exam", {
-        user_id: userId,
-        exam_id: examId,
-        timestamp: new Date(),
-        status: "success",
-        message: "Exam Started successfully (no face auth required)",
-      });
-
-      socket.emit("stream-listener-on", {
-        user_id: userId,
-        exam_id: examId,
-        category: "face_camera",
-        timestamp: new Date(),
-      });
-
-      socket.emit("stream-listener-on", {
-        user_id: userId,
-        exam_id: examId,
-        category: "screen_recording",
-        timestamp: new Date(),
-      });
-
-      setExamStarted(true);
-      setFaceAuthenticationComplete(true);
-    }
-  }, [examSettings, examStarted]);
+  // ✅ REMOVED: Duplicate useEffect blocks (already exist at top of component)
 
   if (blocked) {
     return (

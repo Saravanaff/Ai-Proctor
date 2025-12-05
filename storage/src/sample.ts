@@ -15,8 +15,20 @@ interface RecorderMap {
   [fileName: string]: fs.WriteStream;
 }
 
+interface ChunkQueue {
+  [fileName: string]: {
+    queue: Buffer[];
+    processing: boolean;
+    draining: boolean;
+  };
+}
+
 const startStorageSocketServer = async () => {
   const app = express();
+
+  // ✅ Global counters for monitoring (across all connections)
+  let globalRecorderCount = 0;
+  let globalQueueCount = 0;
 
   app.use(
     cors({
@@ -29,7 +41,13 @@ const startStorageSocketServer = async () => {
   });
 
   app.get("/health", (req, res) => {
-    res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      activeStreams: globalRecorderCount,
+      activeUsers: Math.floor(globalRecorderCount / 2),
+      totalQueuedChunks: globalQueueCount
+    });
   });
 
   let httpsOptions;
@@ -65,6 +83,50 @@ const startStorageSocketServer = async () => {
 
     let recorder: RecorderMap = {};
     let recordingActive: { [fileName: string]: boolean } = {};
+    let chunkQueues: ChunkQueue = {}; // ✅ Queue system for backpressure handling
+
+    // ✅ Process queued chunks with proper flow control
+    const processChunkQueue = async (fileName: string) => {
+      const queue = chunkQueues[fileName];
+      
+      if (!queue || queue.processing || queue.draining || queue.queue.length === 0) {
+        return;
+      }
+
+      queue.processing = true;
+
+      while (queue.queue.length > 0 && recorder[fileName] && recordingActive[fileName]) {
+        const chunk = queue.queue.shift();
+        
+        if (!chunk) break;
+
+        const stream = recorder[fileName];
+        if (!stream) break; // ✅ Safety check
+
+        const writeSuccess = stream.write(chunk);
+        
+        if (!writeSuccess) {
+          // ✅ Backpressure detected - wait for drain before processing more
+          queue.draining = true;
+          console.warn(`⚠️ Backpressure detected for ${fileName} - ${queue.queue.length} chunks queued`);
+          
+          await new Promise<void>((resolve) => {
+            stream.once('drain', () => {
+              console.log(`✅ Buffer drained for ${fileName} - resuming (${queue.queue.length} chunks remaining)`);
+              queue.draining = false;
+              resolve();
+            });
+          });
+        }
+      }
+
+      queue.processing = false;
+
+      // ✅ Check if more chunks arrived while processing
+      if (queue.queue.length > 0) {
+        setImmediate(() => processChunkQueue(fileName));
+      }
+    };
 
     socket.on("error", (error) => {
       console.error("Socket error:", error);
@@ -105,12 +167,17 @@ const startStorageSocketServer = async () => {
             return;
           }
 
-          const writeStream = fs.createWriteStream(outputPath);
+          // ✅ Create WriteStream with larger buffer for better performance with many concurrent streams
+          const writeStream = fs.createWriteStream(outputPath, {
+            highWaterMark: 128 * 1024, // 128KB buffer (default is 16KB) - better for 100+ users
+            flags: 'w'
+          });
           
           writeStream.on("error", (error) => {
             console.error(" WriteStream error for", fileName, ":", error);
             delete recorder[fileName];
             delete recordingActive[fileName];
+            delete chunkQueues[fileName];
             socket.emit("recording-error", { 
               fileName, 
               error: error.message 
@@ -123,8 +190,25 @@ const startStorageSocketServer = async () => {
 
           recorder[fileName] = writeStream;
           recordingActive[fileName] = true;
+          globalRecorderCount++; // ✅ Increment global counter
           
-          console.log(" Recording started:", outputPath);
+          // ✅ Initialize chunk queue for this recording
+          chunkQueues[fileName] = {
+            queue: [],
+            processing: false,
+            draining: false
+          };
+          
+          // ✅ Log concurrent stream count for monitoring
+          const activeStreams = Object.keys(recorder).length;
+          console.log(` Recording started: ${outputPath}`);
+          console.log(`📊 Active streams: ${activeStreams} (${activeStreams / 2} users) | Global: ${globalRecorderCount}`);
+          
+          // ⚠️ Warn if approaching file handle limits
+          if (globalRecorderCount > 150) {
+            console.warn(`⚠️ WARNING: ${globalRecorderCount} active streams - approaching system limits!`);
+          }
+          
           socket.emit("recording-started", { fileName, outputPath });
         } catch (error: any) {
           console.error(" Error in start-stream-recording:", error);
@@ -176,17 +260,26 @@ const startStorageSocketServer = async () => {
             return;
           }
 
-          const writeSuccess = recorder[fileName].write(buf);
-          
-          if (!writeSuccess) {
-            console.warn("⚠️ WriteStream buffer is full for", fileName, "- backpressure detected");
-            // ✅ Handle backpressure: wait for drain event before accepting more chunks
-            recorder[fileName].once('drain', () => {
-              console.log("✅ WriteStream buffer drained for", fileName);
-            });
+          // ✅ Add chunk to queue instead of writing directly
+          if (!chunkQueues[fileName]) {
+            chunkQueues[fileName] = {
+              queue: [],
+              processing: false,
+              draining: false
+            };
           }
 
-          console.log("✅ Written chunk for", fileName, ":", buf.length, "bytes");
+          chunkQueues[fileName].queue.push(buf);
+          
+          // ✅ Start processing if not already processing
+          if (!chunkQueues[fileName].processing) {
+            processChunkQueue(fileName);
+          }
+
+          // ✅ Monitor queue size (warn if queue gets too large)
+          if (chunkQueues[fileName].queue.length > 10) {
+            console.warn(`⚠️ Large queue detected for ${fileName}: ${chunkQueues[fileName].queue.length} chunks pending`);
+          }
         } catch (error: any) {
           console.error("Error in add-video-stream-chunk:", error);
         }
@@ -236,18 +329,34 @@ const startStorageSocketServer = async () => {
                 // ✅ NOW mark as inactive so no new chunks are accepted
                 recordingActive[fileName] = false;
                 
-                stream.end((error?: Error) => {
-                  if (error) {
-                    console.error("❌ Error closing WriteStream for", fileName, ":", error);
-                  } else {
-                    console.log("✅ Recording successfully ended:", fileName);
-                    socket.emit("recording-stopped", { fileName });
+                // ✅ Wait for queue to fully drain before closing stream
+                const waitForQueueDrain = () => {
+                  if (chunkQueues[fileName] && chunkQueues[fileName].queue.length > 0) {
+                    console.log(`⏳ Waiting for ${chunkQueues[fileName].queue.length} queued chunks to process...`);
+                    setTimeout(waitForQueueDrain, 200);
+                    return;
                   }
                   
-                  // ✅ Clean up AFTER stream is fully closed
-                  delete recorder[fileName];
-                  delete recordingActive[fileName];
-                });
+                  console.log(`✅ All queued chunks processed for ${fileName}, closing stream...`);
+                  
+                  stream.end((error?: Error) => {
+                    if (error) {
+                      console.error("❌ Error closing WriteStream for", fileName, ":", error);
+                    } else {
+                      console.log("✅ Recording successfully ended:", fileName);
+                      socket.emit("recording-stopped", { fileName });
+                    }
+                    
+                    // ✅ Clean up AFTER stream is fully closed
+                    delete recorder[fileName];
+                    delete recordingActive[fileName];
+                    delete chunkQueues[fileName]; // ✅ Clean up queue
+                    globalRecorderCount--; // ✅ Decrement global counter
+                    console.log(`📊 Global streams remaining: ${globalRecorderCount}`);
+                  });
+                };
+                
+                waitForQueueDrain();
               };
               
               checkAndClose();
@@ -272,11 +381,15 @@ const startStorageSocketServer = async () => {
             recorder[fileName].end();
             delete recorder[fileName];
             delete recordingActive[fileName];
+            delete chunkQueues[fileName]; // ✅ Clean up queue on disconnect
+            globalRecorderCount--; // ✅ Decrement global counter
           }
         } catch (error) {
           console.error(" Error cleaning up recorder:", error);
         }
       });
+      
+      console.log(`📊 Global streams after disconnect: ${globalRecorderCount}`);
     });
   });
 

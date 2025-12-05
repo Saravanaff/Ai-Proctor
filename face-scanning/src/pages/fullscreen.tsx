@@ -170,7 +170,7 @@ const fullscreen = () => {
             screenStreamRef.current = screenStream;
 
             const mimeType = "video/webm; codecs=vp8";
-            const options: any = { videoBitsPerSecond: 500000 };  // ✅ Reduced from 1Mbps to 500Kbps
+            const options: any = { videoBitsPerSecond: 250000 };  // ✅ Reduced from 500Kbps to 250Kbps to save memory
             if (MediaRecorder && typeof (MediaRecorder as any).isTypeSupported === 'function') {
                 if ((MediaRecorder as any).isTypeSupported(mimeType)) {
                     options.mimeType = mimeType;
@@ -269,8 +269,8 @@ const fullscreen = () => {
             };
 
             try {
-                console.log("Starting screen recorder");
-                screenRecorderMediaRecorderRef.current.start(500);
+                console.log("Starting screen recorder with 1 second chunks");
+                screenRecorderMediaRecorderRef.current.start(1000); // ✅ Changed from 500ms to 1000ms to reduce memory overhead
             } catch (err) {
                 console.error("Failed to start screen MediaRecorder:", err);
                 if (screenStreamRef.current) {

@@ -301,27 +301,16 @@ const FloatingCamera = ({
         mediaRecorderRef.current.state !== "inactive"
       ) {
         try {
-          console.log("📤 Requesting final data from MediaRecorder...");
-          mediaRecorderRef.current.requestData();
+          console.log(`� Stopping MediaRecorder immediately - current state: ${mediaRecorderRef.current.state}`);
+          
+          // ✅ STOP IMMEDIATELY - Don't request data first, just stop
+          mediaRecorderRef.current.stop();
+          console.log("✅ Face camera MediaRecorder.stop() called - waiting for onstop event");
+          
+          // ✅ The onstop handler will handle waiting for pending chunks
         } catch (e) {
-          console.warn("Could not request data:", e);
+          console.error("❌ Error stopping MediaRecorder:", e);
         }
-
-        // Then stop the recorder (will trigger final ondataavailable)
-        setTimeout(() => {
-          if (
-            mediaRecorderRef.current &&
-            mediaRecorderRef.current.state !== "inactive"
-          ) {
-            console.log(`🛑 Calling mediaRecorder.stop() - current state: ${mediaRecorderRef.current.state}`);
-            mediaRecorderRef.current.stop();
-            console.log(
-              "✅ Face camera MediaRecorder.stop() called - waiting for onstop event"
-            );
-          } else {
-            console.warn(`⚠️ Cannot stop MediaRecorder - state is: ${mediaRecorderRef.current?.state || 'null'}`);
-          }
-        }, 100);
       } else {
         console.warn(`⚠️ MediaRecorder not available or already inactive - state: ${mediaRecorderRef.current?.state || 'null'}`);
       }
@@ -544,12 +533,18 @@ const FloatingCamera = ({
         if (streamRef.current) {
           mediaRecorderRef.current = new MediaRecorder(streamRef.current, {
             mimeType: "video/webm; codecs=vp8",
-            videoBitsPerSecond: 500000,  // ✅ Reduced from 1Mbps to 500Kbps to reduce chunk size
+            videoBitsPerSecond: 250000,  // ✅ Reduced from 500Kbps to 250Kbps to reduce memory usage
           });
 
           mediaRecorderRef.current.ondataavailable = (e: any) => {
             if (e.data.size > 0) {
               const chunkNum = faceChunkCounterRef.current++;
+
+              // ✅ CRITICAL: Check if exam is already submitted - if so, ignore this chunk
+              if (examSubmittedRef.current && mediaRecorderRef.current?.state === 'recording') {
+                console.warn(`⚠️ Ignoring face camera chunk #${chunkNum} - exam already submitted but recorder still active`);
+                return;
+              }
 
               // ✅ Track this chunk as pending (both internal and external refs)
               pendingFaceChunksRef.current.add(chunkNum);
@@ -558,6 +553,17 @@ const FloatingCamera = ({
               }
 
               e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
+                // ✅ CRITICAL: Double-check exam submission status before sending
+                if (examSubmittedRef.current && mediaRecorderRef.current?.state === 'recording') {
+                  console.warn(`⚠️ Dropping face chunk #${chunkNum} inside arrayBuffer - exam submitted but recorder still active`);
+                  // Remove from pending
+                  pendingFaceChunksRef.current.delete(chunkNum);
+                  if (pendingChunksRef?.current) {
+                    pendingChunksRef.current.delete(chunkNum);
+                  }
+                  return;
+                }
+
                 // ✅ Check if MediaRecorder is inactive (meaning this is likely the final chunk)
                 const isFinalChunk = mediaRecorderRef.current?.state === 'inactive';
 
@@ -637,17 +643,8 @@ const FloatingCamera = ({
           console.error("❌ Cannot create MediaRecorder: No stream available");
         }
 
-        interRef.current = setInterval(async () => {
-          if (!isMounted) {
-            clearInterval(interRef.current);
-            return;
-          }
-          const video = videoRef.current;
-          if (!video || video.readyState < 2) return;
-          const width = video.videoWidth;
-          const height = video.videoHeight;
-
-          let canvas = canvasRef.current; // Use ref instead of getElementById
+        // ✅ Create canvas and context ONCE outside the interval
+          let canvas = canvasRef.current;
           if (!canvas) {
             canvas = document.createElement("canvas");
             canvas.id = "auth-canvas";
@@ -656,11 +653,30 @@ const FloatingCamera = ({
             canvasRef.current = canvas;
           }
 
-          canvas.width = width;
-          canvas.height = height;
+          // ✅ Get context ONCE - reuse it in the interval
+          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          if (!ctx) {
+            console.error("Failed to get canvas context");
+            return;
+          }
 
-          const ctx = canvas.getContext("2d", { willReadFrequently: true }); // Add performance hint
-          if (!ctx) return;
+        // ✅ Reduce interval frequency from 10 FPS to 2 FPS (500ms) to reduce CPU/memory usage
+        interRef.current = setInterval(async () => {
+          if (!isMounted) {
+            clearInterval(interRef.current);
+            return;
+          }
+          const video = videoRef.current;
+          if (!video || video.readyState < 2) return;
+          
+          const width = video.videoWidth;
+          const height = video.videoHeight;
+
+          // ✅ Only resize canvas if dimensions changed
+          if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width;
+            canvas.height = height;
+          }
 
           ctx.drawImage(video, 0, 0, width, height);
 
@@ -965,7 +981,7 @@ const FloatingCamera = ({
               console.error("Object Detector processing error:", error);
             }
           }
-        }, 1000 / 10);
+        }, 500); // ✅ Changed from 1000/10 (100ms) to 500ms (2 FPS)
       } catch (error) {
         console.error("Camera access failed:", error);
 
@@ -1006,10 +1022,38 @@ const FloatingCamera = ({
       isMounted = false;
       isInitialized.current = false;
 
+      // ✅ Clear interval FIRST to stop all processing
+      if (interRef.current) {
+        clearInterval(interRef.current);
+        interRef.current = null;
+      }
+
+      // ✅ Clean up AI models to free memory
       if (faceLandmarkerRef.current) {
-        faceLandmarkerRef.current.close();
+        try {
+          faceLandmarkerRef.current.close();
+        } catch (e) {
+          console.warn("Error closing FaceLandmarker:", e);
+        }
         faceLandmarkerRef.current = null;
         console.log("Face Landmarker cleaned up");
+      }
+
+      // ✅ Clean up Object Detector to free memory
+      if (objectDetectorRef.current) {
+        try {
+          objectDetectorRef.current.close();
+        } catch (e) {
+          console.warn("Error closing ObjectDetector:", e);
+        }
+        objectDetectorRef.current = null;
+        console.log("Object Detector cleaned up");
+      }
+
+      // ✅ Clean up Face Auth model
+      if (faceAuthRef.current) {
+        faceAuthRef.current = null;
+        console.log("Face Auth cleaned up");
       }
 
       if (mediaRecorderRef.current) {
@@ -1024,11 +1068,6 @@ const FloatingCamera = ({
         mediaRecorderRef.current = null;
       }
 
-      if (interRef.current) {
-        clearInterval(interRef.current);
-        interRef.current = null;
-      }
-
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => {
           console.log(
@@ -1041,6 +1080,20 @@ const FloatingCamera = ({
 
       if (videoRef.current) {
         videoRef.current.srcObject = null;
+        videoRef.current.pause();
+        videoRef.current.load(); // ✅ Force video element to release resources
+      }
+
+      // ✅ Clean up canvas and free memory
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext("2d");
+        if (ctx) {
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        }
+        canvasRef.current.width = 0;
+        canvasRef.current.height = 0;
+        canvasRef.current.remove();
+        canvasRef.current = null;
       }
 
       const canvas = document.getElementById("auth-canvas");
@@ -1066,9 +1119,12 @@ const FloatingCamera = ({
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!dragging) return;
-      setPosition({
-        x: e.clientX - offset.x,
-        y: e.clientY - offset.y,
+      // ✅ Use requestAnimationFrame to throttle position updates and reduce memory usage
+      requestAnimationFrame(() => {
+        setPosition({
+          x: e.clientX - offset.x,
+          y: e.clientY - offset.y,
+        });
       });
     },
     [dragging, offset]
