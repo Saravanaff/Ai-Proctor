@@ -1214,9 +1214,11 @@ const NewExam = () => {
         {/* Main Content */}
         <main
           style={{
-            padding: "32px 48px",
+            padding: "32px 40px",  // ✅ Reduced horizontal padding from 48px to 40px
             maxWidth: "1400px",
             margin: "0 auto",
+            width: "100%",  // ✅ Ensure full width usage
+            boxSizing: "border-box",  // ✅ Include padding in width calculation
           }}
         >
           {/* Step Info Banner */}
@@ -1294,7 +1296,13 @@ const NewExam = () => {
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             {/* STEP 1: Exam Name & Questions */}
             {currentStep === 1 && (
-              <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: "28px", alignItems: "start" }}>
+              <div style={{ 
+                display: "grid", 
+                gridTemplateColumns: "380px 1fr",  // ✅ Reduced from 420px to 380px
+                gap: "24px",  // ✅ Reduced gap from 28px to 24px
+                alignItems: "start",
+                maxWidth: "100%",  // ✅ Ensure container doesn't overflow
+              }}>
                 {/* Left Column - Exam Details */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {/* Exam Name Card */}
@@ -1512,6 +1520,8 @@ const NewExam = () => {
                     display: "flex",
                     flexDirection: "column",
                     minHeight: "600px",
+                    overflow: "hidden",  // ✅ Prevent content from overflowing
+                    maxWidth: "100%",    // ✅ Ensure it doesn't exceed container
                   }}
                 >
                   {/* Header */}
@@ -1564,7 +1574,13 @@ const NewExam = () => {
                   </div>
 
                   {/* Content Area */}
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                  <div style={{ 
+                    flex: 1, 
+                    display: "flex", 
+                    flexDirection: "column", 
+                    minHeight: 0,
+                    overflow: "hidden",  // ✅ Prevent overflow in content area
+                  }}>
                   {showQuestionEditor && (
                     <MCQQuestionEditor
                       onSave={handleAddQuestion}
@@ -1574,11 +1590,16 @@ const NewExam = () => {
                   )}
 
                   {!showQuestionEditor && mcqQuestions.length > 0 && (
+                    <div style={{ 
+                      width: "100%",  // ✅ Ensure table container uses full width
+                      overflow: "auto",  // ✅ Allow scroll if needed
+                    }}>
                       <QuestionTableEditor
                         questions={mcqQuestions}
                         onUpdate={(updatedQuestions) => setMcqQuestions(updatedQuestions)}
                         onDelete={handleDeleteQuestion}
                       />
+                    </div>
                     )}
 
                   {!showQuestionEditor && mcqQuestions.length === 0 && (

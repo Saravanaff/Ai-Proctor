@@ -131,7 +131,8 @@ const QuestionTableEditor: React.FC<QuestionTableEditorProps> = ({
     >
       <table
         style={{
-          width: '100%',
+          width: 'max-content',  // ✅ Changed from 100% to max-content
+          minWidth: '100%',       // ✅ Ensure minimum width is 100%
           borderCollapse: 'separate',
           borderSpacing: 0,
           fontSize: '15px',
@@ -168,7 +169,8 @@ const QuestionTableEditor: React.FC<QuestionTableEditorProps> = ({
                 color: 'var(--text-primary)',
                 borderBottom: '2px solid var(--border-color)',
                 borderRight: '1px solid var(--border-color)',
-                minWidth: '500px',
+                minWidth: '300px',  // ✅ Reduced from 500px to 300px
+                maxWidth: '500px',  // ✅ Added max width
                 background: 'var(--secondary-bg)',
               }}
             >
@@ -182,7 +184,8 @@ const QuestionTableEditor: React.FC<QuestionTableEditorProps> = ({
                 color: 'var(--text-primary)',
                 borderBottom: '2px solid var(--border-color)',
                 borderRight: '1px solid var(--border-color)',
-                minWidth: '220px',
+                minWidth: '150px',  // ✅ Reduced from 220px to 150px
+                maxWidth: '220px',  // ✅ Added max width
                 background: 'var(--secondary-bg)',
               }}
             >
@@ -196,7 +199,8 @@ const QuestionTableEditor: React.FC<QuestionTableEditorProps> = ({
                 color: 'var(--text-primary)',
                 borderBottom: '2px solid var(--border-color)',
                 borderRight: '1px solid var(--border-color)',
-                minWidth: '220px',
+                minWidth: '150px',  // ✅ Reduced from 220px to 150px
+                maxWidth: '220px',  // ✅ Added max width
                 background: 'var(--secondary-bg)',
               }}
             >
@@ -210,7 +214,8 @@ const QuestionTableEditor: React.FC<QuestionTableEditorProps> = ({
                 color: 'var(--text-primary)',
                 borderBottom: '2px solid var(--border-color)',
                 borderRight: '1px solid var(--border-color)',
-                minWidth: '220px',
+                minWidth: '150px',  // ✅ Reduced from 220px to 150px
+                maxWidth: '220px',  // ✅ Added max width
                 background: 'var(--secondary-bg)',
               }}
             >
@@ -224,7 +229,8 @@ const QuestionTableEditor: React.FC<QuestionTableEditorProps> = ({
                 color: 'var(--text-primary)',
                 borderBottom: '2px solid var(--border-color)',
                 borderRight: '1px solid var(--border-color)',
-                minWidth: '220px',
+                minWidth: '150px',  // ✅ Reduced from 220px to 150px
+                maxWidth: '220px',  // ✅ Added max width
                 background: 'var(--secondary-bg)',
               }}
             >
@@ -296,6 +302,10 @@ const QuestionTableEditor: React.FC<QuestionTableEditorProps> = ({
                   color: 'var(--text-primary)',
                   cursor: 'pointer',
                   position: 'relative',
+                  minWidth: '300px',   // ✅ Match header
+                  maxWidth: '500px',   // ✅ Match header
+                  wordWrap: 'break-word',  // ✅ Allow text to wrap
+                  whiteSpace: 'normal',    // ✅ Allow multiline text
                 }}
               >
                 {editingCell?.questionId === question.id &&
@@ -390,6 +400,10 @@ const QuestionTableEditor: React.FC<QuestionTableEditorProps> = ({
                         ? 'rgba(var(--accent-color-rgb), 0.08)'
                         : 'transparent',
                       fontWeight: isCorrect ? 600 : 400,
+                      minWidth: '150px',       // ✅ Match header
+                      maxWidth: '220px',       // ✅ Match header
+                      wordWrap: 'break-word',  // ✅ Allow text to wrap
+                      whiteSpace: 'normal',    // ✅ Allow multiline text
                     }}
                   >
                     {editingCell?.questionId === question.id &&
