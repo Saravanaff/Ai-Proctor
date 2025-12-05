@@ -695,6 +695,7 @@ export const getStudentAnswers = async (req: Request, res: Response) => {
     const answers = await UserAnswer.findAll({
       where: {
         exam_id: Number(examId),
+        user_id: Number(userId),
       },
       include: [
         {
