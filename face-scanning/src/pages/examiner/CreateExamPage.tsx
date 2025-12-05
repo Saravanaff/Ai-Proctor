@@ -9,6 +9,8 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import { ExaminerGuard } from "../../components/guards";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { configureAxiosInterceptor } from "@/utils/axiosConfig";
+import { logout as authLogout, getUserName, getUserInitials } from "@/utils/auth";
 import { useRouter } from "next/router";
 import { LayoutDashboard, Plus } from "lucide-react";
 
@@ -27,26 +29,10 @@ const CreateExam = () => {
     name: string;
   } | null>(null);
 
-  axios.interceptors.request.use(
-    (config) => {
-      const token = getTokenFromCookie();
-      if (token) {
-        // ensure headers exists and use a safe cast to avoid incompatible type assignment
-        config.headers = config.headers ?? ({} as any);
-
-        // Axios may use AxiosHeaders instance or plain object; handle both safely
-        if (typeof (config.headers as any).set === "function") {
-          // AxiosHeaders API
-          (config.headers as any).set("Authorization", `Bearer ${token}`);
-        } else {
-          // plain object
-          (config.headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
-        }
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+  // Configure axios interceptor once
+  useEffect(() => {
+    configureAxiosInterceptor();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,55 +185,15 @@ const CreateExam = () => {
   };
 
   const handleLogout = () => {
-    try {
-      // clear token cookie (adjust cookie name if different)
-      if (typeof document !== "undefined") {
-        document.cookie =
-          "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-      }
-      // clear known localStorage keys (if your AuthStore uses others, remove them too)
-      if (typeof window !== "undefined" && window.localStorage) {
-        localStorage.removeItem("userId");
-        localStorage.removeItem("userEmail");
-        localStorage.removeItem("globalName");
-      }
-    } finally {
-      // redirect to login page
-      if (typeof window !== "undefined") {
-        window.location.href = "/";
-      }
-    }
+    authLogout();
   };
 
   // Parse JWT payload to get user name (safe decode)
   useEffect(() => {
-    try {
-      const token = getTokenFromCookie();
-      if (!token) return;
-      const parts = token.split(".");
-      if (parts.length < 2) return;
-      const payload = parts[1];
-      // Add padding if needed for base64
-      const pad = payload.length % 4;
-      const adjusted = payload + (pad ? "=".repeat(4 - pad) : "");
-      const decoded = JSON.parse(window.atob(adjusted));
-      const name =
-        decoded?.name ||
-        decoded?.fullname ||
-        decoded?.username ||
-        decoded?.email ||
-        null;
-      if (name) {
-        setProfileName(name);
-        const initials = name
-          .split(" ")
-          .map((p: string) => p.charAt(0).toUpperCase())
-          .slice(0, 2)
-          .join("");
-        setProfileInitials(initials || "U");
-      }
-    } catch (err) {
-      console.error(err);
+    const name = getUserName();
+    if (name) {
+      setProfileName(name);
+      setProfileInitials(getUserInitials());
     }
   }, []);
 

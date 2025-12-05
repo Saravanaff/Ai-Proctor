@@ -5,6 +5,8 @@ import styles from "../../styles/SuperAdminPage.module.css";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { SuperAdminGuard } from "../../components/guards";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { configureAxiosInterceptor } from "@/utils/axiosConfig";
+import { logout as authLogout } from "@/utils/auth";
 
 interface Student {
   id: number;
@@ -50,17 +52,10 @@ export default function StudentsManagement() {
   const [totalCount, setTotalCount] = useState(0);
   const studentsPerPage = 10;
 
-  axios.interceptors.request.use((config) => {
-    const token = getTokenFromCookie();
-    if (token) {
-      // Merge existing headers and set Authorization in a way that satisfies Axios/TS types
-      config.headers = {
-        ...(config.headers as Record<string, unknown>),
-        Authorization: `Bearer ${token}`,
-      } as any;
-    }
-    return config;
-  });
+  // Configure axios interceptor once
+  useEffect(() => {
+    configureAxiosInterceptor();
+  }, []);
 
   useEffect(() => {
     fetchStudents();
@@ -106,8 +101,7 @@ export default function StudentsManagement() {
   };
 
   const handleLogout = () => {
-    document.cookie = "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    router.push("/");
+    authLogout();
   };
 
   const formatDate = (dateString: string) => {

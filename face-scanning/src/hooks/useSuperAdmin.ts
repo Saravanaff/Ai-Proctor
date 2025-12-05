@@ -2,23 +2,16 @@ import useSWR from 'swr';
 import axios from 'axios';
 import { getTokenFromCookie } from '@/constants/AuthStore';
 
-// Configure axios interceptor for authentication
-axios.interceptors.request.use((config) => {
-  const token = getTokenFromCookie();
-  if (token) {
-    config.headers = {
-      ...(config.headers as Record<string, unknown>),
-      Authorization: `Bearer ${token}`,
-    } as any;
-  }
-  return config;
-});
-
 const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-// Fetcher function for SWR
+// Fetcher function for SWR with authentication
 const fetcher = async (url: string) => {
-  const response = await axios.get(url);
+  const token = getTokenFromCookie();
+  const response = await axios.get(url, {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : '',
+    },
+  });
   return response.data;
 };
 

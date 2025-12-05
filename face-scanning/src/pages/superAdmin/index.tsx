@@ -5,6 +5,8 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import { SuperAdminGuard } from "../../components/guards";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { configureAxiosInterceptor } from "@/utils/axiosConfig";
+import { logout as authLogout } from "@/utils/auth";
 import { Users, GraduationCap, FileText, CheckCircle, Plus, Clock, Calendar, MoreVertical } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useSuperAdmin";
 
@@ -61,16 +63,11 @@ const SuperAdminDashboard = () => {
   const ongoingPerPage = 3;
   const scheduledPerPage = 5;
 
-  axios.interceptors.request.use((config) => {
-    const token = getTokenFromCookie();
-    if (token) {
-      config.headers = config.headers || ({} as any);
-      (config.headers as any)["Authorization"] = `Bearer ${token}`;
-    }
-    return config;
-  });
+  // Configure axios interceptor once
+  useEffect(() => {
+    configureAxiosInterceptor();
+  }, []);
 
-  // Fetch exams data
   useEffect(() => {
     const fetchExams = async () => {
       try {
@@ -207,8 +204,7 @@ const SuperAdminDashboard = () => {
     : scheduledExams.slice(0, 4);
 
   const handleLogout = () => {
-    document.cookie = "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    router.push("/");
+    authLogout();
   };
 
   return (

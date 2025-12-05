@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import styles from "../../styles/CreateExamPage.module.css";
 import axios from "axios";
 import { getTokenFromCookie, setExamId } from "@/constants/AuthStore";
+import { configureAxiosInterceptor } from "@/utils/axiosConfig";
+import { logout as authLogout, getUserName, getUserInitials } from "@/utils/auth";
 import { useRouter } from "next/router";
 
 const JoinExam = () => {
@@ -13,19 +15,10 @@ const JoinExam = () => {
   const [profileInitials, setProfileInitials] = useState<string>("U");
   const router = useRouter();
 
-  axios.interceptors.request.use(
-    (config) => {
-      const token = getTokenFromCookie();
-      if (token) {
-        if (!config.headers) {
-          config.headers = {} as any;
-        }
-        (config.headers as any)["Authorization"] = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+  // Configure axios interceptor once
+  useEffect(() => {
+    configureAxiosInterceptor();
+  }, []);
 
   const handleJoinExam = async () => {
     if (!examKey.trim()) {
@@ -68,46 +61,15 @@ const JoinExam = () => {
   };
 
   const handleLogout = () => {
-    try {
-      if (typeof document !== "undefined") {
-        document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-      }
-      if (typeof window !== "undefined" && window.localStorage) {
-        localStorage.removeItem("userId");
-        localStorage.removeItem("userEmail");
-        localStorage.removeItem("globalName");
-      }
-    } finally {
-      if (typeof window !== "undefined") {
-        window.location.href = "/";
-      }
-    }
+    authLogout();
   };
 
   // Parse JWT payload to get user name
   useEffect(() => {
-    try {
-      const token = getTokenFromCookie();
-      if (!token) return;
-      const parts = token.split(".");
-      if (parts.length < 2) return;
-      const payload = parts[1];
-      const pad = payload.length % 4;
-      const adjusted = payload + (pad ? "=".repeat(4 - pad) : "");
-      const decoded = JSON.parse(window.atob(adjusted));
-      const name =
-        decoded?.name || decoded?.fullname || decoded?.username || decoded?.email || null;
-      if (name) {
-        setProfileName(name);
-        const initials = name
-          .split(" ")
-          .map((p: string) => p.charAt(0).toUpperCase())
-          .slice(0, 2)
-          .join("");
-        setProfileInitials(initials || "U");
-      }
-    } catch (err) {
-      // ignore
+    const name = getUserName();
+    if (name) {
+      setProfileName(name);
+      setProfileInitials(getUserInitials());
     }
   }, []);
 

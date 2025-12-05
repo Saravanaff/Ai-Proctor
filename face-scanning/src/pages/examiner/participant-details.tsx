@@ -5,6 +5,7 @@ import axios from "axios";
 import LoadingIndicator from "../../components/LoadingIndicator";
 import styles from "../../styles/ParticipantDetailsPage.module.css";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { createAuthenticatedAxiosInstance } from "@/utils/axiosConfig";
 import VideoPlayer from "../../components/VideoPlayer";
 import { ExaminerGuard } from "@/components/guards";
 
@@ -343,18 +344,8 @@ const ParticipantDetailsPage: React.FC = () => {
     y: 0,
   });
 
-  axios.interceptors.request.use(
-    (config: any) => {
-      const token = getTokenFromCookie();
-      if (token) {
-        // Ensure headers object exists and assign header using a cast to avoid AxiosHeaders type issues
-        config.headers = config.headers || {};
-        (config.headers as any)["Authorization"] = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+  // Use authenticated axios instance for this component
+  const axiosInstance = createAuthenticatedAxiosInstance();
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   console.log("Base URL for video streaming:", baseUrl);

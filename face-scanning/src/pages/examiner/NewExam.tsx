@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import MCQQuestionEditor from "../../components/exam/MCQQuestionEditor";
 import MCQQuestionList from "../../components/exam/MCQQuestionList";
+import QuestionTableEditor from "../../components/exam/QuestionTableEditor";
 import { MCQQuestion } from "../../types/mcq";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { ExaminerGuard } from "@/components/guards";
 import * as XLSX from 'xlsx';
+import { downloadQuestionsTemplate, downloadStudentsTemplate, parseSpreadsheetFile } from "@/utils/excelUtils";
 import styles from "../../styles/NewExam.module.css";
 import { 
   AlertTriangle, 
@@ -27,7 +29,8 @@ import {
   Plus,
   Check,
   X,
-  PenLine
+  PenLine,
+  Trash2
 } from "lucide-react";
 
 interface Student {
@@ -37,6 +40,310 @@ interface Student {
   reg?: string;
   dept?: string;
 }
+
+// Toggle Component - Defined outside to prevent re-renders
+const Toggle = ({
+  label,
+  enabled,
+  onToggle,
+  disabled = false,
+}: {
+  label: string;
+  enabled: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+}) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "14px 16px",
+      borderRadius: 12,
+      background: enabled && !disabled ? "rgba(var(--accent-color-rgb), 0.08)" : "var(--secondary-bg)",
+      border: enabled && !disabled ? "1px solid rgba(var(--accent-color-rgb), 0.3)" : "1px solid var(--border-color)",
+      transition: "all 0.25s ease",
+      cursor: disabled ? "not-allowed" : "pointer",
+    }}
+    className="theme-transition"
+    onClick={disabled ? undefined : onToggle}
+  >
+    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+      <div
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          background: enabled ? "var(--accent-color)" : "var(--text-tertiary)",
+          opacity: disabled ? 0.4 : 1,
+          transition: "all 0.25s ease",
+        }}
+      />
+      <span
+        className="theme-transition"
+        style={{
+          fontSize: 14,
+          fontWeight: 500,
+          color: disabled ? "var(--text-tertiary)" : "var(--text-primary)",
+          transition: "color 0.3s ease",
+        }}
+      >
+        {label}
+      </span>
+    </div>
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        if (!disabled) onToggle();
+      }}
+      aria-pressed={enabled}
+      disabled={disabled}
+      className="theme-transition"
+      style={{
+        position: "relative",
+        width: 52,
+        height: 28,
+        borderRadius: 999,
+        border: "none",
+        background: enabled ? "var(--accent-color)" : "var(--border-color)",
+        cursor: disabled ? "not-allowed" : "pointer",
+        transition: "all 0.25s ease",
+        opacity: disabled ? 0.5 : 1,
+        boxShadow: enabled ? "0 2px 8px rgba(var(--accent-color-rgb), 0.3)" : "inset 0 1px 3px rgba(0,0,0,0.1)",
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: 3,
+          left: enabled ? 27 : 3,
+          width: 22,
+          height: 22,
+          borderRadius: "50%",
+          background: "#fff",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+          transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {enabled && (
+          <Check size={12} style={{ color: "var(--accent-color)" }} />
+        )}
+      </span>
+    </button>
+  </div>
+);
+
+// CollapsibleSection Component - Defined outside to prevent re-renders
+const CollapsibleSection = React.memo(({
+  title,
+  subtitle,
+  isOpen,
+  onToggle,
+  masterToggle,
+  masterEnabled,
+  onMasterToggle,
+  children,
+  icon,
+  fullHeight,
+}: {
+  title: string;
+  subtitle: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  masterToggle?: boolean;
+  masterEnabled?: boolean;
+  onMasterToggle?: () => void;
+  children: React.ReactNode;
+  icon: React.ReactNode;
+  fullHeight?: boolean;
+}) => (
+  <div
+    className="theme-transition"
+    style={{
+      marginBottom: fullHeight ? 0 : 20,
+      borderRadius: 16,
+      background: "var(--card-bg)",
+      flex: fullHeight ? 1 : undefined,
+      display: fullHeight ? "flex" : undefined,
+      flexDirection: fullHeight ? "column" : undefined,
+      overflow: "hidden",
+      transition: "all 0.3s ease",
+      boxShadow: isOpen 
+        ? "0 8px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 16px -4px rgba(0, 0, 0, 0.08)" 
+        : "0 2px 8px -2px rgba(0, 0, 0, 0.08)",
+      border: "1px solid var(--border-color)",
+    }}
+  >
+    {/* Header */}
+    <div
+      style={{
+        padding: "20px 24px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        background: isOpen 
+          ? "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.05) 0%, transparent 100%)" 
+          : "transparent",
+        borderBottom: isOpen ? "1px solid var(--border-color)" : "none",
+        cursor: "pointer",
+        transition: "all 0.3s ease",
+      }}
+      onClick={onToggle}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "16px",
+          flex: 1,
+        }}
+      >
+        <div 
+          style={{ 
+            width: 48,
+            height: 48,
+            borderRadius: 12,
+            background: masterEnabled !== false 
+              ? "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.15) 0%, rgba(var(--accent-color-rgb), 0.05) 100%)" 
+              : "var(--secondary-bg)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.3s ease",
+          }}
+        >
+          {icon}
+        </div>
+        <div style={{ flex: 1 }}>
+          <h3
+            className="theme-transition"
+            style={{
+              margin: 0,
+              fontSize: 17,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {title}
+          </h3>
+          <p
+            className="theme-transition"
+            style={{
+              margin: "4px 0 0 0",
+              fontSize: 13,
+              color: "var(--text-secondary)",
+              lineHeight: 1.4,
+            }}
+          >
+            {subtitle}
+          </p>
+        </div>
+      </div>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: "16px" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {masterToggle && (
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span 
+              style={{ 
+                fontSize: 12, 
+                fontWeight: 600,
+                color: masterEnabled ? "var(--accent-color)" : "var(--text-tertiary)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}
+            >
+              {masterEnabled ? "Enabled" : "Disabled"}
+            </span>
+            <button
+              type="button"
+              onClick={onMasterToggle}
+              className="theme-transition"
+              style={{
+                position: "relative",
+                width: 56,
+                height: 30,
+                borderRadius: 999,
+                border: "none",
+                background: masterEnabled ? "var(--accent-color)" : "var(--border-color)",
+                cursor: "pointer",
+                transition: "all 0.25s ease",
+                boxShadow: masterEnabled 
+                  ? "0 2px 8px rgba(var(--accent-color-rgb), 0.3)" 
+                  : "inset 0 1px 3px rgba(0,0,0,0.1)",
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  top: 3,
+                  left: masterEnabled ? 29 : 3,
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  background: "#fff",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                  transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {masterEnabled && (
+                  <Check size={12} style={{ color: "var(--accent-color)" }} />
+                )}
+              </span>
+            </button>
+          </div>
+        )}
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            background: isOpen ? "var(--secondary-bg)" : "transparent",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.3s ease",
+          }}
+        >
+          {isOpen ? (
+            <ChevronUp size={20} color="var(--text-secondary)" />
+          ) : (
+            <ChevronDown size={20} color="var(--text-secondary)" />
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* Content */}
+    {isOpen && (
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{ 
+          padding: "24px",
+          background: "var(--secondary-bg)",
+          flex: fullHeight ? 1 : undefined,
+          display: fullHeight ? "flex" : undefined,
+          flexDirection: fullHeight ? "column" : undefined,
+        }}
+      >
+        {children}
+      </div>
+    )}
+  </div>
+));
+
+CollapsibleSection.displayName = 'CollapsibleSection';
 
 const NewExam = () => {
   const router = useRouter();
@@ -91,6 +398,8 @@ const NewExam = () => {
   const [mcqQuestions, setMcqQuestions] = useState<MCQQuestion[]>([]);
   const [showQuestionEditor, setShowQuestionEditor] = useState(false);
   const [showFileUploader, setShowFileUploader] = useState(false);
+  const [showUploadPopup, setShowUploadPopup] = useState(false);
+  const [showAddOptionsPopup, setShowAddOptionsPopup] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<
     MCQQuestion | undefined
   >(undefined);
@@ -133,148 +442,230 @@ const NewExam = () => {
         console.error("Error restoring exam data:", error);
       }
     }
+
+    // Cleanup function to prevent memory leaks
+    return () => {
+      // Clear any pending timeouts or intervals if needed
+    };
   }, []);
 
   // Student management handlers
   const handleAddStudent = () => {
-    if (!newStudentEmail.trim() || !newStudentPassword.trim()) {
-      setStudentUploadError("Email and password are required");
-      return;
+    try {
+      // Clear any previous errors
+      setStudentUploadError("");
+
+      // Validation
+      if (!newStudentEmail.trim() || !newStudentPassword.trim()) {
+        setStudentUploadError("Email and password are required");
+        return;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newStudentEmail.trim())) {
+        setStudentUploadError("Invalid email format");
+        return;
+      }
+
+      if (students.some(s => s.email.toLowerCase() === newStudentEmail.trim().toLowerCase())) {
+        setStudentUploadError("Student with this email already added");
+        return;
+      }
+
+      // Add student
+      setStudents(prev => [...prev, {
+        email: newStudentEmail.trim(),
+        password: newStudentPassword.trim(),
+        name: newStudentName.trim() || undefined,
+        reg: newStudentReg.trim() || undefined,
+        dept: newStudentDept.trim() || undefined
+      }]);
+
+      // Reset form
+      setNewStudentEmail("");
+      setNewStudentPassword("");
+      setNewStudentName("");
+      setNewStudentReg("");
+      setNewStudentDept("");
+      setStudentUploadError("");
+      setShowStudentForm(false);
+    } catch (error) {
+      console.error("Error adding student:", error);
+      setStudentUploadError("An error occurred while adding the student. Please try again.");
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newStudentEmail)) {
-      setStudentUploadError("Invalid email format");
-      return;
-    }
-
-    if (students.some(s => s.email === newStudentEmail)) {
-      setStudentUploadError("Student with this email already added");
-      return;
-    }
-
-    setStudents(prev => [...prev, {
-      email: newStudentEmail.trim(),
-      password: newStudentPassword.trim(),
-      name: newStudentName.trim() || undefined,
-      reg: newStudentReg.trim() || undefined,
-      dept: newStudentDept.trim() || undefined
-    }]);
-
-    setNewStudentEmail("");
-    setNewStudentPassword("");
-    setNewStudentName("");
-    setNewStudentReg("");
-    setNewStudentDept("");
-    setStudentUploadError("");
-    setShowStudentForm(false);
   };
 
   const handleDeleteStudent = (email: string) => {
-    setStudents(prev => prev.filter(s => s.email !== email));
+    try {
+      setStudents(prev => prev.filter(s => s.email !== email));
+    } catch (error) {
+      console.error("Error deleting student:", error);
+    }
   };
 
   const handleStudentFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    if (fileExtension !== 'xlsx' && fileExtension !== 'xls' && fileExtension !== 'csv') {
-      setStudentUploadError('Please upload a valid Excel (.xlsx, .xls) or CSV file');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
-
-        if (jsonData.length === 0) {
-          setStudentUploadError('No data found in file');
-          return;
-        }
-
-        const extractedStudents: Student[] = [];
-        
-        jsonData.forEach((row, index) => {
-          const email = row['Email'] || row['email'];
-          const password = row['Password'] || row['password'];
-          const name = row['Name'] || row['name'];
-          const reg = row['Registration Number'] || row['Reg'] || row['reg'] || row['registration'] || row['Registration'];
-          const dept = row['Department'] || row['Dept'] || row['dept'] || row['department'];
-
-          if (!email || !password) {
-            console.warn(`Row ${index + 2}: Missing email or password`);
-            return;
-          }
-
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(email)) {
-            console.warn(`Row ${index + 2}: Invalid email format`);
-            return;
-          }
-
-          extractedStudents.push({
-            email: email.trim(),
-            password: password.trim(),
-            name: name?.trim(),
-            reg: reg?.trim(),
-            dept: dept?.trim()
-          });
-        });
-
-        if (extractedStudents.length === 0) {
-          setStudentUploadError('No valid students found. Please check the format.');
-          return;
-        }
-
-        setStudents(prev => [...prev, ...extractedStudents]);
-        setStudentUploadError('');
+    try {
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      if (fileExtension !== 'xlsx' && fileExtension !== 'xls' && fileExtension !== 'csv') {
+        setStudentUploadError('Please upload a valid Excel (.xlsx, .xls) or CSV file');
         event.target.value = '';
-      } catch (error) {
-        console.error('Error parsing file:', error);
-        setStudentUploadError('Error parsing file. Please check the format.');
+        return;
       }
-    };
 
-    reader.readAsBinaryString(file);
+      const reader = new FileReader();
+      
+      reader.onerror = () => {
+        console.error('Error reading file');
+        setStudentUploadError('Error reading file. Please try again.');
+        event.target.value = '';
+      };
+
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
+          if (!data) {
+            setStudentUploadError('No data found in file');
+            event.target.value = '';
+            return;
+          }
+
+          const workbook = XLSX.read(data, { type: 'binary' });
+          
+          if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+            setStudentUploadError('No sheets found in file');
+            event.target.value = '';
+            return;
+          }
+
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+          if (jsonData.length === 0) {
+            setStudentUploadError('No data found in file');
+            event.target.value = '';
+            return;
+          }
+
+          const extractedStudents: Student[] = [];
+          const errors: string[] = [];
+          
+          jsonData.forEach((row, index) => {
+            try {
+              const email = row['Email'] || row['email'];
+              const password = row['Password'] || row['password'];
+              const name = row['Name'] || row['name'];
+              const reg = row['Registration Number'] || row['Reg'] || row['reg'] || row['registration'] || row['Registration'];
+              const dept = row['Department'] || row['Dept'] || row['dept'] || row['department'];
+
+              if (!email || !password) {
+                errors.push(`Row ${index + 2}: Missing email or password`);
+                return;
+              }
+
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              if (!emailRegex.test(email)) {
+                errors.push(`Row ${index + 2}: Invalid email format`);
+                return;
+              }
+
+              // Check for duplicates in current students
+              if (students.some(s => s.email.toLowerCase() === email.trim().toLowerCase())) {
+                errors.push(`Row ${index + 2}: Email already exists`);
+                return;
+              }
+
+              // Check for duplicates in extracted students
+              if (extractedStudents.some(s => s.email.toLowerCase() === email.trim().toLowerCase())) {
+                errors.push(`Row ${index + 2}: Duplicate email in file`);
+                return;
+              }
+
+              extractedStudents.push({
+                email: email.trim(),
+                password: password.trim(),
+                name: name?.trim(),
+                reg: reg?.trim(),
+                dept: dept?.trim()
+              });
+            } catch (rowError) {
+              console.error(`Error processing row ${index + 2}:`, rowError);
+              errors.push(`Row ${index + 2}: Error processing row`);
+            }
+          });
+
+          if (errors.length > 0) {
+            console.warn('File upload errors:', errors);
+          }
+
+          if (extractedStudents.length === 0) {
+            setStudentUploadError('No valid students found. Please check the format.');
+            event.target.value = '';
+            return;
+          }
+
+          setStudents(prev => [...prev, ...extractedStudents]);
+          setStudentUploadError('');
+          event.target.value = '';
+          
+          // Show success message if there were some errors
+          if (errors.length > 0 && extractedStudents.length > 0) {
+            console.log(`Successfully added ${extractedStudents.length} students. ${errors.length} rows had errors.`);
+          }
+        } catch (parseError) {
+          console.error('Error parsing file:', parseError);
+          setStudentUploadError('Error parsing file. Please check the format.');
+          event.target.value = '';
+        }
+      };
+
+      reader.readAsBinaryString(file);
+    } catch (error) {
+      console.error('Error handling file upload:', error);
+      setStudentUploadError('An unexpected error occurred. Please try again.');
+      event.target.value = '';
+    }
   };
 
   const downloadStudentsTemplate = () => {
-    const sampleData = [
-      {
-        'Email': 'student1@example.com',
-        'Password': 'password123',
-        'Name': 'John Doe',
-        'Registration Number': 'REG001',
-        'Department': 'Computer Science'
-      },
-      {
-        'Email': 'student2@example.com',
-        'Password': 'password456',
-        'Name': 'Jane Smith',
-        'Registration Number': 'REG002',
-        'Department': 'Information Technology'
-      }
-    ];
+    try {
+      const sampleData = [
+        {
+          'Email': 'student1@example.com',
+          'Password': 'password123',
+          'Name': 'John Doe',
+          'Registration Number': 'REG001',
+          'Department': 'Computer Science'
+        },
+        {
+          'Email': 'student2@example.com',
+          'Password': 'password456',
+          'Name': 'Jane Smith',
+          'Registration Number': 'REG002',
+          'Department': 'Information Technology'
+        }
+      ];
 
-    const worksheet = XLSX.utils.json_to_sheet(sampleData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
-    
-    worksheet['!cols'] = [
-      { wch: 30 }, // Email
-      { wch: 15 }, // Password
-      { wch: 25 }, // Name
-      { wch: 20 }, // Registration Number
-      { wch: 30 }  // Department
-    ];
+      const worksheet = XLSX.utils.json_to_sheet(sampleData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+      
+      worksheet['!cols'] = [
+        { wch: 30 }, // Email
+        { wch: 15 }, // Password
+        { wch: 25 }, // Name
+        { wch: 20 }, // Registration Number
+        { wch: 30 }  // Department
+      ];
 
-    XLSX.writeFile(workbook, 'students_template.xlsx');
+      XLSX.writeFile(workbook, 'students_template.xlsx');
+    } catch (error) {
+      console.error('Error generating template:', error);
+      alert('Failed to download template. Please try again.');
+    }
   };
 
   // Handler for AI Proctoring toggle that controls related features
@@ -353,6 +744,13 @@ const NewExam = () => {
     setMcqQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
+  const handleDeleteAllQuestions = () => {
+    if (window.confirm('Are you sure you want to delete all questions? This action cannot be undone.')) {
+      setMcqQuestions([]);
+      setShowAddOptionsPopup(false);
+    }
+  };
+
   const handleCancelQuestionEditor = () => {
     setShowQuestionEditor(false);
     setEditingQuestion(undefined);
@@ -362,141 +760,195 @@ const NewExam = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    if (fileExtension !== 'xlsx' && fileExtension !== 'xls' && fileExtension !== 'csv') {
-      setUploadError('Please upload a valid Excel (.xlsx, .xls) or CSV file');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
-
-        if (jsonData.length === 0) {
-          setUploadError('No data found in file');
-          return;
-        }
-
-        const extractedQuestions: MCQQuestion[] = [];
-        
-        jsonData.forEach((row, index) => {
-          const questionText = row['Question'] || row['question'];
-          const option1 = row['Option 1'] || row['option1'] || row['Option1'];
-          const option2 = row['Option 2'] || row['option2'] || row['Option2'];
-          const option3 = row['Option 3'] || row['option3'] || row['Option3'];
-          const option4 = row['Option 4'] || row['option4'] || row['Option4'];
-          const correctAnswer = (row['Correct Answer'] || row['correctAnswer'] || row['CorrectAnswer'] || '').toString().toUpperCase();
-          const marks = parseFloat(row['Marks'] || row['marks'] || '1');
-
-          if (!questionText) {
-            console.warn(`Row ${index + 2}: Missing question text`);
-            return;
-          }
-
-          if (!option1 || !option2) {
-            console.warn(`Row ${index + 2}: Insufficient options`);
-            return;
-          }
-
-          if (!['A', 'B', 'C', 'D'].includes(correctAnswer)) {
-            console.warn(`Row ${index + 2}: Invalid correct answer (must be A, B, C, or D)`);
-            return;
-          }
-
-          const options = [
-            { id: `${Date.now()}-${index}-1`, text: option1, isCorrect: correctAnswer === 'A' },
-            { id: `${Date.now()}-${index}-2`, text: option2, isCorrect: correctAnswer === 'B' },
-          ];
-
-          if (option3) {
-            options.push({ id: `${Date.now()}-${index}-3`, text: option3, isCorrect: correctAnswer === 'C' });
-          }
-          if (option4) {
-            options.push({ id: `${Date.now()}-${index}-4`, text: option4, isCorrect: correctAnswer === 'D' });
-          }
-
-          const correctOption = options.find(opt => opt.isCorrect);
-          
-          extractedQuestions.push({
-            id: `q-${Date.now()}-${index}`,
-            question: questionText,
-            options: options.map(opt => ({ id: opt.id, text: opt.text })),
-            correctOptionId: correctOption?.id || options[0].id,
-          });
-        });
-
-        if (extractedQuestions.length === 0) {
-          setUploadError('No valid questions found. Please check the format.');
-          return;
-        }
-
-        setMcqQuestions((prev) => [...prev, ...extractedQuestions]);
-        setShowFileUploader(false);
-        setUploadError('');
-        
-        // Reset file input
+    try {
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      if (fileExtension !== 'xlsx' && fileExtension !== 'xls' && fileExtension !== 'csv') {
+        setUploadError('Please upload a valid Excel (.xlsx, .xls) or CSV file');
         event.target.value = '';
-      } catch (error) {
-        console.error('Error parsing file:', error);
-        setUploadError('Error parsing file. Please check the format.');
+        return;
       }
-    };
 
-    reader.readAsBinaryString(file);
+      const reader = new FileReader();
+
+      reader.onerror = () => {
+        console.error('Error reading file');
+        setUploadError('Error reading file. Please try again.');
+        event.target.value = '';
+      };
+
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
+          if (!data) {
+            setUploadError('No data found in file');
+            event.target.value = '';
+            return;
+          }
+
+          const workbook = XLSX.read(data, { type: 'binary' });
+
+          if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+            setUploadError('No sheets found in file');
+            event.target.value = '';
+            return;
+          }
+
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+          if (jsonData.length === 0) {
+            setUploadError('No data found in file');
+            event.target.value = '';
+            return;
+          }
+
+          const extractedQuestions: MCQQuestion[] = [];
+          const errors: string[] = [];
+          
+          jsonData.forEach((row, index) => {
+            try {
+              const questionText = row['Question'] || row['question'];
+              const option1 = row['Option 1'] || row['option1'] || row['Option1'];
+              const option2 = row['Option 2'] || row['option2'] || row['Option2'];
+              const option3 = row['Option 3'] || row['option3'] || row['Option3'];
+              const option4 = row['Option 4'] || row['option4'] || row['Option4'];
+              const correctAnswer = (row['Correct Answer'] || row['correctAnswer'] || row['CorrectAnswer'] || '').toString().toUpperCase();
+
+              if (!questionText) {
+                errors.push(`Row ${index + 2}: Missing question text`);
+                return;
+              }
+
+              if (!option1 || !option2) {
+                errors.push(`Row ${index + 2}: Insufficient options (at least 2 required)`);
+                return;
+              }
+
+              if (!['A', 'B', 'C', 'D'].includes(correctAnswer)) {
+                errors.push(`Row ${index + 2}: Invalid correct answer (must be A, B, C, or D)`);
+                return;
+              }
+
+              const options = [
+                { id: `${Date.now()}-${index}-1`, text: option1, isCorrect: correctAnswer === 'A' },
+                { id: `${Date.now()}-${index}-2`, text: option2, isCorrect: correctAnswer === 'B' },
+              ];
+
+              if (option3) {
+                options.push({ id: `${Date.now()}-${index}-3`, text: option3, isCorrect: correctAnswer === 'C' });
+              }
+              if (option4) {
+                options.push({ id: `${Date.now()}-${index}-4`, text: option4, isCorrect: correctAnswer === 'D' });
+              }
+
+              const correctOption = options.find(opt => opt.isCorrect);
+              
+              if (!correctOption) {
+                errors.push(`Row ${index + 2}: Correct answer option not found`);
+                return;
+              }
+
+              extractedQuestions.push({
+                id: `q-${Date.now()}-${index}`,
+                question: questionText,
+                options: options.map(opt => ({ id: opt.id, text: opt.text })),
+                correctOptionId: correctOption.id,
+              });
+            } catch (rowError) {
+              console.error(`Error processing row ${index + 2}:`, rowError);
+              errors.push(`Row ${index + 2}: Error processing row`);
+            }
+          });
+
+          if (errors.length > 0) {
+            console.warn('File upload errors:', errors);
+          }
+
+          if (extractedQuestions.length === 0) {
+            setUploadError('No valid questions found. Please check the format.');
+            event.target.value = '';
+            return;
+          }
+
+          setMcqQuestions((prev) => [...prev, ...extractedQuestions]);
+          setShowFileUploader(false);
+          setUploadError('');
+          
+          // Reset file input
+          event.target.value = '';
+
+          // Show success message if there were some errors
+          if (errors.length > 0 && extractedQuestions.length > 0) {
+            console.log(`Successfully added ${extractedQuestions.length} questions. ${errors.length} rows had errors.`);
+          }
+        } catch (parseError) {
+          console.error('Error parsing file:', parseError);
+          setUploadError('Error parsing file. Please check the format.');
+          event.target.value = '';
+        }
+      };
+
+      reader.readAsBinaryString(file);
+    } catch (error) {
+      console.error('Error handling file upload:', error);
+      setUploadError('An unexpected error occurred. Please try again.');
+      event.target.value = '';
+    }
   };
 
   const downloadSampleTemplate = () => {
-    const sampleData = [
-      {
-        'Question': 'What is 2 + 2?',
-        'Option 1': '3',
-        'Option 2': '4',
-        'Option 3': '5',
-        'Option 4': '6',
-        'Correct Answer': 'B',
-        'Marks': 1
-      },
-      {
-        'Question': 'Which planet is known as the Red Planet?',
-        'Option 1': 'Venus',
-        'Option 2': 'Mars',
-        'Option 3': 'Jupiter',
-        'Option 4': 'Saturn',
-        'Correct Answer': 'B',
-        'Marks': 2
-      },
-      {
-        'Question': 'What is the capital of France?',
-        'Option 1': 'London',
-        'Option 2': 'Berlin',
-        'Option 3': 'Paris',
-        'Option 4': 'Rome',
-        'Correct Answer': 'C',
-        'Marks': 1
-      }
-    ];
+    try {
+      const sampleData = [
+        {
+          'Question': 'What is 2 + 2?',
+          'Option 1': '3',
+          'Option 2': '4',
+          'Option 3': '5',
+          'Option 4': '6',
+          'Correct Answer': 'B',
+          'Marks': 1
+        },
+        {
+          'Question': 'Which planet is known as the Red Planet?',
+          'Option 1': 'Venus',
+          'Option 2': 'Mars',
+          'Option 3': 'Jupiter',
+          'Option 4': 'Saturn',
+          'Correct Answer': 'B',
+          'Marks': 2
+        },
+        {
+          'Question': 'What is the capital of France?',
+          'Option 1': 'London',
+          'Option 2': 'Berlin',
+          'Option 3': 'Paris',
+          'Option 4': 'Rome',
+          'Correct Answer': 'C',
+          'Marks': 1
+        }
+      ];
 
-    const worksheet = XLSX.utils.json_to_sheet(sampleData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Questions');
-    
-    // Set column widths
-    worksheet['!cols'] = [
-      { wch: 50 }, // Question
-      { wch: 20 }, // Option 1
-      { wch: 20 }, // Option 2
-      { wch: 20 }, // Option 3
-      { wch: 20 }, // Option 4
-      { wch: 15 }, // Correct Answer
-      { wch: 10 }  // Marks
-    ];
+      const worksheet = XLSX.utils.json_to_sheet(sampleData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Questions');
+      
+      // Set column widths
+      worksheet['!cols'] = [
+        { wch: 50 }, // Question
+        { wch: 20 }, // Option 1
+        { wch: 20 }, // Option 2
+        { wch: 20 }, // Option 3
+        { wch: 20 }, // Option 4
+        { wch: 15 }, // Correct Answer
+        { wch: 10 }  // Marks
+      ];
 
-    XLSX.writeFile(workbook, 'exam_questions_template.xlsx');
+      XLSX.writeFile(workbook, 'exam_questions_template.xlsx');
+    } catch (error) {
+      console.error('Error generating template:', error);
+      alert('Failed to download template. Please try again.');
+    }
   };
 
   const handlePreview = () => {
@@ -518,352 +970,59 @@ const NewExam = () => {
   };
 
   const handleFinalSubmit = async () => {
-    // Store data in session storage
-    const examData = {
-      examName,
-      startTime,
-      endTime,
-      duration,
-      thirdEye,
-      multiPerson,
-      eyeBall,
-      objectDetect,
-      headDirection,
-      flagNotifications,
-      videoRecording,
-      tabSwitchDetection,
-      microphoneDetection,
-      safeBrowser,
-      proctorFeedToTestTaker,
-      screenSharing,
-      screenCountDetection,
-      controlDesktopApps,
-      normalProctoring,
-      aiPoweredProctoring,
-      recordedManualProctoring,
-      faceAuthentication,
-      mcqQuestions,
-      students,
-      sendEmailInvitations,
-    };
+    try {
+      // Store data in session storage
+      const examData = {
+        examName,
+        startTime,
+        endTime,
+        duration,
+        thirdEye,
+        multiPerson,
+        eyeBall,
+        objectDetect,
+        headDirection,
+        flagNotifications,
+        videoRecording,
+        tabSwitchDetection,
+        microphoneDetection,
+        safeBrowser,
+        proctorFeedToTestTaker,
+        screenSharing,
+        screenCountDetection,
+        controlDesktopApps,
+        normalProctoring,
+        aiPoweredProctoring,
+        recordedManualProctoring,
+        faceAuthentication,
+        mcqQuestions,
+        students,
+        sendEmailInvitations,
+      };
 
-    sessionStorage.setItem("examPreviewData", JSON.stringify(examData));
+      sessionStorage.setItem("examPreviewData", JSON.stringify(examData));
 
-    // If user wants to send emails and there are students, send them now
-    if (sendEmailInvitations && students.length > 0) {
-      setIsSendingEmails(true);
-      try {
-        // First, we need to create the exam to get the exam ID
-        // For now, we'll store the flag and handle it in ExamPreview
-        // The actual email sending will happen after exam creation
-        console.log("Email invitations will be sent after exam creation");
-      } catch (error) {
-        console.error("Error preparing email invitations:", error);
-      } finally {
-        setIsSendingEmails(false);
+      // If user wants to send emails and there are students, send them now
+      if (sendEmailInvitations && students.length > 0) {
+        setIsSendingEmails(true);
+        try {
+          // First, we need to create the exam to get the exam ID
+          // For now, we'll store the flag and handle it in ExamPreview
+          // The actual email sending will happen after exam creation
+          console.log("Email invitations will be sent after exam creation");
+        } catch (error) {
+          console.error("Error preparing email invitations:", error);
+        } finally {
+          setIsSendingEmails(false);
+        }
       }
+
+      router.push("/examiner/ExamPreview");
+    } catch (error) {
+      console.error("Error submitting exam data:", error);
+      alert("An error occurred while preparing exam data. Please try again.");
     }
-
-    router.push("/examiner/ExamPreview");
   };
-
-  const Toggle = ({
-    label,
-    enabled,
-    onToggle,
-    disabled = false,
-  }: {
-    label: string;
-    enabled: boolean;
-    onToggle: () => void;
-    disabled?: boolean;
-  }) => (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "14px 16px",
-        borderRadius: 12,
-        background: enabled && !disabled ? "rgba(var(--accent-color-rgb), 0.08)" : "var(--secondary-bg)",
-        border: enabled && !disabled ? "1px solid rgba(var(--accent-color-rgb), 0.3)" : "1px solid var(--border-color)",
-        transition: "all 0.25s ease",
-        cursor: disabled ? "not-allowed" : "pointer",
-      }}
-      className="theme-transition"
-      onClick={disabled ? undefined : onToggle}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <div
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: enabled ? "var(--accent-color)" : "var(--text-tertiary)",
-            opacity: disabled ? 0.4 : 1,
-            transition: "all 0.25s ease",
-          }}
-        />
-        <span
-          className="theme-transition"
-          style={{
-            fontSize: 14,
-            fontWeight: 500,
-            color: disabled ? "var(--text-tertiary)" : "var(--text-primary)",
-            transition: "color 0.3s ease",
-          }}
-        >
-          {label}
-        </span>
-      </div>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!disabled) onToggle();
-        }}
-        aria-pressed={enabled}
-        disabled={disabled}
-        className="theme-transition"
-        style={{
-          position: "relative",
-          width: 52,
-          height: 28,
-          borderRadius: 999,
-          border: "none",
-          background: enabled ? "var(--accent-color)" : "var(--border-color)",
-          cursor: disabled ? "not-allowed" : "pointer",
-          transition: "all 0.25s ease",
-          opacity: disabled ? 0.5 : 1,
-          boxShadow: enabled ? "0 2px 8px rgba(var(--accent-color-rgb), 0.3)" : "inset 0 1px 3px rgba(0,0,0,0.1)",
-        }}
-      >
-        <span
-          aria-hidden
-          style={{
-            position: "absolute",
-            top: 3,
-            left: enabled ? 27 : 3,
-            width: 22,
-            height: 22,
-            borderRadius: "50%",
-            background: "#fff",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-            transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {enabled && (
-            <Check size={12} style={{ color: "var(--accent-color)" }} />
-          )}
-        </span>
-      </button>
-    </div>
-  );
-
-  const CollapsibleSection = ({
-    title,
-    subtitle,
-    isOpen,
-    onToggle,
-    masterToggle,
-    masterEnabled,
-    onMasterToggle,
-    children,
-    icon,
-    fullHeight,
-  }: {
-    title: string;
-    subtitle: string;
-    isOpen: boolean;
-    onToggle: () => void;
-    masterToggle?: boolean;
-    masterEnabled?: boolean;
-    onMasterToggle?: () => void;
-    children: React.ReactNode;
-    icon: React.ReactNode;
-    fullHeight?: boolean;
-  }) => (
-    <div
-      className="theme-transition"
-      style={{
-        marginBottom: fullHeight ? 0 : 20,
-        borderRadius: 16,
-        background: "var(--card-bg)",
-        flex: fullHeight ? 1 : undefined,
-        display: fullHeight ? "flex" : undefined,
-        flexDirection: fullHeight ? "column" : undefined,
-        overflow: "hidden",
-        transition: "all 0.3s ease",
-        boxShadow: isOpen 
-          ? "0 8px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 16px -4px rgba(0, 0, 0, 0.08)" 
-          : "0 2px 8px -2px rgba(0, 0, 0, 0.08)",
-        border: "1px solid var(--border-color)",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "20px 24px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          background: isOpen 
-            ? "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.05) 0%, transparent 100%)" 
-            : "transparent",
-          borderBottom: isOpen ? "1px solid var(--border-color)" : "none",
-          cursor: "pointer",
-          transition: "all 0.3s ease",
-        }}
-        onClick={onToggle}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            flex: 1,
-          }}
-        >
-          <div 
-            style={{ 
-              width: 48,
-              height: 48,
-              borderRadius: 12,
-              background: masterEnabled !== false 
-                ? "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.15) 0%, rgba(var(--accent-color-rgb), 0.05) 100%)" 
-                : "var(--secondary-bg)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.3s ease",
-            }}
-          >
-            {icon}
-          </div>
-          <div style={{ flex: 1 }}>
-            <h3
-              className="theme-transition"
-              style={{
-                margin: 0,
-                fontSize: 17,
-                fontWeight: 600,
-                color: "var(--text-primary)",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {title}
-            </h3>
-            <p
-              className="theme-transition"
-              style={{
-                margin: "4px 0 0 0",
-                fontSize: 13,
-                color: "var(--text-secondary)",
-                lineHeight: 1.4,
-              }}
-            >
-              {subtitle}
-            </p>
-          </div>
-        </div>
-        <div
-          style={{ display: "flex", alignItems: "center", gap: "16px" }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {masterToggle && (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span 
-                style={{ 
-                  fontSize: 12, 
-                  fontWeight: 600,
-                  color: masterEnabled ? "var(--accent-color)" : "var(--text-tertiary)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                {masterEnabled ? "Enabled" : "Disabled"}
-              </span>
-              <button
-                type="button"
-                onClick={onMasterToggle}
-                className="theme-transition"
-                style={{
-                  position: "relative",
-                  width: 56,
-                  height: 30,
-                  borderRadius: 999,
-                  border: "none",
-                  background: masterEnabled ? "var(--accent-color)" : "var(--border-color)",
-                  cursor: "pointer",
-                  transition: "all 0.25s ease",
-                  boxShadow: masterEnabled 
-                    ? "0 2px 8px rgba(var(--accent-color-rgb), 0.3)" 
-                    : "inset 0 1px 3px rgba(0,0,0,0.1)",
-                }}
-              >
-                <span
-                  style={{
-                    position: "absolute",
-                    top: 3,
-                    left: masterEnabled ? 29 : 3,
-                    width: 24,
-                    height: 24,
-                    borderRadius: "50%",
-                    background: "#fff",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-                    transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {masterEnabled && (
-                    <Check size={12} style={{ color: "var(--accent-color)" }} />
-                  )}
-                </span>
-              </button>
-            </div>
-          )}
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: isOpen ? "var(--secondary-bg)" : "transparent",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.3s ease",
-            }}
-          >
-            {isOpen ? (
-              <ChevronUp size={20} color="var(--text-secondary)" />
-            ) : (
-              <ChevronDown size={20} color="var(--text-secondary)" />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      {isOpen && (
-        <div 
-          style={{ 
-            padding: "24px",
-            background: "var(--secondary-bg)",
-            flex: fullHeight ? 1 : undefined,
-            display: fullHeight ? "flex" : undefined,
-            flexDirection: fullHeight ? "column" : undefined,
-          }}
-        >
-          {children}
-        </div>
-      )}
-    </div>
-  );
 
   const getEnabledFeaturesCount = () => {
     let count = 0;
@@ -1135,144 +1294,87 @@ const NewExam = () => {
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             {/* STEP 1: Exam Name & Questions */}
             {currentStep === 1 && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: "28px", alignItems: "start" }}>
                 {/* Left Column - Exam Details */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                {/* Exam Name Card */}
-                <div
-                  className="theme-transition"
-                  style={{
-                    background: "var(--card-bg)",
-                    borderRadius: "16px",
-                    padding: "28px",
-                    border: "1px solid var(--border-color)",
-                    boxShadow: "0 4px 20px -8px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-                    <div
-                      style={{
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "10px",
-                        background: "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.15) 0%, rgba(var(--accent-color-rgb), 0.05) 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <FileText size={18} color="var(--accent-color)" />
-                    </div>
-                    <div>
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "var(--text-primary)",
-                        }}
-                      >
-                        Exam Name
-                      </h3>
-                      <p
-                        style={{
-                          margin: "2px 0 0 0",
-                          fontSize: "13px",
-                          color: "var(--text-secondary)",
-                        }}
-                      >
-                        Give your exam a descriptive name
-                      </p>
-                    </div>
-                  </div>
-                  <input
-                    type="text"
-                    value={examName}
-                    onChange={(e) => setExamName(e.target.value)}
-                    placeholder="Enter exam name (e.g., Midterm Mathematics Exam)"
-                    className="input-theme theme-transition"
-                    style={{
-                      width: "100%",
-                      padding: "14px 16px",
-                      borderRadius: "10px",
-                      fontSize: "15px",
-                      outline: "none",
-                      border: "2px solid var(--border-color)",
-                      background: "var(--secondary-bg)",
-                    }}
-                  />
-                </div>
-
-                {/* Exam Schedule & Duration */}
-                <div
-                  className="theme-transition"
-                  style={{
-                    background: "var(--card-bg)",
-                    borderRadius: "16px",
-                    padding: "28px",
-                    border: "1px solid var(--border-color)",
-                    boxShadow: "0 4px 20px -8px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
-                    <div
-                      style={{
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "10px",
-                        background: "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.15) 0%, rgba(var(--accent-color-rgb), 0.05) 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Calendar size={18} color="var(--accent-color)" />
-                    </div>
-                    <div>
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "var(--text-primary)",
-                        }}
-                      >
-                        Schedule & Timing
-                      </h3>
-                      <p
-                        style={{
-                          margin: "2px 0 0 0",
-                          fontSize: "13px",
-                          color: "var(--text-secondary)",
-                        }}
-                      >
-                        Set the exam window and duration
-                      </p>
-                    </div>
-                  </div>
-
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  {/* Exam Name Card */}
                   <div
+                    className="theme-transition"
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: "24px",
+                      background: "var(--card-bg)",
+                      borderRadius: "14px",
+                      padding: "24px",
+                      border: "1px solid var(--border-color)",
                     }}
                   >
-                    {/* Start Time */}
-                    <div style={{ position: "relative" }}>
-                      <label
-                        className="theme-transition"
-                        style={{
-                          display: "block",
-                          marginBottom: "8px",
-                          color: "var(--text-secondary)",
-                          fontWeight: 500,
-                          fontSize: "14px",
-                        }}
-                      >
-                        Start Date & Time
-                      </label>
-                      <div style={{ position: "relative" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+                      <div style={{ 
+                        width: "40px", 
+                        height: "40px", 
+                        borderRadius: "10px",
+                        background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}>
+                        <FileText size={22} color="#0ea5e9" />
+                      </div>
+                      <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)" }}>
+                        Exam Name
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      value={examName}
+                      onChange={(e) => setExamName(e.target.value)}
+                      placeholder="e.g., Midterm Math Exam"
+                      className="input-theme theme-transition"
+                      style={{
+                        width: "100%",
+                        padding: "14px 16px",
+                        borderRadius: "10px",
+                        fontSize: "15px",
+                        outline: "none",
+                        border: "1px solid var(--border-color)",
+                        background: "var(--secondary-bg)",
+                        color: "var(--text-primary)",
+                      }}
+                    />
+                  </div>
+
+                  {/* Schedule & Timing Card */}
+                  <div
+                    className="theme-transition"
+                    style={{
+                      background: "var(--card-bg)",
+                      borderRadius: "14px",
+                      padding: "24px",
+                      border: "1px solid var(--border-color)",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+                      <div style={{ 
+                        width: "40px", 
+                        height: "40px", 
+                        borderRadius: "10px",
+                        background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}>
+                        <Calendar size={22} color="#0ea5e9" />
+                      </div>
+                      <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)" }}>
+                        Schedule & Timing
+                      </span>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+                      {/* Start Date & Time */}
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px", color: "var(--text-secondary)", fontSize: "14px", fontWeight: 500 }}>
+                          Start Date & Time
+                        </label>
                         <input
                           type="datetime-local"
                           value={startTime}
@@ -1280,34 +1382,22 @@ const NewExam = () => {
                           className="input-theme theme-transition"
                           style={{
                             width: "100%",
-                            padding: "12px 16px",
+                            padding: "12px 14px",
                             borderRadius: "10px",
                             border: "1px solid var(--border-color)",
                             background: "var(--secondary-bg)",
                             color: "var(--text-primary)",
                             fontSize: "14px",
                             outline: "none",
-                            transition: "all 0.2s ease",
                           }}
                         />
                       </div>
-                    </div>
 
-                    {/* End Time */}
-                    <div style={{ position: "relative" }}>
-                      <label
-                        className="theme-transition"
-                        style={{
-                          display: "block",
-                          marginBottom: "8px",
-                          color: "var(--text-secondary)",
-                          fontWeight: 500,
-                          fontSize: "14px",
-                        }}
-                      >
-                        End Date & Time
-                      </label>
-                      <div style={{ position: "relative" }}>
+                      {/* End Date & Time */}
+                      <div>
+                        <label style={{ display: "block", marginBottom: "8px", color: "var(--text-secondary)", fontSize: "14px", fontWeight: 500 }}>
+                          End Date & Time
+                        </label>
                         <input
                           type="datetime-local"
                           value={endTime}
@@ -1315,170 +1405,100 @@ const NewExam = () => {
                           className="input-theme theme-transition"
                           style={{
                             width: "100%",
-                            padding: "12px 16px",
+                            padding: "12px 14px",
                             borderRadius: "10px",
                             border: "1px solid var(--border-color)",
                             background: "var(--secondary-bg)",
                             color: "var(--text-primary)",
                             fontSize: "14px",
                             outline: "none",
-                            transition: "all 0.2s ease",
                           }}
                         />
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Duration Input */}
-                  <div style={{ marginTop: "24px" }}>
-                    <label
-                      className="theme-transition"
-                      style={{
-                        display: "block",
-                        marginBottom: "12px",
-                        color: "var(--text-secondary)",
-                        fontWeight: 500,
-                        fontSize: "14px",
-                      }}
-                    >
-                      Exam Duration
-                    </label>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "20px",
-                        alignItems: "flex-start",
-                      }}
-                    >
-                      <div style={{ flex: "0 0 120px" }}>
-                        <label
-                          style={{
-                            fontSize: "12px",
-                            color: "var(--text-tertiary)",
-                            marginBottom: "6px",
-                            display: "block",
-                          }}
-                        >
-                          Hours
+                      {/* Exam Duration */}
+                      <div>
+                        <label style={{ display: "block", marginBottom: "10px", color: "var(--text-secondary)", fontSize: "14px", fontWeight: 500 }}>
+                          Exam Duration
                         </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={Math.floor(Number(duration || 0) / 60)}
-                          onChange={(e) => {
-                            const h = Math.max(
-                              0,
-                              parseInt(e.target.value) || 0
-                            );
-                            const m = Number(duration || 0) % 60;
-                            setDuration((h * 60 + m).toString());
-                          }}
-                          className="input-theme theme-transition"
-                          style={{
-                            width: "100%",
-                            padding: "12px",
-                            borderRadius: "10px",
-                            border: "1px solid var(--border-color)",
-                            background: "var(--secondary-bg)",
-                            color: "var(--text-primary)",
-                            fontSize: "16px",
-                            textAlign: "center",
-                            outline: "none",
-                          }}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          paddingTop: "32px",
-                          color: "var(--text-tertiary)",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        :
-                      </div>
-                      <div style={{ flex: "0 0 120px" }}>
-                        <label
-                          style={{
-                            fontSize: "12px",
-                            color: "var(--text-tertiary)",
-                            marginBottom: "6px",
-                            display: "block",
-                          }}
-                        >
-                          Minutes
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="59"
-                          value={Number(duration || 0) % 60}
-                          onChange={(e) => {
-                            const m = Math.max(
-                              0,
-                              Math.min(59, parseInt(e.target.value) || 0)
-                            );
-                            const h = Math.floor(Number(duration || 0) / 60);
-                            setDuration((h * 60 + m).toString());
-                          }}
-                          className="input-theme theme-transition"
-                          style={{
-                            width: "100%",
-                            padding: "12px",
-                            borderRadius: "10px",
-                            border: "1px solid var(--border-color)",
-                            background: "var(--secondary-bg)",
-                            color: "var(--text-primary)",
-                            fontSize: "16px",
-                            textAlign: "center",
-                            outline: "none",
-                          }}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          flex: 1,
-                          display: "flex",
-                          alignItems: "center",
-                          height: "80px",
-                          paddingLeft: "20px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            background: "var(--secondary-bg)",
-                            padding: "10px 20px",
-                            borderRadius: "8px",
-                            border: "1px solid var(--border-color)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <Timer size={20} color="var(--accent-color)" />
-                          <div>
-                            <div
-                              style={{
-                                fontSize: "12px",
-                                color: "var(--text-tertiary)",
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ display: "block", marginBottom: "6px", color: "var(--text-tertiary)", fontSize: "13px" }}>Hours</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={Math.floor(Number(duration || 0) / 60)}
+                              onChange={(e) => {
+                                const h = Math.max(0, parseInt(e.target.value) || 0);
+                                const m = Number(duration || 0) % 60;
+                                setDuration((h * 60 + m).toString());
                               }}
-                            >
-                              Total Duration
-                            </div>
-                            <div
+                              className="input-theme theme-transition"
                               style={{
-                                color: "var(--accent-color)",
-                                fontWeight: 700,
+                                width: "100%",
+                                padding: "12px",
+                                borderRadius: "10px",
+                                border: "1px solid var(--border-color)",
+                                background: "var(--secondary-bg)",
+                                color: "var(--text-primary)",
                                 fontSize: "16px",
+                                textAlign: "center",
+                                outline: "none",
                               }}
-                            >
-                              {duration || 0} minutes
+                            />
+                          </div>
+                          <span style={{ color: "var(--text-tertiary)", fontWeight: "bold", paddingTop: "22px", fontSize: "20px" }}>:</span>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ display: "block", marginBottom: "6px", color: "var(--text-tertiary)", fontSize: "13px" }}>Minutes</label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="59"
+                              value={Number(duration || 0) % 60}
+                              onChange={(e) => {
+                                const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                                const h = Math.floor(Number(duration || 0) / 60);
+                                setDuration((h * 60 + m).toString());
+                              }}
+                              className="input-theme theme-transition"
+                              style={{
+                                width: "100%",
+                                padding: "12px",
+                                borderRadius: "10px",
+                                border: "1px solid var(--border-color)",
+                                background: "var(--secondary-bg)",
+                                color: "var(--text-primary)",
+                                fontSize: "16px",
+                                textAlign: "center",
+                                outline: "none",
+                              }}
+                            />
+                          </div>
+                          {/* Total Duration Box */}
+                          <div
+                            style={{
+                              flex: 1.3,
+                              padding: "12px 14px",
+                              background: "linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0.05) 100%)",
+                              borderRadius: "12px",
+                              border: "1px solid rgba(14, 165, 233, 0.25)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              marginTop: "20px",
+                            }}
+                          >
+                            <Timer size={22} color="#0ea5e9" />
+                            <div>
+                              <div style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>Total Duration</div>
+                              <div style={{ fontSize: "20px", fontWeight: 700, color: "#0ea5e9" }}>{duration || 0}</div>
+                              <div style={{ fontSize: "12px", color: "#0ea5e9" }}>minutes</div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
                 </div>
 
                 {/* Right Column - Questions */}
@@ -1486,174 +1506,41 @@ const NewExam = () => {
                   className="theme-transition"
                   style={{
                     background: "var(--card-bg)",
-                    borderRadius: "16px",
+                    borderRadius: "14px",
                     padding: "28px",
                     border: "1px solid var(--border-color)",
-                    boxShadow: "0 4px 20px -8px rgba(0, 0, 0, 0.1)",
                     display: "flex",
                     flexDirection: "column",
-                    height: "500px",
-                    minHeight: "500px",
-                    maxHeight: "500px",
-                    overflow: "hidden",
+                    minHeight: "600px",
                   }}
                 >
                   {/* Header */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px", flexShrink: 0 }}>
-                    <div
-                      style={{
-                        width: "36px",
-                        height: "36px",
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div style={{ 
+                        width: "40px", 
+                        height: "40px", 
                         borderRadius: "10px",
-                        background: "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.15) 0%, rgba(var(--accent-color-rgb), 0.05) 100%)",
+                        background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%)",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <HelpCircle size={18} color="var(--accent-color)" />
-                    </div>
-                    <div>
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "var(--text-primary)",
-                        }}
-                      >
-                        MCQ Questions
-                      </h3>
-                      <p
-                        style={{
-                          margin: "2px 0 0 0",
-                          fontSize: "13px",
-                          color: "var(--text-secondary)",
-                        }}
-                      >
-                        {mcqQuestions.length} questions added
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Content Area */}
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto", minHeight: 0 }}>
-                  {showFileUploader && (
-                    <div
-                      className="theme-transition"
-                      style={{
-                        padding: "24px",
-                        background: "var(--secondary-bg)",
-                        borderRadius: "12px",
-                        border: "2px dashed var(--border-color)",
-                        marginBottom: "16px",
-                      }}
-                    >
-                      <div style={{ marginBottom: "20px" }}>
-                        <h4
-                          style={{
-                            margin: "0 0 8px 0",
-                            fontSize: "16px",
-                            fontWeight: 600,
-                            color: "var(--text-primary)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <FileSpreadsheet size={18} /> Upload Excel/CSV File
-                        </h4>
-                        <p
-                          style={{
-                            margin: "0 0 16px 0",
-                            fontSize: "13px",
-                            color: "var(--text-secondary)",
-                          }}
-                        >
-                          Upload an Excel (.xlsx, .xls) or CSV file with your questions. 
-                          Download the sample template to see the required format.
-                        </p>
-
-                        {/* Sample Format Info */}
-                        <div
-                          style={{
-                            background: "var(--card-bg)",
-                            padding: "16px",
-                            borderRadius: "8px",
-                            border: "1px solid var(--border-color)",
-                            marginBottom: "16px",
-                          }}
-                        >
-                          <h5
-                            style={{
-                              margin: "0 0 12px 0",
-                              fontSize: "14px",
-                              fontWeight: 600,
-                              color: "var(--text-primary)",
-                            }}
-                          >
-                            Required Format:
-                          </h5>
-                          <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-                            <table
-                              style={{
-                                width: "100%",
-                                borderCollapse: "collapse",
-                                fontSize: "11px",
-                              }}
-                            >
-                              <thead>
-                                <tr style={{ background: "var(--secondary-bg)" }}>
-                                  <th style={{ padding: "8px", textAlign: "left", border: "1px solid var(--border-color)" }}>Column Name</th>
-                                  <th style={{ padding: "8px", textAlign: "left", border: "1px solid var(--border-color)" }}>Description</th>
-                                  <th style={{ padding: "8px", textAlign: "left", border: "1px solid var(--border-color)" }}>Example</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Question</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>The question text</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>What is 2 + 2?</td>
-                                </tr>
-                                <tr>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Option 1</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>First option (required)</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>3</td>
-                                </tr>
-                                <tr>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Option 2</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>Second option (required)</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>4</td>
-                                </tr>
-                                <tr>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Option 3</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>Third option (optional)</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>5</td>
-                                </tr>
-                                <tr>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Option 4</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>Fourth option (optional)</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>6</td>
-                                </tr>
-                                <tr>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Correct Answer</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>A, B, C, or D</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>B</td>
-                                </tr>
-                                <tr>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)", fontWeight: 600 }}>Marks</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>Points for question</td>
-                                  <td style={{ padding: "8px", border: "1px solid var(--border-color)" }}>1</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
+                        justifyContent: "center"
+                      }}>
+                        <HelpCircle size={22} color="#0ea5e9" />
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)" }}>Exam Questions</span>
+                        <div style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "2px" }}>
+                          {mcqQuestions.length} questions • Click cells to edit directly
                         </div>
-
-                        {/* Download Template Button */}
+                      </div>
+                    </div>
+                    {/* Action Buttons */}
+                    {mcqQuestions.length > 0 && (
+                      <div style={{ display: "flex", gap: "10px" }}>
                         <button
                           type="button"
-                          onClick={downloadSampleTemplate}
+                          onClick={() => setShowAddOptionsPopup(true)}
                           className="theme-transition"
                           style={{
                             padding: "10px 16px",
@@ -1664,132 +1551,20 @@ const NewExam = () => {
                             fontSize: "13px",
                             fontWeight: 600,
                             cursor: "pointer",
-                            marginBottom: "16px",
                             display: "flex",
                             alignItems: "center",
-                            gap: "8px",
+                            gap: "6px",
                             transition: "all 0.2s ease",
                           }}
                         >
-                          <Download size={16} /> Download Sample Template
-                        </button>
-
-                        {uploadError && (
-                          <div
-                            style={{
-                              padding: "12px",
-                              background: "#fee",
-                              border: "1px solid #fcc",
-                              borderRadius: "8px",
-                              color: "#c33",
-                              fontSize: "13px",
-                              marginBottom: "16px",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                            }}
-                          >
-                            <AlertTriangle size={16} /> {uploadError}
-                          </div>
-                        )}
-
-                        {/* File Input */}
-                        <div
-                          style={{
-                            border: "2px dashed var(--accent-color)",
-                            borderRadius: "8px",
-                            padding: "32px",
-                            textAlign: "center",
-                            background: "var(--card-bg)",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
-                          }}
-                          onDragOver={(e) => {
-                            e.preventDefault();
-                            e.currentTarget.style.background = "var(--secondary-bg)";
-                          }}
-                          onDragLeave={(e) => {
-                            e.currentTarget.style.background = "var(--card-bg)";
-                          }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            e.currentTarget.style.background = "var(--card-bg)";
-                            const files = e.dataTransfer.files;
-                            if (files.length > 0) {
-                              const input = document.getElementById('file-upload') as HTMLInputElement;
-                              if (input) {
-                                input.files = files;
-                                handleFileUpload({ target: input } as any);
-                              }
-                            }
-                          }}
-                        >
-                          <input
-                            id="file-upload"
-                            type="file"
-                            accept=".xlsx,.xls,.csv"
-                            onChange={handleFileUpload}
-                            style={{ display: "none" }}
-                          />
-                          <label
-                            htmlFor="file-upload"
-                            style={{
-                              cursor: "pointer",
-                              display: "block",
-                            }}
-                          >
-                            <div style={{ marginBottom: "12px", display: "flex", justifyContent: "center" }}>
-                              <FolderOpen size={48} color="var(--accent-color)" strokeWidth={1.5} />
-                            </div>
-                            <p
-                              style={{
-                                margin: "0 0 8px 0",
-                                fontSize: "14px",
-                                fontWeight: 600,
-                                color: "var(--text-primary)",
-                              }}
-                            >
-                              Click to upload or drag and drop
-                            </p>
-                            <p
-                              style={{
-                                margin: 0,
-                                fontSize: "12px",
-                                color: "var(--text-secondary)",
-                              }}
-                            >
-                              Excel (.xlsx, .xls) or CSV files
-                            </p>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowFileUploader(false);
-                            setUploadError('');
-                          }}
-                          className="theme-transition"
-                          style={{
-                            padding: "10px 20px",
-                            borderRadius: "8px",
-                            border: "1px solid var(--border-color)",
-                            background: "var(--secondary-bg)",
-                            color: "var(--text-primary)",
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            flex: 1,
-                          }}
-                        >
-                          Cancel
+                          <Plus size={16} /> Add More
                         </button>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
+                  {/* Content Area */}
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
                   {showQuestionEditor && (
                     <MCQQuestionEditor
                       onSave={handleAddQuestion}
@@ -1798,99 +1573,80 @@ const NewExam = () => {
                     />
                   )}
 
-                  {!showQuestionEditor &&
-                    !showFileUploader &&
-                    mcqQuestions.length > 0 && (
-                      <MCQQuestionList
+                  {!showQuestionEditor && mcqQuestions.length > 0 && (
+                      <QuestionTableEditor
                         questions={mcqQuestions}
-                        onEdit={handleEditQuestion}
+                        onUpdate={(updatedQuestions) => setMcqQuestions(updatedQuestions)}
                         onDelete={handleDeleteQuestion}
                       />
                     )}
 
-                  {!showQuestionEditor &&
-                    !showFileUploader &&
-                    mcqQuestions.length === 0 && (
+                  {!showQuestionEditor && mcqQuestions.length === 0 && (
                       <div
                         className="theme-transition"
                         style={{
                           textAlign: "center",
-                          padding: "40px 20px",
+                          padding: "60px 20px",
                           color: "var(--text-secondary)",
-                          fontSize: "14px",
+                          fontSize: "15px",
                           flex: 1,
                           display: "flex",
+                          flexDirection: "column",
                           alignItems: "center",
                           justifyContent: "center",
+                          background: "var(--secondary-bg)",
+                          borderRadius: "12px",
+                          border: "2px dashed var(--border-color)",
                         }}
                       >
-                        No questions added yet. Upload an Excel/CSV file or add questions
-                        manually.
+                        <FileSpreadsheet size={48} color="var(--text-tertiary)" strokeWidth={1.5} style={{ marginBottom: "16px" }} />
+                        <p style={{ margin: "0 0 8px 0", fontWeight: 600, color: "var(--text-primary)" }}>No questions added yet</p>
+                        <p style={{ margin: "0 0 24px 0", fontSize: "14px" }}>Upload an Excel/CSV file or add questions manually</p>
+                        <div style={{ display: "flex", gap: "12px" }}>
+                          <button
+                            type="button"
+                            onClick={() => setShowUploadPopup(true)}
+                            className="theme-transition"
+                            style={{
+                              padding: "12px 24px",
+                              borderRadius: 10,
+                              border: "none",
+                              background: "var(--accent-color)",
+                              color: "white",
+                              fontSize: 14,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <Upload size={18} /> Upload Excel/CSV
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowQuestionEditor(true)}
+                            className="theme-transition"
+                            style={{
+                              padding: "12px 24px",
+                              borderRadius: 10,
+                              border: "1px solid var(--border-color)",
+                              background: "var(--card-bg)",
+                              color: "var(--text-primary)",
+                              fontSize: 14,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <PenLine size={18} /> Add Manually
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
-
-                  {/* Fixed Footer Buttons - Outside scrollable area */}
-                  {!showQuestionEditor && !showFileUploader && (
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "12px",
-                        marginTop: "16px",
-                        paddingTop: "16px",
-                        borderTop: "1px solid var(--border-color)",
-                        flexShrink: 0,
-                        background: "var(--card-bg)",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setShowFileUploader(true)}
-                        className="theme-transition"
-                        style={{
-                          padding: "12px 20px",
-                          borderRadius: 10,
-                          border: "2px dashed var(--accent-color)",
-                          background: "transparent",
-                          color: "var(--accent-color)",
-                          fontSize: 14,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          flex: 1,
-                          transition: "all 0.2s ease",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <Upload size={16} /> Upload Excel/CSV
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowQuestionEditor(true)}
-                        className="theme-transition"
-                        style={{
-                          padding: "12px 20px",
-                          borderRadius: 10,
-                          border: "2px dashed var(--accent-color)",
-                          background: "transparent",
-                          color: "var(--accent-color)",
-                          fontSize: 14,
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          flex: 1,
-                          transition: "all 0.2s ease",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <Plus size={16} /> Add Manually
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 {/* Action Buttons - Full Width */}
@@ -1899,8 +1655,8 @@ const NewExam = () => {
                     gridColumn: "1 / -1",
                     display: "flex",
                     gap: "16px",
-                    marginTop: "16px",
-                    paddingTop: "24px",
+                    marginTop: "40px",
+                    paddingTop: "32px",
                     borderTop: "1px solid var(--border-color)",
                   }}
                 >
@@ -2207,6 +1963,8 @@ const NewExam = () => {
                   {showStudentForm && (
                     <div
                       className="theme-transition"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
                       style={{
                         padding: "24px",
                         background: "var(--secondary-bg)",
@@ -2720,6 +2478,385 @@ const NewExam = () => {
           </div>
         </main>
       </div>
+
+      {/* Upload Excel Popup Modal */}
+      {showUploadPopup && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={() => {
+            setShowUploadPopup(false);
+            setUploadError('');
+          }}
+        >
+          <div
+            className="theme-transition"
+            style={{
+              background: "var(--card-bg)",
+              borderRadius: "16px",
+              padding: "28px",
+              maxWidth: "600px",
+              width: "90%",
+              maxHeight: "85vh",
+              overflow: "auto",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              border: "1px solid var(--border-color)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "10px" }}>
+                <FileSpreadsheet size={24} color="#0ea5e9" />
+                Upload Excel/CSV File
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUploadPopup(false);
+                  setUploadError('');
+                }}
+                style={{
+                  background: "var(--secondary-bg)",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "8px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <X size={20} color="var(--text-secondary)" />
+              </button>
+            </div>
+
+            <p style={{ margin: "0 0 20px 0", fontSize: "14px", color: "var(--text-secondary)" }}>
+              Upload an Excel (.xlsx, .xls) or CSV file with your questions. Download the sample template to see the required format.
+            </p>
+
+            {/* Download Template Button */}
+            <button
+              type="button"
+              onClick={downloadSampleTemplate}
+              className="theme-transition"
+              style={{
+                padding: "12px 20px",
+                borderRadius: "10px",
+                border: "none",
+                background: "linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: 600,
+                cursor: "pointer",
+                marginBottom: "20px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <Download size={18} /> Download Sample Template
+            </button>
+
+            {uploadError && (
+              <div
+                style={{
+                  padding: "14px",
+                  background: "rgba(239, 68, 68, 0.1)",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  borderRadius: "10px",
+                  color: "#ef4444",
+                  fontSize: "14px",
+                  marginBottom: "20px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <AlertTriangle size={18} /> {uploadError}
+              </div>
+            )}
+
+            {/* File Drop Zone */}
+            <div
+              style={{
+                border: "2px dashed var(--accent-color)",
+                borderRadius: "12px",
+                padding: "40px",
+                textAlign: "center",
+                background: "var(--secondary-bg)",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.currentTarget.style.background = "rgba(14, 165, 233, 0.1)";
+                e.currentTarget.style.borderColor = "#0ea5e9";
+              }}
+              onDragLeave={(e) => {
+                e.currentTarget.style.background = "var(--secondary-bg)";
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.style.background = "var(--secondary-bg)";
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                  const input = document.getElementById('popup-file-upload') as HTMLInputElement;
+                  if (input) {
+                    input.files = files;
+                    handleFileUpload({ target: input } as any);
+                    setShowUploadPopup(false);
+                  }
+                }
+              }}
+            >
+              <input
+                id="popup-file-upload"
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={(e) => {
+                  handleFileUpload(e);
+                  if (!uploadError) {
+                    setShowUploadPopup(false);
+                  }
+                }}
+                style={{ display: "none" }}
+              />
+              <label htmlFor="popup-file-upload" style={{ cursor: "pointer", display: "block" }}>
+                <FolderOpen size={56} color="var(--accent-color)" strokeWidth={1.5} style={{ marginBottom: "16px" }} />
+                <p style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: 600, color: "var(--text-primary)" }}>
+                  Click to upload or drag and drop
+                </p>
+                <p style={{ margin: 0, fontSize: "13px", color: "var(--text-secondary)" }}>
+                  Excel (.xlsx, .xls) or CSV files
+                </p>
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add More Questions Popup Modal */}
+      {showAddOptionsPopup && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={() => setShowAddOptionsPopup(false)}
+        >
+          <div
+            className="theme-transition"
+            style={{
+              background: "var(--card-bg)",
+              borderRadius: "16px",
+              padding: "28px",
+              maxWidth: "420px",
+              width: "90%",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              border: "1px solid var(--border-color)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 600, color: "var(--text-primary)" }}>
+                Add More Questions
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAddOptionsPopup(false)}
+                style={{
+                  background: "var(--secondary-bg)",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "8px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <X size={20} color="var(--text-secondary)" />
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {/* Upload Excel Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddOptionsPopup(false);
+                  setShowUploadPopup(true);
+                }}
+                className="theme-transition"
+                style={{
+                  padding: "16px 20px",
+                  borderRadius: "12px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--secondary-bg)",
+                  color: "var(--text-primary)",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "14px",
+                  textAlign: "left",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(14, 165, 233, 0.1)";
+                  e.currentTarget.style.borderColor = "#0ea5e9";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "var(--secondary-bg)";
+                  e.currentTarget.style.borderColor = "var(--border-color)";
+                }}
+              >
+                <div style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "10px",
+                  background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <Upload size={22} color="#0ea5e9" />
+                </div>
+                <div>
+                  <div>Upload Excel/CSV</div>
+                  <div style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-secondary)", marginTop: "2px" }}>
+                    Import questions from a spreadsheet
+                  </div>
+                </div>
+              </button>
+
+              {/* Add Manually Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddOptionsPopup(false);
+                  setShowQuestionEditor(true);
+                }}
+                className="theme-transition"
+                style={{
+                  padding: "16px 20px",
+                  borderRadius: "12px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--secondary-bg)",
+                  color: "var(--text-primary)",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "14px",
+                  textAlign: "left",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(34, 197, 94, 0.1)";
+                  e.currentTarget.style.borderColor = "#22c55e";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "var(--secondary-bg)";
+                  e.currentTarget.style.borderColor = "var(--border-color)";
+                }}
+              >
+                <div style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "10px",
+                  background: "linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <PenLine size={22} color="#22c55e" />
+                </div>
+                <div>
+                  <div>Add Manually</div>
+                  <div style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-secondary)", marginTop: "2px" }}>
+                    Create a new question from scratch
+                  </div>
+                </div>
+              </button>
+
+              {/* Divider */}
+              <div style={{ height: "1px", background: "var(--border-color)", margin: "8px 0" }} />
+
+              {/* Delete All Option */}
+              <button
+                type="button"
+                onClick={handleDeleteAllQuestions}
+                className="theme-transition"
+                style={{
+                  padding: "16px 20px",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  background: "rgba(239, 68, 68, 0.05)",
+                  color: "#ef4444",
+                  fontSize: "15px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "14px",
+                  textAlign: "left",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)";
+                  e.currentTarget.style.borderColor = "#ef4444";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(239, 68, 68, 0.05)";
+                  e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.3)";
+                }}
+              >
+                <div style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "10px",
+                  background: "rgba(239, 68, 68, 0.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}>
+                  <Trash2 size={22} color="#ef4444" />
+                </div>
+                <div>
+                  <div>Delete All Questions</div>
+                  <div style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-secondary)", marginTop: "2px" }}>
+                    Remove all {mcqQuestions.length} questions
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ExaminerGuard>
   );
 };

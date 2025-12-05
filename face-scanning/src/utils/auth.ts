@@ -64,6 +64,70 @@ export const logout = () => {
   if (typeof document === "undefined" || typeof window === "undefined") {
     return;
   }
-  document.cookie = "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-  window.location.href = "/login";
+  
+  // Clear all auth-related cookies
+  document.cookie = "authToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+  document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+  
+  // Clear localStorage
+  if (window.localStorage) {
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("globalName");
+  }
+  
+  // Redirect to login
+  window.location.href = "/";
+};
+
+/**
+ * Get user profile initials from token
+ * Returns first letters of name parts (max 2)
+ */
+export const getUserInitials = (): string => {
+  try {
+    const decoded = decodeToken();
+    if (!decoded) return "U";
+    
+    const name = decoded.email.split("@")[0]; // Fallback to email prefix
+    const parts = name.split(/[\s._-]+/);
+    const initials = parts
+      .map((p: string) => p.charAt(0).toUpperCase())
+      .slice(0, 2)
+      .join("");
+    
+    return initials || "U";
+  } catch (error) {
+    return "U";
+  }
+};
+
+/**
+ * Parse JWT token to get user name
+ * Tries multiple possible name fields
+ */
+export const getUserName = (): string | null => {
+  try {
+    const token = getTokenFromCookie();
+    if (!token) return null;
+    
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    
+    const payload = parts[1];
+    const pad = payload.length % 4;
+    const adjusted = payload + (pad ? "=".repeat(4 - pad) : "");
+    const decoded = JSON.parse(window.atob(adjusted));
+    
+    return (
+      decoded?.name ||
+      decoded?.fullname ||
+      decoded?.username ||
+      decoded?.email ||
+      null
+    );
+  } catch (error) {
+    console.error("Error parsing user name:", error);
+    return null;
+  }
 };

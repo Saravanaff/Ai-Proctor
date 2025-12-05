@@ -5,6 +5,8 @@ import { ThemeToggle } from "../../components/ThemeToggle";
 import { SuperAdminGuard } from "../../components/guards";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { configureAxiosInterceptor } from "@/utils/axiosConfig";
+import { logout as authLogout } from "@/utils/auth";
 import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
 interface Admin {
@@ -44,14 +46,10 @@ const SuperAdminDashboard = () => {
   const [totalCount, setTotalCount] = useState(0);
   const adminsPerPage = 10;
 
-  axios.interceptors.request.use((config) => {
-    const token = getTokenFromCookie();
-    if (token) {
-      config.headers = config.headers || ({} as any);
-      (config.headers as any)["Authorization"] = `Bearer ${token}`;
-    }
-    return config;
-  });
+  // Configure axios interceptor once
+  useEffect(() => {
+    configureAxiosInterceptor();
+  }, []);
 
   const fetchAdmins = async () => {
     try {
@@ -216,8 +214,7 @@ const SuperAdminDashboard = () => {
   };
 
   const handleLogout = () => {
-    document.cookie = "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    router.push("/");
+    authLogout();
   };
 
   const filtered = admins.filter((a) => {
