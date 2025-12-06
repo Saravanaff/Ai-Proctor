@@ -1,5 +1,13 @@
 /* ExamsGrid.module.css - Modular and theme-responsive exam grid styles */
 
+/* List View Styles */
+.examsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
 .examsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));

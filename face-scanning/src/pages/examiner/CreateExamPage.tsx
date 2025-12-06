@@ -206,7 +206,7 @@ const CreateExam = () => {
       <div
         style={{
           minHeight: "100vh",
-          background: "var(--background)",
+          background: "#f8fafc",
         }}
       >
         {/* Top Navigation Bar */}
@@ -215,13 +215,13 @@ const CreateExam = () => {
             position: "sticky",
             top: 0,
             zIndex: 100,
-            background: "var(--card-bg)",
-            borderBottom: "1px solid var(--border-color)",
+            background: "white",
+            borderBottom: "1px solid #e2e8f0",
             padding: "16px 32px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            boxShadow: "0 2px 8px var(--shadow)",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
           }}
         >
           {/* Logo and Title */}
@@ -231,15 +231,13 @@ const CreateExam = () => {
                 width: "48px",
                 height: "48px",
                 borderRadius: "12px",
-                background:
-                  "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                background: "#0ea5e9",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "20px",
+                fontSize: "18px",
                 fontWeight: "700",
                 color: "white",
-                boxShadow: "0 4px 12px rgba(14, 165, 233, 0.3)",
               }}
             >
               EX
@@ -250,7 +248,7 @@ const CreateExam = () => {
                   margin: 0,
                   fontSize: "20px",
                   fontWeight: "700",
-                  color: "var(--text-primary)",
+                  color: "#0f172a",
                 }}
               >
                 Exam Dashboard
@@ -259,7 +257,7 @@ const CreateExam = () => {
                 style={{
                   margin: 0,
                   fontSize: "12px",
-                  color: "var(--text-secondary)",
+                  color: "#64748b",
                 }}
               >
                 Examiner Portal
@@ -274,7 +272,36 @@ const CreateExam = () => {
               onClick={() => router.push("/examiner")}
               style={{
                 padding: "10px 20px",
-                background: "var(--accent-color)",
+                background: "transparent",
+                color: "#64748b",
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#f1f5f9";
+                e.currentTarget.style.borderColor = "#cbd5e1";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.borderColor = "#e2e8f0";
+              }}
+            >
+              <LayoutDashboard size={16} />
+              Dashboard
+            </button>
+
+            <button
+              onClick={() => router.push("/examiner/NewExam")}
+              style={{
+                padding: "10px 20px",
+                background: "#0ea5e9",
                 color: "white",
                 border: "none",
                 borderRadius: "8px",
@@ -286,36 +313,11 @@ const CreateExam = () => {
                 gap: "8px",
                 transition: "all 0.2s ease",
               }}
-            >
-              <LayoutDashboard size={16} />
-              Dashboard
-            </button>
-
-            <button
-              onClick={() => router.push("/examiner/NewExam")}
-              style={{
-                padding: "10px 20px",
-                background: "transparent",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border-color)",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                transition: "all 0.2s ease",
-              }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--secondary-bg)";
-                e.currentTarget.style.borderColor = "var(--accent-color)";
-                e.currentTarget.style.color = "var(--text-primary)";
+                e.currentTarget.style.background = "#0284c7";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.borderColor = "var(--border-color)";
-                e.currentTarget.style.color = "var(--text-secondary)";
+                e.currentTarget.style.background = "#0ea5e9";
               }}
             >
               <Plus size={16} />
@@ -330,7 +332,7 @@ const CreateExam = () => {
               style={{
                 width: "1px",
                 height: "32px",
-                background: "var(--border-color)",
+                background: "#e2e8f0",
               }}
             />
 
@@ -341,14 +343,13 @@ const CreateExam = () => {
                   width: "40px",
                   height: "40px",
                   borderRadius: "50%",
-                  background: "var(--accent-color)",
+                  background: "#0ea5e9",
                   color: "white",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: "16px",
                   fontWeight: "600",
-                  boxShadow: "0 2px 8px rgba(14, 165, 233, 0.3)",
                 }}
               >
                 {profileInitials}
@@ -358,7 +359,7 @@ const CreateExam = () => {
                   style={{
                     fontSize: "14px",
                     fontWeight: "600",
-                    color: "var(--text-primary)",
+                    color: "#0f172a",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -370,7 +371,7 @@ const CreateExam = () => {
                 <div
                   style={{
                     fontSize: "12px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                   }}
                 >
                   Examiner
@@ -384,8 +385,8 @@ const CreateExam = () => {
               style={{
                 padding: "10px 16px",
                 background: "transparent",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border-color)",
+                color: "#ef4444",
+                border: "1px solid #fee2e2",
                 borderRadius: "8px",
                 fontSize: "14px",
                 fontWeight: "600",
@@ -396,27 +397,157 @@ const CreateExam = () => {
                 transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--danger-bg)";
-                e.currentTarget.style.color = "var(--danger-color)";
-                e.currentTarget.style.borderColor = "var(--danger-color)";
+                e.currentTarget.style.background = "#fef2f2";
+                e.currentTarget.style.borderColor = "#fecaca";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = "var(--text-secondary)";
-                e.currentTarget.style.borderColor = "var(--border-color)";
+                e.currentTarget.style.borderColor = "#fee2e2";
               }}
             >
-              <span>🚪</span>
               Logout
             </button>
           </div>
         </header>
 
-        {/* Main Content - Full Width */}
-        <div style={{ padding: "32px", maxWidth: "1600px", margin: "0 auto" }}>
+        {/* Main Content */}
+        <div style={{ padding: "32px", maxWidth: "1400px", margin: "0 auto" }}>
           {/* Stats */}
-          <div style={{ marginBottom: "32px" }}>
-            <ExamStats stats={stats} />
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(5, 1fr)", 
+            gap: "20px", 
+            marginBottom: "32px" 
+          }}>
+            <div style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+              border: "1px solid #e2e8f0",
+            }}>
+              <div style={{ 
+                fontSize: "36px", 
+                fontWeight: "700", 
+                color: "#0f172a",
+                marginBottom: "8px",
+              }}>
+                {stats.total}
+              </div>
+              <div style={{ 
+                fontSize: "13px", 
+                fontWeight: "600", 
+                color: "#64748b",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}>
+                TOTAL
+              </div>
+            </div>
+
+            <div style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+              border: "1px solid #e2e8f0",
+            }}>
+              <div style={{ 
+                fontSize: "36px", 
+                fontWeight: "700", 
+                color: "#22c55e",
+                marginBottom: "8px",
+              }}>
+                {stats.active}
+              </div>
+              <div style={{ 
+                fontSize: "13px", 
+                fontWeight: "600", 
+                color: "#64748b",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}>
+                ACTIVE
+              </div>
+            </div>
+
+            <div style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+              border: "1px solid #e2e8f0",
+            }}>
+              <div style={{ 
+                fontSize: "36px", 
+                fontWeight: "700", 
+                color: "#ef4444",
+                marginBottom: "8px",
+              }}>
+                {stats.suspended}
+              </div>
+              <div style={{ 
+                fontSize: "13px", 
+                fontWeight: "600", 
+                color: "#64748b",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}>
+                SUSPENDED
+              </div>
+            </div>
+
+            <div style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+              border: "1px solid #e2e8f0",
+            }}>
+              <div style={{ 
+                fontSize: "36px", 
+                fontWeight: "700", 
+                color: "#3b82f6",
+                marginBottom: "8px",
+              }}>
+                {stats.future}
+              </div>
+              <div style={{ 
+                fontSize: "13px", 
+                fontWeight: "600", 
+                color: "#64748b",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}>
+                FUTURE
+              </div>
+            </div>
+
+            <div style={{
+              background: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+              border: "1px solid #e2e8f0",
+            }}>
+              <div style={{ 
+                fontSize: "36px", 
+                fontWeight: "700", 
+                color: "#64748b",
+                marginBottom: "8px",
+              }}>
+                {stats.completed}
+              </div>
+              <div style={{ 
+                fontSize: "13px", 
+                fontWeight: "600", 
+                color: "#64748b",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}>
+                COMPLETED
+              </div>
+            </div>
           </div>
 
           {/* Filters and Search */}
@@ -427,7 +558,6 @@ const CreateExam = () => {
               alignItems: "center",
               marginBottom: "24px",
               gap: "16px",
-              flexWrap: "wrap",
             }}
           >
             <div style={{ display: "flex", gap: "8px" }}>
@@ -441,23 +571,14 @@ const CreateExam = () => {
                   style={{
                     padding: "8px 16px",
                     borderRadius: "8px",
-                    border: "1px solid var(--border-color)",
-                    background:
-                      filterStatus === status
-                        ? status === "active"
-                          ? "var(--success-color)"
-                          : status === "suspended"
-                          ? "var(--error-color)"
-                          : "var(--accent-color)"
-                        : "transparent",
-                    color:
-                      filterStatus === status
-                        ? "white"
-                        : "var(--text-secondary)",
+                    border: "1px solid #e2e8f0",
+                    background: filterStatus === status ? "#0ea5e9" : "white",
+                    color: filterStatus === status ? "white" : "#64748b",
                     cursor: "pointer",
                     fontSize: "14px",
-                    fontWeight: 500,
+                    fontWeight: 600,
                     textTransform: "capitalize",
+                    transition: "all 0.2s ease",
                   }}
                 >
                   {status}
@@ -469,39 +590,22 @@ const CreateExam = () => {
             </div>
           </div>
 
-          {/* Content */}
-          <section
-            className={styles.examsSection}
-            style={{ background: "transparent", padding: 0 }}
-          >
-            <div
-              className={styles.sectionHeader}
-              style={{ marginBottom: "16px" }}
+          {/* Exams Header */}
+          <div style={{ marginBottom: "16px" }}>
+            <h2
+              style={{
+                color: "#0f172a",
+                fontSize: "18px",
+                fontWeight: "600",
+                margin: 0,
+              }}
             >
-              <h2
-                className={styles.sectionTitle}
-                style={{
-                  color: "var(--text-primary)",
-                  fontSize: "20px",
-                  fontWeight: "600",
-                  margin: 0,
-                }}
-              >
-                Exams ({filteredExams.length})
-              </h2>
-              {search && (
-                <span
-                  className={styles.filterInfo}
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontSize: "14px",
-                  }}
-                >
-                  Filtered by: &quot;{search}&quot;
-                </span>
-              )}
-            </div>
+              Exams ({filteredExams.length})
+            </h2>
+          </div>
 
+          {/* Content */}
+          <section style={{ background: "transparent", padding: 0 }}>
             {loading && (
               <div className={styles.skeletonGrid}>
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -514,53 +618,59 @@ const CreateExam = () => {
             )}
 
             {!loading && filteredExams.length === 0 && (
-              <div className={`${styles.emptyState} ${styles.glassPanel}`}>
-                <div className={styles.emptyContent}>
-                  <div
-                    className={styles.emptyIcon}
-                    style={{ fontSize: "48px", marginBottom: "16px" }}
-                  >
-                    {filterStatus === "suspended" ? "🚫" : "📁"}
-                  </div>
-                  <h3
-                    className={styles.emptyTitle}
-                    style={{
-                      color: "var(--text-primary)",
-                      fontSize: "18px",
-                      fontWeight: 600,
-                      marginBottom: "8px",
-                    }}
-                  >
-                    {filterStatus === "suspended" 
-                      ? "No Suspended Exams" 
-                      : filterStatus === "active"
-                      ? "No Active Exams"
-                      : "No Exams Found"}
-                  </h3>
-                  <p
-                    className={styles.emptyDescription}
-                    style={{
-                      color: "var(--text-secondary)",
-                      fontSize: "14px",
-                      marginBottom: "24px",
-                    }}
-                  >
-                    {filterStatus === "suspended"
-                      ? "No exams are currently suspended or expired."
-                      : search
-                      ? "Try adjusting your search criteria."
-                      : "Get started by creating your first exam."}
-                  </p>
-                  {filterStatus !== "suspended" && (
-                    <button
-                      onClick={() => router.push("/examiner/NewExam")}
-                      className={`${styles.btn} ${styles.btnPrimary}`}
-                      style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                    >
-                      <Plus size={16} /> Create Exam
-                    </button>
-                  )}
+              <div style={{
+                background: "white",
+                borderRadius: "12px",
+                padding: "64px 32px",
+                textAlign: "center",
+                border: "1px solid #e2e8f0",
+              }}>
+                <div style={{ fontSize: "48px", marginBottom: "16px" }}>
+                  {filterStatus === "suspended" ? "🚫" : "📁"}
                 </div>
+                <h3 style={{
+                  color: "#0f172a",
+                  fontSize: "18px",
+                  fontWeight: 600,
+                  marginBottom: "8px",
+                }}>
+                  {filterStatus === "suspended" 
+                    ? "No Suspended Exams" 
+                    : filterStatus === "active"
+                    ? "No Active Exams"
+                    : "No Exams Found"}
+                </h3>
+                <p style={{
+                  color: "#64748b",
+                  fontSize: "14px",
+                  marginBottom: "24px",
+                }}>
+                  {filterStatus === "suspended"
+                    ? "No exams are currently suspended or expired."
+                    : search
+                    ? "Try adjusting your search criteria."
+                    : "Get started by creating your first exam."}
+                </p>
+                {filterStatus !== "suspended" && (
+                  <button
+                    onClick={() => router.push("/examiner/NewExam")}
+                    style={{
+                      padding: "10px 20px",
+                      background: "#0ea5e9",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <Plus size={16} /> Create Exam
+                  </button>
+                )}
               </div>
             )}
 

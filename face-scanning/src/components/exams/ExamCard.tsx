@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { Exam } from "../../types/exam";
 import styles from "./ExamCard.module.css";
 import { getTokenFromCookie } from "../../constants/AuthStore";
-import { Copy, Check, Pencil, Clock, Monitor } from "lucide-react";
+import { Copy, Check, Pencil, Clock, Monitor, UserPlus, Mail, X, Upload, Download, AlertTriangle } from "lucide-react";
+import * as XLSX from "xlsx";
+import axios from "axios";
 
 interface Props {
   exam: Exam;
@@ -30,6 +32,16 @@ const ExamCard: React.FC<Props> = ({
   const [isReactivating, setIsReactivating] = useState(false);
   const [showEditDetailsModal, setShowEditDetailsModal] = useState(false);
   const [isLoadingExamDetails, setIsLoadingExamDetails] = useState(false);
+  const [showAddStudentsModal, setShowAddStudentsModal] = useState(false);
+  const [newStudents, setNewStudents] = useState<Array<{email: string; password: string; name: string; reg: string; dept: string}>>([]);
+  const [showStudentForm, setShowStudentForm] = useState(false);
+  const [newStudentEmail, setNewStudentEmail] = useState("");
+  const [newStudentPassword, setNewStudentPassword] = useState("");
+  const [newStudentName, setNewStudentName] = useState("");
+  const [newStudentReg, setNewStudentReg] = useState("");
+  const [newStudentDept, setNewStudentDept] = useState("");
+  const [studentUploadError, setStudentUploadError] = useState("");
+  const [isSendingInvitations, setIsSendingInvitations] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: '',
     startTime: '',
@@ -346,6 +358,273 @@ const ExamCard: React.FC<Props> = ({
       const hours = Math.floor(diffMs / (1000 * 60 * 60));
       const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
       return `${hours}h ${minutes}m`;
+    }
+  };
+
+  // Add Students Modal Handlers
+  const handleAddStudent = () => {
+    setStudentUploadError("");
+
+    // Validate all mandatory fields
+    if (!newStudentEmail.trim()) {
+      setStudentUploadError("Email is required");
+      return;
+    }
+    if (!newStudentPassword.trim()) {
+      setStudentUploadError("Password is required");
+      return;
+    }
+    if (!newStudentName.trim()) {
+      setStudentUploadError("Name is required");
+      return;
+    }
+    if (!newStudentReg.trim()) {
+      setStudentUploadError("Registration number is required");
+      return;
+    }
+    if (!newStudentDept.trim()) {
+      setStudentUploadError("Department is required");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newStudentEmail.trim())) {
+      setStudentUploadError("Invalid email format");
+      return;
+    }
+
+    if (newStudents.some(s => s.email.toLowerCase() === newStudentEmail.trim().toLowerCase())) {
+      setStudentUploadError("Student with this email already added");
+      return;
+    }
+
+    setNewStudents(prev => [...prev, {
+      email: newStudentEmail.trim(),
+      password: newStudentPassword.trim(),
+      name: newStudentName.trim(),
+      reg: newStudentReg.trim(),
+      dept: newStudentDept.trim()
+    }]);
+
+    // Reset form
+    setNewStudentEmail("");
+    setNewStudentPassword("");
+    setNewStudentName("");
+    setNewStudentReg("");
+    setNewStudentDept("");
+    setStudentUploadError("");
+    setShowStudentForm(false);
+  };
+
+  const handleDeleteStudent = (email: string) => {
+    setNewStudents(prev => prev.filter(s => s.email !== email));
+  };
+
+  const handleStudentFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    if (fileExtension !== 'xlsx' && fileExtension !== 'xls' && fileExtension !== 'csv') {
+      setStudentUploadError('Please upload a valid Excel (.xlsx, .xls) or CSV file');
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    
+    reader.onerror = () => {
+      setStudentUploadError('Error reading file. Please try again.');
+      event.target.value = '';
+    };
+
+    reader.onload = (e) => {
+      try {
+        const data = e.target?.result;
+        if (!data) {
+          setStudentUploadError('No data found in file');
+          event.target.value = '';
+          return;
+        }
+
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        if (jsonData.length === 0) {
+          setStudentUploadError('No data found in file');
+          event.target.value = '';
+          return;
+        }
+
+        const extractedStudents: typeof newStudents = [];
+        const errors: string[] = [];
+        
+        jsonData.forEach((row, index) => {
+          const email = row['Email'] || row['email'];
+          const password = row['Password'] || row['password'];
+          const name = row['Name'] || row['name'];
+          const reg = row['Registration Number'] || row['Reg'] || row['reg'];
+          const dept = row['Department'] || row['Dept'] || row['dept'];
+
+          if (!email || !email.trim()) {
+            errors.push(`Row ${index + 2}: Email is required`);
+            return;
+          }
+          if (!password || !password.trim()) {
+            errors.push(`Row ${index + 2}: Password is required`);
+            return;
+          }
+          if (!name || !name.trim()) {
+            errors.push(`Row ${index + 2}: Name is required`);
+            return;
+          }
+          if (!reg || !reg.trim()) {
+            errors.push(`Row ${index + 2}: Registration number is required`);
+            return;
+          }
+          if (!dept || !dept.trim()) {
+            errors.push(`Row ${index + 2}: Department is required`);
+            return;
+          }
+
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email.trim())) {
+            errors.push(`Row ${index + 2}: Invalid email format`);
+            return;
+          }
+
+          if (newStudents.some(s => s.email.toLowerCase() === email.trim().toLowerCase())) {
+            errors.push(`Row ${index + 2}: Email already exists`);
+            return;
+          }
+
+          if (extractedStudents.some(s => s.email.toLowerCase() === email.trim().toLowerCase())) {
+            errors.push(`Row ${index + 2}: Duplicate email in file`);
+            return;
+          }
+
+          extractedStudents.push({
+            email: email.trim(),
+            password: password.trim(),
+            name: name.trim(),
+            reg: reg.trim(),
+            dept: dept.trim()
+          });
+        });
+
+        if (errors.length > 0) {
+          const errorSummary = errors.slice(0, 3).join('\n');
+          const remainingErrors = errors.length > 3 ? `\n... and ${errors.length - 3} more errors` : '';
+          setStudentUploadError(`Found ${errors.length} error(s):\n${errorSummary}${remainingErrors}`);
+        }
+
+        if (extractedStudents.length === 0) {
+          setStudentUploadError('No valid students found. All fields are mandatory.');
+          event.target.value = '';
+          return;
+        }
+
+        setNewStudents(prev => [...prev, ...extractedStudents]);
+        
+        if (errors.length === 0) {
+          setStudentUploadError('');
+        }
+        
+        event.target.value = '';
+      } catch (parseError) {
+        setStudentUploadError('Error parsing file. Please check the format.');
+        event.target.value = '';
+      }
+    };
+
+    reader.readAsBinaryString(file);
+  };
+
+  const downloadStudentsTemplate = () => {
+    const sampleData = [
+      {
+        'Email': 'student1@example.com',
+        'Password': 'password123',
+        'Name': 'John Doe',
+        'Registration Number': 'REG001',
+        'Department': 'Computer Science'
+      },
+      {
+        'Email': 'student2@example.com',
+        'Password': 'password456',
+        'Name': 'Jane Smith',
+        'Registration Number': 'REG002',
+        'Department': 'Information Technology'
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+    
+    worksheet['!cols'] = [
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 30 }
+    ];
+
+    XLSX.writeFile(workbook, 'students_template.xlsx');
+  };
+
+  const handleSendInvitations = async () => {
+    if (newStudents.length === 0) {
+      alert('Please add at least one student');
+      return;
+    }
+
+    setIsSendingInvitations(true);
+    try {
+      const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const response = await axios.post(
+        `${base}/exam/${exam.id}/invite-students`,
+        {
+          examId: exam.id,
+          students: newStudents,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${getTokenFromCookie()}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        const { results } = response.data;
+        let message = `Successfully invited ${results.successful}/${results.total} students!\n`;
+        
+        if (results.failed > 0) {
+          message += `\nFailed: ${results.failed}`;
+        }
+        
+        if (results.emailsFailed > 0) {
+          message += `\n\nEmail delivery failed for ${results.emailsFailed} student(s). Accounts were created but emails could not be sent.`;
+        }
+
+        alert(message);
+        setShowAddStudentsModal(false);
+        setNewStudents([]);
+        setStudentUploadError('');
+      } else {
+        alert('Failed to invite students. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Error inviting students:', error);
+      alert(
+        `Failed to invite students:\n${
+          error?.response?.data?.message || error.message
+        }`
+      );
+    } finally {
+      setIsSendingInvitations(false);
     }
   };
 
@@ -796,6 +1075,42 @@ const ExamCard: React.FC<Props> = ({
                   Settings
                 </>
               )}
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAddStudentsModal(true);
+              }}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                background: 'var(--secondary-bg)',
+                color: 'var(--text-primary)',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--primary-color)';
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.borderColor = 'var(--primary-color)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--secondary-bg)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+              }}
+              title="Add students and send invitations"
+            >
+              <UserPlus size={14} />
+              Add Students
             </button>
 
             {onViewResults && (
@@ -2296,6 +2611,384 @@ const ExamCard: React.FC<Props> = ({
           </div>
         </div>
       )}
+
+      {/* Add Students Modal */}
+      {showAddStudentsModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            backdropFilter: "blur(4px)",
+          }}
+          onClick={() => {
+            setShowAddStudentsModal(false);
+            setNewStudents([]);
+            setStudentUploadError('');
+          }}
+        >
+          <div
+            style={{
+              background: "var(--card-bg)",
+              borderRadius: "16px",
+              padding: "28px",
+              maxWidth: "700px",
+              width: "90%",
+              maxHeight: "85vh",
+              overflow: "auto",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              border: "1px solid var(--border-color)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 600, color: "var(--text-primary)" }}>
+                Add Students to {examName}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowAddStudentsModal(false);
+                  setNewStudents([]);
+                  setStudentUploadError('');
+                }}
+                style={{
+                  background: "var(--secondary-bg)",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "8px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <X size={20} color="var(--text-secondary)" />
+              </button>
+            </div>
+
+            <p style={{ margin: "0 0 20px 0", fontSize: "14px", color: "var(--text-secondary)" }}>
+              Add students manually or upload an Excel file. All fields (Email, Password, Name, Registration Number, Department) are mandatory.
+            </p>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
+              <button
+                onClick={() => setShowStudentForm(!showStudentForm)}
+                style={{
+                  flex: 1,
+                  padding: "12px 20px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border-color)",
+                  background: showStudentForm ? "var(--accent-color)" : "var(--secondary-bg)",
+                  color: showStudentForm ? "white" : "var(--text-primary)",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                }}
+              >
+                <UserPlus size={18} />
+                Add Manually
+              </button>
+
+              <label
+                htmlFor={`student-file-upload-${exam.id}`}
+                style={{
+                  flex: 1,
+                  padding: "12px 20px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--secondary-bg)",
+                  color: "var(--text-primary)",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                }}
+              >
+                <Upload size={18} />
+                Upload Excel
+                <input
+                  id={`student-file-upload-${exam.id}`}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleStudentFileUpload}
+                  style={{ display: "none" }}
+                />
+              </label>
+
+              <button
+                onClick={downloadStudentsTemplate}
+                style={{
+                  padding: "12px 20px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--secondary-bg)",
+                  color: "var(--text-primary)",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <Download size={18} />
+                Template
+              </button>
+            </div>
+
+            {/* Manual Form */}
+            {showStudentForm && (
+              <div style={{
+                background: "var(--secondary-bg)",
+                borderRadius: "12px",
+                padding: "16px",
+                marginBottom: "20px",
+              }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                  <input
+                    type="email"
+                    placeholder="Email *"
+                    value={newStudentEmail}
+                    onChange={(e) => setNewStudentEmail(e.target.value)}
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color)",
+                      background: "var(--card-bg)",
+                      color: "var(--text-primary)",
+                      fontSize: "14px",
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Password *"
+                    value={newStudentPassword}
+                    onChange={(e) => setNewStudentPassword(e.target.value)}
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color)",
+                      background: "var(--card-bg)",
+                      color: "var(--text-primary)",
+                      fontSize: "14px",
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Name *"
+                    value={newStudentName}
+                    onChange={(e) => setNewStudentName(e.target.value)}
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color)",
+                      background: "var(--card-bg)",
+                      color: "var(--text-primary)",
+                      fontSize: "14px",
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Registration Number *"
+                    value={newStudentReg}
+                    onChange={(e) => setNewStudentReg(e.target.value)}
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color)",
+                      background: "var(--card-bg)",
+                      color: "var(--text-primary)",
+                      fontSize: "14px",
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Department *"
+                    value={newStudentDept}
+                    onChange={(e) => setNewStudentDept(e.target.value)}
+                    style={{
+                      gridColumn: "1 / -1",
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color)",
+                      background: "var(--card-bg)",
+                      color: "var(--text-primary)",
+                      fontSize: "14px",
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={handleAddStudent}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "var(--accent-color)",
+                    color: "white",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Add Student
+                </button>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {studentUploadError && (
+              <div style={{
+                padding: "12px",
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                borderRadius: "8px",
+                color: "#ef4444",
+                fontSize: "13px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "start",
+                gap: "8px",
+                whiteSpace: "pre-line",
+              }}>
+                <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
+                {studentUploadError}
+              </div>
+            )}
+
+            {/* Students List */}
+            {newStudents.length > 0 && (
+              <div style={{ marginBottom: "20px" }}>
+                <h4 style={{ margin: "0 0 12px 0", fontSize: "16px", fontWeight: 600, color: "var(--text-primary)" }}>
+                  Students to Invite ({newStudents.length})
+                </h4>
+                <div style={{ maxHeight: "250px", overflow: "auto", background: "var(--secondary-bg)", borderRadius: "8px", padding: "8px" }}>
+                  {newStudents.map((student, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "10px 12px",
+                        background: "var(--card-bg)",
+                        borderRadius: "6px",
+                        marginBottom: "8px",
+                        border: "1px solid var(--border-color)",
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "2px" }}>
+                          {student.name} ({student.reg})
+                        </div>
+                        <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                          {student.email} • {student.dept}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteStudent(student.email)}
+                        style={{
+                          padding: "6px",
+                          borderRadius: "6px",
+                          border: "none",
+                          background: "transparent",
+                          color: "var(--error-color)",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Send Invitations Button */}
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                onClick={() => {
+                  setShowAddStudentsModal(false);
+                  setNewStudents([]);
+                  setStudentUploadError('');
+                }}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border-color)",
+                  background: "transparent",
+                  color: "var(--text-secondary)",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendInvitations}
+                disabled={newStudents.length === 0 || isSendingInvitations}
+                style={{
+                  flex: 2,
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: newStudents.length === 0 || isSendingInvitations ? "var(--border-color)" : "var(--success-color)",
+                  color: "white",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  cursor: newStudents.length === 0 || isSendingInvitations ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  opacity: newStudents.length === 0 || isSendingInvitations ? 0.6 : 1,
+                }}
+              >
+                {isSendingInvitations ? (
+                  <>
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        border: "2px solid white",
+                        borderTopColor: "transparent",
+                        borderRadius: "50%",
+                        animation: "spin 0.6s linear infinite",
+                      }}
+                    />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail size={18} />
+                    Send Invitations to {newStudents.length} Student{newStudents.length !== 1 ? 's' : ''}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         @keyframes spin {
           to {
