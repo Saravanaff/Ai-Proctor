@@ -39,7 +39,7 @@ const LoginPage = () => {
             display: "flex",
             alignItems: "center",
             gap: "12px",
-            animation: "slideIn 0.3s ease",
+            animation: "slideInFromRight 0.3s ease",
           }}
         >
           <svg
@@ -57,7 +57,7 @@ const LoginPage = () => {
       )}
       <LoginForm redirect={(redirect as string) || "/"} />
       <style jsx global>{`
-        @keyframes slideIn {
+        @keyframes slideInFromRight {
           from {
             transform: translateX(400px);
             opacity: 0;

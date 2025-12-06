@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
-import styles from "../../styles/RegisterForm.module.css";
 import Link from "next/link";
+import { Moon, Sun, Eye, EyeOff, ArrowRight, ArrowLeft, AlertCircle, Lock, Mail, User, Calendar, Hash, Building2, CheckCircle, Send } from "lucide-react";
 
 interface RegisterFormProps {
   redirect?: string;
@@ -24,6 +24,38 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
+
+  const themes = {
+    dark: {
+      background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
+      cardBg: "rgba(30, 41, 59, 0.8)",
+      cardBorder: "rgba(51, 65, 85, 0.5)",
+      textPrimary: "#f1f5f9",
+      textSecondary: "#cbd5e1",
+      textMuted: "#94a3b8",
+      accentPrimary: "#3b82f6",
+      inputBg: "rgba(15, 23, 42, 0.6)",
+      inputBorder: "rgba(51, 65, 85, 0.6)",
+      stepActive: "rgba(59, 130, 246, 0.2)",
+      stepInactive: "rgba(51, 65, 85, 0.3)",
+    },
+    light: {
+      background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",
+      cardBg: "rgba(255, 255, 255, 0.95)",
+      cardBorder: "rgba(203, 213, 225, 0.6)",
+      textPrimary: "#0f172a",
+      textSecondary: "#475569",
+      textMuted: "#64748b",
+      accentPrimary: "#3b82f6",
+      inputBg: "rgba(248, 250, 252, 0.9)",
+      inputBorder: "rgba(203, 213, 225, 0.7)",
+      stepActive: "rgba(59, 130, 246, 0.15)",
+      stepInactive: "rgba(203, 213, 225, 0.5)",
+    }
+  };
+
+  const currentTheme = isDarkTheme ? themes.dark : themes.light;
 
   const router = useRouter();
 
@@ -201,175 +233,525 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
   ];
 
   return (
-    <div className={styles.container}>
-      <div className={styles.content}>
-        <div className={styles.header}>
-          <div className={styles.logo}>
-            <div className={styles.logoIcon}></div>
-            <span className={styles.logoText}>AI Proctor</span>
+    <div style={{
+      minHeight: "100vh",
+      background: currentTheme.background,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "24px",
+      position: "relative",
+      transition: "background 0.3s ease",
+    }}>
+      {/* Animated Background Orbs */}
+      <div style={{
+        position: "absolute",
+        width: "400px",
+        height: "400px",
+        borderRadius: "50%",
+        background: isDarkTheme ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.1)",
+        filter: "blur(80px)",
+        top: "-200px",
+        right: "-100px",
+        animation: "float 8s ease-in-out infinite",
+        pointerEvents: "none",
+      }} />
+      <div style={{
+        position: "absolute",
+        width: "300px",
+        height: "300px",
+        borderRadius: "50%",
+        background: isDarkTheme ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.1)",
+        filter: "blur(80px)",
+        bottom: "-150px",
+        left: "-50px",
+        animation: "float 10s ease-in-out infinite reverse",
+        pointerEvents: "none",
+      }} />
+
+      <div style={{
+        maxWidth: "600px",
+        width: "100%",
+        position: "relative",
+        zIndex: 1,
+      }}>
+        <div style={{
+          textAlign: "center",
+          marginBottom: "32px",
+          animation: "slideDown 0.6s ease",
+        }}>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "12px",
+            marginBottom: "24px",
+          }}>
+            <div style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "12px",
+              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
+            }}>
+              <Lock size={24} color="#ffffff" strokeWidth={2.5} />
+            </div>
+            <span style={{
+              fontSize: "28px",
+              fontWeight: "800",
+              color: currentTheme.textPrimary,
+              letterSpacing: "-0.02em",
+              transition: "color 0.3s ease",
+            }}>AI Proctor</span>
           </div>
-          <h1 className={styles.title}>Create Account</h1>
-          <p className={styles.subtitle}>
+          <h1 style={{
+            fontSize: "32px",
+            fontWeight: "800",
+            color: currentTheme.textPrimary,
+            margin: "0 0 12px 0",
+            letterSpacing: "-0.02em",
+            transition: "color 0.3s ease",
+          }}>Create Account</h1>
+          <p style={{
+            fontSize: "15px",
+            color: currentTheme.textSecondary,
+            margin: 0,
+            transition: "color 0.3s ease",
+          }}>
             Join our secure AI-powered proctoring platform
           </p>
 
           {/* Step Indicator */}
-          <div className={styles.stepIndicator}>
-            <div
-              className={`${styles.step} ${step >= 1 ? styles.stepActive : ""}`}
-            >
-              <div className={styles.stepNumber}>1</div>
-              <span className={styles.stepLabel}>Account Details</span>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "16px",
+            marginTop: "32px",
+          }}>
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "8px",
+            }}>
+              <div style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                background: step >= 1 ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)" : currentTheme.stepInactive,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#ffffff",
+                fontWeight: "700",
+                fontSize: "16px",
+                transition: "all 0.3s ease",
+                boxShadow: step >= 1 ? "0 4px 12px rgba(59, 130, 246, 0.4)" : "none",
+              }}>
+                {step > 1 ? <CheckCircle size={20} strokeWidth={2.5} /> : "1"}
+              </div>
+              <span style={{
+                fontSize: "12px",
+                fontWeight: "600",
+                color: step >= 1 ? currentTheme.textPrimary : currentTheme.textMuted,
+                transition: "color 0.3s ease",
+              }}>Account Details</span>
             </div>
-            <div className={styles.stepLine}></div>
-            <div
-              className={`${styles.step} ${step >= 2 ? styles.stepActive : ""}`}
-            >
-              <div className={styles.stepNumber}>2</div>
-              <span className={styles.stepLabel}>Verify Email</span>
+            <div style={{
+              width: "60px",
+              height: "2px",
+              background: step >= 2 ? currentTheme.accentPrimary : currentTheme.stepInactive,
+              transition: "all 0.3s ease",
+            }} />
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "8px",
+            }}>
+              <div style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                background: step >= 2 ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)" : currentTheme.stepInactive,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#ffffff",
+                fontWeight: "700",
+                fontSize: "16px",
+                transition: "all 0.3s ease",
+                boxShadow: step >= 2 ? "0 4px 12px rgba(59, 130, 246, 0.4)" : "none",
+              }}>2</div>
+              <span style={{
+                fontSize: "12px",
+                fontWeight: "600",
+                color: step >= 2 ? currentTheme.textPrimary : currentTheme.textMuted,
+                transition: "color 0.3s ease",
+              }}>Verify Email</span>
             </div>
           </div>
         </div>
 
-        <div className={styles.formCard}>
+        <div style={{
+          background: currentTheme.cardBg,
+          backdropFilter: "blur(40px)",
+          borderRadius: "24px",
+          padding: "40px",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          border: `1px solid ${currentTheme.cardBorder}`,
+          transition: "all 0.3s ease",
+          animation: "scaleIn 0.6s ease",
+        }}>
           {step === 1 ? (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendOtp();
               }}
-              className={styles.form}
+              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
             >
-              {/* Name */}
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>Full Name</label>
-                <input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={styles.input}
-                  required
-                />
+              {/* Two columns layout for name and department */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: currentTheme.textPrimary,
+                    marginBottom: "8px",
+                    transition: "color 0.3s ease",
+                  }}>Full Name</label>
+                  <div style={{ position: "relative" }}>
+                    <User size={18} color={currentTheme.textMuted} style={{
+                      position: "absolute",
+                      left: "16px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      transition: "color 0.3s ease",
+                    }} />
+                    <input
+                      type="text"
+                      placeholder="Enter your full name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px 12px 48px",
+                        fontSize: "15px",
+                        background: currentTheme.inputBg,
+                        border: `2px solid ${currentTheme.inputBorder}`,
+                        borderRadius: "12px",
+                        color: currentTheme.textPrimary,
+                        outline: "none",
+                        transition: "all 0.3s ease",
+                        boxSizing: "border-box",
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = currentTheme.accentPrimary;
+                        e.currentTarget.style.boxShadow = `0 0 0 3px ${isDarkTheme ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)'}`;
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = currentTheme.inputBorder;
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: currentTheme.textPrimary,
+                    marginBottom: "8px",
+                    transition: "color 0.3s ease",
+                  }}>Department</label>
+                  <div style={{ position: "relative" }}>
+                    <Building2 size={18} color={currentTheme.textMuted} style={{
+                      position: "absolute",
+                      left: "16px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      transition: "color 0.3s ease",
+                    }} />
+                    <input
+                      type="text"
+                      placeholder="Enter your department"
+                      value={dept}
+                      onChange={(e) => setDept(e.target.value)}
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px 12px 48px",
+                        fontSize: "15px",
+                        background: currentTheme.inputBg,
+                        border: `2px solid ${currentTheme.inputBorder}`,
+                        borderRadius: "12px",
+                        color: currentTheme.textPrimary,
+                        outline: "none",
+                        transition: "all 0.3s ease",
+                        boxSizing: "border-box",
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = currentTheme.accentPrimary;
+                        e.currentTarget.style.boxShadow = `0 0 0 3px ${isDarkTheme ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)'}`;
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = currentTheme.inputBorder;
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              {/* Department */}
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>Department</label>
-                <input
-                  type="text"
-                  placeholder="Enter your department"
-                  value={dept}
-                  onChange={(e) => setDept(e.target.value)}
-                  className={styles.input}
-                  required
-                />
+
+              {/* Two columns for DOB and Registration */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: currentTheme.textPrimary,
+                    marginBottom: "8px",
+                    transition: "color 0.3s ease",
+                  }}>Date of Birth</label>
+                  <div style={{ position: "relative" }}>
+                    <Calendar size={18} color={currentTheme.textMuted} style={{
+                      position: "absolute",
+                      left: "16px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      transition: "color 0.3s ease",
+                    }} />
+                    <input
+                      type="date"
+                      value={dob}
+                      onChange={(e) => setDob(e.target.value)}
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px 12px 48px",
+                        fontSize: "15px",
+                        background: currentTheme.inputBg,
+                        border: `2px solid ${currentTheme.inputBorder}`,
+                        borderRadius: "12px",
+                        color: currentTheme.textPrimary,
+                        outline: "none",
+                        transition: "all 0.3s ease",
+                        boxSizing: "border-box",
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = currentTheme.accentPrimary;
+                        e.currentTarget.style.boxShadow = `0 0 0 3px ${isDarkTheme ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)'}`;
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = currentTheme.inputBorder;
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: currentTheme.textPrimary,
+                    marginBottom: "8px",
+                    transition: "color 0.3s ease",
+                  }}>Registration Number</label>
+                  <div style={{ position: "relative" }}>
+                    <Hash size={18} color={currentTheme.textMuted} style={{
+                      position: "absolute",
+                      left: "16px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      transition: "color 0.3s ease",
+                    }} />
+                    <input
+                      type="text"
+                      placeholder="Enter your registration number"
+                      value={reg}
+                      onChange={(e) => setReg(e.target.value)}
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px 12px 48px",
+                        fontSize: "15px",
+                        background: currentTheme.inputBg,
+                        border: `2px solid ${currentTheme.inputBorder}`,
+                        borderRadius: "12px",
+                        color: currentTheme.textPrimary,
+                        outline: "none",
+                        transition: "all 0.3s ease",
+                        boxSizing: "border-box",
+                      }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = currentTheme.accentPrimary;
+                        e.currentTarget.style.boxShadow = `0 0 0 3px ${isDarkTheme ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)'}`;
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = currentTheme.inputBorder;
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-              {/* Date of Birth */}
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>Date of Birth</label>
-                <input
-                  type="date"
-                  placeholder="Select your date of birth"
-                  value={dob}
-                  onChange={(e) => setDob(e.target.value)}
-                  className={styles.input}
-                  required
-                />
-              </div>
-              {/* Registration Number */}
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>Registration Number</label>
-                <input
-                  type="text"
-                  placeholder="Enter your registration number"
-                  value={reg}
-                  onChange={(e) => setReg(e.target.value)}
-                  className={styles.input}
-                  required
-                />
-              </div>
+
               {/* Email */}
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>Email Address</label>
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={styles.input}
-                  required
-                />
-              </div>
-              {/* Password */}
-              <div className={styles.inputGroup}>
-                <label className={styles.label}>Password</label>
+              <div>
+                <label style={{
+                  display: "block",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: currentTheme.textPrimary,
+                  marginBottom: "8px",
+                  transition: "color 0.3s ease",
+                }}>Email Address</label>
                 <div style={{ position: "relative" }}>
+                  <Mail size={18} color={currentTheme.textMuted} style={{
+                    position: "absolute",
+                    left: "16px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    transition: "color 0.3s ease",
+                  }} />
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px 12px 48px",
+                      fontSize: "15px",
+                      background: currentTheme.inputBg,
+                      border: `2px solid ${currentTheme.inputBorder}`,
+                      borderRadius: "12px",
+                      color: currentTheme.textPrimary,
+                      outline: "none",
+                      transition: "all 0.3s ease",
+                      boxSizing: "border-box",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = currentTheme.accentPrimary;
+                      e.currentTarget.style.boxShadow = `0 0 0 3px ${isDarkTheme ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)'}`;
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = currentTheme.inputBorder;
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label style={{
+                  display: "block",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: currentTheme.textPrimary,
+                  marginBottom: "8px",
+                  transition: "color 0.3s ease",
+                }}>Password</label>
+                <div style={{ position: "relative" }}>
+                  <Lock size={18} color={currentTheme.textMuted} style={{
+                    position: "absolute",
+                    left: "16px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    transition: "color 0.3s ease",
+                  }} />
                   <input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={styles.input}
                     placeholder="Create a strong password"
                     onFocus={() => setShowPasswordReqs(true)}
                     onBlur={() => setShowPasswordReqs(false)}
                     required
-                    style={{ paddingRight: 60 }}
+                    style={{
+                      width: "100%",
+                      padding: "12px 52px 12px 48px",
+                      fontSize: "15px",
+                      background: currentTheme.inputBg,
+                      border: `2px solid ${currentTheme.inputBorder}`,
+                      borderRadius: "12px",
+                      color: currentTheme.textPrimary,
+                      outline: "none",
+                      transition: "all 0.3s ease",
+                      boxSizing: "border-box",
+                    }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((p) => !p)}
-                    className={styles.passwordToggle}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      color: currentTheme.textMuted,
+                      transition: "color 0.3s ease",
+                    }}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? (
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19" />
-                        <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
-                        <line x1="1" y1="1" x2="23" y2="23" />
-                      </svg>
-                    ) : (
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    )}
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
                 {showPasswordReqs && (
-                  <div className={styles.passwordReqs}>
+                  <div style={{
+                    marginTop: "12px",
+                    padding: "16px",
+                    background: isDarkTheme ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.08)",
+                    borderRadius: "12px",
+                    border: `1px solid ${isDarkTheme ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.15)"}`,
+                  }}>
                     {passwordRequirements.map((req) => (
-                      <div key={req.key} className={styles.passwordReq}>
-                        <span
-                          className={`${styles.passwordReqIcon} ${req.passed ? styles.passwordReqPassed : ""
-                            }`}
-                        >
-                          {req.passed ? "✓" : ""}
-                        </span>
-                        <span
-                          className={
-                            req.passed ? styles.passwordReqTextPassed : ""
-                          }
-                        >
+                      <div key={req.key} style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        marginBottom: "8px",
+                      }}>
+                        <div style={{
+                          width: "18px",
+                          height: "18px",
+                          borderRadius: "50%",
+                          background: req.passed ? "#22c55e" : currentTheme.inputBg,
+                          border: `2px solid ${req.passed ? "#22c55e" : currentTheme.inputBorder}`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "10px",
+                          color: "#ffffff",
+                          fontWeight: "bold",
+                          transition: "all 0.3s ease",
+                        }}>
+                          {req.passed && "✓"}
+                        </div>
+                        <span style={{
+                          fontSize: "13px",
+                          color: req.passed ? "#22c55e" : currentTheme.textSecondary,
+                          fontWeight: "500",
+                          transition: "color 0.3s ease",
+                        }}>
                           {req.label}
                         </span>
                       </div>
@@ -377,193 +759,385 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                   </div>
                 )}
               </div>
+
               {error && (
-                <div className={styles.error}>
-                  <div className={styles.errorIcon}>
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="8" x2="12" y2="12" />
-                      <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                  </div>
-                  <span>{error}</span>
+                <div style={{
+                  padding: "14px 16px",
+                  borderRadius: "12px",
+                  background: isDarkTheme ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.1)",
+                  border: `1px solid ${isDarkTheme ? "rgba(239, 68, 68, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  animation: "slideIn 0.3s ease",
+                }}>
+                  <AlertCircle size={18} color="#ef4444" strokeWidth={2.5} />
+                  <span style={{
+                    fontSize: "14px",
+                    color: "#ef4444",
+                    fontWeight: "500",
+                  }}>{error}</span>
                 </div>
               )}
+
               <button
                 type="submit"
-                className={styles.submitButton}
                 disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: "16px",
+                  fontSize: "16px",
+                  fontWeight: "700",
+                  color: "#ffffff",
+                  background: loading
+                    ? (isDarkTheme ? "rgba(100, 116, 139, 0.5)" : "rgba(148, 163, 184, 0.5)")
+                    : "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                  border: "none",
+                  borderRadius: "12px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  transition: "all 0.3s ease",
+                  boxShadow: loading ? "none" : "0 4px 16px rgba(59, 130, 246, 0.4)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  letterSpacing: "0.5px",
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 6px 24px rgba(59, 130, 246, 0.5)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(59, 130, 246, 0.4)";
+                  }
+                }}
               >
                 {loading ? (
-                  <div className={styles.spinner}></div>
+                  <div style={{
+                    width: "20px",
+                    height: "20px",
+                    border: "3px solid rgba(255, 255, 255, 0.3)",
+                    borderTop: "3px solid #ffffff",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite",
+                  }} />
                 ) : (
                   <>
                     <span>Continue to Verification</span>
-                    <div className={styles.buttonIcon}>
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                        <polyline points="12 5 19 12 12 19" />
-                      </svg>
-                    </div>
+                    <ArrowRight size={18} strokeWidth={2.5} />
                   </>
                 )}
               </button>
             </form>
           ) : (
-            <form onSubmit={handleVerifyAndRegister} className={styles.form}>
-              <div className={styles.otpSection}>
-                <div className={styles.otpIcon}>
-                  <svg
-                    width="60"
-                    height="60"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  >
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <polyline points="22,6 12,13 2,6" />
-                  </svg>
-                </div>
-                <h3 className={styles.otpTitle}>Verify Your Email</h3>
-                <p className={styles.otpDesc}>
-                  We've sent a 6-digit verification code to
-                  <strong> {email}</strong>
-                </p>
-
-                <div className={styles.inputGroup}>
-                  <label className={styles.label}>Verification Code</label>
-                  <input
-                    type="text"
-                    placeholder="Enter 6-digit code"
-                    value={otp}
-                    onChange={(e) =>
-                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-                    }
-                    className={`${styles.input} ${styles.otpInput}`}
-                    required
-                    maxLength={6}
-                    pattern="[0-9]{6}"
-                  />
-                </div>
-
-                {error && (
-                  <div className={styles.error}>
-                    <div className={styles.errorIcon}>
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                      </svg>
-                    </div>
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  className={styles.submitButton}
-                  disabled={loading || otp.length !== 6}
-                >
-                  {loading ? (
-                    <div className={styles.spinner}></div>
-                  ) : (
-                    <>
-                      <span>Verify & Create Account</span>
-                      <div className={styles.buttonIcon}>
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                    </>
-                  )}
-                </button>
-
-                <div className={styles.resendSection}>
-                  {resendTimer > 0 ? (
-                    <p className={styles.resendTimer}>
-                      Resend code in {resendTimer}s
-                    </p>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleResendOtp}
-                      className={styles.resendButton}
-                      disabled={loading}
-                    >
-                      Resend Code
-                    </button>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className={styles.backButton}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    style={{ marginRight: "8px" }}
-                  >
-                    <line x1="19" y1="12" x2="5" y2="12" />
-                    <polyline points="12 19 5 12 12 5" />
-                  </svg>
-                  Back to edit details
-                </button>
+            <form onSubmit={handleVerifyAndRegister} style={{ display: "flex", flexDirection: "column", gap: "24px", alignItems: "center", textAlign: "center" }}>
+              <div style={{
+                width: "80px",
+                height: "80px",
+                borderRadius: "50%",
+                background: isDarkTheme ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.15)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto",
+              }}>
+                <Send size={36} color={currentTheme.accentPrimary} strokeWidth={2} />
               </div>
+              <div>
+                <h3 style={{
+                  fontSize: "24px",
+                  fontWeight: "800",
+                  color: currentTheme.textPrimary,
+                  margin: "0 0 12px 0",
+                  transition: "color 0.3s ease",
+                }}>Verify Your Email</h3>
+                <p style={{
+                  fontSize: "15px",
+                  color: currentTheme.textSecondary,
+                  margin: 0,
+                  lineHeight: 1.6,
+                  transition: "color 0.3s ease",
+                }}>
+                  We've sent a 6-digit verification code to<br />
+                  <strong style={{ color: currentTheme.accentPrimary }}>{email}</strong>
+                </p>
+              </div>
+
+              <div style={{ width: "100%", maxWidth: "300px" }}>
+                <label style={{
+                  display: "block",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: currentTheme.textPrimary,
+                  marginBottom: "8px",
+                  textAlign: "left",
+                  transition: "color 0.3s ease",
+                }}>Verification Code</label>
+                <input
+                  type="text"
+                  placeholder="Enter 6-digit code"
+                  value={otp}
+                  onChange={(e) =>
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  required
+                  maxLength={6}
+                  pattern="[0-9]{6}"
+                  style={{
+                    width: "100%",
+                    padding: "16px",
+                    fontSize: "24px",
+                    fontWeight: "700",
+                    textAlign: "center",
+                    letterSpacing: "8px",
+                    background: currentTheme.inputBg,
+                    border: `2px solid ${currentTheme.inputBorder}`,
+                    borderRadius: "12px",
+                    color: currentTheme.textPrimary,
+                    outline: "none",
+                    transition: "all 0.3s ease",
+                    boxSizing: "border-box",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = currentTheme.accentPrimary;
+                    e.currentTarget.style.boxShadow = `0 0 0 3px ${isDarkTheme ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)'}`;
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = currentTheme.inputBorder;
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+
+              {error && (
+                <div style={{
+                  width: "100%",
+                  padding: "14px 16px",
+                  borderRadius: "12px",
+                  background: isDarkTheme ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.1)",
+                  border: `1px solid ${isDarkTheme ? "rgba(239, 68, 68, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  animation: "slideIn 0.3s ease",
+                }}>
+                  <AlertCircle size={18} color="#ef4444" strokeWidth={2.5} />
+                  <span style={{
+                    fontSize: "14px",
+                    color: "#ef4444",
+                    fontWeight: "500",
+                  }}>{error}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || otp.length !== 6}
+                style={{
+                  width: "100%",
+                  padding: "16px",
+                  fontSize: "16px",
+                  fontWeight: "700",
+                  color: "#ffffff",
+                  background: (loading || otp.length !== 6)
+                    ? (isDarkTheme ? "rgba(100, 116, 139, 0.5)" : "rgba(148, 163, 184, 0.5)")
+                    : "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                  border: "none",
+                  borderRadius: "12px",
+                  cursor: (loading || otp.length !== 6) ? "not-allowed" : "pointer",
+                  transition: "all 0.3s ease",
+                  boxShadow: (loading || otp.length !== 6) ? "none" : "0 4px 16px rgba(34, 197, 94, 0.4)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  letterSpacing: "0.5px",
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading && otp.length === 6) {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 6px 24px rgba(34, 197, 94, 0.5)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading && otp.length === 6) {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(34, 197, 94, 0.4)";
+                  }
+                }}
+              >
+                {loading ? (
+                  <div style={{
+                    width: "20px",
+                    height: "20px",
+                    border: "3px solid rgba(255, 255, 255, 0.3)",
+                    borderTop: "3px solid #ffffff",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite",
+                  }} />
+                ) : (
+                  <>
+                    <span>Verify & Create Account</span>
+                    <CheckCircle size={18} strokeWidth={2.5} />
+                  </>
+                )}
+              </button>
+
+              <div style={{ width: "100%" }}>
+                {resendTimer > 0 ? (
+                  <p style={{
+                    fontSize: "14px",
+                    color: currentTheme.textMuted,
+                    margin: 0,
+                    transition: "color 0.3s ease",
+                  }}>
+                    Resend code in <strong style={{ color: currentTheme.accentPrimary }}>{resendTimer}s</strong>
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={loading}
+                    style={{
+                      padding: "12px 24px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: currentTheme.accentPrimary,
+                      background: isDarkTheme ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.08)",
+                      border: `2px solid ${isDarkTheme ? "rgba(59, 130, 246, 0.3)" : "rgba(59, 130, 246, 0.2)"}`,
+                      borderRadius: "10px",
+                      cursor: loading ? "not-allowed" : "pointer",
+                      transition: "all 0.3s ease",
+                    }}
+                  >
+                    Resend Code
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: currentTheme.textSecondary,
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = currentTheme.accentPrimary}
+                onMouseLeave={(e) => e.currentTarget.style.color = currentTheme.textSecondary}
+              >
+                <ArrowLeft size={16} strokeWidth={2.5} />
+                <span>Back to edit details</span>
+              </button>
             </form>
           )}
 
-          <div className={styles.divider}>
-            <span>or</span>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            margin: "24px 0",
+          }}>
+            <div style={{ flex: 1, height: "1px", background: currentTheme.inputBorder, transition: "background 0.3s ease" }} />
+            <span style={{ fontSize: "14px", color: currentTheme.textMuted, fontWeight: "500", transition: "color 0.3s ease" }}>or</span>
+            <div style={{ flex: 1, height: "1px", background: currentTheme.inputBorder, transition: "background 0.3s ease" }} />
           </div>
 
-          <Link href="/auth/login" legacyBehavior>
-            <a className={styles.toggleButton}>
-              Already have an account? Sign In
-            </a>
-          </Link>
+          <Link href="/auth/login" style={{
+            display: "block",
+            width: "100%",
+            padding: "14px",
+            fontSize: "15px",
+            fontWeight: "600",
+            color: currentTheme.accentPrimary,
+            background: isDarkTheme ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.08)",
+            border: `2px solid ${isDarkTheme ? "rgba(59, 130, 246, 0.3)" : "rgba(59, 130, 246, 0.2)"}`,
+            borderRadius: "12px",
+            textAlign: "center",
+            textDecoration: "none",
+            transition: "all 0.3s ease",
+          }}>Already have an account? Sign In</Link>
         </div>
 
-        <div className={styles.footer}>
-          <p className={styles.footerText}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
-          </p>
-        </div>
+        <p style={{
+          textAlign: "center",
+          fontSize: "13px",
+          color: currentTheme.textMuted,
+          marginTop: "24px",
+          lineHeight: 1.6,
+          transition: "color 0.3s ease",
+        }}>
+          By continuing, you agree to our Terms of Service and Privacy Policy
+        </p>
       </div>
+
+      {/* Theme Toggle Button */}
+      <button
+        onClick={() => setIsDarkTheme(!isDarkTheme)}
+        style={{
+          position: "fixed",
+          bottom: "32px",
+          right: "32px",
+          padding: "14px",
+          borderRadius: "50%",
+          background: currentTheme.cardBg,
+          backdropFilter: "blur(20px)",
+          border: `2px solid ${currentTheme.cardBorder}`,
+          cursor: "pointer",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+          transition: "all 0.3s ease",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-2px)";
+          e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.2)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "translateY(0)";
+          e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.15)";
+        }}
+      >
+        {isDarkTheme ? <Sun size={20} color={currentTheme.textPrimary} strokeWidth={2.5} /> : <Moon size={20} color={currentTheme.textPrimary} strokeWidth={2.5} />}
+      </button>
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translate(0, 0); }
+          33% { transform: translate(30px, -30px); }
+          66% { transform: translate(-20px, 20px); }
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(-10px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

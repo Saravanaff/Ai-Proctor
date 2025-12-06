@@ -2,7 +2,6 @@ import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { ToastProvider } from "@/components/Toaster";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 
@@ -95,7 +94,6 @@ export default function App({ Component, pageProps }: AppProps) {
       <ClientAuth>
         <ToastProvider>
           <PageTransition>
-            <ThemeToggle />
             <Component {...pageProps} />
           </PageTransition>
         </ToastProvider>
