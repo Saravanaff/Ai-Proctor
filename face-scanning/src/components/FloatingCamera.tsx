@@ -175,7 +175,7 @@ const FloatingCamera = ({
 
   // ✅ NEW: Frame counters for mobile phone detection
   const mobileFrameCountRef = useRef(0);
-  const MOBILE_FRAME_THRESHOLD = 3; // 3 consecutive frames
+  const MOBILE_FRAME_THRESHOLD = 5; // 3 consecutive frames
 
 
 
@@ -732,7 +732,6 @@ const FloatingCamera = ({
                   }
                   console.log("Face Authentication : ", isAuth);
 
-                  // ✅ NEW: Track continuous head position violation (only if enabled)
                   if (examSettings?.head_direction_enabled) {
                     if (
                       headPos.toLowerCase() !== "forward" &&
@@ -740,14 +739,12 @@ const FloatingCamera = ({
                     ) {
                       const now = Date.now();
 
-                      // Start tracking if not already tracking
                       if (violationStartTimeRef.current.headDirection === null) {
                         violationStartTimeRef.current.headDirection = now;
                         violationLoggedRef.current.headDirection = false;
                         console.log("⚠️ Head direction violation started");
                       }
 
-                      // Check if violation has been continuous for 4 seconds
                       const violationDuration =
                         now - violationStartTimeRef.current.headDirection;
                       if (
@@ -760,7 +757,6 @@ const FloatingCamera = ({
                         logViolation("head_position_violation");
                         violationLoggedRef.current.headDirection = true;
 
-                        // Trigger UI notification
                         if (
                           now - lastNotificationRef.current.headDirection >=
                           NOTIFICATION_THROTTLE_MS
@@ -770,7 +766,6 @@ const FloatingCamera = ({
                         }
                       }
                     } else {
-                      // ✅ Reset tracking when violation stops
                       if (violationStartTimeRef.current.headDirection !== null) {
                         console.log("✅ Head direction violation ended");
                         violationStartTimeRef.current.headDirection = null;
@@ -782,19 +777,16 @@ const FloatingCamera = ({
                   const eyeGaze = calculateEyeGaze(landmarks);
                   console.log(`👁️ Eye Gaze: ${eyeGaze}`);
 
-                  // ✅ NEW: Track continuous eye position violation (only if enabled)
                   if (examSettings?.eyeball_detection_enabled) {
                     if (eyeGaze.toLowerCase() !== "center") {
                       const now = Date.now();
 
-                      // Start tracking if not already tracking
                       if (violationStartTimeRef.current.eyePosition === null) {
                         violationStartTimeRef.current.eyePosition = now;
                         violationLoggedRef.current.eyePosition = false;
                         console.log("⚠️ Eye position violation started");
                       }
 
-                      // Check if violation has been continuous for 4 seconds
                       const violationDuration =
                         now - violationStartTimeRef.current.eyePosition;
                       if (
@@ -807,7 +799,6 @@ const FloatingCamera = ({
                         logViolation("eye_position_violation");
                         violationLoggedRef.current.eyePosition = true;
 
-                        // Trigger UI notification
                         if (
                           now - lastNotificationRef.current.eyePosition >=
                           NOTIFICATION_THROTTLE_MS

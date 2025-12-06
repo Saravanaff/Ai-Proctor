@@ -530,7 +530,7 @@ export const deleteExam = async (req: Request, res: Response) => {
       message: "Exam and all related data deleted successfully",
     });
   } catch (err: any) {
-    console.error(`❌ Error deleting exam ${examId}:`, err);
+    console.error(` Error deleting exam ${examId}:`, err);
     res.status(500).json({
       success: false,
       message: "Error deleting exam",
@@ -676,7 +676,6 @@ export const getStudentAnswers = async (req: Request, res: Response) => {
 
   console.log()
   try {
-    // Verify exam belongs to the examiner
     const exam = await Exam.findOne({
       where: {
         id: examId,
@@ -801,12 +800,13 @@ export const inviteStudentsToExam = async (req: Request, res: Response) => {
     // Process each student
     for (const student of students) {
       try {
-        const { email, password, name } = student;
+        const { email, password, name, reg, dept } = student;
 
-        if (!email || !password) {
+        // Validate all mandatory fields
+        if (!email || !password || !name || !reg || !dept) {
           results.errors.push({
-            email,
-            error: "Email and password are required",
+            email: email || 'unknown',
+            error: "All fields are required: email, password, name, registration number, and department",
           });
           continue;
         }
@@ -819,23 +819,21 @@ export const inviteStudentsToExam = async (req: Request, res: Response) => {
         let isNewUser = false;
 
         if (!user) {
-          // Create new student account
+          // Create new student account with all provided information
           const hashedPassword = await bcrypt.hash(password, 10);
           
           user = await User.create({
-            name: name || email.split('@')[0], // Use email prefix if name not provided
+            name: name,
             email: email.toLowerCase(),
             password: hashedPassword,
             role: "student",
-            dept: "N/A", // Default values since they're required
-            dob: "2000-01-01",
-            reg: email.toLowerCase(), // Use email as reg number
+            dept: dept,
+            dob: "2000-01-01", // Default DOB if not provided
+            reg: reg,
           } as any);
 
           isNewUser = true;
-          console.log(`✅ Created new student account: ${email}`);
-        } else {
-          console.log(`ℹ️  Student account already exists: ${email}`);
+          console.log(`✅ Created new student account: ${email} (${name}, Reg: ${reg}, Dept: ${dept})`);
         }
 
         // Send invitation email

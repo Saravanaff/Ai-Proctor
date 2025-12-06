@@ -36,9 +36,9 @@ import {
 interface Student {
   email: string;
   password: string;
-  name?: string;
-  reg?: string;
-  dept?: string;
+  name: string;
+  reg: string;
+  dept: string;
 }
 
 // Toggle Component - Defined outside to prevent re-renders
@@ -455,9 +455,29 @@ const NewExam = () => {
       // Clear any previous errors
       setStudentUploadError("");
 
-      // Validation
-      if (!newStudentEmail.trim() || !newStudentPassword.trim()) {
-        setStudentUploadError("Email and password are required");
+      // Validation - ALL fields are mandatory
+      if (!newStudentEmail.trim()) {
+        setStudentUploadError("Email is required");
+        return;
+      }
+
+      if (!newStudentPassword.trim()) {
+        setStudentUploadError("Password is required");
+        return;
+      }
+
+      if (!newStudentName.trim()) {
+        setStudentUploadError("Name is required");
+        return;
+      }
+
+      if (!newStudentReg.trim()) {
+        setStudentUploadError("Registration number is required");
+        return;
+      }
+
+      if (!newStudentDept.trim()) {
+        setStudentUploadError("Department is required");
         return;
       }
 
@@ -472,13 +492,13 @@ const NewExam = () => {
         return;
       }
 
-      // Add student
+      // Add student with all mandatory fields
       setStudents(prev => [...prev, {
         email: newStudentEmail.trim(),
         password: newStudentPassword.trim(),
-        name: newStudentName.trim() || undefined,
-        reg: newStudentReg.trim() || undefined,
-        dept: newStudentDept.trim() || undefined
+        name: newStudentName.trim(),
+        reg: newStudentReg.trim(),
+        dept: newStudentDept.trim()
       }]);
 
       // Reset form
@@ -561,13 +581,34 @@ const NewExam = () => {
               const reg = row['Registration Number'] || row['Reg'] || row['reg'] || row['registration'] || row['Registration'];
               const dept = row['Department'] || row['Dept'] || row['dept'] || row['department'];
 
-              if (!email || !password) {
-                errors.push(`Row ${index + 2}: Missing email or password`);
+              // Validate ALL mandatory fields
+              if (!email || !email.trim()) {
+                errors.push(`Row ${index + 2}: Email is required`);
+                return;
+              }
+
+              if (!password || !password.trim()) {
+                errors.push(`Row ${index + 2}: Password is required`);
+                return;
+              }
+
+              if (!name || !name.trim()) {
+                errors.push(`Row ${index + 2}: Name is required`);
+                return;
+              }
+
+              if (!reg || !reg.trim()) {
+                errors.push(`Row ${index + 2}: Registration number is required`);
+                return;
+              }
+
+              if (!dept || !dept.trim()) {
+                errors.push(`Row ${index + 2}: Department is required`);
                 return;
               }
 
               const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-              if (!emailRegex.test(email)) {
+              if (!emailRegex.test(email.trim())) {
                 errors.push(`Row ${index + 2}: Invalid email format`);
                 return;
               }
@@ -587,9 +628,9 @@ const NewExam = () => {
               extractedStudents.push({
                 email: email.trim(),
                 password: password.trim(),
-                name: name?.trim(),
-                reg: reg?.trim(),
-                dept: dept?.trim()
+                name: name.trim(),
+                reg: reg.trim(),
+                dept: dept.trim()
               });
             } catch (rowError) {
               console.error(`Error processing row ${index + 2}:`, rowError);
@@ -599,21 +640,33 @@ const NewExam = () => {
 
           if (errors.length > 0) {
             console.warn('File upload errors:', errors);
+            // Show first few errors to user
+            const errorSummary = errors.slice(0, 3).join('\n');
+            const remainingErrors = errors.length > 3 ? `\n... and ${errors.length - 3} more errors` : '';
+            setStudentUploadError(`Found ${errors.length} error(s) in file:\n${errorSummary}${remainingErrors}`);
           }
 
           if (extractedStudents.length === 0) {
-            setStudentUploadError('No valid students found. Please check the format.');
+            setStudentUploadError('No valid students found. Please ensure all mandatory fields are filled: Email, Password, Name, Registration Number, and Department.');
             event.target.value = '';
             return;
           }
 
           setStudents(prev => [...prev, ...extractedStudents]);
-          setStudentUploadError('');
+          
+          // Clear error only if all students were added successfully
+          if (errors.length === 0) {
+            setStudentUploadError('');
+          }
+          
           event.target.value = '';
           
-          // Show success message if there were some errors
+          // Show success message
           if (errors.length > 0 && extractedStudents.length > 0) {
             console.log(`Successfully added ${extractedStudents.length} students. ${errors.length} rows had errors.`);
+            // Keep the error message visible to show which rows failed
+          } else if (extractedStudents.length > 0) {
+            console.log(`Successfully added ${extractedStudents.length} students.`);
           }
         } catch (parseError) {
           console.error('Error parsing file:', parseError);
@@ -646,6 +699,13 @@ const NewExam = () => {
           'Name': 'Jane Smith',
           'Registration Number': 'REG002',
           'Department': 'Information Technology'
+        },
+        {
+          'Email': 'student3@example.com',
+          'Password': 'password789',
+          'Name': 'Bob Wilson',
+          'Registration Number': 'REG003',
+          'Department': 'Electronics'
         }
       ];
 
@@ -657,10 +717,13 @@ const NewExam = () => {
         { wch: 30 }, // Email
         { wch: 15 }, // Password
         { wch: 25 }, // Name
-        { wch: 20 }, // Registration Number
+        { wch: 25 }, // Registration Number
         { wch: 30 }  // Department
       ];
 
+      // Add a note in the workbook
+      XLSX.utils.book_set_sheet_visibility(workbook, 0, 0); // Make sheet visible
+      
       XLSX.writeFile(workbook, 'students_template.xlsx');
     } catch (error) {
       console.error('Error generating template:', error);
@@ -1214,11 +1277,11 @@ const NewExam = () => {
         {/* Main Content */}
         <main
           style={{
-            padding: "32px 40px",  // ✅ Reduced horizontal padding from 48px to 40px
+            padding: "32px 40px",
             maxWidth: "1400px",
             margin: "0 auto",
-            width: "100%",  // ✅ Ensure full width usage
-            boxSizing: "border-box",  // ✅ Include padding in width calculation
+            width: "100%",
+            boxSizing: "border-box",  
           }}
         >
           {/* Step Info Banner */}

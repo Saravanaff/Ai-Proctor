@@ -5,6 +5,9 @@ import path from "path";
 import fs from "fs";
 import cors from "cors";
 import dotenv from "dotenv";
+
+process.env.UV_THREADPOOL_SIZE = '10';
+
 dotenv.config();
 
 const storageServerPort = process.env.STORAGE_SERVER_PORT 
