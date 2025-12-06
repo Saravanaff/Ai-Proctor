@@ -11,6 +11,18 @@ import { getExamSettings } from '@/constants/examSettingsConsts';
 import { setNumberOfMicrophones } from '@/constants/violationConsts';
 import { useExamState } from '@/hooks/useExamState';
 import ExamStateError from '@/components/ExamStateError';
+import { 
+  CheckCircle, 
+  Monitor, 
+  AlertTriangle, 
+  Shield, 
+  Eye, 
+  Camera,
+  Volume2,
+  MousePointer,
+  Moon,
+  Sun
+} from 'lucide-react';
 
 
 const fullscreen = () => {
@@ -20,6 +32,7 @@ const fullscreen = () => {
     const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
     const [rulesAccepted, setRulesAccepted] = useState(false);
     const [screenShareError, setScreenShareError] = useState(false);
+    const [isDarkTheme, setIsDarkTheme] = useState(true);
     const { theme } = useTheme();
     const { getMicrophoneCount } = useMicrophoneDevices();
 
@@ -103,6 +116,48 @@ const fullscreen = () => {
         };
     }, []);
 
+    // Theme configurations
+    const themes = {
+        dark: {
+            background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
+            cardBg: "rgba(30, 41, 59, 0.9)",
+            cardBorder: "rgba(51, 65, 85, 0.8)",
+            textPrimary: "#ffffff",
+            textSecondary: "#cbd5e1",
+            textMuted: "#94a3b8",
+            accentPrimary: "#3b82f6",
+            ruleBg: "rgba(51, 65, 85, 0.5)",
+            ruleBorder: "rgba(51, 65, 85, 0.8)",
+            iconBg: "rgba(59, 130, 246, 0.15)",
+            iconColor: "#60a5fa",
+            buttonPrimaryBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+            buttonPrimaryShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
+            errorBg: "rgba(239, 68, 68, 0.15)",
+            errorBorder: "rgba(239, 68, 68, 0.4)",
+            errorText: "#ef4444",
+        },
+        light: {
+            background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",
+            cardBg: "rgba(255, 255, 255, 0.95)",
+            cardBorder: "rgba(226, 232, 240, 0.9)",
+            textPrimary: "#0f172a",
+            textSecondary: "#475569",
+            textMuted: "#64748b",
+            accentPrimary: "#3b82f6",
+            ruleBg: "rgba(255, 255, 255, 0.7)",
+            ruleBorder: "rgba(226, 232, 240, 0.8)",
+            iconBg: "rgba(59, 130, 246, 0.1)",
+            iconColor: "#3b82f6",
+            buttonPrimaryBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+            buttonPrimaryShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
+            errorBg: "rgba(239, 68, 68, 0.1)",
+            errorBorder: "rgba(239, 68, 68, 0.3)",
+            errorText: "#dc2626",
+        }
+    };
+
+    const currentTheme = isDarkTheme ? themes.dark : themes.light;
+
     // 2️⃣ NOW conditional returns are safe - after ALL hooks
     // ✅ Show error screen if exam state is invalid
     if (examState.error) {
@@ -119,12 +174,36 @@ const fullscreen = () => {
     // ✅ Show loading while validating
     if (examState.isLoading) {
         return (
-            <div className={`${styles.examGuidelinesContainer} theme-transition`} data-theme={theme}>
-                <div className={`${styles.guidelinesCard} card-theme`}>
-                    <div className={styles.header}>
-                        <h1>Initializing Exam...</h1>
-                        <p>Please wait while we prepare your exam session</p>
-                    </div>
+            <div style={{
+                minHeight: "100vh",
+                background: currentTheme.background,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "background 0.3s ease",
+            }}>
+                <div style={{
+                    background: currentTheme.cardBg,
+                    backdropFilter: "blur(20px)",
+                    borderRadius: "24px",
+                    padding: "48px",
+                    border: `1px solid ${currentTheme.cardBorder}`,
+                    maxWidth: "500px",
+                    textAlign: "center",
+                    transition: "all 0.3s ease",
+                }}>
+                    <h1 style={{
+                        fontSize: "28px",
+                        fontWeight: "700",
+                        color: currentTheme.textPrimary,
+                        marginBottom: "12px",
+                        transition: "color 0.3s ease",
+                    }}>Initializing Exam...</h1>
+                    <p style={{
+                        fontSize: "16px",
+                        color: currentTheme.textSecondary,
+                        transition: "color 0.3s ease",
+                    }}>Please wait while we prepare your exam session</p>
                 </div>
             </div>
         );
@@ -317,143 +396,472 @@ const fullscreen = () => {
 
     // ✅ Conditional return: Show guidelines if screen sharing not yet allowed
     if (!fullscreenAllowed) {
+        const guidelinesSections = [
+            {
+                icon: Shield,
+                title: "Important Requirements",
+                items: [
+                    "Ensure you have a stable internet connection",
+                    "Use a desktop or laptop computer",
+                    "Close all unnecessary applications and browser tabs",
+                    "Charge your device or keep it plugged in",
+                    "Have a backup internet connection ready if possible"
+                ]
+            },
+            {
+                icon: Camera,
+                title: "Camera & Audio Setup",
+                items: [
+                    "Position your camera to show your face and shoulders clearly",
+                    "Ensure good lighting - avoid backlighting",
+                    "Test your microphone and camera before starting",
+                    "Keep your camera on throughout the entire exam",
+                    "Do not cover or disable your camera during the exam"
+                ]
+            },
+            {
+                icon: Eye,
+                title: "Environment Guidelines",
+                items: [
+                    "Choose a quiet, well-lit room with minimal distractions",
+                    "Sit at a clean desk with only permitted materials",
+                    "Inform others not to disturb you during the exam",
+                    "Remove or cover any notes, books, or electronic devices",
+                    "Keep your workspace organized and clutter-free"
+                ]
+            },
+            {
+                icon: MousePointer,
+                title: "During the Exam",
+                items: [
+                    "Do not switch tabs or minimize the exam window",
+                    "Do not use external monitors or devices",
+                    "Keep your eyes on the screen at all times",
+                    "Answer all questions honestly and independently",
+                    "Raise concerns through the proper channels if needed"
+                ]
+            }
+        ];
+
         return (
-            <div className={`${styles.examGuidelinesContainer} theme-transition`} data-theme={theme}>
-                <div className={`${styles.guidelinesCard} card-theme`}>
-                    <div className={styles.header}>
-                        <h1>Online Exam Guidelines</h1>
-                        <p>Please read carefully and follow all instructions</p>
+            <div style={{
+                minHeight: "100vh",
+                background: currentTheme.background,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "40px 20px",
+                position: "relative",
+                overflow: "hidden",
+                transition: "background 0.3s ease",
+            }}>
+                {/* Animated Background Orbs */}
+                <div style={{
+                    position: "absolute",
+                    top: "-10%",
+                    right: "-5%",
+                    width: "500px",
+                    height: "500px",
+                    background: isDarkTheme 
+                        ? "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)"
+                        : "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
+                    borderRadius: "50%",
+                    filter: "blur(60px)",
+                    animation: "float 8s ease-in-out infinite",
+                    transition: "background 0.3s ease",
+                }} />
+                <div style={{
+                    position: "absolute",
+                    bottom: "-10%",
+                    left: "-5%",
+                    width: "400px",
+                    height: "400px",
+                    background: isDarkTheme
+                        ? "radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%)"
+                        : "radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%)",
+                    borderRadius: "50%",
+                    filter: "blur(60px)",
+                    animation: "float 10s ease-in-out infinite reverse",
+                    transition: "background 0.3s ease",
+                }} />
+
+                <div style={{
+                    width: "100%",
+                    maxWidth: "900px",
+                    background: currentTheme.cardBg,
+                    backdropFilter: "blur(40px)",
+                    borderRadius: "32px",
+                    padding: "48px",
+                    border: `1px solid ${currentTheme.cardBorder}`,
+                    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+                    position: "relative",
+                    zIndex: 10,
+                    maxHeight: "90vh",
+                    overflowY: "auto",
+                    transition: "all 0.3s ease",
+                }}>
+                    {/* Header */}
+                    <div style={{ marginBottom: "40px", textAlign: "center" }}>
+                        <div style={{
+                            width: "64px",
+                            height: "64px",
+                            borderRadius: "20px",
+                            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            margin: "0 auto 24px",
+                            boxShadow: "0 12px 40px rgba(59, 130, 246, 0.4)",
+                        }}>
+                            <Monitor size={32} color="white" strokeWidth={2} />
+                        </div>
+                        <h1 style={{
+                            fontSize: "32px",
+                            fontWeight: "800",
+                            color: currentTheme.textPrimary,
+                            marginBottom: "12px",
+                            letterSpacing: "-0.02em",
+                            transition: "color 0.3s ease",
+                        }}>Online Exam Guidelines</h1>
+                        <p style={{
+                            fontSize: "16px",
+                            color: currentTheme.textSecondary,
+                            lineHeight: "1.6",
+                            transition: "color 0.3s ease",
+                        }}>Please read carefully and follow all instructions</p>
                     </div>
-                    
+
+                    {/* Screen Share Error */}
                     {screenShareError && (
-                        <div className={styles.content}>
-                            <section className={styles.section}>
-                                <h2 style={{ color: '#ff4444' }}>🚫 Screen Sharing Required</h2>
-                                <p className={styles.notice} style={{ backgroundColor: '#fff3cd', color: '#856404', padding: '15px', borderRadius: '8px', marginTop: '10px' }}>
-                                    <strong>You cannot start the exam without enabling screen sharing.</strong>
-                                    <br /><br />
-                                    Screen sharing is mandatory for this exam to ensure academic integrity. 
-                                    Please click "Try Again" and allow screen sharing permission when prompted.
-                                </p>
-                                <ul style={{ marginTop: '15px' }}>
-                                    <li>Click the "Try Again" button below</li>
-                                    <li>Select the screen/window you want to share</li>
-                                    <li>Click "Share" in the browser permission dialog</li>
-                                    <li>Do not cancel or deny the screen sharing request</li>
-                                </ul>
-                            </section>
+                        <div style={{
+                            padding: "24px",
+                            borderRadius: "20px",
+                            background: currentTheme.errorBg,
+                            border: `2px solid ${currentTheme.errorBorder}`,
+                            marginBottom: "32px",
+                            animation: "slideDown 0.4s ease",
+                            transition: "all 0.3s ease",
+                        }}>
+                            <div style={{
+                                display: "flex",
+                                alignItems: "start",
+                                gap: "16px",
+                                marginBottom: "16px",
+                            }}>
+                                <div style={{
+                                    width: "48px",
+                                    height: "48px",
+                                    borderRadius: "50%",
+                                    background: currentTheme.errorText,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                }}>
+                                    <AlertTriangle size={24} color="white" strokeWidth={2} />
+                                </div>
+                                <div>
+                                    <h3 style={{
+                                        fontSize: "18px",
+                                        fontWeight: "700",
+                                        color: currentTheme.textPrimary,
+                                        marginBottom: "8px",
+                                        transition: "color 0.3s ease",
+                                    }}>Screen Sharing Required</h3>
+                                    <p style={{
+                                        fontSize: "14px",
+                                        color: currentTheme.textSecondary,
+                                        lineHeight: "1.6",
+                                        marginBottom: "12px",
+                                        transition: "color 0.3s ease",
+                                    }}>
+                                        <strong>You cannot start the exam without enabling screen sharing.</strong>
+                                        <br /><br />
+                                        Screen sharing is mandatory for this exam to ensure academic integrity. 
+                                        Please click "Try Again" and allow screen sharing permission when prompted.
+                                    </p>
+                                </div>
+                            </div>
+                            <ul style={{
+                                listStyle: "none",
+                                padding: 0,
+                                margin: "16px 0 0 0",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "8px",
+                            }}>
+                                {[
+                                    "Click the \"Try Again\" button below",
+                                    "Select the screen/window you want to share",
+                                    "Click \"Share\" in the browser permission dialog",
+                                    "Do not cancel or deny the screen sharing request"
+                                ].map((item, index) => (
+                                    <li key={index} style={{
+                                        display: "flex",
+                                        alignItems: "start",
+                                        gap: "10px",
+                                        fontSize: "13px",
+                                        color: currentTheme.textSecondary,
+                                        lineHeight: "1.5",
+                                        transition: "color 0.3s ease",
+                                    }}>
+                                        <CheckCircle size={16} color={currentTheme.accentPrimary} style={{ flexShrink: 0, marginTop: "2px" }} />
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     )}
-                    
+
+                    {/* Guidelines Sections */}
                     {!screenShareError && (
-                    <div className={styles.content}>
-                        <section className={styles.section}>
-                            <h2>🚨 Important Requirements</h2>
-                            <ul>
-                                <li>Ensure you have a stable internet connection</li>
-                                <li>Use a desktop or laptop computer</li>
-                                <li>Close all unnecessary applications and browser tabs</li>
-                                <li>Charge your device or keep it plugged in</li>
-                                <li>Have a backup internet connection ready if possible</li>
-                            </ul>
-                        </section>
-
-                        <section className={styles.section}>
-                            <h2>📹 Camera & Audio Setup</h2>
-                            <ul>
-                                <li>Position your camera to show your face and shoulders clearly</li>
-                                <li>Ensure good lighting - avoid backlighting</li>
-                                <li>Test your microphone and camera before starting</li>
-                                <li>Keep your camera on throughout the entire exam</li>
-                                <li>Do not cover or disable your camera during the exam</li>
-                            </ul>
-                        </section>
-
-                        <section className={styles.section}>
-                            <h2>🏠 Environment Guidelines</h2>
-                            <ul>
-                                <li>Choose a quiet, well-lit room with minimal distractions</li>
-                                <li>Sit at a clean desk with only permitted materials</li>
-                                <li>Inform others not to disturb you during the exam</li>
-                                <li>Remove or cover any notes, books, or electronic devices</li>
-                                <li>Keep your workspace organized and clutter-free</li>
-                            </ul>
-                        </section>
-
-                        <section className={styles.section}>
-                            <h2>📋 During the Exam</h2>
-                            <ul>
-                                <li>Look directly at your screen - avoid looking away frequently</li>
-                                <li>Do not leave your seat</li>
-                                <li>Do not use any unauthorized materials or devices</li>
-                            </ul>
-                        </section>
-
-                        <section className={styles.section}>
-                            <h2>🚫 Prohibited Activities</h2>
-                            <ul>
-                                <li>Using tablets, or smart devices</li>
-                                <li>Communicating with others during the exam</li>
-                                <li>Opening new browser tabs or applications</li>
-                                <li>Taking screenshots or photos of exam content</li>
-                                <li>Using notes, books, or external materials (unless permitted)</li>
-                                <li>Having other people in the room</li>
-                            </ul>
-                        </section>
-
-                        <section className={styles.section}>
-                            <h2>⚠️ Proctoring Notice</h2>
-                            <p className={styles.notice}>
-                                This exam is monitored by AI proctoring software. Your screen activity, 
-                                camera feed, and audio will be recorded and analyzed for any suspicious 
-                                behavior. Any violations may result in immediate exam termination and 
-                                academic consequences.
-                            </p>
-                        </section>
-                    </div>
+                        <div style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr",
+                            gap: "20px",
+                            marginBottom: "32px",
+                        }}>
+                            {guidelinesSections.map((section, index) => (
+                                <div key={index} style={{
+                                    background: currentTheme.ruleBg,
+                                    backdropFilter: "blur(10px)",
+                                    borderRadius: "20px",
+                                    padding: "24px",
+                                    border: `1px solid ${currentTheme.ruleBorder}`,
+                                    transition: "all 0.3s ease",
+                                }}>
+                                    <div style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "12px",
+                                        marginBottom: "16px",
+                                    }}>
+                                        <div style={{
+                                            width: "40px",
+                                            height: "40px",
+                                            borderRadius: "12px",
+                                            background: currentTheme.iconBg,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                        }}>
+                                            <section.icon size={20} color={currentTheme.iconColor} strokeWidth={2} />
+                                        </div>
+                                        <h3 style={{
+                                            fontSize: "18px",
+                                            fontWeight: "700",
+                                            color: currentTheme.textPrimary,
+                                            transition: "color 0.3s ease",
+                                        }}>{section.title}</h3>
+                                    </div>
+                                    <ul style={{
+                                        listStyle: "none",
+                                        padding: 0,
+                                        margin: 0,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "10px",
+                                    }}>
+                                        {section.items.map((item, itemIndex) => (
+                                            <li key={itemIndex} style={{
+                                                display: "flex",
+                                                alignItems: "start",
+                                                gap: "10px",
+                                                fontSize: "14px",
+                                                color: currentTheme.textSecondary,
+                                                lineHeight: "1.6",
+                                                transition: "color 0.3s ease",
+                                            }}>
+                                                <div style={{
+                                                    width: "6px",
+                                                    height: "6px",
+                                                    borderRadius: "50%",
+                                                    background: currentTheme.accentPrimary,
+                                                    marginTop: "8px",
+                                                    flexShrink: 0,
+                                                }} />
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
                     )}
 
-                    <div className={styles.footer}>
-                        {screenShareError ? (
-                            <button 
-                                className={`${styles.proceedButton} button-theme`}
-                                onClick={async () => {
-                                    setScreenShareError(false);
-                                    setRulesAccepted(false);
-                                    if(examSettings.screen_sharing_enabled){
-                                        startScreenRecording();
-                                    }
+                    {/* Action Buttons */}
+                    <div style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "16px",
+                        paddingTop: "24px",
+                        borderTop: `1px solid ${currentTheme.cardBorder}`,
+                    }}>
+                        <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "16px",
+                            borderRadius: "16px",
+                            background: isDarkTheme ? "rgba(51, 65, 85, 0.3)" : "rgba(226, 232, 240, 0.5)",
+                            border: `1px solid ${currentTheme.cardBorder}`,
+                            transition: "all 0.3s ease",
+                        }}>
+                            <input
+                                type="checkbox"
+                                id="rulesAccept"
+                                checked={rulesAccepted}
+                                onChange={(e) => setRulesAccepted(e.target.checked)}
+                                style={{
+                                    width: "20px",
+                                    height: "20px",
+                                    cursor: "pointer",
+                                    accentColor: currentTheme.accentPrimary,
                                 }}
-                            >
-                                Try Again
-                            </button>
-                        ) : (
-                            <>
-                                <div className={styles.acknowledgment}>
-                                    <label className={styles.checkbox}>
-                                        <input 
-                                            type="checkbox" 
-                                            onChange={(e) => setRulesAccepted(e.target.checked)}
-                                        />
-                                        <span>I have read and understood all the guidelines above</span>
-                                    </label>
-                                </div>
-                                <button 
-                                    className={`${styles.proceedButton} button-theme`}
-                                    disabled={!rulesAccepted}
-                                    onClick={async () => {
-                                        let screenStream = null;
-                                        if(examSettings.screen_sharing_enabled){
-                                            startScreenRecording();
-                                        }
-                                    }}
-                                >
-                                    Accept & Start Exam
-                                </button>
-                            </>
-                        )}
+                            />
+                            <label htmlFor="rulesAccept" style={{
+                                fontSize: "14px",
+                                color: currentTheme.textPrimary,
+                                fontWeight: "600",
+                                cursor: "pointer",
+                                transition: "color 0.3s ease",
+                            }}>
+                                I have read and agree to follow all examination guidelines
+                            </label>
+                        </div>
+
+                        <button
+                            onClick={screenShareError ? startScreenRecording : startScreenRecording}
+                            disabled={!rulesAccepted && !screenShareError}
+                            style={{
+                                width: "100%",
+                                padding: "16px 32px",
+                                borderRadius: "16px",
+                                border: "none",
+                                background: (!rulesAccepted && !screenShareError) ? currentTheme.ruleBg : currentTheme.buttonPrimaryBg,
+                                color: "white",
+                                fontSize: "16px",
+                                fontWeight: "700",
+                                cursor: (!rulesAccepted && !screenShareError) ? "not-allowed" : "pointer",
+                                boxShadow: (!rulesAccepted && !screenShareError) ? "none" : currentTheme.buttonPrimaryShadow,
+                                transition: "all 0.3s ease",
+                                opacity: (!rulesAccepted && !screenShareError) ? 0.5 : 1,
+                            }}
+                            onMouseEnter={(e) => {
+                                if (rulesAccepted || screenShareError) {
+                                    e.currentTarget.style.transform = "translateY(-2px)";
+                                    e.currentTarget.style.boxShadow = "0 15px 40px rgba(59, 130, 246, 0.5)";
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0)";
+                                e.currentTarget.style.boxShadow = currentTheme.buttonPrimaryShadow;
+                            }}
+                        >
+                            {screenShareError ? "Try Again" : "Start Screen Sharing & Begin Exam"}
+                        </button>
                     </div>
                 </div>
+
+                {/* Theme Toggle Switch */}
+                <div style={{
+                    position: "fixed",
+                    bottom: "30px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    zIndex: 1000,
+                }}>
+                    <button
+                        onClick={() => setIsDarkTheme(!isDarkTheme)}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            padding: "12px 24px",
+                            borderRadius: "100px",
+                            background: currentTheme.cardBg,
+                            backdropFilter: "blur(20px)",
+                            border: `2px solid ${currentTheme.cardBorder}`,
+                            cursor: "pointer",
+                            transition: "all 0.3s ease",
+                            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-3px)";
+                            e.currentTarget.style.boxShadow = "0 15px 50px rgba(0, 0, 0, 0.3)";
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow = "0 10px 40px rgba(0, 0, 0, 0.2)";
+                        }}
+                    >
+                        <div style={{
+                            width: "50px",
+                            height: "26px",
+                            borderRadius: "100px",
+                            background: isDarkTheme 
+                                ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
+                                : "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+                            position: "relative",
+                            transition: "all 0.3s ease",
+                            boxShadow: isDarkTheme
+                                ? "0 4px 12px rgba(59, 130, 246, 0.4) inset"
+                                : "0 4px 12px rgba(251, 191, 36, 0.4) inset",
+                        }}>
+                            <div style={{
+                                position: "absolute",
+                                top: "3px",
+                                left: isDarkTheme ? "3px" : "27px",
+                                width: "20px",
+                                height: "20px",
+                                borderRadius: "50%",
+                                background: "white",
+                                transition: "all 0.3s ease",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}>
+                                {isDarkTheme ? (
+                                    <Moon size={12} color="#3b82f6" strokeWidth={2.5} />
+                                ) : (
+                                    <Sun size={12} color="#f59e0b" strokeWidth={2.5} />
+                                )}
+                            </div>
+                        </div>
+                        <span style={{
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            color: currentTheme.textPrimary,
+                            transition: "color 0.3s ease",
+                        }}>
+                            {isDarkTheme ? "Dark" : "Light"} Theme
+                        </span>
+                    </button>
+                </div>
+
+                {/* Animations */}
+                <style jsx>{`
+                    @keyframes float {
+                        0%, 100% {
+                            transform: translateY(0) rotate(0deg);
+                        }
+                        50% {
+                            transform: translateY(-20px) rotate(5deg);
+                        }
+                    }
+
+                    @keyframes slideDown {
+                        from {
+                            opacity: 0;
+                            transform: translateY(-10px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+                `}</style>
             </div>
         );
     }

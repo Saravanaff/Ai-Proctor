@@ -16,15 +16,20 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     // Load theme from localStorage on client side only
-    if (typeof window !== "undefined" && typeof window.localStorage !== "undefined" && window.localStorage.getItem) {
+    if (typeof window !== "undefined") {
       try {
-        const savedTheme = window.localStorage.getItem("ai-proctor-theme") as Theme;
-        if (savedTheme) {
-          setTheme(savedTheme);
+        const storage = window.localStorage;
+        if (storage && typeof storage.getItem === "function") {
+          const savedTheme = storage.getItem("ai-proctor-theme") as Theme;
+          if (savedTheme && (savedTheme === "light" || savedTheme === "dark")) {
+            setTheme(savedTheme);
+          }
         }
       } catch (error) {
         console.error("Error loading theme from localStorage:", error);
@@ -34,15 +39,18 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Apply theme to document on client side only
-    if (typeof window !== "undefined" && typeof document !== "undefined" && typeof window.localStorage !== "undefined" && window.localStorage.setItem) {
+    if (mounted && typeof window !== "undefined" && typeof document !== "undefined") {
       try {
         document.documentElement.setAttribute("data-theme", theme);
-        window.localStorage.setItem("ai-proctor-theme", theme);
+        const storage = window.localStorage;
+        if (storage && typeof storage.setItem === "function") {
+          storage.setItem("ai-proctor-theme", theme);
+        }
       } catch (error) {
         console.error("Error saving theme to localStorage:", error);
       }
     }
-  }, [theme]);
+  }, [theme, mounted]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));

@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getExamId, getUserId, hasValidExamId, hasValidUserId } from "@/constants/AuthStore";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
-import { Brain, FileText, Loader, Upload, CheckCircle } from "lucide-react";
+import { Brain, FileText, Loader, Upload, CheckCircle, Clock, AlertTriangle, Moon, Sun } from "lucide-react";
 import { useExamState } from "@/hooks/useExamState";
 import ExamStateError from "./ExamStateError";
 
@@ -49,6 +49,9 @@ const ExamPage = ({
   // ✅ Use exam state hook for validation and error handling
   const examState = useExamState();
   
+  // ✅ Theme state
+  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  
   const [answers, setAnswers] = useState<{ [key: number]: Answer }>({});
   const [blocked, setBlocked] = useState(false);
   const [lookAlert, setlookAlert] = useState(false);
@@ -72,6 +75,60 @@ const ExamPage = ({
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [modelsLoadingError, setModelsLoadingError] = useState(false);
   const [isUploadingChunks, setIsUploadingChunks] = useState(false);
+
+  // ✅ Theme configuration
+  const themes = {
+    dark: {
+      background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
+      cardBg: "rgba(30, 41, 59, 0.7)",
+      cardBorder: "rgba(51, 65, 85, 0.5)",
+      textPrimary: "#f1f5f9",
+      textSecondary: "#cbd5e1",
+      textMuted: "#94a3b8",
+      accentPrimary: "#3b82f6",
+      accentSecondary: "#60a5fa",
+      sidebarBg: "rgba(15, 23, 42, 0.9)",
+      questionNavBg: "rgba(30, 41, 59, 0.5)",
+      questionAnsweredBg: "rgba(34, 197, 94, 0.15)",
+      questionNavBorder: "rgba(51, 65, 85, 0.6)",
+      questionNumberBg: "rgba(30, 41, 59, 0.6)",
+      optionBg: "rgba(30, 41, 59, 0.5)",
+      optionHoverBg: "rgba(51, 65, 85, 0.6)",
+      buttonPrimaryBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+      buttonPrimaryShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
+      timerBg: "rgba(30, 41, 59, 0.8)",
+      alertBg: "rgba(239, 68, 68, 0.15)",
+      alertBorder: "rgba(239, 68, 68, 0.4)",
+      warningColor: "#f59e0b",
+      successBg: "rgba(34, 197, 94, 0.15)",
+    },
+    light: {
+      background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",
+      cardBg: "rgba(255, 255, 255, 0.9)",
+      cardBorder: "rgba(203, 213, 225, 0.6)",
+      textPrimary: "#0f172a",
+      textSecondary: "#475569",
+      textMuted: "#64748b",
+      accentPrimary: "#3b82f6",
+      accentSecondary: "#60a5fa",
+      sidebarBg: "rgba(248, 250, 252, 0.95)",
+      questionNavBg: "rgba(241, 245, 249, 0.8)",
+      questionAnsweredBg: "rgba(34, 197, 94, 0.1)",
+      questionNavBorder: "rgba(203, 213, 225, 0.7)",
+      questionNumberBg: "rgba(226, 232, 240, 0.8)",
+      optionBg: "rgba(248, 250, 252, 0.9)",
+      optionHoverBg: "rgba(226, 232, 240, 0.9)",
+      buttonPrimaryBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+      buttonPrimaryShadow: "0 10px 30px rgba(59, 130, 246, 0.3)",
+      timerBg: "rgba(255, 255, 255, 0.95)",
+      alertBg: "rgba(239, 68, 68, 0.1)",
+      alertBorder: "rgba(239, 68, 68, 0.3)",
+      warningColor: "#ea580c",
+      successBg: "rgba(34, 197, 94, 0.1)",
+    }
+  };
+
+  const currentTheme = isDarkTheme ? themes.dark : themes.light;
 
   // ✅ Debug logging
   useEffect(() => {
@@ -864,153 +921,258 @@ const ExamPage = ({
   // ✅ Show upload loading screen while chunks are being uploaded
   if (isUploadingChunks) {
     return (
-      <div className={`${styles.overlay} theme-transition`}>
-        <div
-          className="theme-transition"
-          style={{
-            background: "var(--card-bg)",
-            color: "var(--text-primary)",
-            padding: "48px",
-            borderRadius: "16px",
-            boxShadow: "0 20px 50px var(--shadow)",
-            border: "1px solid var(--border-color)",
-            textAlign: "center",
-            maxWidth: "450px",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div
-            style={{
+      <div style={{
+        minHeight: "100vh",
+        background: currentTheme.background,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        overflow: "hidden",
+        transition: "background 0.3s ease",
+      }}>
+        {/* Animated Background Orbs */}
+        <div style={{
+          position: "absolute",
+          top: "-10%",
+          right: "-5%",
+          width: "500px",
+          height: "500px",
+          background: isDarkTheme 
+            ? "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)"
+            : "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
+          borderRadius: "50%",
+          filter: "blur(60px)",
+          animation: "float 8s ease-in-out infinite",
+          transition: "background 0.3s ease",
+        }} />
+        <div style={{
+          position: "absolute",
+          bottom: "-10%",
+          left: "-5%",
+          width: "400px",
+          height: "400px",
+          background: isDarkTheme
+            ? "radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%)"
+            : "radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%)",
+          borderRadius: "50%",
+          filter: "blur(60px)",
+          animation: "float 10s ease-in-out infinite reverse",
+          transition: "background 0.3s ease",
+        }} />
+
+        <div style={{
+          background: currentTheme.cardBg,
+          backdropFilter: "blur(40px)",
+          padding: "48px",
+          borderRadius: "24px",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          border: `1px solid ${currentTheme.cardBorder}`,
+          textAlign: "center",
+          maxWidth: "480px",
+          position: "relative",
+          zIndex: 10,
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: "28px",
+            animation: "pulse 2s ease-in-out infinite",
+          }}>
+            <div style={{
+              width: "80px",
+              height: "80px",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
               display: "flex",
+              alignItems: "center",
               justifyContent: "center",
-              marginBottom: "24px",
-            }}
-          >
-            <Upload size={64} color="var(--accent-color)" strokeWidth={1.5} style={{ animation: "pulse 2s ease-in-out infinite" }} />
+              boxShadow: "0 12px 40px rgba(59, 130, 246, 0.4)",
+            }}>
+              <Upload size={40} color="white" strokeWidth={2} />
+            </div>
           </div>
-          <h3
-            className="theme-transition"
-            style={{
-              marginBottom: "16px",
-              color: "var(--text-primary)",
-              fontSize: "24px",
-              fontWeight: 700,
-              transition: "color 0.3s ease",
-            }}
-          >
+          <h3 style={{
+            marginBottom: "16px",
+            color: currentTheme.textPrimary,
+            fontSize: "28px",
+            fontWeight: "800",
+            letterSpacing: "-0.02em",
+            transition: "color 0.3s ease",
+          }}>
             Submitting Your Exam...
           </h3>
-          <p
-            className="theme-transition"
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: "16px",
-              lineHeight: 1.6,
-              margin: "0 0 28px 0",
-              transition: "color 0.3s ease",
-            }}
-          >
+          <p style={{
+            color: currentTheme.textSecondary,
+            fontSize: "16px",
+            lineHeight: 1.6,
+            margin: "0 0 32px 0",
+            transition: "color 0.3s ease",
+          }}>
             Please wait while we securely upload your exam recordings and save your answers.
             <br />
-            <strong>Do not close this window.</strong>
+            <strong style={{ color: currentTheme.textPrimary }}>Do not close this window.</strong>
           </p>
 
           {/* Animated Progress Bar */}
-          <div
-            style={{
-              width: "100%",
-              height: "6px",
-              background: "var(--border-color)",
-              borderRadius: "3px",
-              overflow: "hidden",
-              marginBottom: "24px",
-            }}
-          >
-            <div
-              style={{
-                width: "70%",
-                height: "100%",
-                background: "var(--accent-color)",
-                borderRadius: "3px",
-                animation: "shimmer 1.5s ease-in-out infinite",
-              }}
-            />
+          <div style={{
+            width: "100%",
+            height: "8px",
+            background: isDarkTheme ? "rgba(30, 41, 59, 0.6)" : "rgba(203, 213, 225, 0.6)",
+            borderRadius: "100px",
+            overflow: "hidden",
+            marginBottom: "28px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1) inset",
+          }}>
+            <div style={{
+              width: "70%",
+              height: "100%",
+              background: "linear-gradient(90deg, #3b82f6 0%, #2563eb 50%, #3b82f6 100%)",
+              backgroundSize: "200% 100%",
+              borderRadius: "100px",
+              animation: "shimmer 1.5s ease-in-out infinite",
+              boxShadow: "0 0 12px rgba(59, 130, 246, 0.6)",
+            }} />
           </div>
 
           {/* Info Box */}
-          <div
-            style={{
-              padding: "16px",
-              background: "rgba(59, 130, 246, 0.1)",
-              borderRadius: "8px",
-              fontSize: "14px",
-              color: "var(--text-secondary)",
-              border: "1px solid rgba(59, 130, 246, 0.3)",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              justifyContent: "center",
-            }}
-          >
-            <Loader size={18} style={{ animation: "spin 1s linear infinite", flexShrink: 0 }} />
+          <div style={{
+            padding: "16px 20px",
+            background: isDarkTheme ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.08)",
+            borderRadius: "12px",
+            fontSize: "14px",
+            color: currentTheme.textSecondary,
+            border: `1px solid ${isDarkTheme ? "rgba(59, 130, 246, 0.3)" : "rgba(59, 130, 246, 0.2)"}`,
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            justifyContent: "center",
+            transition: "all 0.3s ease",
+          }}>
+            <div style={{
+              width: "20px",
+              height: "20px",
+              border: `3px solid ${currentTheme.accentPrimary}`,
+              borderTop: `3px solid transparent`,
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }} />
             <span>All cameras and screen sharing have been stopped</span>
           </div>
         </div>
+
+        {/* Animations */}
+        <style jsx>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 0.9; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+          }
+          @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }
 
   if (isLoadingQuestions) {
     return (
-      <div className={`${styles.overlay} theme-transition`}>
-        <div
-          className="theme-transition"
-          style={{
-            background: "var(--card-bg)",
-            color: "var(--text-primary)",
-            padding: "32px",
-            borderRadius: "16px",
-            boxShadow: "0 20px 50px var(--shadow)",
-            border: "1px solid var(--border-color)",
-            textAlign: "center",
-            maxWidth: "400px",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div
-            style={{
+      <div style={{
+        minHeight: "100vh",
+        background: currentTheme.background,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        overflow: "hidden",
+        transition: "background 0.3s ease",
+      }}>
+        <div style={{
+          position: "absolute",
+          top: "-10%",
+          left: "-5%",
+          width: "450px",
+          height: "450px",
+          background: isDarkTheme 
+            ? "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)"
+            : "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
+          borderRadius: "50%",
+          filter: "blur(60px)",
+          animation: "float 10s ease-in-out infinite",
+        }} />
+
+        <div style={{
+          background: currentTheme.cardBg,
+          backdropFilter: "blur(40px)",
+          padding: "40px",
+          borderRadius: "24px",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          border: `1px solid ${currentTheme.cardBorder}`,
+          textAlign: "center",
+          maxWidth: "420px",
+          position: "relative",
+          zIndex: 10,
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: "20px",
+          }}>
+            <div style={{
+              width: "64px",
+              height: "64px",
+              borderRadius: "16px",
+              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
               display: "flex",
+              alignItems: "center",
               justifyContent: "center",
-              marginBottom: "16px",
-            }}
-          >
-            <FileText size={48} color="var(--accent-color)" strokeWidth={1.5} />
+              boxShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
+              animation: "pulse 2s ease-in-out infinite",
+            }}>
+              <FileText size={32} color="white" strokeWidth={2} />
+            </div>
           </div>
-          <h3
-            className="theme-transition"
-            style={{
-              marginBottom: "12px",
-              color: "var(--text-primary)",
-              fontSize: "20px",
-              fontWeight: 600,
-              transition: "color 0.3s ease",
-            }}
-          >
+          <h3 style={{
+            marginBottom: "12px",
+            color: currentTheme.textPrimary,
+            fontSize: "24px",
+            fontWeight: "700",
+            letterSpacing: "-0.01em",
+            transition: "color 0.3s ease",
+          }}>
             Loading Exam Questions...
           </h3>
-          <p
-            className="theme-transition"
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: "14px",
-              lineHeight: 1.5,
-              margin: 0,
-              transition: "color 0.3s ease",
-            }}
-          >
+          <p style={{
+            color: currentTheme.textSecondary,
+            fontSize: "15px",
+            lineHeight: 1.6,
+            margin: 0,
+            transition: "color 0.3s ease",
+          }}>
             Please wait while we prepare your exam.
           </p>
         </div>
+
+        <style jsx>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 0.9; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -1021,92 +1183,122 @@ const ExamPage = ({
       examSettings?.object_detection_enabled || 
       examSettings?.multiple_person_detection_enabled)) {
     return (
-      <div className={`${styles.overlay} theme-transition`}>
-        <div
-          className="theme-transition"
-          style={{
-            background: "var(--card-bg)",
-            color: "var(--text-primary)",
-            padding: "40px",
-            borderRadius: "16px",
-            boxShadow: "0 20px 50px var(--shadow)",
-            border: "1px solid var(--border-color)",
-            textAlign: "center",
-            maxWidth: "450px",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              marginBottom: "20px",
-              animation: "pulse 2s ease-in-out infinite",
-            }}
-          >
-            <Brain size={56} color="var(--accent-color)" strokeWidth={1.5} />
-          </div>
-          <h3
-            className="theme-transition"
-            style={{
-              marginBottom: "16px",
-              color: "var(--text-primary)",
-              fontSize: "22px",
-              fontWeight: 700,
-              transition: "color 0.3s ease",
-            }}
-          >
-            Initializing AI Proctoring...
-          </h3>
-          <p
-            className="theme-transition"
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: "15px",
-              lineHeight: 1.6,
-              margin: "0 0 20px 0",
-              transition: "color 0.3s ease",
-            }}
-          >
-            Loading AI models for advanced monitoring.
-            <br />
-            <strong>This may take a few moments.</strong>
-          </p>
-          <div
-            style={{
-              width: "100%",
-              height: "4px",
-              background: "var(--border-color)",
-              borderRadius: "2px",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: "60%",
-                height: "100%",
-                background: "var(--accent-color)",
-                borderRadius: "2px",
-                animation: "shimmer 1.5s ease-in-out infinite",
-              }}
-            />
-          </div>
-          <div
-            style={{
-              marginTop: "20px",
-              padding: "12px",
-              background: "var(--secondary-bg)",
-              borderRadius: "8px",
-              fontSize: "13px",
-              color: "var(--text-secondary)",
-              border: "1px solid var(--border-color)",
+      <div style={{
+        minHeight: "100vh",
+        background: currentTheme.background,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        overflow: "hidden",
+        transition: "background 0.3s ease",
+      }}>
+        <div style={{
+          position: "absolute",
+          top: "-10%",
+          left: "-5%",
+          width: "450px",
+          height: "450px",
+          background: isDarkTheme
+            ? "radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%)"
+            : "radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%)",
+          borderRadius: "50%",
+          filter: "blur(60px)",
+          animation: "float 10s ease-in-out infinite reverse",
+        }} />
+        <div style={{
+          background: currentTheme.cardBg,
+          backdropFilter: "blur(40px)",
+          padding: "48px",
+          borderRadius: "24px",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          border: `1px solid ${currentTheme.cardBorder}`,
+          textAlign: "center",
+          maxWidth: "480px",
+          position: "relative",
+          zIndex: 10,
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: "24px",
+            animation: "pulse 2s ease-in-out infinite",
+          }}>
+            <div style={{
+              width: "80px",
+              height: "80px",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
               display: "flex",
               alignItems: "center",
-              gap: "8px",
               justifyContent: "center",
-            }}
-          >
-            <Loader size={16} style={{ animation: "spin 1s linear infinite" }} />
+              boxShadow: "0 12px 40px rgba(139, 92, 246, 0.4)",
+            }}>
+              <Brain size={44} color="white" strokeWidth={2} />
+            </div>
+          </div>
+          <h3 style={{
+            marginBottom: "16px",
+            color: currentTheme.textPrimary,
+            fontSize: "26px",
+            fontWeight: "800",
+            letterSpacing: "-0.02em",
+            transition: "color 0.3s ease",
+          }}>
+            Initializing AI Proctoring...
+          </h3>
+          <p style={{
+            color: currentTheme.textSecondary,
+            fontSize: "15px",
+            lineHeight: 1.6,
+            margin: "0 0 24px 0",
+            transition: "color 0.3s ease",
+          }}>
+            Loading AI models for advanced monitoring.
+            <br />
+            <strong style={{ color: currentTheme.textPrimary }}>This may take a few moments.</strong>
+          </p>
+          <div style={{
+            width: "100%",
+            height: "6px",
+            background: isDarkTheme ? "rgba(30, 41, 59, 0.6)" : "rgba(203, 213, 225, 0.6)",
+            borderRadius: "100px",
+            overflow: "hidden",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1) inset",
+          }}>
+            <div style={{
+              width: "60%",
+              height: "100%",
+              background: "linear-gradient(90deg, #8b5cf6 0%, #7c3aed 50%, #8b5cf6 100%)",
+              backgroundSize: "200% 100%",
+              borderRadius: "100px",
+              animation: "shimmer 1.5s ease-in-out infinite",
+              boxShadow: "0 0 12px rgba(139, 92, 246, 0.6)",
+            }} />
+          </div>
+          <div style={{
+            marginTop: "24px",
+            padding: "14px 18px",
+            background: isDarkTheme ? "rgba(139, 92, 246, 0.1)" : "rgba(139, 92, 246, 0.08)",
+            borderRadius: "12px",
+            fontSize: "13px",
+            color: currentTheme.textSecondary,
+            border: `1px solid ${isDarkTheme ? "rgba(139, 92, 246, 0.3)" : "rgba(139, 92, 246, 0.2)"}`,
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            justifyContent: "center",
+            transition: "all 0.3s ease",
+          }}>
+            <div style={{
+              width: "18px",
+              height: "18px",
+              border: `3px solid ${currentTheme.accentPrimary}`,
+              borderTop: "3px solid transparent",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }} />
             <span>Please ensure your camera is enabled and you&apos;re in a well-lit area</span>
           </div>
         </div>
@@ -1130,6 +1322,24 @@ const ExamPage = ({
             onModelsLoaded={handleModelsLoaded}
           />
         </div>
+
+        <style jsx>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 0.9; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+          }
+          @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -1137,77 +1347,82 @@ const ExamPage = ({
   // ✅ Show submitting overlay during exam submission
   if (isSubmitting) {
     return (
-      <div className={`${styles.overlay} theme-transition`}>
-        <div
-          className="theme-transition"
-          style={{
-            background: "var(--card-bg)",
-            color: "var(--text-primary)",
-            padding: "40px",
-            borderRadius: "16px",
-            boxShadow: "0 20px 50px var(--shadow)",
-            border: "1px solid var(--border-color)",
-            textAlign: "center",
-            maxWidth: "450px",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "64px",
-              marginBottom: "20px",
-              animation: "pulse 2s ease-in-out infinite",
-            }}
-          >
+      <div style={{
+        minHeight: "100vh",
+        background: currentTheme.background,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "background 0.3s ease",
+      }}>
+        <div style={{
+          background: currentTheme.cardBg,
+          backdropFilter: "blur(40px)",
+          padding: "48px",
+          borderRadius: "24px",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          border: `1px solid ${currentTheme.cardBorder}`,
+          textAlign: "center",
+          maxWidth: "480px",
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{
+            fontSize: "64px",
+            marginBottom: "24px",
+            animation: "pulse 2s ease-in-out infinite",
+          }}>
             📤
           </div>
-          <h3
-            className="theme-transition"
-            style={{
-              marginBottom: "16px",
-              color: "var(--text-primary)",
-              fontSize: "24px",
-              fontWeight: 700,
-              transition: "color 0.3s ease",
-            }}
-          >
+          <h3 style={{
+            marginBottom: "16px",
+            color: currentTheme.textPrimary,
+            fontSize: "28px",
+            fontWeight: "800",
+            letterSpacing: "-0.02em",
+            transition: "color 0.3s ease",
+          }}>
             Submitting Your Exam...
           </h3>
-          <p
-            className="theme-transition"
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: "15px",
-              lineHeight: 1.6,
-              margin: 0,
-              marginBottom: "20px",
-              transition: "color 0.3s ease",
-            }}
-          >
+          <p style={{
+            color: currentTheme.textSecondary,
+            fontSize: "16px",
+            lineHeight: 1.6,
+            margin: "0 0 24px 0",
+            transition: "color 0.3s ease",
+          }}>
             Please wait while we save your answers securely to the database.
             <br />
-            <strong>Do not close this window.</strong>
+            <strong style={{ color: currentTheme.textPrimary }}>Do not close this window.</strong>
           </p>
-          <div
-            style={{
-              width: "100%",
-              height: "4px",
-              background: "var(--border-color)",
-              borderRadius: "2px",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: "70%",
-                height: "100%",
-                background: "var(--accent-color)",
-                borderRadius: "2px",
-                animation: "shimmer 1.5s ease-in-out infinite",
-              }}
-            />
+          <div style={{
+            width: "100%",
+            height: "6px",
+            background: isDarkTheme ? "rgba(30, 41, 59, 0.6)" : "rgba(203, 213, 225, 0.6)",
+            borderRadius: "100px",
+            overflow: "hidden",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1) inset",
+          }}>
+            <div style={{
+              width: "70%",
+              height: "100%",
+              background: "linear-gradient(90deg, #3b82f6 0%, #2563eb 50%, #3b82f6 100%)",
+              backgroundSize: "200% 100%",
+              borderRadius: "100px",
+              animation: "shimmer 1.5s ease-in-out infinite",
+              boxShadow: "0 0 12px rgba(59, 130, 246, 0.6)",
+            }} />
           </div>
         </div>
+        <style jsx>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 0.9; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+          }
+          @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+        `}</style>
       </div>
     );
   }
@@ -1230,551 +1445,569 @@ const ExamPage = ({
   // ✅ Show loading while validating
   if (examState.isLoading) {
     return (
-      <div className={`${styles.overlay} theme-transition`}>
-        <div
-          className="theme-transition"
-          style={{
-            background: "var(--card-bg)",
-            color: "var(--text-primary)",
-            padding: "32px",
-            borderRadius: "16px",
-            boxShadow: "0 20px 50px var(--shadow)",
-            border: "1px solid var(--border-color)",
-            textAlign: "center",
-            maxWidth: "400px",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              marginBottom: "16px",
-            }}
-          >
-            <Loader size={48} color="var(--accent-color)" strokeWidth={1.5} style={{ animation: "spin 1s linear infinite" }} />
+      <div style={{
+        minHeight: "100vh",
+        background: currentTheme.background,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "background 0.3s ease",
+      }}>
+        <div style={{
+          background: currentTheme.cardBg,
+          backdropFilter: "blur(40px)",
+          padding: "40px",
+          borderRadius: "24px",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          border: `1px solid ${currentTheme.cardBorder}`,
+          textAlign: "center",
+          maxWidth: "420px",
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: "20px",
+          }}>
+            <div style={{
+              width: "64px",
+              height: "64px",
+              border: `4px solid ${currentTheme.accentPrimary}`,
+              borderTop: "4px solid transparent",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }} />
           </div>
-          <h3
-            className="theme-transition"
-            style={{
-              marginBottom: "12px",
-              color: "var(--text-primary)",
-              fontSize: "20px",
-              fontWeight: "600",
-              transition: "color 0.3s ease",
-            }}
-          >
+          <h3 style={{
+            marginBottom: "12px",
+            color: currentTheme.textPrimary,
+            fontSize: "22px",
+            fontWeight: "700",
+            letterSpacing: "-0.01em",
+            transition: "color 0.3s ease",
+          }}>
             Validating Exam Session...
           </h3>
-          <p
-            className="theme-transition"
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: "14px",
-              lineHeight: 1.5,
-              margin: 0,
-              transition: "color 0.3s ease",
-            }}
-          >
+          <p style={{
+            color: currentTheme.textSecondary,
+            fontSize: "15px",
+            lineHeight: 1.5,
+            margin: 0,
+            transition: "color 0.3s ease",
+          }}>
             Please wait while we restore your exam session.
           </p>
         </div>
+        <style jsx>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
-    <div className={`${styles.examContainer} theme-transition`}>
+    <div style={{
+      minHeight: "100vh",
+      background: currentTheme.background,
+      display: "flex",
+      position: "relative",
+      transition: "background 0.3s ease",
+    }}>
       {paused && (
-        <div
-          className={`${styles.overlay} theme-transition`}
-          style={{ zIndex: 2000 }}
-        >
-          <div
-            className="theme-transition"
-            style={{
-              background: "var(--card-bg)",
-              color: "var(--text-primary)",
-              padding: "32px",
-              borderRadius: "16px",
-              boxShadow: "0 20px 50px var(--shadow)",
-              border: "1px solid var(--border-color)",
-              textAlign: "center",
-              maxWidth: "400px",
-              transition: "all 0.3s ease",
-            }}
-          >
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                background: "var(--warning-color)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: "16px",
-                color: "white",
-                fontSize: "20px",
-                fontWeight: "bold",
-              }}
-            >
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          background: "rgba(0, 0, 0, 0.7)",
+          backdropFilter: "blur(8px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 2000,
+          animation: "fadeIn 0.3s ease",
+        }}>
+          <div style={{
+            background: currentTheme.cardBg,
+            backdropFilter: "blur(40px)",
+            padding: "40px",
+            borderRadius: "24px",
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
+            border: `1px solid ${currentTheme.cardBorder}`,
+            textAlign: "center",
+            maxWidth: "420px",
+            transition: "all 0.3s ease",
+            animation: "scaleIn 0.3s ease",
+          }}>
+            <div style={{
+              width: "64px",
+              height: "64px",
+              borderRadius: "50%",
+              background: currentTheme.warningColor,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 20px",
+              color: "white",
+              fontSize: "28px",
+              fontWeight: "bold",
+              boxShadow: `0 8px 24px ${isDarkTheme ? 'rgba(245, 158, 11, 0.4)' : 'rgba(234, 88, 12, 0.4)'}`,
+            }}>
               ||
             </div>
-            <h3
-              className="theme-transition"
-              style={{
-                marginBottom: "12px",
-                color: "var(--text-primary)",
-                fontSize: "20px",
-                fontWeight: 600,
-                transition: "color 0.3s ease",
-              }}
-            >
+            <h3 style={{
+              marginBottom: "12px",
+              color: currentTheme.textPrimary,
+              fontSize: "24px",
+              fontWeight: "700",
+              letterSpacing: "-0.01em",
+              transition: "color 0.3s ease",
+            }}>
               Exam Paused
             </h3>
-            <p
-              className="theme-transition"
-              style={{
-                color: "var(--text-secondary)",
-                fontSize: "14px",
-                lineHeight: 1.5,
-                margin: 0,
-                transition: "color 0.3s ease",
-              }}
-            >
+            <p style={{
+              color: currentTheme.textSecondary,
+              fontSize: "15px",
+              lineHeight: 1.6,
+              margin: 0,
+              transition: "color 0.3s ease",
+            }}>
               Authenticating your identity… Please look at the camera.
             </p>
           </div>
         </div>
       )}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
 
-      <aside className={`${styles.sidebar} theme-transition`}>
-        <div
-          className="theme-transition"
-          style={{
-            padding: "20px 0",
-            borderBottom: "1px solid var(--border-color)",
-            marginBottom: "20px",
-            transition: "border-color 0.3s ease",
-          }}
-        >
-          <h3
-            className="theme-transition"
-            style={{
-              color: "var(--text-primary)",
-              fontSize: "16px",
-              fontWeight: 600,
-              margin: 0,
-              letterSpacing: "-0.01em",
-              transition: "color 0.3s ease",
-            }}
-          >
+      <aside style={{
+        width: "280px",
+        background: currentTheme.sidebarBg,
+        backdropFilter: "blur(20px)",
+        padding: "24px 20px",
+        borderRight: `1px solid ${currentTheme.cardBorder}`,
+        overflowY: "auto",
+        transition: "all 0.3s ease",
+      }}>
+        <div style={{
+          padding: "0 0 20px 0",
+          borderBottom: `1px solid ${currentTheme.cardBorder}`,
+          marginBottom: "20px",
+          transition: "border-color 0.3s ease",
+        }}>
+          <h3 style={{
+            color: currentTheme.textPrimary,
+            fontSize: "18px",
+            fontWeight: "700",
+            margin: 0,
+            letterSpacing: "-0.02em",
+            transition: "color 0.3s ease",
+          }}>
             Questions
           </h3>
         </div>
-        <div className={styles.questionNavigation}>
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}>
           {questions.map((q) => (
             <div
               key={q.id}
-              className={`${styles.questionNavItem} theme-transition ${
-                answers[q.id] ? styles.answered : ""
-              }`}
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "12px",
-                borderRadius: "8px",
-                marginBottom: "8px",
+                padding: "14px 16px",
+                borderRadius: "12px",
                 background: answers[q.id]
-                  ? "var(--success-bg)"
-                  : "var(--secondary-bg)",
-                border: "1px solid var(--border-color)",
+                  ? currentTheme.questionAnsweredBg
+                  : currentTheme.questionNavBg,
+                border: `1px solid ${currentTheme.questionNavBorder}`,
                 cursor: "pointer",
                 transition: "all 0.3s ease",
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateX(4px)";
+                e.currentTarget.style.boxShadow = `0 4px 12px ${isDarkTheme ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)'}`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateX(0)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
             >
-              <span
-                className="theme-transition"
-                style={{
-                  color: "var(--text-primary)",
-                  fontWeight: 500,
-                  transition: "color 0.3s ease",
-                }}
-              >
+              <span style={{
+                color: currentTheme.textPrimary,
+                fontSize: "14px",
+                fontWeight: "600",
+                transition: "color 0.3s ease",
+              }}>
                 Q{q.id}
               </span>
               {answers[q.id] && (
-                <span
-                  style={{
-                    color: "var(--success-color)",
-                    fontSize: "14px",
-                  }}
-                >
-                  ✓
-                </span>
+                <CheckCircle size={18} color="#22c55e" strokeWidth={2.5} />
               )}
             </div>
           ))}
         </div>
-
-        <div
-          className="theme-transition"
-          style={{
-            marginTop: "20px",
-            padding: "16px",
-            background: "var(--info-bg)",
-            border: "1px solid var(--info-color)",
-            borderRadius: "8px",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "8px",
-            }}
-          >
-            <span
-              className="theme-transition"
-              style={{
-                color: "var(--text-primary)",
-                fontSize: "14px",
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-                transition: "color 0.3s ease",
-              }}
-            >
-              Progress
-            </span>
-          </div>
-          <div
-            className="theme-transition"
-            style={{
-              color: "var(--text-secondary)",
-              fontSize: "12px",
-              transition: "color 0.3s ease",
-            }}
-          >
-            {Object.keys(answers).length} of {questions.length} answered
-          </div>
-          <div
-            style={{
-              width: "100%",
-              height: "4px",
-              background: "var(--border-color)",
-              borderRadius: "2px",
-              marginTop: "8px",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: `${
-                  (Object.keys(answers).length / questions.length) * 100
-                }%`,
-                height: "100%",
-                background: "var(--success-color)",
-                borderRadius: "2px",
-                transition: "width 0.3s ease",
-              }}
-            />
-          </div>
-        </div>
       </aside>
 
-      <main className={`${styles.mainContent} theme-transition`}>
-        <div
-          className="theme-transition"
-          style={{
-            marginBottom: "30px",
-            padding: "24px",
-            background: "var(--card-bg)",
-            border: "1px solid var(--border-color)",
-            borderRadius: "12px",
-            boxShadow: "0 2px 8px var(--shadow)",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div
-            className="theme-transition"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "32px",
-              padding: "20px",
-              background: "var(--card-bg)",
-              borderRadius: "16px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-              border: "1px solid var(--border-color)",
-            }}
-          >
+      <main style={{
+        flex: 1,
+        padding: "32px",
+        overflowY: "auto",
+        transition: "all 0.3s ease",
+      }}>
+        <div style={{
+          marginBottom: "32px",
+          padding: "28px 32px",
+          background: currentTheme.cardBg,
+          backdropFilter: "blur(20px)",
+          border: `1px solid ${currentTheme.cardBorder}`,
+          borderRadius: "20px",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}>
             <div>
-              <h1
-                className="theme-transition"
-                style={{
-                  fontSize: "28px",
-                  fontWeight: 800,
-                  color: "var(--text-primary)",
-                  margin: 0,
-                  marginBottom: "8px",
-                  letterSpacing: "-0.5px",
-                }}
-              >
+              <h1 style={{
+                fontSize: "32px",
+                fontWeight: "800",
+                color: currentTheme.textPrimary,
+                margin: 0,
+                marginBottom: "8px",
+                letterSpacing: "-0.02em",
+                transition: "color 0.3s ease",
+              }}>
                 Final Examination
               </h1>
-              <p
-                className="theme-transition"
-                style={{
-                  fontSize: "15px",
-                  color: "var(--text-secondary)",
-                  margin: 0,
-                  fontWeight: 500,
-                }}
-              >
+              <p style={{
+                fontSize: "15px",
+                color: currentTheme.textSecondary,
+                margin: 0,
+                fontWeight: "500",
+                lineHeight: 1.6,
+                transition: "color 0.3s ease",
+              }}>
                 Read each question carefully and select the best answer. This
                 session is proctored for academic integrity.
               </p>
             </div>
 
             {timeLeft !== null && (
-              <div
-                className="theme-transition"
-                style={{
-                  padding: "12px 24px",
-                  borderRadius: "12px",
-                  background:
-                    timeLeft < 300 ? "var(--error-bg)" : "var(--secondary-bg)",
-                  border: `2px solid ${
-                    timeLeft < 300
-                      ? "var(--error-color)"
-                      : "var(--border-color)"
-                  }`,
+              <div style={{
+                padding: "16px 28px",
+                borderRadius: "16px",
+                background: timeLeft < 300
+                  ? (isDarkTheme ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.1)")
+                  : currentTheme.timerBg,
+                backdropFilter: "blur(10px)",
+                border: `2px solid ${timeLeft < 300
+                  ? (isDarkTheme ? "rgba(239, 68, 68, 0.4)" : "rgba(239, 68, 68, 0.3)")
+                  : currentTheme.cardBorder}`,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                minWidth: "140px",
+                boxShadow: timeLeft < 300
+                  ? "0 8px 24px rgba(239, 68, 68, 0.2)"
+                  : "0 4px 12px rgba(0, 0, 0, 0.1)",
+                transition: "all 0.3s ease",
+              }}>
+                <div style={{
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
-                  minWidth: "120px",
-                }}
-              >
-                <span
-                  style={{
+                  gap: "8px",
+                  marginBottom: "6px",
+                }}>
+                  <Clock size={16} color={timeLeft < 300 ? "#ef4444" : currentTheme.accentPrimary} strokeWidth={2.5} />
+                  <span style={{
                     fontSize: "12px",
-                    fontWeight: 600,
-                    color:
-                      timeLeft < 300
-                        ? "var(--error-color)"
-                        : "var(--text-secondary)",
+                    fontWeight: "700",
+                    color: timeLeft < 300 ? "#ef4444" : currentTheme.textSecondary,
                     textTransform: "uppercase",
                     letterSpacing: "1px",
-                    marginBottom: "4px",
-                  }}
-                >
-                  Time Left
-                </span>
-                <span
-                  style={{
-                    fontSize: "24px",
-                    fontWeight: 700,
-                    color:
-                      timeLeft < 300
-                        ? "var(--error-color)"
-                        : "var(--text-primary)",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {formatTime(timeLeft)}
+                    transition: "color 0.3s ease",
+                  }}>
+                    Time Left
+                  </span>
+                </div>
+                <span style={{
+                  fontSize: "28px",
+                  fontWeight: "800",
+                  color: timeLeft < 300 ? "#ef4444" : currentTheme.textPrimary,
+                  fontVariantNumeric: "tabular-nums",
+                  letterSpacing: "-0.02em",
+                  animation: timeLeft < 300 ? "pulse 2s ease-in-out infinite" : "none",
+                  transition: "color 0.3s ease",
+                }}>
+                  {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
                 </span>
               </div>
             )}
           </div>
         </div>
 
-        {questions.map((q) => (
-          <div
-            key={q.id}
-            className={`${styles.questionBlock} theme-transition`}
-          >
-            <div
-              className="theme-transition"
-              style={{
+        {questions.map((q, index) => (
+          <div key={q.id} style={{
+            marginBottom: "32px",
+            padding: "32px",
+            background: currentTheme.cardBg,
+            backdropFilter: "blur(20px)",
+            border: `1px solid ${currentTheme.cardBorder}`,
+            borderRadius: "20px",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            transition: "all 0.3s ease",
+          }}>
+            <div style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "16px",
+              marginBottom: "20px",
+            }}>
+              <div style={{
+                background: answers[q.id] ? "#22c55e" : currentTheme.questionNumberBg,
+                color: answers[q.id] ? "#ffffff" : currentTheme.textPrimary,
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
                 display: "flex",
-                alignItems: "flex-start",
-                gap: "16px",
-                marginBottom: "20px",
-              }}
-            >
-              <div
-                className="theme-transition"
-                style={{
-                  background: answers[q.id]
-                    ? "var(--success-color)"
-                    : "var(--secondary-bg)",
-                  color: answers[q.id] ? "white" : "var(--text-primary)",
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  flexShrink: 0,
-                  border: `2px solid ${
-                    answers[q.id]
-                      ? "var(--success-color)"
-                      : "var(--border-color)"
-                  }`,
-                  transition: "all 0.3s ease",
-                }}
-              >
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "15px",
+                fontWeight: "700",
+                flexShrink: 0,
+                border: `2px solid ${answers[q.id] ? "#22c55e" : currentTheme.cardBorder}`,
+                transition: "all 0.3s ease",
+                boxShadow: answers[q.id] ? "0 4px 12px rgba(34, 197, 94, 0.3)" : "none",
+              }}>
                 {answers[q.id] ? "✓" : q.id}
               </div>
-              <h4
-                className="theme-transition"
-                style={{
-                  color: "var(--text-primary)",
-                  fontSize: "18px",
-                  fontWeight: 600,
-                  margin: 0,
-                  lineHeight: 1.4,
-                  transition: "color 0.3s ease",
-                }}
-              >
+              <h4 style={{
+                color: currentTheme.textPrimary,
+                fontSize: "18px",
+                fontWeight: "700",
+                margin: 0,
+                lineHeight: 1.5,
+                letterSpacing: "-0.01em",
+                transition: "color 0.3s ease",
+              }}>
                 {q.question_text}
               </h4>
             </div>
-            <div className={styles.options}>
-              {q.options &&
-                q.options.map((opt, idx) => (
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {q.options && q.options.map((opt, idx) => {
+                const isSelected = answers[q.id]?.option_id === opt.id;
+                return (
                   <label
                     key={idx}
-                    className={`${styles.optionLabel} theme-transition ${
-                      answers[q.id]?.option_id === opt.id ? styles.selected : ""
-                    }`}
                     style={{
-                      background:
-                        answers[q.id]?.option_id === opt.id
-                          ? "var(--accent-color)"
-                          : "var(--secondary-bg)",
-                      color:
-                        answers[q.id]?.option_id === opt.id
-                          ? "white"
-                          : "var(--text-primary)",
-                      border: `2px solid ${
-                        answers[q.id]?.option_id === opt.id
-                          ? "var(--accent-color)"
-                          : "var(--border-color)"
-                      }`,
+                      padding: "18px 24px",
+                      borderRadius: "14px",
+                      background: isSelected
+                        ? (isDarkTheme ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.15)")
+                        : currentTheme.optionBg,
+                      color: isSelected ? currentTheme.accentPrimary : currentTheme.textPrimary,
+                      border: `2px solid ${isSelected ? currentTheme.accentPrimary : currentTheme.cardBorder}`,
                       cursor: "pointer",
                       transition: "all 0.3s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      fontWeight: isSelected ? "600" : "500",
+                      fontSize: "15px",
+                      boxShadow: isSelected ? `0 4px 16px ${isDarkTheme ? "rgba(59, 130, 246, 0.3)" : "rgba(59, 130, 246, 0.2)"}` : "none",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = currentTheme.optionHoverBg;
+                        e.currentTarget.style.borderColor = currentTheme.accentSecondary;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.background = currentTheme.optionBg;
+                        e.currentTarget.style.borderColor = currentTheme.cardBorder;
+                      }
                     }}
                   >
                     <input
                       type="radio"
                       name={`q-${q.id}`}
                       value={opt.id}
-                      checked={answers[q.id]?.option_id === opt.id}
-                      onChange={() =>
-                        handleChange(q.id, opt.id, opt.option_text)
-                      }
+                      checked={isSelected}
+                      onChange={() => handleChange(q.id, opt.id, opt.option_text)}
                       style={{ display: "none" }}
                     />
-                    <div
-                      className="theme-transition"
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        borderRadius: "50%",
-                        border: "2px solid",
-                        borderColor:
-                          answers[q.id]?.option_id === opt.id
-                            ? "white"
-                            : "var(--border-color)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      {answers[q.id]?.option_id === opt.id && (
-                        <div
-                          style={{
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            background: "white",
-                          }}
-                        />
+                    <div style={{
+                      width: "22px",
+                      height: "22px",
+                      borderRadius: "50%",
+                      border: `2px solid ${isSelected ? currentTheme.accentPrimary : currentTheme.cardBorder}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.3s ease",
+                      flexShrink: 0,
+                    }}>
+                      {isSelected && (
+                        <div style={{
+                          width: "10px",
+                          height: "10px",
+                          borderRadius: "50%",
+                          background: currentTheme.accentPrimary,
+                        }} />
                       )}
                     </div>
-                    <span
-                      style={{
-                        fontSize: "16px",
-                        fontWeight: 500,
-                      }}
-                    >
+                    <span style={{ flex: 1, lineHeight: 1.5, transition: "color 0.3s ease" }}>
                       {opt.option_text}
                     </span>
                   </label>
-                ))}
+                );
+              })}
             </div>
           </div>
         ))}
 
-        <div
-          className="theme-transition"
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            marginTop: "40px",
-            padding: "20px 0",
-          }}
-        >
+        <div style={{
+          marginTop: "48px",
+          padding: "32px",
+          background: currentTheme.cardBg,
+          backdropFilter: "blur(20px)",
+          border: `1px solid ${currentTheme.cardBorder}`,
+          borderRadius: "20px",
+          textAlign: "center",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{
+            fontSize: "15px",
+            color: currentTheme.textSecondary,
+            marginBottom: "20px",
+            fontWeight: "500",
+            transition: "color 0.3s ease",
+          }}>
+            Answered {Object.keys(answers).length} of {questions.length} questions
+          </div>
           <button
-            className={`${styles.submitButton} theme-transition`}
             onClick={handleSubmit}
             disabled={isSubmitting}
             style={{
-              background: isSubmitting
-                ? "linear-gradient(135deg, #94a3b8 0%, #64748b 100%)"
-                : "linear-gradient(135deg, var(--accent-color) 0%, #0284c7 100%)",
-              border: "none",
-              color: "white",
               padding: "16px 48px",
-              borderRadius: "12px",
               fontSize: "16px",
-              fontWeight: 600,
+              fontWeight: "700",
+              color: "#ffffff",
+              background: isSubmitting
+                ? (isDarkTheme ? "rgba(100, 116, 139, 0.5)" : "rgba(148, 163, 184, 0.5)")
+                : "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+              border: "none",
+              borderRadius: "14px",
               cursor: isSubmitting ? "not-allowed" : "pointer",
-              boxShadow: "0 4px 14px rgba(14, 165, 233, 0.25)",
               transition: "all 0.3s ease",
-              minWidth: "200px",
-              opacity: isSubmitting ? 0.6 : 1,
+              boxShadow: isSubmitting ? "none" : "0 4px 16px rgba(59, 130, 246, 0.4)",
+              letterSpacing: "0.5px",
+              textTransform: "uppercase",
             }}
             onMouseEnter={(e) => {
               if (!isSubmitting) {
                 e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow =
-                  "0 6px 20px rgba(14, 165, 233, 0.35)";
+                e.currentTarget.style.boxShadow = "0 6px 24px rgba(59, 130, 246, 0.5)";
               }
             }}
             onMouseLeave={(e) => {
               if (!isSubmitting) {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 14px rgba(14, 165, 233, 0.25)";
+                e.currentTarget.style.boxShadow = "0 4px 16px rgba(59, 130, 246, 0.4)";
               }
             }}
           >
-            {isSubmitting ? "⏳ Submitting..." : "🚀 Submit Exam"}
+            {isSubmitting ? "Submitting..." : "Submit Exam"}
           </button>
         </div>
       </main>
 
-      {/* ✅ Keep FloatingCamera mounted even after submission - just hide it */}
+      {/* Theme Toggle Button */}
+      <button
+        onClick={() => setIsDarkTheme(!isDarkTheme)}
+        style={{
+          position: "fixed",
+          bottom: "32px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "14px 28px",
+          borderRadius: "50px",
+          background: currentTheme.cardBg,
+          backdropFilter: "blur(20px)",
+          border: `2px solid ${currentTheme.cardBorder}`,
+          cursor: "pointer",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+          transition: "all 0.3s ease",
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateX(-50%) translateY(-2px)";
+          e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.2)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "translateX(-50%)";
+          e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.15)";
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", position: "relative", width: "60px", height: "28px" }}>
+          <div style={{
+            position: "absolute",
+            width: "60px",
+            height: "28px",
+            background: isDarkTheme ? "rgba(59, 130, 246, 0.2)" : "rgba(203, 213, 225, 0.3)",
+            borderRadius: "14px",
+            transition: "background 0.3s ease",
+          }} />
+          <div style={{
+            position: "absolute",
+            left: isDarkTheme ? "32px" : "0",
+            width: "28px",
+            height: "28px",
+            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "left 0.3s ease",
+            boxShadow: "0 2px 8px rgba(59, 130, 246, 0.4)",
+          }}>
+            {isDarkTheme ? <Moon size={14} color="#ffffff" strokeWidth={2.5} /> : <Sun size={14} color="#ffffff" strokeWidth={2.5} />}
+          </div>
+        </div>
+        <span style={{
+          fontSize: "14px",
+          fontWeight: "600",
+          color: currentTheme.textPrimary,
+          transition: "color 0.3s ease",
+        }}>
+          {isDarkTheme ? "Dark" : "Light"}
+        </span>
+      </button>
+
+      {/* FloatingCamera Component */}
       <div style={{ display: examSubmitted ? "none" : "block" }}>
         <FloatingCamera
           settings={examSettings}
@@ -1796,19 +2029,35 @@ const ExamPage = ({
 
       {/* Conditionally render alerts based on exam settings */}
       {lookAlert && (
-        <div
-          className={`${styles.alertBox} theme-transition`}
-          style={{
-            background:
-              "linear-gradient(135deg, var(--warning-color) 0%, #f59e0b 100%)",
-            border: "1px solid var(--warning-color)",
-            boxShadow: "0 8px 25px rgba(245, 158, 11, 0.3)",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "20px" }}>👀</span>
-            <span style={{ fontWeight: 600 }}>
+        <div style={{
+          position: "fixed",
+          bottom: "100px",
+          right: "30px",
+          padding: "16px 24px",
+          borderRadius: "16px",
+          background: isDarkTheme ? "rgba(245, 158, 11, 0.15)" : "rgba(234, 88, 12, 0.1)",
+          backdropFilter: "blur(20px)",
+          border: `2px solid ${isDarkTheme ? "rgba(245, 158, 11, 0.4)" : "rgba(234, 88, 12, 0.3)"}`,
+          boxShadow: "0 8px 24px rgba(245, 158, 11, 0.3)",
+          zIndex: 1000,
+          animation: "slideIn 0.3s ease",
+          maxWidth: "400px",
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              background: currentTheme.warningColor,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: "20px" }}>👀</span>
+            </div>
+            <span style={{ fontWeight: "600", color: currentTheme.textPrimary, fontSize: "14px", transition: "color 0.3s ease" }}>
               Please stay focused on the screen! You are turning {lookDirection}
             </span>
           </div>
@@ -1816,19 +2065,35 @@ const ExamPage = ({
       )}
 
       {object && (
-        <div
-          className={`${styles.alertBox} theme-transition`}
-          style={{
-            background:
-              "linear-gradient(135deg, var(--error-color) 0%, #dc2626 100%)",
-            border: "1px solid var(--error-color)",
-            boxShadow: "0 8px 25px rgba(239, 68, 68, 0.3)",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "20px" }}>📱</span>
-            <span style={{ fontWeight: 600 }}>
+        <div style={{
+          position: "fixed",
+          bottom: "100px",
+          right: "30px",
+          padding: "16px 24px",
+          borderRadius: "16px",
+          background: isDarkTheme ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.1)",
+          backdropFilter: "blur(20px)",
+          border: `2px solid ${isDarkTheme ? "rgba(239, 68, 68, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+          boxShadow: "0 8px 24px rgba(239, 68, 68, 0.3)",
+          zIndex: 1000,
+          animation: "slideIn 0.3s ease",
+          maxWidth: "400px",
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              background: "#ef4444",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: "20px" }}>📱</span>
+            </div>
+            <span style={{ fontWeight: "600", color: currentTheme.textPrimary, fontSize: "14px", transition: "color 0.3s ease" }}>
               Unauthorized device detected (e.g., mobile phone)
             </span>
           </div>
@@ -1836,37 +2101,71 @@ const ExamPage = ({
       )}
 
       {num && (
-        <div
-          className={`${styles.alertBox} theme-transition`}
-          style={{
-            background:
-              "linear-gradient(135deg, var(--info-color) 0%, #2563eb 100%)",
-            border: "1px solid var(--info-color)",
-            boxShadow: "0 8px 25px rgba(59, 130, 246, 0.3)",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "20px" }}>👥</span>
-            <span style={{ fontWeight: 600 }}>{face} faces detected</span>
+        <div style={{
+          position: "fixed",
+          bottom: "100px",
+          right: "30px",
+          padding: "16px 24px",
+          borderRadius: "16px",
+          background: isDarkTheme ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.1)",
+          backdropFilter: "blur(20px)",
+          border: `2px solid ${isDarkTheme ? "rgba(59, 130, 246, 0.4)" : "rgba(59, 130, 246, 0.3)"}`,
+          boxShadow: "0 8px 24px rgba(59, 130, 246, 0.3)",
+          zIndex: 1000,
+          animation: "slideIn 0.3s ease",
+          maxWidth: "400px",
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              background: currentTheme.accentPrimary,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: "20px" }}>👥</span>
+            </div>
+            <span style={{ fontWeight: "600", color: currentTheme.textPrimary, fontSize: "14px", transition: "color 0.3s ease" }}>
+              {face} faces detected
+            </span>
           </div>
         </div>
       )}
 
       {authFaceMissing && (
-        <div
-          className={`${styles.alertBox} theme-transition`}
-          style={{
-            background:
-              "linear-gradient(135deg, var(--warning-color) 0%, #f59e0b 100%)",
-            border: "1px solid var(--warning-color)",
-            boxShadow: "0 8px 25px rgba(245, 158, 11, 0.3)",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "20px" }}>⚠️</span>
-            <span style={{ fontWeight: 600 }}>
+        <div style={{
+          position: "fixed",
+          bottom: "100px",
+          right: "30px",
+          padding: "16px 24px",
+          borderRadius: "16px",
+          background: isDarkTheme ? "rgba(245, 158, 11, 0.15)" : "rgba(234, 88, 12, 0.1)",
+          backdropFilter: "blur(20px)",
+          border: `2px solid ${isDarkTheme ? "rgba(245, 158, 11, 0.4)" : "rgba(234, 88, 12, 0.3)"}`,
+          boxShadow: "0 8px 24px rgba(245, 158, 11, 0.3)",
+          zIndex: 1000,
+          animation: "slideIn 0.3s ease",
+          maxWidth: "400px",
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              background: currentTheme.warningColor,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <AlertTriangle size={20} color="white" strokeWidth={2.5} />
+            </div>
+            <span style={{ fontWeight: "600", color: currentTheme.textPrimary, fontSize: "14px", transition: "color 0.3s ease" }}>
               Authenticated face not detected. Please ensure you are in front of
               the camera.
             </span>
@@ -1875,24 +2174,118 @@ const ExamPage = ({
       )}
 
       {headDirection && (
-        <div
-          className={`${styles.alertBox} theme-transition`}
-          style={{
-            background:
-              "linear-gradient(135deg, var(--warning-color) 0%, #f59e0b 100%)",
-            border: "1px solid var(--warning-color)",
-            boxShadow: "0 8px 25px rgba(245, 158, 11, 0.3)",
-            transition: "all 0.3s ease",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "20px" }}>🧭</span>
-            <span style={{ fontWeight: 600 }}>
+        <div style={{
+          position: "fixed",
+          bottom: "100px",
+          right: "30px",
+          padding: "16px 24px",
+          borderRadius: "16px",
+          background: isDarkTheme ? "rgba(245, 158, 11, 0.15)" : "rgba(234, 88, 12, 0.1)",
+          backdropFilter: "blur(20px)",
+          border: `2px solid ${isDarkTheme ? "rgba(245, 158, 11, 0.4)" : "rgba(234, 88, 12, 0.3)"}`,
+          boxShadow: "0 8px 24px rgba(245, 158, 11, 0.3)",
+          zIndex: 1000,
+          animation: "slideIn 0.3s ease",
+          maxWidth: "400px",
+          transition: "all 0.3s ease",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              background: currentTheme.warningColor,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: "20px" }}>🧭</span>
+            </div>
+            <span style={{ fontWeight: "600", color: currentTheme.textPrimary, fontSize: "14px", transition: "color 0.3s ease" }}>
               Please keep your head facing forward
             </span>
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% {
+            transform: translate(0, 0);
+          }
+          33% {
+            transform: translate(30px, -30px);
+          }
+          66% {
+            transform: translate(-20px, 20px);
+          }
+        }
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 0.9;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.05);
+          }
+        }
+        @keyframes shimmer {
+          0% {
+            background-position: -1000px 0;
+          }
+          100% {
+            background-position: 1000px 0;
+          }
+        }
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 };
