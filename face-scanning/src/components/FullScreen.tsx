@@ -49,8 +49,23 @@ const ExamPage = ({
   // ✅ Use exam state hook for validation and error handling
   const examState = useExamState();
   
-  // ✅ Theme state
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  // ✅ Theme state - default to light
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
+
+  // ✅ Load theme preference from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setIsDarkTheme(savedTheme === 'dark');
+    }
+  }, []);
+
+  // ✅ Save theme preference to localStorage when changed
+  const handleThemeToggle = () => {
+    const newTheme = !isDarkTheme;
+    setIsDarkTheme(newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+  };
   
   const [answers, setAnswers] = useState<{ [key: number]: Answer }>({});
   const [blocked, setBlocked] = useState(false);
@@ -76,31 +91,31 @@ const ExamPage = ({
   const [modelsLoadingError, setModelsLoadingError] = useState(false);
   const [isUploadingChunks, setIsUploadingChunks] = useState(false);
 
-  // ✅ Theme configuration
+  // ✅ Professional High-Tech Black Theme Configuration
   const themes = {
     dark: {
-      background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
-      cardBg: "rgba(30, 41, 59, 0.7)",
-      cardBorder: "rgba(51, 65, 85, 0.5)",
-      textPrimary: "#f1f5f9",
-      textSecondary: "#cbd5e1",
-      textMuted: "#94a3b8",
-      accentPrimary: "#3b82f6",
-      accentSecondary: "#60a5fa",
-      sidebarBg: "rgba(15, 23, 42, 0.9)",
-      questionNavBg: "rgba(30, 41, 59, 0.5)",
-      questionAnsweredBg: "rgba(34, 197, 94, 0.15)",
-      questionNavBorder: "rgba(51, 65, 85, 0.6)",
-      questionNumberBg: "rgba(30, 41, 59, 0.6)",
-      optionBg: "rgba(30, 41, 59, 0.5)",
-      optionHoverBg: "rgba(51, 65, 85, 0.6)",
-      buttonPrimaryBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-      buttonPrimaryShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
-      timerBg: "rgba(30, 41, 59, 0.8)",
-      alertBg: "rgba(239, 68, 68, 0.15)",
-      alertBorder: "rgba(239, 68, 68, 0.4)",
-      warningColor: "#f59e0b",
-      successBg: "rgba(34, 197, 94, 0.15)",
+      background: "linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #0f0f0f 100%)",
+      cardBg: "rgba(12, 12, 12, 0.95)",
+      cardBorder: "rgba(0, 255, 255, 0.15)",
+      textPrimary: "#ffffff",
+      textSecondary: "#a0aec0",
+      textMuted: "#718096",
+      accentPrimary: "#00ffff",
+      accentSecondary: "#00d9ff",
+      sidebarBg: "rgba(8, 8, 8, 0.98)",
+      questionNavBg: "rgba(15, 15, 15, 0.8)",
+      questionAnsweredBg: "rgba(0, 255, 157, 0.12)",
+      questionNavBorder: "rgba(0, 255, 255, 0.2)",
+      questionNumberBg: "rgba(18, 18, 18, 0.9)",
+      optionBg: "rgba(15, 15, 15, 0.8)",
+      optionHoverBg: "rgba(20, 20, 20, 0.9)",
+      buttonPrimaryBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
+      buttonPrimaryShadow: "0 0 30px rgba(0, 255, 255, 0.5), 0 10px 40px rgba(0, 153, 255, 0.3)",
+      timerBg: "rgba(15, 15, 15, 0.95)",
+      alertBg: "rgba(255, 51, 102, 0.08)",
+      alertBorder: "rgba(255, 51, 102, 0.5)",
+      warningColor: "#ffaa00",
+      successBg: "rgba(0, 255, 157, 0.12)",
     },
     light: {
       background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",
@@ -1766,12 +1781,14 @@ const ExamPage = ({
         {questions.map((q, index) => (
           <div key={q.id} style={{
             marginBottom: "32px",
-            padding: "32px",
+            padding: "36px",
             background: currentTheme.cardBg,
-            backdropFilter: "blur(20px)",
-            border: `1px solid ${currentTheme.cardBorder}`,
-            borderRadius: "20px",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+            backdropFilter: "blur(30px)",
+            border: `2px solid ${currentTheme.cardBorder}`,
+            borderRadius: "24px",
+            boxShadow: isDarkTheme 
+              ? "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 255, 255, 0.05) inset"
+              : "0 4px 20px rgba(0,0,0,0.1)",
             transition: "all 0.3s ease",
           }}>
             <div style={{
@@ -1781,69 +1798,93 @@ const ExamPage = ({
               marginBottom: "20px",
             }}>
               <div style={{
-                background: answers[q.id] ? "#22c55e" : currentTheme.questionNumberBg,
-                color: answers[q.id] ? "#ffffff" : currentTheme.textPrimary,
-                width: "36px",
-                height: "36px",
+                background: answers[q.id] 
+                  ? (isDarkTheme ? "linear-gradient(135deg, #00ff9d 0%, #00d4aa 100%)" : "#22c55e")
+                  : currentTheme.questionNumberBg,
+                color: answers[q.id] ? "#000000" : currentTheme.textPrimary,
+                width: "42px",
+                height: "42px",
                 borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "15px",
-                fontWeight: "700",
+                fontSize: "16px",
+                fontWeight: "800",
                 flexShrink: 0,
-                border: `2px solid ${answers[q.id] ? "#22c55e" : currentTheme.cardBorder}`,
+                border: `2px solid ${answers[q.id] 
+                  ? (isDarkTheme ? "rgba(0, 255, 157, 0.4)" : "#22c55e")
+                  : currentTheme.cardBorder}`,
                 transition: "all 0.3s ease",
-                boxShadow: answers[q.id] ? "0 4px 12px rgba(34, 197, 94, 0.3)" : "none",
+                boxShadow: answers[q.id] 
+                  ? (isDarkTheme 
+                    ? "0 0 25px rgba(0, 255, 157, 0.5), 0 4px 15px rgba(0, 255, 157, 0.3)"
+                    : "0 4px 12px rgba(34, 197, 94, 0.3)")
+                  : "none",
               }}>
                 {answers[q.id] ? "✓" : q.id}
               </div>
               <h4 style={{
                 color: currentTheme.textPrimary,
-                fontSize: "18px",
+                fontSize: "19px",
                 fontWeight: "700",
                 margin: 0,
-                lineHeight: 1.5,
-                letterSpacing: "-0.01em",
+                lineHeight: 1.6,
+                letterSpacing: "-0.02em",
                 transition: "color 0.3s ease",
               }}>
                 {q.question_text}
               </h4>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               {q.options && q.options.map((opt, idx) => {
                 const isSelected = answers[q.id]?.option_id === opt.id;
                 return (
                   <label
                     key={idx}
                     style={{
-                      padding: "18px 24px",
-                      borderRadius: "14px",
+                      padding: "20px 26px",
+                      borderRadius: "16px",
                       background: isSelected
-                        ? (isDarkTheme ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.15)")
+                        ? (isDarkTheme 
+                          ? "rgba(0, 255, 255, 0.08)" 
+                          : "rgba(59, 130, 246, 0.15)")
                         : currentTheme.optionBg,
-                      color: isSelected ? currentTheme.accentPrimary : currentTheme.textPrimary,
-                      border: `2px solid ${isSelected ? currentTheme.accentPrimary : currentTheme.cardBorder}`,
+                      color: isSelected 
+                        ? (isDarkTheme ? "#00ffff" : currentTheme.accentPrimary)
+                        : currentTheme.textPrimary,
+                      border: `2px solid ${isSelected 
+                        ? (isDarkTheme ? "rgba(0, 255, 255, 0.5)" : currentTheme.accentPrimary)
+                        : currentTheme.cardBorder}`,
                       cursor: "pointer",
                       transition: "all 0.3s ease",
                       display: "flex",
                       alignItems: "center",
-                      gap: "12px",
-                      fontWeight: isSelected ? "600" : "500",
-                      fontSize: "15px",
-                      boxShadow: isSelected ? `0 4px 16px ${isDarkTheme ? "rgba(59, 130, 246, 0.3)" : "rgba(59, 130, 246, 0.2)"}` : "none",
+                      gap: "14px",
+                      fontWeight: isSelected ? "700" : "500",
+                      fontSize: "16px",
+                      boxShadow: isSelected 
+                        ? (isDarkTheme 
+                          ? "0 0 25px rgba(0, 255, 255, 0.25), 0 4px 20px rgba(0, 255, 255, 0.15)"
+                          : "0 4px 16px rgba(59, 130, 246, 0.2)")
+                        : "none",
                     }}
                     onMouseEnter={(e) => {
                       if (!isSelected) {
                         e.currentTarget.style.background = currentTheme.optionHoverBg;
-                        e.currentTarget.style.borderColor = currentTheme.accentSecondary;
+                        e.currentTarget.style.borderColor = isDarkTheme 
+                          ? "rgba(0, 255, 255, 0.3)" 
+                          : currentTheme.accentSecondary;
+                        e.currentTarget.style.boxShadow = isDarkTheme
+                          ? "0 0 20px rgba(0, 255, 255, 0.15)"
+                          : "0 2px 12px rgba(59, 130, 246, 0.1)";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isSelected) {
                         e.currentTarget.style.background = currentTheme.optionBg;
                         e.currentTarget.style.borderColor = currentTheme.cardBorder;
+                        e.currentTarget.style.boxShadow = "none";
                       }
                     }}
                   >
@@ -1856,22 +1897,30 @@ const ExamPage = ({
                       style={{ display: "none" }}
                     />
                     <div style={{
-                      width: "22px",
-                      height: "22px",
+                      width: "24px",
+                      height: "24px",
                       borderRadius: "50%",
-                      border: `2px solid ${isSelected ? currentTheme.accentPrimary : currentTheme.cardBorder}`,
+                      border: `2.5px solid ${isSelected 
+                        ? (isDarkTheme ? "#00ffff" : currentTheme.accentPrimary)
+                        : currentTheme.cardBorder}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       transition: "all 0.3s ease",
                       flexShrink: 0,
+                      boxShadow: isSelected && isDarkTheme
+                        ? "0 0 15px rgba(0, 255, 255, 0.4)"
+                        : "none",
                     }}>
                       {isSelected && (
                         <div style={{
-                          width: "10px",
-                          height: "10px",
+                          width: "12px",
+                          height: "12px",
                           borderRadius: "50%",
-                          background: currentTheme.accentPrimary,
+                          background: isDarkTheme ? "#00ffff" : currentTheme.accentPrimary,
+                          boxShadow: isDarkTheme
+                            ? "0 0 10px rgba(0, 255, 255, 0.6)"
+                            : "none",
                         }} />
                       )}
                     </div>
@@ -1944,12 +1993,11 @@ const ExamPage = ({
 
       {/* Theme Toggle Button */}
       <button
-        onClick={() => setIsDarkTheme(!isDarkTheme)}
+        onClick={handleThemeToggle}
         style={{
           position: "fixed",
           bottom: "32px",
-          left: "50%",
-          transform: "translateX(-50%)",
+          right: "32px",
           padding: "14px 28px",
           borderRadius: "50px",
           background: currentTheme.cardBg,
@@ -2033,14 +2081,18 @@ const ExamPage = ({
           position: "fixed",
           bottom: "100px",
           right: "30px",
-          padding: "16px 24px",
-          borderRadius: "16px",
-          background: isDarkTheme ? "rgba(245, 158, 11, 0.15)" : "rgba(234, 88, 12, 0.1)",
-          backdropFilter: "blur(20px)",
-          border: `2px solid ${isDarkTheme ? "rgba(245, 158, 11, 0.4)" : "rgba(234, 88, 12, 0.3)"}`,
-          boxShadow: "0 8px 24px rgba(245, 158, 11, 0.3)",
+          padding: "18px 26px",
+          borderRadius: "18px",
+          background: isDarkTheme 
+            ? "rgba(255, 170, 0, 0.1)"
+            : "rgba(234, 88, 12, 0.95)",
+          backdropFilter: "blur(25px)",
+          border: `3px solid ${isDarkTheme ? "rgba(255, 170, 0, 0.6)" : "rgba(194, 65, 12, 0.8)"}`,
+          boxShadow: isDarkTheme
+            ? "0 0 30px rgba(255, 170, 0, 0.4), 0 10px 40px rgba(255, 170, 0, 0.2)"
+            : "0 0 30px rgba(234, 88, 12, 0.5), 0 15px 50px rgba(0, 0, 0, 0.3)",
           zIndex: 1000,
-          animation: "slideIn 0.3s ease",
+          animation: "slideIn 0.3s ease, glowPulse 2s ease-in-out infinite",
           maxWidth: "400px",
           transition: "all 0.3s ease",
         }}>
@@ -2057,7 +2109,7 @@ const ExamPage = ({
             }}>
               <span style={{ fontSize: "20px" }}>👀</span>
             </div>
-            <span style={{ fontWeight: "600", color: currentTheme.textPrimary, fontSize: "14px", transition: "color 0.3s ease" }}>
+            <span style={{ fontWeight: "700", color: isDarkTheme ? currentTheme.textPrimary : "#ffffff", fontSize: "15px", transition: "color 0.3s ease", textShadow: isDarkTheme ? "none" : "0 2px 4px rgba(0, 0, 0, 0.3)" }}>
               Please stay focused on the screen! You are turning {lookDirection}
             </span>
           </div>
@@ -2069,14 +2121,18 @@ const ExamPage = ({
           position: "fixed",
           bottom: "100px",
           right: "30px",
-          padding: "16px 24px",
-          borderRadius: "16px",
-          background: isDarkTheme ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.1)",
-          backdropFilter: "blur(20px)",
-          border: `2px solid ${isDarkTheme ? "rgba(239, 68, 68, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
-          boxShadow: "0 8px 24px rgba(239, 68, 68, 0.3)",
+          padding: "18px 26px",
+          borderRadius: "18px",
+          background: isDarkTheme 
+            ? "rgba(255, 51, 102, 0.1)"
+            : "rgba(239, 68, 68, 0.95)",
+          backdropFilter: "blur(25px)",
+          border: `3px solid ${isDarkTheme ? "rgba(255, 51, 102, 0.6)" : "rgba(185, 28, 28, 0.9)"}`,
+          boxShadow: isDarkTheme
+            ? "0 0 30px rgba(255, 51, 102, 0.5), 0 10px 40px rgba(255, 51, 102, 0.3)"
+            : "0 0 35px rgba(239, 68, 68, 0.6), 0 15px 50px rgba(0, 0, 0, 0.4)",
           zIndex: 1000,
-          animation: "slideIn 0.3s ease",
+          animation: "slideIn 0.3s ease, glowPulse 2s ease-in-out infinite",
           maxWidth: "400px",
           transition: "all 0.3s ease",
         }}>
@@ -2093,7 +2149,7 @@ const ExamPage = ({
             }}>
               <span style={{ fontSize: "20px" }}>📱</span>
             </div>
-            <span style={{ fontWeight: "600", color: currentTheme.textPrimary, fontSize: "14px", transition: "color 0.3s ease" }}>
+            <span style={{ fontWeight: "700", color: isDarkTheme ? currentTheme.textPrimary : "#ffffff", fontSize: "15px", transition: "color 0.3s ease", textShadow: isDarkTheme ? "none" : "0 2px 4px rgba(0, 0, 0, 0.3)" }}>
               Unauthorized device detected (e.g., mobile phone)
             </span>
           </div>
@@ -2105,14 +2161,18 @@ const ExamPage = ({
           position: "fixed",
           bottom: "100px",
           right: "30px",
-          padding: "16px 24px",
-          borderRadius: "16px",
-          background: isDarkTheme ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.1)",
-          backdropFilter: "blur(20px)",
-          border: `2px solid ${isDarkTheme ? "rgba(59, 130, 246, 0.4)" : "rgba(59, 130, 246, 0.3)"}`,
-          boxShadow: "0 8px 24px rgba(59, 130, 246, 0.3)",
+          padding: "18px 26px",
+          borderRadius: "18px",
+          background: isDarkTheme 
+            ? "rgba(0, 153, 255, 0.1)" 
+            : "rgba(59, 130, 246, 0.95)",
+          backdropFilter: "blur(25px)",
+          border: `3px solid ${isDarkTheme ? "rgba(0, 153, 255, 0.5)" : "rgba(37, 99, 235, 0.9)"}`,
+          boxShadow: isDarkTheme 
+            ? "0 0 30px rgba(0, 153, 255, 0.4), 0 10px 40px rgba(0, 153, 255, 0.2)"
+            : "0 0 30px rgba(59, 130, 246, 0.5), 0 15px 50px rgba(0, 0, 0, 0.3)",
           zIndex: 1000,
-          animation: "slideIn 0.3s ease",
+          animation: "slideIn 0.3s ease, glowPulse 2s ease-in-out infinite",
           maxWidth: "400px",
           transition: "all 0.3s ease",
         }}>
@@ -2129,7 +2189,7 @@ const ExamPage = ({
             }}>
               <span style={{ fontSize: "20px" }}>👥</span>
             </div>
-            <span style={{ fontWeight: "600", color: currentTheme.textPrimary, fontSize: "14px", transition: "color 0.3s ease" }}>
+            <span style={{ fontWeight: "700", color: isDarkTheme ? currentTheme.textPrimary : "#ffffff", fontSize: "15px", transition: "color 0.3s ease", textShadow: isDarkTheme ? "none" : "0 2px 4px rgba(0, 0, 0, 0.3)" }}>
               {face} faces detected
             </span>
           </div>
@@ -2141,14 +2201,18 @@ const ExamPage = ({
           position: "fixed",
           bottom: "100px",
           right: "30px",
-          padding: "16px 24px",
-          borderRadius: "16px",
-          background: isDarkTheme ? "rgba(245, 158, 11, 0.15)" : "rgba(234, 88, 12, 0.1)",
-          backdropFilter: "blur(20px)",
-          border: `2px solid ${isDarkTheme ? "rgba(245, 158, 11, 0.4)" : "rgba(234, 88, 12, 0.3)"}`,
-          boxShadow: "0 8px 24px rgba(245, 158, 11, 0.3)",
+          padding: "18px 26px",
+          borderRadius: "18px",
+          background: isDarkTheme 
+            ? "rgba(255, 170, 0, 0.1)" 
+            : "rgba(234, 88, 12, 0.95)",
+          backdropFilter: "blur(25px)",
+          border: `3px solid ${isDarkTheme ? "rgba(255, 170, 0, 0.6)" : "rgba(194, 65, 12, 0.8)"}`,
+          boxShadow: isDarkTheme
+            ? "0 0 30px rgba(255, 170, 0, 0.4), 0 10px 40px rgba(255, 170, 0, 0.2)"
+            : "0 0 30px rgba(234, 88, 12, 0.5), 0 15px 50px rgba(0, 0, 0, 0.3)",
           zIndex: 1000,
-          animation: "slideIn 0.3s ease",
+          animation: "slideIn 0.3s ease, glowPulse 2s ease-in-out infinite",
           maxWidth: "400px",
           transition: "all 0.3s ease",
         }}>
@@ -2165,7 +2229,7 @@ const ExamPage = ({
             }}>
               <AlertTriangle size={20} color="white" strokeWidth={2.5} />
             </div>
-            <span style={{ fontWeight: "600", color: currentTheme.textPrimary, fontSize: "14px", transition: "color 0.3s ease" }}>
+            <span style={{ fontWeight: "700", color: isDarkTheme ? currentTheme.textPrimary : "#ffffff", fontSize: "15px", transition: "color 0.3s ease", textShadow: isDarkTheme ? "none" : "0 2px 4px rgba(0, 0, 0, 0.3)" }}>
               Authenticated face not detected. Please ensure you are in front of
               the camera.
             </span>
@@ -2178,14 +2242,18 @@ const ExamPage = ({
           position: "fixed",
           bottom: "100px",
           right: "30px",
-          padding: "16px 24px",
-          borderRadius: "16px",
-          background: isDarkTheme ? "rgba(245, 158, 11, 0.15)" : "rgba(234, 88, 12, 0.1)",
-          backdropFilter: "blur(20px)",
-          border: `2px solid ${isDarkTheme ? "rgba(245, 158, 11, 0.4)" : "rgba(234, 88, 12, 0.3)"}`,
-          boxShadow: "0 8px 24px rgba(245, 158, 11, 0.3)",
+          padding: "18px 26px",
+          borderRadius: "18px",
+          background: isDarkTheme 
+            ? "rgba(255, 170, 0, 0.1)" 
+            : "rgba(234, 88, 12, 0.95)",
+          backdropFilter: "blur(25px)",
+          border: `3px solid ${isDarkTheme ? "rgba(255, 170, 0, 0.6)" : "rgba(194, 65, 12, 0.8)"}`,
+          boxShadow: isDarkTheme
+            ? "0 0 30px rgba(255, 170, 0, 0.4), 0 10px 40px rgba(255, 170, 0, 0.2)"
+            : "0 0 30px rgba(234, 88, 12, 0.5), 0 15px 50px rgba(0, 0, 0, 0.3)",
           zIndex: 1000,
-          animation: "slideIn 0.3s ease",
+          animation: "slideIn 0.3s ease, glowPulse 2s ease-in-out infinite",
           maxWidth: "400px",
           transition: "all 0.3s ease",
         }}>
@@ -2202,7 +2270,7 @@ const ExamPage = ({
             }}>
               <span style={{ fontSize: "20px" }}>🧭</span>
             </div>
-            <span style={{ fontWeight: "600", color: currentTheme.textPrimary, fontSize: "14px", transition: "color 0.3s ease" }}>
+            <span style={{ fontWeight: "700", color: isDarkTheme ? currentTheme.textPrimary : "#ffffff", fontSize: "15px", transition: "color 0.3s ease", textShadow: isDarkTheme ? "none" : "0 2px 4px rgba(0, 0, 0, 0.3)" }}>
               Please keep your head facing forward
             </span>
           </div>
@@ -2239,6 +2307,14 @@ const ExamPage = ({
           50% {
             opacity: 1;
             transform: scale(1.05);
+          }
+        }
+        @keyframes glowPulse {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.3), 0 0 40px rgba(255, 170, 0, 0.15);
+          }
+          50% {
+            box-shadow: 0 0 35px rgba(255, 170, 0, 0.5), 0 0 60px rgba(255, 170, 0, 0.25);
           }
         }
         @keyframes shimmer {

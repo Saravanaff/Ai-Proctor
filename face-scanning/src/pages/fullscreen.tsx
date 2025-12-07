@@ -32,9 +32,16 @@ const fullscreen = () => {
     const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
     const [rulesAccepted, setRulesAccepted] = useState(false);
     const [screenShareError, setScreenShareError] = useState(false);
-    const [isDarkTheme, setIsDarkTheme] = useState(true);
+    const [isDarkTheme, setIsDarkTheme] = useState(false);
     const { theme } = useTheme();
     const { getMicrophoneCount } = useMicrophoneDevices();
+
+    // ✅ Save theme preference to localStorage when changed
+    const handleThemeToggle = () => {
+        const newTheme = !isDarkTheme;
+        setIsDarkTheme(newTheme);
+        localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+    };
 
     // All useRef hooks must be called before any conditional returns
     const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
@@ -52,7 +59,7 @@ const fullscreen = () => {
     console.log("Exam ID:", examId);
 
     // 🔥 CRITICAL: ALL useEffect hooks MUST be called before ANY conditional returns
-    // useEffect #1: Get microphone count
+    // useEffect #1: Get microphone count and load theme
     useEffect(() => {
         const getCount = async() => {
             let cnt = await getMicrophoneCount();
@@ -61,6 +68,12 @@ const fullscreen = () => {
         getCount().then(cnt => {
             setNumberOfMicrophones(cnt);
         });
+        
+        // ✅ Load theme preference from localStorage
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            setIsDarkTheme(savedTheme === 'dark');
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     },[])
 
@@ -116,25 +129,25 @@ const fullscreen = () => {
         };
     }, []);
 
-    // Theme configurations
+    // Professional High-Tech Black Theme Configuration
     const themes = {
         dark: {
-            background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
-            cardBg: "rgba(30, 41, 59, 0.9)",
-            cardBorder: "rgba(51, 65, 85, 0.8)",
+            background: "linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #0f0f0f 100%)",
+            cardBg: "rgba(12, 12, 12, 0.98)",
+            cardBorder: "rgba(0, 255, 255, 0.15)",
             textPrimary: "#ffffff",
-            textSecondary: "#cbd5e1",
-            textMuted: "#94a3b8",
-            accentPrimary: "#3b82f6",
-            ruleBg: "rgba(51, 65, 85, 0.5)",
-            ruleBorder: "rgba(51, 65, 85, 0.8)",
-            iconBg: "rgba(59, 130, 246, 0.15)",
-            iconColor: "#60a5fa",
-            buttonPrimaryBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-            buttonPrimaryShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
-            errorBg: "rgba(239, 68, 68, 0.15)",
-            errorBorder: "rgba(239, 68, 68, 0.4)",
-            errorText: "#ef4444",
+            textSecondary: "#a0aec0",
+            textMuted: "#718096",
+            accentPrimary: "#00ffff",
+            ruleBg: "rgba(15, 15, 15, 0.8)",
+            ruleBorder: "rgba(0, 255, 255, 0.2)",
+            iconBg: "rgba(0, 255, 255, 0.12)",
+            iconColor: "#00ffff",
+            buttonPrimaryBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
+            buttonPrimaryShadow: "0 0 30px rgba(0, 255, 255, 0.5), 0 10px 40px rgba(0, 153, 255, 0.3)",
+            errorBg: "rgba(255, 51, 102, 0.08)",
+            errorBorder: "rgba(255, 51, 102, 0.5)",
+            errorText: "#ff3366",
         },
         light: {
             background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",
@@ -767,12 +780,11 @@ const fullscreen = () => {
                 <div style={{
                     position: "fixed",
                     bottom: "30px",
-                    left: "50%",
-                    transform: "translateX(-50%)",
+                    right: "30px",
                     zIndex: 1000,
                 }}>
                     <button
-                        onClick={() => setIsDarkTheme(!isDarkTheme)}
+                        onClick={handleThemeToggle}
                         style={{
                             display: "flex",
                             alignItems: "center",

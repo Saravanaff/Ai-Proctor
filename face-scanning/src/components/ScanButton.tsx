@@ -7,18 +7,33 @@ const ScanButton: any = ({
   currentStep,
   totalSteps,
 }: any) => {
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
+
+  // ✅ Load theme preference from localStorage on mount
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setIsDarkTheme(savedTheme === 'dark');
+    }
+  }, []);
+
+  // ✅ Save theme preference to localStorage when changed
+  const handleThemeToggle = () => {
+    const newTheme = !isDarkTheme;
+    setIsDarkTheme(newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+  };
 
   const themes = {
     dark: {
-      buttonActiveBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-      buttonActiveShadow: "0 8px 24px rgba(59, 130, 246, 0.4)",
-      buttonDisabledBg: "rgba(51, 65, 85, 0.5)",
+      buttonActiveBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
+      buttonActiveShadow: "0 0 30px rgba(0, 255, 255, 0.5), 0 10px 40px rgba(0, 153, 255, 0.3)",
+      buttonDisabledBg: "rgba(20, 20, 20, 0.7)",
       buttonDisabledShadow: "none",
-      progressBg: "rgba(30, 41, 59, 0.8)",
-      progressFill: "linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)",
-      textPrimary: "#f1f5f9",
-      textMuted: "#94a3b8",
+      progressBg: "rgba(15, 15, 15, 0.95)",
+      progressFill: "linear-gradient(90deg, #00ffff 0%, #0099ff 100%)",
+      textPrimary: "#ffffff",
+      textMuted: "#718096",
     },
     light: {
       buttonActiveBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
@@ -155,7 +170,7 @@ const ScanButton: any = ({
         zIndex: 1000,
       }}>
         <button
-          onClick={() => setIsDarkTheme(!isDarkTheme)}
+          onClick={handleThemeToggle}
           style={{
             display: "flex",
             alignItems: "center",

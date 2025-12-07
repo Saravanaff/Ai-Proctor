@@ -26,13 +26,28 @@ const JoinExam = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileInitials, setProfileInitials] = useState<string>("U");
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
   const router = useRouter();
 
   // Configure axios interceptor once
   useEffect(() => {
     configureAxiosInterceptor();
   }, []);
+
+  // ✅ Load theme preference from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setIsDarkTheme(savedTheme === 'dark');
+    }
+  }, []);
+
+  // ✅ Save theme preference to localStorage when changed
+  const handleThemeToggle = () => {
+    const newTheme = !isDarkTheme;
+    setIsDarkTheme(newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+  };
 
   const handleJoinExam = async () => {
     if (!examKey.trim()) {
@@ -86,43 +101,43 @@ const JoinExam = () => {
     }
   }, []);
 
-  // Theme configurations
+  // Professional High-Tech Black Theme Configuration
   const themes = {
     dark: {
-      background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
-      orb1: "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)",
-      orb2: "radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%)",
-      navBg: "rgba(30, 41, 59, 0.8)",
-      navBorder: "rgba(51, 65, 85, 0.8)",
-      logoBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-      logoBorder: "rgba(59, 130, 246, 0.3)",
-      logoShadow: "0 8px 32px rgba(59, 130, 246, 0.3)",
+      background: "linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #0f0f0f 100%)",
+      orb1: "radial-gradient(circle, rgba(0, 255, 255, 0.12) 0%, rgba(0, 153, 255, 0.06) 40%, transparent 70%)",
+      orb2: "radial-gradient(circle, rgba(0, 153, 255, 0.15) 0%, rgba(0, 255, 255, 0.08) 40%, transparent 70%)",
+      navBg: "rgba(8, 8, 8, 0.95)",
+      navBorder: "rgba(0, 255, 255, 0.15)",
+      logoBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
+      logoBorder: "rgba(0, 255, 255, 0.3)",
+      logoShadow: "0 0 40px rgba(0, 255, 255, 0.5), 0 15px 50px rgba(0, 153, 255, 0.4)",
       titleColor: "white",
-      subtitleColor: "rgba(148, 163, 184, 1)",
+      subtitleColor: "rgba(160, 174, 192, 1)",
       textColor: "white",
-      textSecondary: "rgba(203, 213, 225, 1)",
-      featureCardBg: "rgba(30, 41, 59, 0.5)",
-      featureCardBorder: "rgba(51, 65, 85, 0.6)",
-      featureIconBg: "linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%)",
-      featureIconColor: "#60a5fa",
+      textSecondary: "rgba(160, 174, 192, 1)",
+      featureCardBg: "rgba(15, 15, 15, 0.8)",
+      featureCardBorder: "rgba(0, 255, 255, 0.2)",
+      featureIconBg: "linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 153, 255, 0.15) 100%)",
+      featureIconColor: "#00ffff",
       formBg: "rgba(255, 255, 255, 0.98)",
       formShadow: "0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
       formBorder: "rgba(226, 232, 240, 0.2)",
-      formHeaderBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-      formHeaderShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
+      formHeaderBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
+      formHeaderShadow: "0 0 30px rgba(0, 255, 255, 0.5), 0 10px 40px rgba(0, 153, 255, 0.3)",
       formTitleColor: "#0f172a",
       formTextColor: "#64748b",
       inputBorder: "#e2e8f0",
       inputBg: "#f8fafc",
       inputColor: "#0f172a",
-      inputFocusBorder: "#3b82f6",
-      inputFocusShadow: "0 0 0 4px rgba(59, 130, 246, 0.1)",
-      buttonBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-      buttonShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
-      buttonHoverShadow: "0 15px 40px rgba(59, 130, 246, 0.5)",
+      inputFocusBorder: "#00ffff",
+      inputFocusShadow: "0 0 0 4px rgba(0, 255, 255, 0.15)",
+      buttonBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
+      buttonShadow: "0 0 30px rgba(0, 255, 255, 0.5), 0 10px 40px rgba(0, 153, 255, 0.3)",
+      buttonHoverShadow: "0 0 40px rgba(0, 255, 255, 0.6), 0 15px 50px rgba(0, 153, 255, 0.4)",
       instructionBg: "#f8fafc",
       instructionBorder: "#e2e8f0",
-      bulletColor: "#3b82f6",
+      bulletColor: "#00ffff",
     },
     light: {
       background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",

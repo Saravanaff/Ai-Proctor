@@ -162,7 +162,22 @@ export default function PhotoDetect() {
   // ✅ Use exam state hook for validation and error handling
   const examState = useExamState();
   const router = useRouter();
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
+
+  // ✅ Load theme preference from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setIsDarkTheme(savedTheme === 'dark');
+    }
+  }, []);
+
+  // ✅ Save theme preference to localStorage when changed
+  const handleThemeToggle = () => {
+    const newTheme = !isDarkTheme;
+    setIsDarkTheme(newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+  };
   
   const [permissions, setPermissions] = useState<DevicePermission[]>([
     {
@@ -308,34 +323,34 @@ export default function PhotoDetect() {
     }
   };
 
-  // Theme configurations
+  // Theme configurations - Professional High-Tech Black Theme
   const themes = {
     dark: {
-      background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
-      containerBg: "rgba(30, 41, 59, 0.8)",
-      containerBorder: "rgba(51, 65, 85, 0.6)",
-      cardBg: "rgba(30, 41, 59, 0.9)",
-      cardBorder: "rgba(51, 65, 85, 0.8)",
+      background: "linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #111111 100%)",
+      containerBg: "rgba(10, 10, 10, 0.95)",
+      containerBorder: "rgba(0, 255, 255, 0.15)",
+      cardBg: "rgba(15, 15, 15, 0.98)",
+      cardBorder: "rgba(0, 255, 255, 0.2)",
       textPrimary: "#ffffff",
-      textSecondary: "#cbd5e1",
-      textMuted: "#94a3b8",
-      accentPrimary: "#3b82f6",
-      accentSecondary: "#60a5fa",
-      successBg: "rgba(34, 197, 94, 0.1)",
-      successBorder: "rgba(34, 197, 94, 0.3)",
-      successText: "#22c55e",
-      errorBg: "rgba(239, 68, 68, 0.1)",
-      errorBorder: "rgba(239, 68, 68, 0.3)",
-      errorText: "#ef4444",
-      progressBg: "rgba(51, 65, 85, 0.5)",
-      progressFill: "linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)",
-      buttonPrimaryBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-      buttonPrimaryShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
-      buttonSecondaryBg: "rgba(51, 65, 85, 0.8)",
-      iconSuccess: "#22c55e",
-      iconError: "#ef4444",
-      iconPending: "#94a3b8",
-      iconChecking: "#3b82f6",
+      textSecondary: "#a0aec0",
+      textMuted: "#718096",
+      accentPrimary: "#00ffff",
+      accentSecondary: "#00d9ff",
+      successBg: "rgba(0, 255, 157, 0.08)",
+      successBorder: "rgba(0, 255, 157, 0.4)",
+      successText: "#00ff9d",
+      errorBg: "rgba(255, 51, 102, 0.08)",
+      errorBorder: "rgba(255, 51, 102, 0.4)",
+      errorText: "#ff3366",
+      progressBg: "rgba(20, 20, 20, 0.8)",
+      progressFill: "linear-gradient(90deg, #00ffff 0%, #0099ff 100%)",
+      buttonPrimaryBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
+      buttonPrimaryShadow: "0 0 30px rgba(0, 255, 255, 0.5), 0 10px 40px rgba(0, 153, 255, 0.3)",
+      buttonSecondaryBg: "rgba(20, 20, 20, 0.9)",
+      iconSuccess: "#00ff9d",
+      iconError: "#ff3366",
+      iconPending: "#718096",
+      iconChecking: "#00ffff",
     },
     light: {
       background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",
@@ -432,33 +447,33 @@ export default function PhotoDetect() {
       overflow: "hidden",
       transition: "background 0.3s ease",
     }}>
-      {/* Animated Background Orbs */}
+      {/* Animated Background Orbs - Cyan Glow */}
       <div style={{
         position: "absolute",
         top: "-10%",
         right: "-5%",
-        width: "500px",
-        height: "500px",
+        width: "600px",
+        height: "600px",
         background: isDarkTheme 
-          ? "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)"
+          ? "radial-gradient(circle, rgba(0, 255, 255, 0.12) 0%, rgba(0, 153, 255, 0.06) 40%, transparent 70%)"
           : "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
         borderRadius: "50%",
-        filter: "blur(60px)",
-        animation: "float 8s ease-in-out infinite",
+        filter: "blur(80px)",
+        animation: "float 8s ease-in-out infinite, pulse 4s ease-in-out infinite",
         transition: "background 0.3s ease",
       }} />
       <div style={{
         position: "absolute",
         bottom: "-10%",
         left: "-5%",
-        width: "400px",
-        height: "400px",
+        width: "500px",
+        height: "500px",
         background: isDarkTheme
-          ? "radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%)"
+          ? "radial-gradient(circle, rgba(0, 153, 255, 0.15) 0%, rgba(0, 255, 255, 0.08) 40%, transparent 70%)"
           : "radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%)",
         borderRadius: "50%",
-        filter: "blur(60px)",
-        animation: "float 10s ease-in-out infinite reverse",
+        filter: "blur(80px)",
+        animation: "float 10s ease-in-out infinite reverse, pulse 6s ease-in-out infinite",
         transition: "background 0.3s ease",
       }} />
 
@@ -478,15 +493,20 @@ export default function PhotoDetect() {
         {/* Header */}
         <div style={{ marginBottom: "40px", textAlign: "center" }}>
           <div style={{
-            width: "64px",
-            height: "64px",
-            borderRadius: "20px",
-            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+            width: "80px",
+            height: "80px",
+            borderRadius: "24px",
+            background: isDarkTheme 
+              ? "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)"
+              : "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             margin: "0 auto 24px",
-            boxShadow: "0 12px 40px rgba(59, 130, 246, 0.4)",
+            boxShadow: isDarkTheme
+              ? "0 0 40px rgba(0, 255, 255, 0.5), 0 15px 50px rgba(0, 153, 255, 0.4)"
+              : "0 12px 40px rgba(59, 130, 246, 0.4)",
+            animation: "iconFloat 3s ease-in-out infinite",
           }}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -883,14 +903,34 @@ export default function PhotoDetect() {
         </button>
       </div>
 
-      {/* Animations */}
+      {/* Advanced Professional Animations */}
       <style jsx>{`
         @keyframes float {
           0%, 100% {
             transform: translateY(0) rotate(0deg);
           }
           50% {
-            transform: translateY(-20px) rotate(5deg);
+            transform: translateY(-30px) rotate(5deg);
+          }
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 0.8;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.05);
+          }
+        }
+
+        @keyframes iconFloat {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-10px);
           }
         }
 
@@ -908,6 +948,24 @@ export default function PhotoDetect() {
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+
+        @keyframes glow {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), 0 0 40px rgba(0, 153, 255, 0.2);
+          }
+          50% {
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5), 0 0 60px rgba(0, 153, 255, 0.3);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: -1000px 0;
+          }
+          100% {
+            background-position: 1000px 0;
           }
         }
       `}</style>
