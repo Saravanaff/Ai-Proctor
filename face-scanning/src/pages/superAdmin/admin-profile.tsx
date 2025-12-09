@@ -149,16 +149,7 @@ const AdminProfilePage = () => {
             overflow: "hidden",
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "5px",
-              background: "linear-gradient(90deg, #0ea5e9, #3b82f6)",
-            }}
-          />
+          
           
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px", marginBottom: "24px" }}>
             <button

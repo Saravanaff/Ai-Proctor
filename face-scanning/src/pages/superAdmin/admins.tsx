@@ -7,7 +7,7 @@ import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { configureAxiosInterceptor } from "@/utils/axiosConfig";
 import { logout as authLogout } from "@/utils/auth";
-import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Shield, UserCheck, LayoutDashboard, LogOut, Upload, UserPlus } from "lucide-react";
 
 interface Admin {
   id: number;
@@ -274,7 +274,7 @@ const SuperAdminDashboard = () => {
             {/* Logo */}
             <div className={styles.logoSection}>
               <div className={styles.logoIcon}>
-                SA
+                <Shield size={20} color="white" />
               </div>
               <div>
                 <div className={styles.logoText}>Super Admin</div>
@@ -288,18 +288,21 @@ const SuperAdminDashboard = () => {
                 onClick={() => router.push("/superAdmin")}
                 className={styles.navButton}
               >
+                <LayoutDashboard size={18} />
                 Dashboard
               </button>
               <button
                 onClick={() => router.push("/superAdmin/admins")}
                 className={`${styles.navButton} ${styles.active}`}
               >
+                <Shield size={18} />
                 Admin Management
               </button>
               <button
                 onClick={() => router.push("/superAdmin/students")}
                 className={styles.navButton}
               >
+                <UserCheck size={18} />
                 Student Management
               </button>
             </nav>
@@ -308,35 +311,7 @@ const SuperAdminDashboard = () => {
           {/* Logout Button */}
           <div>
             <button onClick={handleLogout} className={styles.logoutButton}>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M7.5 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M13.3333 14.1667L17.5 10L13.3333 5.83334"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M17.5 10H7.5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <LogOut size={18} />
               Logout
             </button>
           </div>
@@ -349,7 +324,7 @@ const SuperAdminDashboard = () => {
         <div
           style={{
             background: "linear-gradient(135deg, #ffffff, #f1f5f9)",
-            borderRadius: "24px",
+            borderRadius: "12px",
             padding: "32px",
             border: "1px solid #e2e8f0",
             boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
@@ -357,24 +332,13 @@ const SuperAdminDashboard = () => {
             overflow: "hidden",
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "5px",
-              background: "linear-gradient(90deg, #0ea5e9, #3b82f6)",
-            }}
-          />
-          
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
               <div
                 style={{
                   width: "60px",
                   height: "60px",
-                  borderRadius: "16px",
+                  borderRadius: "12px",
                   background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                   display: "flex",
                   alignItems: "center",
@@ -385,7 +349,7 @@ const SuperAdminDashboard = () => {
                   boxShadow: "0 8px 24px rgba(14, 165, 233, 0.4)",
                 }}
               >
-                SA
+                <Shield size={32} color="white" />
               </div>
               <div>
                 <h1 style={{ margin: "0 0 8px 0", fontSize: "28px", fontWeight: "700", color: "#1e293b" }}>
@@ -423,20 +387,7 @@ const SuperAdminDashboard = () => {
                   e.currentTarget.style.borderColor = "#e2e8f0";
                 }}
               >
-                <svg 
-                  width="18" 
-                  height="18" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
+                <Upload size={18} />
                 Import CSV
               </button>
               <button
@@ -465,7 +416,7 @@ const SuperAdminDashboard = () => {
                   e.currentTarget.style.boxShadow = "0 4px 16px rgba(14, 165, 233, 0.3)";
                 }}
               >
-                <span style={{ fontSize: "16px" }}>+</span>
+                <UserPlus size={18} />
                 Add Admin
               </button>
             </div>
@@ -572,7 +523,7 @@ const SuperAdminDashboard = () => {
         <div
           style={{
             background: "#ffffff",
-            borderRadius: "16px",
+            borderRadius: "12px",
             border: "1px solid #e2e8f0",
             overflow: "hidden",
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
@@ -864,7 +815,7 @@ const SuperAdminDashboard = () => {
               maxHeight: "90vh",
               overflowY: "auto",
               background: "#ffffff",
-              borderRadius: "16px",
+              borderRadius: "12px",
               boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
             }}
             onClick={(e) => e.stopPropagation()}
@@ -1156,7 +1107,7 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
               padding: "24px", 
               animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
               background: "#ffffff",
-              borderRadius: "16px",
+              borderRadius: "12px",
               boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
             }}
             onClick={(e) => e.stopPropagation()}
@@ -1344,7 +1295,7 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
               padding: "24px", 
               animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
               background: "#ffffff",
-              borderRadius: "16px",
+              borderRadius: "12px",
               boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
             }}
             onClick={(e) => e.stopPropagation()}
@@ -1456,7 +1407,7 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
               maxHeight: "80vh",
               overflowY: "auto",
               background: "#ffffff",
-              borderRadius: "16px",
+              borderRadius: "12px",
               boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
             }}
             onClick={(e) => e.stopPropagation()}

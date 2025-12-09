@@ -8,7 +8,7 @@ import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { configureAxiosInterceptor } from "@/utils/axiosConfig";
 import { logout as authLogout } from "@/utils/auth";
-import { Users, GraduationCap, FileText, CheckCircle, Plus, Clock, Calendar, MoreVertical } from "lucide-react";
+import { Users, GraduationCap, BookOpen, UserCog, Plus, Clock, Calendar, MoreVertical, LayoutDashboard, TrendingUp, BarChart3, Shield, UserCheck, ShieldCheck, UsersRound, FileText, CheckCircle } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useSuperAdmin";
 
 interface DashboardStats {
@@ -365,7 +365,7 @@ const SuperAdminDashboard = () => {
                   boxShadow: "0 4px 12px rgba(14, 165, 233, 0.3)",
                 }}
               >
-                SA
+                <Shield size={20} color="white" />
               </div>
               <div>
                 <div style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>
@@ -383,6 +383,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => router.push("/superAdmin")}
                 className="sidebar-nav-button active"
               >
+                <LayoutDashboard size={18} />
                 <span style={{ flex: 1 }}>Dashboard</span>
                 <div
                   style={{
@@ -400,12 +401,14 @@ const SuperAdminDashboard = () => {
                 onClick={() => router.push("/superAdmin/admins")}
                 className="sidebar-nav-button"
               >
+                <Shield size={18} />
                 Admin Management
               </button>
               <button
                 onClick={() => router.push("/superAdmin/students")}
                 className="sidebar-nav-button"
               >
+                <UserCheck size={18} />
                 Student Management
               </button>
             </nav>
@@ -436,7 +439,7 @@ const SuperAdminDashboard = () => {
             <div
               style={{
                 background: "linear-gradient(135deg, #ffffff, #f1f5f9)",
-                borderRadius: "24px",
+                borderRadius: "12px",
                 padding: "32px",
                 border: "1px solid #e2e8f0",
                 boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
@@ -444,24 +447,13 @@ const SuperAdminDashboard = () => {
                 overflow: "hidden",
               }}
             >
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: "5px",
-                  background: "linear-gradient(90deg, #0ea5e9, #3b82f6)",
-                }}
-              />
-
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                   <div
                     style={{
                       width: "60px",
                       height: "60px",
-                      borderRadius: "16px",
+                      borderRadius: "12px",
                       background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                       display: "flex",
                       alignItems: "center",
@@ -472,7 +464,7 @@ const SuperAdminDashboard = () => {
                       boxShadow: "0 8px 24px rgba(14, 165, 233, 0.4)",
                     }}
                   >
-                    SA
+                    <LayoutDashboard size={32} color="white" />
                   </div>
                   <div>
                     <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "700", color: "#1e293b" }}>
@@ -495,7 +487,7 @@ const SuperAdminDashboard = () => {
             <div
               style={{
                 background: "#ffffff",
-                borderRadius: "16px",
+                borderRadius: "12px",
                 padding: "24px",
                 border: "1px solid #e2e8f0",
                 boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
@@ -513,17 +505,16 @@ const SuperAdminDashboard = () => {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
                 <div
                   style={{
-                    width: "48px",
-                    height: "48px",
-                    borderRadius: "12px",
-                    background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                    width: "56px",
+                    height: "56px",
+                    borderRadius: "10px",
+                    background: "rgba(59, 130, 246, 0.1)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "24px",
                   }}
                 >
-                  <Users size={24} color="white" />
+                  <ShieldCheck size={28} color="#3b82f6" strokeWidth={2} />
                 </div>
               </div>
               <div>
@@ -561,17 +552,16 @@ const SuperAdminDashboard = () => {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
                 <div
                   style={{
-                    width: "48px",
-                    height: "48px",
-                    borderRadius: "12px",
-                    background: "linear-gradient(135deg, #10b981, #059669)",
+                    width: "56px",
+                    height: "56px",
+                    borderRadius: "10px",
+                    background: "rgba(16, 185, 129, 0.1)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "24px",
                   }}
                 >
-                  <GraduationCap size={24} color="white" />
+                  <UsersRound size={28} color="#10b981" strokeWidth={2} />
                 </div>
               </div>
               <div>
@@ -609,17 +599,16 @@ const SuperAdminDashboard = () => {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
                 <div
                   style={{
-                    width: "48px",
-                    height: "48px",
-                    borderRadius: "12px",
-                    background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                    width: "56px",
+                    height: "56px",
+                    borderRadius: "10px",
+                    background: "rgba(245, 158, 11, 0.1)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "24px",
                   }}
                 >
-                  <FileText size={24} color="white" />
+                  <FileText size={28} color="#f59e0b" strokeWidth={2} />
                 </div>
               </div>
               <div>
@@ -657,17 +646,16 @@ const SuperAdminDashboard = () => {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
                 <div
                   style={{
-                    width: "48px",
-                    height: "48px",
-                    borderRadius: "12px",
-                    background: "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+                    width: "56px",
+                    height: "56px",
+                    borderRadius: "10px",
+                    background: "rgba(139, 92, 246, 0.1)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "24px",
                   }}
                 >
-                  <CheckCircle size={24} color="white" />
+                  <CheckCircle size={28} color="#8b5cf6" strokeWidth={2} />
                 </div>
               </div>
               <div>
@@ -688,7 +676,7 @@ const SuperAdminDashboard = () => {
           <div
             style={{
               background: "#ffffff",
-              borderRadius: "16px",
+              borderRadius: "12px",
               padding: "24px",
               border: "1px solid #e2e8f0",
               boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
@@ -882,13 +870,13 @@ const SuperAdminDashboard = () => {
                                   width: "36px",
                                   height: "36px",
                                   borderRadius: "8px",
-                                  background: "linear-gradient(135deg, #10b981, #059669)",
+                                  background: "rgba(14, 165, 233, 0.1)",
                                   display: "flex",
                                   alignItems: "center",
                                   justifyContent: "center",
                                   flexShrink: 0
                                 }}>
-                                  <Clock size={18} color="white" />
+                                  <Clock size={18} color="#0ea5e9" />
                                 </div>
                                 <div>
                                   <div style={{ 
@@ -1068,7 +1056,7 @@ const SuperAdminDashboard = () => {
           <div
             style={{
               background: "#ffffff",
-              borderRadius: "16px",
+              borderRadius: "12px",
               padding: "24px",
               border: "1px solid #e2e8f0",
               boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"

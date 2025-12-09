@@ -7,6 +7,7 @@ import { LoadingScreen } from "../../components/PageTransition";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { configureAxiosInterceptor } from "@/utils/axiosConfig";
 import { logout as authLogout } from "@/utils/auth";
+import { Shield, UserCheck, LayoutDashboard, LogOut } from "lucide-react";
 
 interface Student {
   id: number;
@@ -209,7 +210,7 @@ export default function StudentsManagement() {
             {/* Logo */}
             <div className={styles.logoSection}>
               <div className={styles.logoIcon}>
-                SA
+                <Shield size={20} color="white" />
               </div>
               <div>
                 <div className={styles.logoText}>Super Admin</div>
@@ -223,18 +224,21 @@ export default function StudentsManagement() {
                 onClick={() => router.push("/superAdmin")}
                 className={styles.navButton}
               >
+                <LayoutDashboard size={18} />
                 Dashboard
               </button>
               <button
                 onClick={() => router.push("/superAdmin/admins")}
                 className={styles.navButton}
               >
+                <Shield size={18} />
                 Admin Management
               </button>
               <button
                 onClick={() => router.push("/superAdmin/students")}
                 className={`${styles.navButton} ${styles.active}`}
               >
+                <UserCheck size={18} />
                 Student Management
               </button>
             </nav>
@@ -243,35 +247,7 @@ export default function StudentsManagement() {
           {/* Logout Button */}
           <div>
             <button onClick={handleLogout} className={styles.logoutButton}>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M7.5 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M13.3333 14.1667L17.5 10L13.3333 5.83334"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M17.5 10H7.5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <LogOut size={18} />
               Logout
             </button>
           </div>
@@ -284,7 +260,7 @@ export default function StudentsManagement() {
             <div
               style={{
                 background: "linear-gradient(135deg, #ffffff, #f1f5f9)",
-                borderRadius: "24px",
+                borderRadius: "12px",
                 padding: "32px",
                 border: "1px solid #e2e8f0",
                 boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
@@ -292,24 +268,13 @@ export default function StudentsManagement() {
                 overflow: "hidden",
               }}
             >
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: "5px",
-                  background: "linear-gradient(90deg, #0ea5e9, #3b82f6)",
-                }}
-              />
-              
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                   <div
                     style={{
                       width: "60px",
                       height: "60px",
-                      borderRadius: "16px",
+                      borderRadius: "12px",
                       background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                       display: "flex",
                       alignItems: "center",
@@ -320,7 +285,7 @@ export default function StudentsManagement() {
                       boxShadow: "0 8px 24px rgba(14, 165, 233, 0.4)",
                     }}
                   >
-                    SA
+                    <UserCheck size={32} color="white" />
                   </div>
                   <div>
                     <h1 style={{ margin: "0 0 8px 0", fontSize: "28px", fontWeight: "700", color: "#1e293b" }}>
