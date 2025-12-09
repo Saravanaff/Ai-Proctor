@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import styles from "../../styles/CreateExamPage.module.css";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { SuperAdminGuard } from "../../components/guards";
+import { LoadingScreen } from "../../components/PageTransition";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { configureAxiosInterceptor } from "@/utils/axiosConfig";
@@ -207,6 +208,29 @@ const SuperAdminDashboard = () => {
     authLogout();
   };
 
+  useEffect(() => {
+    // Set light theme background
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    document.documentElement.style.background = "#f8fafc";
+    
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+      document.documentElement.style.background = "";
+    };
+  }, []);
+
+  // Show full page loading screen only on initial load when both are loading
+  if (isLoading && loadingExams) {
+    console.log('🔄 Dashboard - showing loading screen');
+    return (
+      <SuperAdminGuard>
+        <LoadingScreen message="Loading dashboard..." />
+      </SuperAdminGuard>
+    );
+  }
+
   return (
     <SuperAdminGuard>
       <style jsx global>{`
@@ -230,10 +254,28 @@ const SuperAdminDashboard = () => {
             transform: scale(1.2);
           }
         }
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
         .sidebar-nav-button {
           padding: 12px 16px;
           background: transparent;
-          color: var(--text-secondary);
+          color: #64748b;
           border: none;
           border-radius: 10px;
           text-align: left;
@@ -247,20 +289,20 @@ const SuperAdminDashboard = () => {
           transition: all 0.2s ease;
         }
         .sidebar-nav-button:hover {
-          background: var(--secondary-bg);
-          color: var(--text-primary);
+          background: #f1f5f9;
+          color: #1e293b;
           padding-left: 20px;
         }
         .sidebar-nav-button.active {
-          background: var(--accent-color);
+          background: #0ea5e9;
           color: white;
         }
         .sidebar-logout-button {
           width: 100%;
           padding: 12px 16px;
           background: transparent;
-          color: var(--text-secondary);
-          border: 1px solid var(--border-color);
+          color: #64748b;
+          border: 1px solid #e2e8f0;
           border-radius: 10px;
           text-align: left;
           font-size: 14px;
@@ -272,18 +314,18 @@ const SuperAdminDashboard = () => {
           transition: all 0.2s ease;
         }
         .sidebar-logout-button:hover {
-          background: var(--danger-bg);
-          color: var(--danger-color);
-          border-color: var(--danger-color);
+          background: #fee2e2;
+          color: #dc2626;
+          border-color: #dc2626;
         }
       `}</style>
-      <div style={{ display: "flex", minHeight: "100vh", background: "var(--background)", overflow: "hidden" }}>
+      <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc", overflow: "hidden" }}>
         {/* Sidebar */}
         <aside
           style={{
             width: "260px",
-            background: "var(--card-bg)",
-            borderRight: "1px solid var(--border-color)",
+            background: "#ffffff",
+            borderRight: "1px solid #e2e8f0",
             padding: "24px 16px",
             display: "flex",
             flexDirection: "column",
@@ -313,7 +355,7 @@ const SuperAdminDashboard = () => {
                   width: "40px",
                   height: "40px",
                   borderRadius: "12px",
-                  background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                  background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -326,10 +368,10 @@ const SuperAdminDashboard = () => {
                 SA
               </div>
               <div>
-                <div style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-primary)" }}>
+                <div style={{ fontSize: "14px", fontWeight: "700", color: "#1e293b" }}>
                   Super Admin
                 </div>
-                <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                <div style={{ fontSize: "12px", color: "#64748b" }}>
                   Admin Portal
                 </div>
               </div>
@@ -393,11 +435,11 @@ const SuperAdminDashboard = () => {
           <header style={{ marginBottom: "32px" }}>
             <div
               style={{
-                background: "linear-gradient(135deg, var(--card-bg), var(--secondary-bg))",
+                background: "linear-gradient(135deg, #ffffff, #f1f5f9)",
                 borderRadius: "24px",
                 padding: "32px",
-                border: "1px solid var(--border-color)",
-                boxShadow: "0 8px 32px var(--shadow)",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
                 position: "relative",
                 overflow: "hidden",
               }}
@@ -409,7 +451,7 @@ const SuperAdminDashboard = () => {
                   left: 0,
                   right: 0,
                   height: "5px",
-                  background: "linear-gradient(90deg, var(--accent-color), var(--primary-color))",
+                  background: "linear-gradient(90deg, #0ea5e9, #3b82f6)",
                 }}
               />
 
@@ -420,7 +462,7 @@ const SuperAdminDashboard = () => {
                       width: "60px",
                       height: "60px",
                       borderRadius: "16px",
-                      background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                      background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -433,7 +475,7 @@ const SuperAdminDashboard = () => {
                     SA
                   </div>
                   <div>
-                    <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "700", color: "var(--text-primary)" }}>
+                    <h1 style={{ margin: 0, fontSize: "28px", fontWeight: "700", color: "#1e293b" }}>
                       Good morning, Super Admin
                     </h1>
                   </div>
@@ -452,20 +494,20 @@ const SuperAdminDashboard = () => {
             {/* Total Admins */}
             <div
               style={{
-                background: "var(--card-bg)",
+                background: "#ffffff",
                 borderRadius: "16px",
                 padding: "24px",
-                border: "1px solid var(--border-color)",
-                boxShadow: "0 4px 20px var(--shadow)",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
                 transition: "all 0.3s ease",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-4px)";
-                e.currentTarget.style.boxShadow = "0 8px 32px var(--shadow)";
+                e.currentTarget.style.boxShadow = "0 8px 32px rgba(0, 0, 0, 0.08)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 4px 20px var(--shadow)";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.08)";
               }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
@@ -485,13 +527,13 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
               <div>
-                <p style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--text-secondary)", fontWeight: "500" }}>
+                <p style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#64748b", fontWeight: "500" }}>
                   Total Admins
                 </p>
-                <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "var(--text-primary)" }}>
+                <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "#1e293b" }}>
                   {isLoading ? "..." : stats?.totalAdmins || 0}
                 </h3>
-                <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "var(--success-color)" }}>
+                <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "#10b981" }}>
                   {stats?.activeAdmins || 0} Active
                 </p>
               </div>
@@ -500,20 +542,20 @@ const SuperAdminDashboard = () => {
             {/* Total Students */}
             <div
               style={{
-                background: "var(--card-bg)",
+                background: "#ffffff",
                 borderRadius: "16px",
                 padding: "24px",
-                border: "1px solid var(--border-color)",
-                boxShadow: "0 4px 20px var(--shadow)",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
                 transition: "all 0.3s ease",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-4px)";
-                e.currentTarget.style.boxShadow = "0 8px 32px var(--shadow)";
+                e.currentTarget.style.boxShadow = "0 8px 32px rgba(0, 0, 0, 0.08)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 4px 20px var(--shadow)";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.08)";
               }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
@@ -533,13 +575,13 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
               <div>
-                <p style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--text-secondary)", fontWeight: "500" }}>
+                <p style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#64748b", fontWeight: "500" }}>
                   Total Students
                 </p>
-                <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "var(--text-primary)" }}>
+                <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "#1e293b" }}>
                   {isLoading ? "..." : stats?.totalStudents || 0}
                 </h3>
-                <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
+                <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "#64748b" }}>
                   Across all exams
                 </p>
               </div>
@@ -548,20 +590,20 @@ const SuperAdminDashboard = () => {
             {/* Total Exams */}
             <div
               style={{
-                background: "var(--card-bg)",
+                background: "#ffffff",
                 borderRadius: "16px",
                 padding: "24px",
-                border: "1px solid var(--border-color)",
-                boxShadow: "0 4px 20px var(--shadow)",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
                 transition: "all 0.3s ease",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-4px)";
-                e.currentTarget.style.boxShadow = "0 8px 32px var(--shadow)";
+                e.currentTarget.style.boxShadow = "0 8px 32px rgba(0, 0, 0, 0.08)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 4px 20px var(--shadow)";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.08)";
               }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
@@ -581,13 +623,13 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
               <div>
-                <p style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--text-secondary)", fontWeight: "500" }}>
+                <p style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#64748b", fontWeight: "500" }}>
                   Total Exams
                 </p>
-                <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "var(--text-primary)" }}>
+                <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "#1e293b" }}>
                   {isLoading ? "..." : stats?.totalExams || 0}
                 </h3>
-                <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
+                <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "#64748b" }}>
                   All time
                 </p>
               </div>
@@ -596,20 +638,20 @@ const SuperAdminDashboard = () => {
             {/* Active Admins */}
             <div
               style={{
-                background: "var(--card-bg)",
+                background: "#ffffff",
                 borderRadius: "16px",
                 padding: "24px",
-                border: "1px solid var(--border-color)",
-                boxShadow: "0 4px 20px var(--shadow)",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
                 transition: "all 0.3s ease",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-4px)";
-                e.currentTarget.style.boxShadow = "0 8px 32px var(--shadow)";
+                e.currentTarget.style.boxShadow = "0 8px 32px rgba(0, 0, 0, 0.08)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 4px 20px var(--shadow)";
+                e.currentTarget.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.08)";
               }}
             >
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
@@ -629,13 +671,13 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
               <div>
-                <p style={{ margin: "0 0 8px 0", fontSize: "14px", color: "var(--text-secondary)", fontWeight: "500" }}>
+                <p style={{ margin: "0 0 8px 0", fontSize: "14px", color: "#64748b", fontWeight: "500" }}>
                   Active Admins
                 </p>
-                <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "var(--text-primary)" }}>
+                <h3 style={{ margin: 0, fontSize: "32px", fontWeight: "700", color: "#1e293b" }}>
                   {isLoading ? "..." : stats?.activeAdmins || 0}
                 </h3>
-                <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "var(--success-color)" }}>
+                <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "#10b981" }}>
                   Currently online
                 </p>
               </div>
@@ -645,11 +687,11 @@ const SuperAdminDashboard = () => {
           {/* Ongoing Exams Section */}
           <div
             style={{
-              background: "var(--card-bg)",
+              background: "#ffffff",
               borderRadius: "16px",
               padding: "24px",
-              border: "1px solid var(--border-color)",
-              boxShadow: "0 4px 20px var(--shadow)",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
               marginBottom: "24px"
             }}
           >
@@ -664,7 +706,7 @@ const SuperAdminDashboard = () => {
                     animation: "pulse 2s infinite",
                   }}
                 />
-                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "var(--text-primary)" }}>
+                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#1e293b" }}>
                   Ongoing Exams
                 </h3>
                 <span style={{ 
@@ -687,21 +729,21 @@ const SuperAdminDashboard = () => {
                   style={{
                     padding: "8px 16px",
                     background: "transparent",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "8px",
-                    color: "var(--accent-color)",
+                    color: "#0ea5e9",
                     fontSize: "13px",
                     fontWeight: "600",
                     cursor: "pointer",
                     transition: "all 0.3s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--accent-color)";
+                    e.currentTarget.style.background = "#0ea5e9";
                     e.currentTarget.style.color = "white";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "var(--accent-color)";
+                    e.currentTarget.style.color = "#0ea5e9";
                   }}
                 >
                   {showAllOngoing ? "Show Less" : `View All (${ongoingExams.length})`}
@@ -710,142 +752,312 @@ const SuperAdminDashboard = () => {
             </div>
 
             {loadingExams ? (
-              <div style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>
-                Loading exams...
+              <div style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center", 
+                padding: "60px 20px",
+                color: "#64748b" 
+              }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{
+                    width: "32px",
+                    height: "32px",
+                    border: "3px solid #e2e8f0",
+                    borderTop: "3px solid #0ea5e9",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite",
+                    margin: "0 auto 12px"
+                  }} />
+                  <p style={{ fontSize: "14px", fontWeight: "500" }}>Loading exams...</p>
+                </div>
               </div>
             ) : ongoingExams.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>
-                No ongoing exams at the moment
+              <div style={{ 
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "60px 20px",
+                color: "#64748b"
+              }}>
+                <div style={{
+                  width: "64px",
+                  height: "64px",
+                  borderRadius: "50%",
+                  background: "#f1f5f9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "16px"
+                }}>
+                  <Clock size={28} color="#64748b" />
+                </div>
+                <p style={{ fontSize: "15px", fontWeight: "600", color: "#1e293b", marginBottom: "4px" }}>
+                  No ongoing exams
+                </p>
+                <p style={{ fontSize: "13px", margin: 0 }}>
+                  All exams are scheduled or completed
+                </p>
               </div>
             ) : (
               <>
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  {displayedOngoingExams.map((exam) => {
-                    // Backend returns 'attendances' property (lowercase)
-                    const attendees = exam.attendances || [];
-                    const totalStudents = attendees.length;
-                    const participants = attendees.filter((a: any) => a.startTime).length;
-                    
-                    console.log("Exam:", exam.exam_name);
-                    console.log("Exam object keys:", Object.keys(exam));
-                    console.log("Total attendees:", totalStudents);
-                    console.log("Attendees data:", attendees);
-                    console.log("Participants with startTime:", participants);
-                    
-                    return (
-                      <div
-                        key={exam.id}
-                        style={{
-                          background: "linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05))",
-                          borderRadius: "12px",
-                          padding: "20px",
-                          border: "1px solid rgba(16, 185, 129, 0.2)",
-                          transition: "all 0.3s ease",
-                          cursor: "pointer",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateX(4px)";
-                          e.currentTarget.style.borderColor = "rgba(16, 185, 129, 0.5)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "translateX(0)";
-                          e.currentTarget.style.borderColor = "rgba(16, 185, 129, 0.2)";
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-                              <div
-                                style={{
-                                  width: "32px",
-                                  height: "32px",
+                <div style={{ 
+                  overflowX: "auto",
+                  margin: "0 -24px",
+                  padding: "0 24px"
+                }}>
+                  <table style={{ 
+                    width: "100%", 
+                    borderCollapse: "separate", 
+                    borderSpacing: "0",
+                    minWidth: "600px"
+                  }}>
+                    <thead>
+                      <tr>
+                        <th style={{
+                          textAlign: "left",
+                          padding: "12px 16px",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px",
+                          color: "#64748b",
+                          borderBottom: "1px solid #e2e8f0",
+                          background: "#f1f5f9"
+                        }}>
+                          Exam Name
+                        </th>
+                        <th style={{
+                          textAlign: "left",
+                          padding: "12px 16px",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px",
+                          color: "#64748b",
+                          borderBottom: "1px solid #e2e8f0",
+                          background: "#f1f5f9"
+                        }}>
+                          Time Remaining
+                        </th>
+                        <th style={{
+                          textAlign: "right",
+                          padding: "12px 16px",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px",
+                          color: "#64748b",
+                          borderBottom: "1px solid #e2e8f0",
+                          background: "#f1f5f9"
+                        }}>
+                          Participants
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayedOngoingExams.map((exam, index) => {
+                        const attendees = exam.attendances || [];
+                        const participants = attendees.filter((a: any) => a.startTime).length;
+                        
+                        return (
+                          <tr
+                            key={exam.id}
+                            style={{
+                              borderBottom: index < displayedOngoingExams.length - 1 ? "1px solid #e2e8f0" : "none",
+                              transition: "all 0.2s ease",
+                              cursor: "pointer"
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "#f1f5f9";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "transparent";
+                            }}
+                          >
+                            <td style={{ padding: "16px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                <div style={{
+                                  width: "36px",
+                                  height: "36px",
                                   borderRadius: "8px",
                                   background: "linear-gradient(135deg, #10b981, #059669)",
                                   display: "flex",
                                   alignItems: "center",
                                   justifyContent: "center",
-                                }}
-                              >
-                                <Clock size={18} color="white" />
+                                  flexShrink: 0
+                                }}>
+                                  <Clock size={18} color="white" />
+                                </div>
+                                <div>
+                                  <div style={{ 
+                                    fontSize: "14px", 
+                                    fontWeight: "600", 
+                                    color: "#1e293b",
+                                    marginBottom: "2px"
+                                  }}>
+                                    {exam.exam_name}
+                                  </div>
+                                  <div style={{
+                                    fontSize: "12px",
+                                    color: "#64748b"
+                                  }}>
+                                    ID: {exam.id}
+                                  </div>
+                                </div>
                               </div>
-                              <h4 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "var(--text-primary)" }}>
-                                {exam.exam_name}
-                              </h4>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#f59e0b", fontSize: "13px", fontWeight: "500" }}>
-                              <Clock size={14} />
-                              <span>{getTimeLeft(exam.end_time)}</span>
-                            </div>
-                          </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                            <div style={{ textAlign: "right" }}>
-                              <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginBottom: "4px" }}>
-                                Participants
+                            </td>
+                            <td style={{ padding: "16px" }}>
+                              <div style={{ 
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "6px 12px",
+                                borderRadius: "6px",
+                                background: "rgba(245, 158, 11, 0.1)",
+                                color: "#f59e0b",
+                                fontSize: "13px",
+                                fontWeight: "600"
+                              }}>
+                                <Clock size={14} />
+                                <span>{getTimeLeft(exam.end_time)}</span>
                               </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                <Users size={16} color="var(--text-secondary)" />
-                                <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary)" }}>
-                                  {participants}
-                                </span>
+                            </td>
+                            <td style={{ padding: "16px", textAlign: "right" }}>
+                              <div style={{ 
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "6px 12px",
+                                borderRadius: "6px",
+                                background: "#f1f5f9",
+                                fontSize: "14px",
+                                fontWeight: "600",
+                                color: "#1e293b"
+                              }}>
+                                <Users size={16} color="#64748b" />
+                                <span>{participants}</span>
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
 
                 {/* Pagination for Ongoing Exams */}
                 {showAllOngoing && totalOngoingPages > 1 && (
                   <div style={{ 
                     display: "flex", 
-                    justifyContent: "center", 
+                    justifyContent: "space-between",
                     alignItems: "center", 
-                    gap: "12px", 
-                    marginTop: "24px",
+                    marginTop: "20px",
                     paddingTop: "20px",
-                    borderTop: "1px solid var(--border-color)"
+                    borderTop: "1px solid #e2e8f0"
                   }}>
-                    <button
-                      onClick={() => setOngoingPage(p => Math.max(1, p - 1))}
-                      disabled={ongoingPage === 1}
-                      style={{
-                        padding: "8px 16px",
-                        background: "var(--secondary-bg)",
-                        border: "1px solid var(--border-color)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        cursor: ongoingPage === 1 ? "not-allowed" : "pointer",
-                        opacity: ongoingPage === 1 ? 0.5 : 1,
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      Previous
-                    </button>
-                    <span style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
-                      Page {ongoingPage} of {totalOngoingPages}
-                    </span>
-                    <button
-                      onClick={() => setOngoingPage(p => Math.min(totalOngoingPages, p + 1))}
-                      disabled={ongoingPage === totalOngoingPages}
-                      style={{
-                        padding: "8px 16px",
-                        background: "var(--secondary-bg)",
-                        border: "1px solid var(--border-color)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        cursor: ongoingPage === totalOngoingPages ? "not-allowed" : "pointer",
-                        opacity: ongoingPage === totalOngoingPages ? 0.5 : 1,
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      Next
-                    </button>
+                    <div style={{ 
+                      fontSize: "13px",
+                      color: "#64748b",
+                      fontWeight: "500"
+                    }}>
+                      Showing {((ongoingPage - 1) * ongoingPerPage) + 1} to {Math.min(ongoingPage * ongoingPerPage, ongoingExams.length)} of {ongoingExams.length} exams
+                    </div>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <button
+                        onClick={() => setOngoingPage(p => Math.max(1, p - 1))}
+                        disabled={ongoingPage === 1}
+                        style={{
+                          padding: "6px 12px",
+                          background: ongoingPage === 1 ? "transparent" : "#ffffff",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "6px",
+                          color: ongoingPage === 1 ? "#64748b" : "#1e293b",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          cursor: ongoingPage === 1 ? "not-allowed" : "pointer",
+                          opacity: ongoingPage === 1 ? 0.5 : 1,
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (ongoingPage !== 1) {
+                            e.currentTarget.style.background = "#f1f5f9";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (ongoingPage !== 1) {
+                            e.currentTarget.style.background = "#ffffff";
+                          }
+                        }}
+                      >
+                        Previous
+                      </button>
+                      <div style={{ 
+                        display: "flex",
+                        gap: "4px"
+                      }}>
+                        {Array.from({ length: totalOngoingPages }, (_, i) => i + 1).map(page => (
+                          <button
+                            key={page}
+                            onClick={() => setOngoingPage(page)}
+                            style={{
+                              minWidth: "32px",
+                              height: "32px",
+                              padding: "0 8px",
+                              background: ongoingPage === page ? "#0ea5e9" : "transparent",
+                              border: ongoingPage === page ? "none" : "1px solid #e2e8f0",
+                              borderRadius: "6px",
+                              color: ongoingPage === page ? "white" : "#1e293b",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (ongoingPage !== page) {
+                                e.currentTarget.style.background = "#f1f5f9";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (ongoingPage !== page) {
+                                e.currentTarget.style.background = "transparent";
+                              }
+                            }}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setOngoingPage(p => Math.min(totalOngoingPages, p + 1))}
+                        disabled={ongoingPage === totalOngoingPages}
+                        style={{
+                          padding: "6px 12px",
+                          background: ongoingPage === totalOngoingPages ? "transparent" : "#ffffff",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "6px",
+                          color: ongoingPage === totalOngoingPages ? "#64748b" : "#1e293b",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          cursor: ongoingPage === totalOngoingPages ? "not-allowed" : "pointer",
+                          opacity: ongoingPage === totalOngoingPages ? 0.5 : 1,
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (ongoingPage !== totalOngoingPages) {
+                            e.currentTarget.style.background = "#f1f5f9";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (ongoingPage !== totalOngoingPages) {
+                            e.currentTarget.style.background = "#ffffff";
+                          }
+                        }}
+                      >
+                        Next
+                      </button>
+                    </div>
                   </div>
                 )}
               </>
@@ -855,24 +1067,24 @@ const SuperAdminDashboard = () => {
           {/* Scheduled Exams Section */}
           <div
             style={{
-              background: "var(--card-bg)",
+              background: "#ffffff",
               borderRadius: "16px",
               padding: "24px",
-              border: "1px solid var(--border-color)",
-              boxShadow: "0 4px 20px var(--shadow)"
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "12px" }}>
-                  <Calendar size={20} color="var(--accent-color)" />
+                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#1e293b", display: "flex", alignItems: "center", gap: "12px" }}>
+                  <Calendar size={20} color="#0ea5e9" />
                   Scheduled Exams
                 </h3>
                 <span style={{ 
                   padding: "4px 12px", 
                   borderRadius: "12px", 
                   background: "rgba(14, 165, 233, 0.1)",
-                  color: "var(--accent-color)",
+                  color: "#0ea5e9",
                   fontSize: "12px",
                   fontWeight: "600"
                 }}>
@@ -888,21 +1100,21 @@ const SuperAdminDashboard = () => {
                   style={{
                     padding: "8px 16px",
                     background: "transparent",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "8px",
-                    color: "var(--accent-color)",
+                    color: "#0ea5e9",
                     fontSize: "13px",
                     fontWeight: "600",
                     cursor: "pointer",
                     transition: "all 0.3s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--accent-color)";
+                    e.currentTarget.style.background = "#0ea5e9";
                     e.currentTarget.style.color = "white";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "var(--accent-color)";
+                    e.currentTarget.style.color = "#0ea5e9";
                   }}
                 >
                   {showAllScheduled ? "Show Less" : `View All (${scheduledExams.length})`}
@@ -911,11 +1123,11 @@ const SuperAdminDashboard = () => {
             </div>
 
             {loadingExams ? (
-              <div style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>
+              <div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>
                 Loading exams...
               </div>
             ) : scheduledExams.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px", color: "var(--text-secondary)" }}>
+              <div style={{ textAlign: "center", padding: "40px", color: "#64748b" }}>
                 No scheduled exams
               </div>
             ) : (
@@ -923,12 +1135,12 @@ const SuperAdminDashboard = () => {
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 8px" }}>
                     <thead>
-                      <tr style={{ fontSize: "12px", color: "var(--text-secondary)", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                        <th style={{ textAlign: "left", padding: "12px 16px", background: "var(--secondary-bg)", borderRadius: "8px 0 0 8px" }}>EXAM NAME</th>
-                        <th style={{ textAlign: "left", padding: "12px 16px", background: "var(--secondary-bg)" }}>DATE & TIME</th>
-                        <th style={{ textAlign: "left", padding: "12px 16px", background: "var(--secondary-bg)" }}>DURATION</th>
-                        <th style={{ textAlign: "left", padding: "12px 16px", background: "var(--secondary-bg)" }}>STUDENTS</th>
-                        <th style={{ textAlign: "center", padding: "12px 16px", background: "var(--secondary-bg)", borderRadius: "0 8px 8px 0" }}>ACTIONS</th>
+                      <tr style={{ fontSize: "12px", color: "#64748b", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                        <th style={{ textAlign: "left", padding: "12px 16px", background: "#f1f5f9", borderRadius: "8px 0 0 8px" }}>EXAM NAME</th>
+                        <th style={{ textAlign: "left", padding: "12px 16px", background: "#f1f5f9" }}>DATE & TIME</th>
+                        <th style={{ textAlign: "left", padding: "12px 16px", background: "#f1f5f9" }}>DURATION</th>
+                        <th style={{ textAlign: "left", padding: "12px 16px", background: "#f1f5f9" }}>STUDENTS</th>
+                        <th style={{ textAlign: "center", padding: "12px 16px", background: "#f1f5f9", borderRadius: "0 8px 8px 0" }}>ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -940,7 +1152,7 @@ const SuperAdminDashboard = () => {
                           <tr
                             key={exam.id}
                             style={{
-                              background: "var(--secondary-bg)",
+                              background: "#f1f5f9",
                               transition: "all 0.2s ease",
                               cursor: "pointer",
                             }}
@@ -948,34 +1160,34 @@ const SuperAdminDashboard = () => {
                               (e.currentTarget as HTMLElement).style.background = "var(--hover-bg)";
                             }}
                             onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLElement).style.background = "var(--secondary-bg)";
+                              (e.currentTarget as HTMLElement).style.background = "#f1f5f9";
                             }}
                           >
                             <td style={{ padding: "16px", borderRadius: "8px 0 0 8px" }}>
-                              <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-primary)" }}>
+                              <div style={{ fontSize: "14px", fontWeight: "600", color: "#1e293b" }}>
                                 {exam.exam_name}
                               </div>
                             </td>
                             <td style={{ padding: "16px" }}>
-                              <div style={{ fontSize: "13px", color: "var(--text-primary)", marginBottom: "4px" }}>
+                              <div style={{ fontSize: "13px", color: "#1e293b", marginBottom: "4px" }}>
                                 {formatDate(exam.start_time)}
                               </div>
-                              <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                              <div style={{ fontSize: "12px", color: "#64748b" }}>
                                 {formatTime(exam.start_time)}
                               </div>
                             </td>
                             <td style={{ padding: "16px" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                <Clock size={14} color="var(--text-secondary)" />
-                                <span style={{ fontSize: "13px", color: "var(--text-primary)" }}>
+                                <Clock size={14} color="#64748b" />
+                                <span style={{ fontSize: "13px", color: "#1e293b" }}>
                                   {formatDuration(exam.duration)}
                                 </span>
                               </div>
                             </td>
                             <td style={{ padding: "16px" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                <Users size={14} color="var(--text-secondary)" />
-                                <span style={{ fontSize: "13px", color: "var(--text-primary)" }}>
+                                <Users size={14} color="#64748b" />
+                                <span style={{ fontSize: "13px", color: "#1e293b" }}>
                                   {totalStudents}
                                 </span>
                               </div>
@@ -988,16 +1200,16 @@ const SuperAdminDashboard = () => {
                                   border: "none",
                                   borderRadius: "6px",
                                   cursor: "pointer",
-                                  color: "var(--text-secondary)",
+                                  color: "#64748b",
                                   transition: "all 0.2s ease",
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = "var(--accent-color)";
+                                  e.currentTarget.style.background = "#0ea5e9";
                                   e.currentTarget.style.color = "white";
                                 }}
                                 onMouseLeave={(e) => {
                                   e.currentTarget.style.background = "transparent";
-                                  e.currentTarget.style.color = "var(--text-secondary)";
+                                  e.currentTarget.style.color = "#64748b";
                                 }}
                               >
                                 <MoreVertical size={18} />
@@ -1014,79 +1226,120 @@ const SuperAdminDashboard = () => {
                 {showAllScheduled && totalScheduledPages > 1 && (
                   <div style={{ 
                     display: "flex", 
-                    justifyContent: "center", 
+                    justifyContent: "space-between",
                     alignItems: "center", 
-                    gap: "12px", 
-                    marginTop: "24px",
+                    marginTop: "20px",
                     paddingTop: "20px",
-                    borderTop: "1px solid var(--border-color)"
+                    borderTop: "1px solid #e2e8f0"
                   }}>
-                    <button
-                      onClick={() => setScheduledPage(p => Math.max(1, p - 1))}
-                      disabled={scheduledPage === 1}
-                      style={{
-                        padding: "8px 16px",
-                        background: "var(--secondary-bg)",
-                        border: "1px solid var(--border-color)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        cursor: scheduledPage === 1 ? "not-allowed" : "pointer",
-                        opacity: scheduledPage === 1 ? 0.5 : 1,
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      Previous
-                    </button>
-                    <span style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
-                      Page {scheduledPage} of {totalScheduledPages}
-                    </span>
-                    <button
-                      onClick={() => setScheduledPage(p => Math.min(totalScheduledPages, p + 1))}
-                      disabled={scheduledPage === totalScheduledPages}
-                      style={{
-                        padding: "8px 16px",
-                        background: "var(--secondary-bg)",
-                        border: "1px solid var(--border-color)",
-                        borderRadius: "8px",
-                        color: "var(--text-primary)",
-                        fontSize: "13px",
-                        fontWeight: "600",
-                        cursor: scheduledPage === totalScheduledPages ? "not-allowed" : "pointer",
-                        opacity: scheduledPage === totalScheduledPages ? 0.5 : 1,
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      Next
-                    </button>
+                    <div style={{ 
+                      fontSize: "13px",
+                      color: "#64748b",
+                      fontWeight: "500"
+                    }}>
+                      Showing {((scheduledPage - 1) * scheduledPerPage) + 1} to {Math.min(scheduledPage * scheduledPerPage, scheduledExams.length)} of {scheduledExams.length} exams
+                    </div>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <button
+                        onClick={() => setScheduledPage(p => Math.max(1, p - 1))}
+                        disabled={scheduledPage === 1}
+                        style={{
+                          padding: "6px 12px",
+                          background: scheduledPage === 1 ? "transparent" : "#ffffff",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "6px",
+                          color: scheduledPage === 1 ? "#64748b" : "#1e293b",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          cursor: scheduledPage === 1 ? "not-allowed" : "pointer",
+                          opacity: scheduledPage === 1 ? 0.5 : 1,
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (scheduledPage !== 1) {
+                            e.currentTarget.style.background = "#f1f5f9";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (scheduledPage !== 1) {
+                            e.currentTarget.style.background = "#ffffff";
+                          }
+                        }}
+                      >
+                        Previous
+                      </button>
+                      <div style={{ 
+                        display: "flex",
+                        gap: "4px"
+                      }}>
+                        {Array.from({ length: totalScheduledPages }, (_, i) => i + 1).map(page => (
+                          <button
+                            key={page}
+                            onClick={() => setScheduledPage(page)}
+                            style={{
+                              minWidth: "32px",
+                              height: "32px",
+                              padding: "0 8px",
+                              background: scheduledPage === page ? "#0ea5e9" : "transparent",
+                              border: scheduledPage === page ? "none" : "1px solid #e2e8f0",
+                              borderRadius: "6px",
+                              color: scheduledPage === page ? "white" : "#1e293b",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              if (scheduledPage !== page) {
+                                e.currentTarget.style.background = "#f1f5f9";
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (scheduledPage !== page) {
+                                e.currentTarget.style.background = "transparent";
+                              }
+                            }}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setScheduledPage(p => Math.min(totalScheduledPages, p + 1))}
+                        disabled={scheduledPage === totalScheduledPages}
+                        style={{
+                          padding: "6px 12px",
+                          background: scheduledPage === totalScheduledPages ? "transparent" : "#ffffff",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "6px",
+                          color: scheduledPage === totalScheduledPages ? "#64748b" : "#1e293b",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          cursor: scheduledPage === totalScheduledPages ? "not-allowed" : "pointer",
+                          opacity: scheduledPage === totalScheduledPages ? 0.5 : 1,
+                          transition: "all 0.2s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (scheduledPage !== totalScheduledPages) {
+                            e.currentTarget.style.background = "#f1f5f9";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (scheduledPage !== totalScheduledPages) {
+                            e.currentTarget.style.background = "#ffffff";
+                          }
+                        }}
+                      >
+                        Next
+                      </button>
+                    </div>
                   </div>
                 )}
               </>
             )}
           </div>
 
-          {/* Floating Theme Toggle */}
-          <div
-            style={{
-              position: "fixed",
-              right: 20,
-              bottom: 20,
-              zIndex: 1200,
-            }}
-          >
-            <div
-              style={{
-                background: "var(--card-bg)",
-                border: "1px solid var(--border-color)",
-                borderRadius: 12,
-                padding: 8,
-                boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-              }}
-            >
-              <ThemeToggle />
-            </div>
-          </div>
+
         </div>
       </div>
     </SuperAdminGuard>

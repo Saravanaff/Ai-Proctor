@@ -7,7 +7,6 @@ import { getExamId, getUserId, hasValidExamId, hasValidUserId } from "@/constant
 import { setExamSettings } from "@/constants/examSettingsConsts";
 import { useExamState } from "@/hooks/useExamState";
 import ExamStateError from "./ExamStateError";
-import { Moon, Sun } from "lucide-react";
 
 type Status = "pending" | "checking" | "success" | "denied";
 
@@ -162,22 +161,6 @@ export default function PhotoDetect() {
   // ✅ Use exam state hook for validation and error handling
   const examState = useExamState();
   const router = useRouter();
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
-
-  // ✅ Load theme preference from localStorage on mount
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setIsDarkTheme(savedTheme === 'dark');
-    }
-  }, []);
-
-  // ✅ Save theme preference to localStorage when changed
-  const handleThemeToggle = () => {
-    const newTheme = !isDarkTheme;
-    setIsDarkTheme(newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-  };
   
   const [permissions, setPermissions] = useState<DevicePermission[]>([
     {
@@ -323,65 +306,34 @@ export default function PhotoDetect() {
     }
   };
 
-  // Theme configurations - Professional High-Tech Black Theme
-  const themes = {
-    dark: {
-      background: "linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #111111 100%)",
-      containerBg: "rgba(10, 10, 10, 0.95)",
-      containerBorder: "rgba(0, 255, 255, 0.15)",
-      cardBg: "rgba(15, 15, 15, 0.98)",
-      cardBorder: "rgba(0, 255, 255, 0.2)",
-      textPrimary: "#ffffff",
-      textSecondary: "#a0aec0",
-      textMuted: "#718096",
-      accentPrimary: "#00ffff",
-      accentSecondary: "#00d9ff",
-      successBg: "rgba(0, 255, 157, 0.08)",
-      successBorder: "rgba(0, 255, 157, 0.4)",
-      successText: "#00ff9d",
-      errorBg: "rgba(255, 51, 102, 0.08)",
-      errorBorder: "rgba(255, 51, 102, 0.4)",
-      errorText: "#ff3366",
-      progressBg: "rgba(20, 20, 20, 0.8)",
-      progressFill: "linear-gradient(90deg, #00ffff 0%, #0099ff 100%)",
-      buttonPrimaryBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
-      buttonPrimaryShadow: "0 0 30px rgba(0, 255, 255, 0.5), 0 10px 40px rgba(0, 153, 255, 0.3)",
-      buttonSecondaryBg: "rgba(20, 20, 20, 0.9)",
-      iconSuccess: "#00ff9d",
-      iconError: "#ff3366",
-      iconPending: "#718096",
-      iconChecking: "#00ffff",
-    },
-    light: {
-      background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",
-      containerBg: "rgba(255, 255, 255, 0.9)",
-      containerBorder: "rgba(226, 232, 240, 0.8)",
-      cardBg: "rgba(255, 255, 255, 0.95)",
-      cardBorder: "rgba(226, 232, 240, 0.9)",
-      textPrimary: "#0f172a",
-      textSecondary: "#475569",
-      textMuted: "#64748b",
-      accentPrimary: "#3b82f6",
-      accentSecondary: "#2563eb",
-      successBg: "rgba(34, 197, 94, 0.1)",
-      successBorder: "rgba(34, 197, 94, 0.3)",
-      successText: "#16a34a",
-      errorBg: "rgba(239, 68, 68, 0.1)",
-      errorBorder: "rgba(239, 68, 68, 0.3)",
-      errorText: "#dc2626",
-      progressBg: "rgba(226, 232, 240, 0.6)",
-      progressFill: "linear-gradient(90deg, #3b82f6 0%, #2563eb 100%)",
-      buttonPrimaryBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-      buttonPrimaryShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
-      buttonSecondaryBg: "rgba(226, 232, 240, 0.8)",
-      iconSuccess: "#16a34a",
-      iconError: "#dc2626",
-      iconPending: "#64748b",
-      iconChecking: "#3b82f6",
-    }
+  // Theme configuration
+  const theme = {
+    background: "#f8fafc",
+    containerBg: "rgba(255, 255, 255, 0.9)",
+    containerBorder: "rgba(226, 232, 240, 0.8)",
+    cardBg: "rgba(255, 255, 255, 0.95)",
+    cardBorder: "rgba(226, 232, 240, 0.9)",
+    textPrimary: "#0f172a",
+    textSecondary: "#475569",
+    textMuted: "#64748b",
+    accentPrimary: "#3b82f6",
+    accentSecondary: "#2563eb",
+    successBg: "rgba(34, 197, 94, 0.1)",
+    successBorder: "rgba(34, 197, 94, 0.3)",
+    successText: "#16a34a",
+    errorBg: "rgba(239, 68, 68, 0.1)",
+    errorBorder: "rgba(239, 68, 68, 0.3)",
+    errorText: "#dc2626",
+    progressBg: "rgba(226, 232, 240, 0.6)",
+    progressFill: "#3b82f6",
+    buttonPrimaryBg: "#3b82f6",
+    buttonPrimaryShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+    buttonSecondaryBg: "rgba(226, 232, 240, 0.8)",
+    iconSuccess: "#16a34a",
+    iconError: "#dc2626",
+    iconPending: "#64748b",
+    iconChecking: "#3b82f6",
   };
-
-  const theme = isDarkTheme ? themes.dark : themes.light;
 
   // ✅ Show error screen if exam state is invalid (AFTER all hooks)
   if (examState.error) {
@@ -454,9 +406,7 @@ export default function PhotoDetect() {
         right: "-5%",
         width: "600px",
         height: "600px",
-        background: isDarkTheme 
-          ? "radial-gradient(circle, rgba(0, 255, 255, 0.12) 0%, rgba(0, 153, 255, 0.06) 40%, transparent 70%)"
-          : "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
+        background: "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
         borderRadius: "50%",
         filter: "blur(80px)",
         animation: "float 8s ease-in-out infinite, pulse 4s ease-in-out infinite",
@@ -468,9 +418,7 @@ export default function PhotoDetect() {
         left: "-5%",
         width: "500px",
         height: "500px",
-        background: isDarkTheme
-          ? "radial-gradient(circle, rgba(0, 153, 255, 0.15) 0%, rgba(0, 255, 255, 0.08) 40%, transparent 70%)"
-          : "radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%)",
+        background: "radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%)",
         borderRadius: "50%",
         filter: "blur(80px)",
         animation: "float 10s ease-in-out infinite reverse, pulse 6s ease-in-out infinite",
@@ -496,16 +444,12 @@ export default function PhotoDetect() {
             width: "80px",
             height: "80px",
             borderRadius: "24px",
-            background: isDarkTheme 
-              ? "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)"
-              : "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             margin: "0 auto 24px",
-            boxShadow: isDarkTheme
-              ? "0 0 40px rgba(0, 255, 255, 0.5), 0 15px 50px rgba(0, 153, 255, 0.4)"
-              : "0 12px 40px rgba(59, 130, 246, 0.4)",
+            boxShadow: "0 12px 40px rgba(59, 130, 246, 0.4)",
             animation: "iconFloat 3s ease-in-out infinite",
           }}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
@@ -826,83 +770,6 @@ export default function PhotoDetect() {
         )}
       </div>
 
-      {/* Theme Toggle Switch */}
-      <div style={{
-        position: "fixed",
-        bottom: "30px",
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 1000,
-      }}>
-        <button
-          onClick={() => setIsDarkTheme(!isDarkTheme)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            padding: "12px 24px",
-            borderRadius: "100px",
-            background: theme.containerBg,
-            backdropFilter: "blur(20px)",
-            border: `2px solid ${theme.containerBorder}`,
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-3px)";
-            e.currentTarget.style.boxShadow = "0 15px 50px rgba(0, 0, 0, 0.3)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 10px 40px rgba(0, 0, 0, 0.2)";
-          }}
-        >
-          <div style={{
-            width: "50px",
-            height: "26px",
-            borderRadius: "100px",
-            background: isDarkTheme 
-              ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
-              : "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-            position: "relative",
-            transition: "all 0.3s ease",
-            boxShadow: isDarkTheme
-              ? "0 4px 12px rgba(59, 130, 246, 0.4) inset"
-              : "0 4px 12px rgba(251, 191, 36, 0.4) inset",
-          }}>
-            <div style={{
-              position: "absolute",
-              top: "3px",
-              left: isDarkTheme ? "3px" : "27px",
-              width: "20px",
-              height: "20px",
-              borderRadius: "50%",
-              background: "white",
-              transition: "all 0.3s ease",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}>
-              {isDarkTheme ? (
-                <Moon size={12} color="#3b82f6" strokeWidth={2.5} />
-              ) : (
-                <Sun size={12} color="#f59e0b" strokeWidth={2.5} />
-              )}
-            </div>
-          </div>
-          <span style={{
-            fontSize: "14px",
-            fontWeight: "600",
-            color: theme.textPrimary,
-            transition: "color 0.3s ease",
-          }}>
-            {isDarkTheme ? "Dark" : "Light"} Theme
-          </span>
-        </button>
-      </div>
-
       {/* Advanced Professional Animations */}
       <style jsx>{`
         @keyframes float {
@@ -972,3 +839,4 @@ export default function PhotoDetect() {
     </div>
   );
 }
+

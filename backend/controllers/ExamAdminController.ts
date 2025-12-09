@@ -666,6 +666,7 @@ export const getExamResults = async (req: Request, res: Response) => {
 export const getStudentAnswers = async (req: Request, res: Response) => {
   const { examId, userId } = req.params;
   const examiner_id = getUserIdFromToken(req);
+  const role = getRoleFromToken(req);
 
   if (!examId || !userId || !examiner_id) {
     return res.status(400).json({
@@ -676,12 +677,20 @@ export const getStudentAnswers = async (req: Request, res: Response) => {
 
   console.log()
   try {
-    const exam = await Exam.findOne({
-      where: {
-        id: examId,
-        user_id: examiner_id,
-      },
-    });
+    // ✅ FIX: Allow super admins to access any exam
+    let exam;
+    if (role === "HEAD") {
+      exam = await Exam.findOne({
+        where: { id: examId },
+      });
+    } else {
+      exam = await Exam.findOne({
+        where: {
+          id: examId,
+          user_id: examiner_id,
+        },
+      });
+    }
 
     if (!exam) {
       return res.status(404).json({

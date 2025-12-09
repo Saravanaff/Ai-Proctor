@@ -8,6 +8,7 @@ import { getTokenFromCookie } from "@/constants/AuthStore";
 import { createAuthenticatedAxiosInstance } from "@/utils/axiosConfig";
 import VideoPlayer from "../../components/VideoPlayer";
 import { ExaminerGuard } from "@/components/guards";
+import { LoadingScreen } from "@/components/PageTransition";
 
 const PDF_CONSTANTS = {
   SUPER_PROCTOR_FEED: 0,
@@ -86,8 +87,64 @@ interface ViolationLogResponse {
 }
 
 const ParticipantDetailsPage: React.FC = () => {
+  // Enforce light theme
+  useEffect(() => {
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+    };
+  }, []);
+
+  const router = useRouter();
+  const { examId, userId } = router.query;
+
+  const [user, setUser] = useState<User | null>(null);
+  const [attendance, setAttendance] = useState<any>(null);
+  const [examDetails, setExamDetails] = useState<ExamDetails | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Store IDs in localStorage when they're available from router
+  useEffect(() => {
+    if (examId && userId) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("currentExamId", examId as string);
+        localStorage.setItem("currentUserId", userId as string);
+      }
+    }
+  }, [examId, userId]);
+
+  // Get IDs from localStorage if router query is empty (on refresh)
+  const getExamId = () => {
+    if (examId) return examId as string;
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("currentExamId");
+    }
+    return null;
+  };
+
+  const getUserId = () => {
+    if (userId) return userId as string;
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("currentUserId");
+    }
+    return null;
+  };
+
   const handleGeneratePDF = async () => {
-    if (!user || !examDetails) return;
+    if (!user || !examDetails) {
+      alert("User or exam details not loaded. Please wait and try again.");
+      return;
+    }
+
+    // ✅ FIX: Get userId with fallback to localStorage
+    const currentUserId = getUserId();
+    if (!currentUserId) {
+      console.error("User ID not available");
+      alert("Unable to identify student. Please refresh the page and try again.");
+      return;
+    }
 
     let results = examResults;
     if (!results) {
@@ -95,23 +152,57 @@ const ParticipantDetailsPage: React.FC = () => {
         setExamResultsLoading(true);
         
         const token = getTokenFromCookie();
-        const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+        if (!token) {
+          throw new Error("Authentication token not found. Please login again.");
+        }
 
-        const examRes = await axios.get(`${base}/exam/${examDetails.id}`, {
+        const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+        const currentExamId = getExamId();
+
+        if (!currentExamId) {
+          throw new Error("Exam ID not available");
+        }
+
+        console.log("📄 PDF Generation - Fetching data:", { currentUserId, currentExamId });
+
+        // ✅ FIX: Use the same endpoint as fetchExamResults
+        const questionsRes = await axios.get(`${base}/getExamQuestions/${currentExamId}`, {
           headers: { Authorization: `Bearer ${token}` },
+          timeout: 10000,
+          validateStatus: (status) => status < 500,
         });
 
-        const questions = examRes.data.questions || [];
+        const questions = questionsRes.data.questions || [];
         
-        // ✅ FIX: Use userId from router query (student's ID), not user.id (admin's ID)
+        // ✅ FIX: Use getUserId() helper (student's ID), not user.id (admin's ID)
         const answersRes = await axios.get(
-          `${base}/exam/${examDetails.id}/student/${userId}/answers`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          `${base}/exam/${currentExamId}/student/${currentUserId}/answers`,
+          { 
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 10000,
+            validateStatus: (status) => status < 500,
+          }
         );
+
+        console.log("📄 PDF - Answers Response:", answersRes.data);
+
+        // Check if the request failed
+        if (answersRes.status === 404) {
+          throw new Error("Student answers not found. The student may not have submitted any answers.");
+        }
+
+        if (!answersRes.data.success) {
+          throw new Error(answersRes.data.message || "Failed to fetch student answers");
+        }
 
         // ✅ FIX: API returns answers directly in data.answers
         const rawUserAnswers = answersRes.data.data?.answers || [];
         
+        console.log("📄 PDF - Processing answers:", {
+          totalQuestions: questions.length,
+          totalAnswers: rawUserAnswers.length
+        });
+
         const detailedAnswers = questions.map((question: any) => {
           const userAnswer = rawUserAnswers.find(
             (ans: any) => ans.question_id === question.id
@@ -169,8 +260,14 @@ const ParticipantDetailsPage: React.FC = () => {
 
         results = { answers: detailedAnswers, stats };
         setExamResults(results);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching exam results for PDF:", err);
+        
+        // ✅ User-friendly error message
+        const errorMessage = err.response?.data?.message || err.message || "Unknown error occurred";
+        alert(`Failed to generate PDF: ${errorMessage}. Please try again or contact support.`);
+        
+        return; // Don't proceed with PDF generation if data fetch failed
       } finally {
         setExamResultsLoading(false);
       }
@@ -207,12 +304,6 @@ const ParticipantDetailsPage: React.FC = () => {
       } : undefined,
     });
   };
-  const router = useRouter();
-  const { examId, userId } = router.query;
-
-  const [user, setUser] = useState<User | null>(null);
-  const [attendance, setAttendance] = useState<any>(null);
-  const [examDetails, setExamDetails] = useState<ExamDetails | null>(null);
 
   // Function to calculate total exam duration
   const calculateExamDuration = (): string => {
@@ -494,8 +585,10 @@ const ParticipantDetailsPage: React.FC = () => {
 
   const fetchScore = async (payload: any) => {
     try {
+      const token = getTokenFromCookie();
       const response = await axios.get(`${baseUrl}/getScore`, {
         params: payload,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         timeout: 10000, // 10 second timeout
         validateStatus: (status) => status < 500,
       });
@@ -509,10 +602,12 @@ const ParticipantDetailsPage: React.FC = () => {
   const fetchLogs = async (examId: number, attendanceData?: any) => {
     try {
       setLogsLoading(true);
+      const token = getTokenFromCookie();
       const response = await axios.get<ViolationLogResponse>(
         `${baseUrl}/getLogs`,
         {
           params: { examId, userId },
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
           timeout: 10000, // 10 second timeout
           validateStatus: (status) => status < 500,
         }
@@ -790,6 +885,12 @@ const ParticipantDetailsPage: React.FC = () => {
       };
 
       console.log("📊 Final Stats:", stats);
+      console.log("📊 Score Details:", {
+        obtainedMarks,
+        totalMarks,
+        scoreString: stats.score,
+        percentage: totalMarks > 0 ? Math.round((obtainedMarks / totalMarks) * 100) : 0
+      });
 
       setExamResults({
         answers: detailedAnswers,
@@ -897,28 +998,74 @@ const ParticipantDetailsPage: React.FC = () => {
 
   useEffect(() => {
     const fetchParticipantDetails = async () => {
-      if (!examId || !userId) return;
+      const currentExamId = getExamId();
+      const currentUserId = getUserId();
+      
+      if (!currentExamId || !currentUserId) {
+        console.log("Waiting for exam/user IDs...", { examId: currentExamId, userId: currentUserId });
+        return;
+      }
 
       try {
         setLoading(true);
+        setFetchError(null);
+        
+        console.log("Fetching participant details for:", { examId: currentExamId, userId: currentUserId });
+
+        // Get authentication token
+        const token = getTokenFromCookie();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         // Fetch exam details
-        const examResponse = await axios.get(`${baseUrl}/exam/${examId}`, {
+        const examResponse = await axios.get(`${baseUrl}/exam/${currentExamId}`, {
+          headers,
           timeout: 10000,
           validateStatus: (status) => status < 500,
         });
         
+        console.log("Exam response:", examResponse.data);
+        
         if (!examResponse.data || !examResponse.data.exam) {
           console.error("Invalid exam response:", examResponse);
+          setFetchError("Failed to load exam details");
           return;
         }
         
         setExamDetails(examResponse.data.exam);
 
         // Find the specific user from exam attendances
+        // Try both user.id and user_id to handle different response formats
         const attendance = examResponse.data.exam.attendances?.find(
-          (att: any) => att.user.id === parseInt(userId as string)
+          (att: any) => {
+            const matchById = att.user?.id === parseInt(currentUserId);
+            const matchByUserId = att.user_id === parseInt(currentUserId);
+            console.log(`Checking attendance:`, {
+              attUserId: att.user?.id,
+              attUserIdField: att.user_id,
+              searchingFor: currentUserId,
+              searchingForParsed: parseInt(currentUserId),
+              matchById,
+              matchByUserId,
+              userName: att.user?.name
+            });
+            return matchById || matchByUserId;
+          }
         );
+
+        console.log("Found attendance:", attendance);
+        console.log("All attendances:", examResponse.data.exam.attendances);
+
+        if (!attendance) {
+          console.error(`Attendance not found for userId: ${currentUserId} in exam ${currentExamId}`);
+          console.log("Available attendances:", examResponse.data.exam.attendances?.map((a: any) => ({ 
+            userId: a.user?.id, 
+            user_id: a.user_id,
+            userName: a.user?.name 
+          })));
+          setFetchError(`Participant with ID ${currentUserId} not found in this exam`);
+          setLoading(false);
+          return;
+        }
 
         if (attendance) {
           setUser(attendance.user);
@@ -953,6 +1100,108 @@ const ParticipantDetailsPage: React.FC = () => {
 
           // Fetch violation logs - pass attendance data for accurate exam start time
           await fetchLogs(examResponse.data.exam.id, attendance);
+
+          // ✅ Fetch exam results immediately on page load
+          console.log("🎓 Fetching exam results on page load...");
+          try {
+            setExamResultsLoading(true);
+            const base = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+            const questionsRes = await axios.get(
+              `${base}/getExamQuestions/${examResponse.data.exam.id}`,
+              {
+                headers,
+                timeout: 10000,
+                validateStatus: (status) => status < 500,
+              }
+            );
+
+            const answersRes = await axios.get(
+              `${base}/exam/${examResponse.data.exam.id}/student/${attendance.user.id}/answers`,
+              {
+                headers,
+                timeout: 10000,
+                validateStatus: (status) => status < 500,
+              }
+            );
+
+            const questions = questionsRes.data.questions || [];
+            const rawUserAnswers = answersRes.data.data?.answers || [];
+
+            const detailedAnswers = questions.map((question: any) => {
+              const questionOptions = Array.isArray(question.QuestionOptions)
+                ? question.QuestionOptions
+                : [];
+
+              const userAnswer = rawUserAnswers.find(
+                (ans: any) => ans.question_id === question.id
+              );
+              
+              const correctOption = questionOptions.find(
+                (opt: any) => {
+                  const isCorrectValue = opt.is_correct;
+                  return isCorrectValue === true || 
+                         isCorrectValue === 1 || 
+                         isCorrectValue === "1" || 
+                         isCorrectValue === "true" ||
+                         String(isCorrectValue).toLowerCase() === "true";
+                }
+              );
+              
+              const userSelectedOptionId = userAnswer?.option_id;
+              
+              let selectedOption = userSelectedOptionId
+                ? questionOptions.find(
+                    (opt: any) => Number(opt.id) === Number(userSelectedOptionId)
+                  )
+                : null;
+              
+              if (!selectedOption && userAnswer?.selected_option) {
+                selectedOption = userAnswer.selected_option;
+              }
+              
+              const isCorrect = selectedOption?.is_correct === true || 
+                               selectedOption?.is_correct === 1 || 
+                               selectedOption?.is_correct === "1" ||
+                               selectedOption?.is_correct === "true";
+
+              return {
+                question: {
+                  ...question,
+                  QuestionOptions: questionOptions,
+                },
+                userAnswer: userAnswer || null,
+                selectedOption,
+                correctOption,
+                isCorrect,
+              };
+            });
+
+            const totalMarks = questions.reduce((sum: number, q: any) => sum + (q.marks || 0), 0);
+            const obtainedMarks = detailedAnswers.reduce((sum: number, a: any) => {
+              return sum + (a.isCorrect ? (a.question.marks || 0) : 0);
+            }, 0);
+
+            const stats = {
+              totalQuestions: questions.length,
+              answered: rawUserAnswers.length,
+              correct: detailedAnswers.filter((a: any) => a.isCorrect).length,
+              wrong: detailedAnswers.filter((a: any) => a.userAnswer && !a.isCorrect).length,
+              unanswered: questions.length - rawUserAnswers.length,
+              score: `${obtainedMarks}/${totalMarks}`,
+            };
+
+            console.log("🎓 Exam results loaded on page load:", stats);
+
+            setExamResults({
+              answers: detailedAnswers,
+              stats,
+            });
+          } catch (examErr) {
+            console.error("Error fetching exam results on page load:", examErr);
+          } finally {
+            setExamResultsLoading(false);
+          }
 
           // Check video availability after user and exam details are set
           console.log("About to check video availability...");
@@ -1043,7 +1292,7 @@ const ParticipantDetailsPage: React.FC = () => {
     };
 
     fetchParticipantDetails();
-  }, [examId, userId, router]);
+  }, [examId, userId, router, baseUrl]);
 
   // Additional useEffect to check video availability when user and examDetails are both available
   useEffect(() => {
@@ -1437,7 +1686,7 @@ const ParticipantDetailsPage: React.FC = () => {
                 });
 
                 // Highlight the video briefly to indicate seeking
-                video.style.border = "3px solid var(--primary-color)";
+                video.style.border = "3px solid #3b82f6";
                 setTimeout(() => {
                   video.style.border = "none";
                 }, 2000);
@@ -1494,23 +1743,30 @@ const ParticipantDetailsPage: React.FC = () => {
     }
   };
 
+  // Show loading if still loading
   if (loading || logsLoading) {
+    return <LoadingScreen message="Loading participant details..." />;
+  }
+
+  // Show error if we tried to fetch but failed
+  if (fetchError || (!user && !loading)) {
     return (
-      <div className={styles.loadingContainer}>
-        <LoadingIndicator />
-      </div>
+      <ExaminerGuard>
+        <div className={styles.errorContainer}>
+          <h2>Participant not found</h2>
+          <p style={{ color: "#64748b", marginBottom: "20px" }}>
+            {fetchError || "Unable to load participant information. The participant may not exist or you may not have access."}
+          </p>
+          <button onClick={() => router.back()} className={styles.backButton}>
+            Go Back
+          </button>
+        </div>
+      </ExaminerGuard>
     );
   }
 
   if (!user || !examDetails) {
-    return (
-      <div className={styles.errorContainer}>
-        <h2>Participant not found</h2>
-        <button onClick={() => router.back()} className={styles.backButton}>
-          Go Back
-        </button>
-      </div>
-    );
+    return <LoadingScreen message="Loading participant details..." />;
   }
 
   return (
@@ -2085,26 +2341,66 @@ const ParticipantDetailsPage: React.FC = () => {
                   </span>
                 </div>
                 <div className={styles.statItem}>
-                  <span className={styles.statLabel}>Exam Score</span>
+                  <span className={styles.statLabel}>Total Questions</span>
+                  <span className={styles.statValue} style={{ color: "#64748b" }}>
+                    {examResults 
+                      ? examResults.stats.totalQuestions
+                      : examResultsLoading 
+                      ? "Loading..." 
+                      : "Not loaded yet"}
+                  </span>
+                </div>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>Obtained Marks</span>
                   <span
                     className={styles.statValue}
                     style={{ 
                       color: examResults 
-                        ? (examResults.stats.correct / examResults.stats.totalQuestions * 100 >= 70 
-                          ? "#10b981" 
-                          : examResults.stats.correct / examResults.stats.totalQuestions * 100 >= 40 
-                          ? "#f59e0b" 
-                          : "#ef4444")
+                        ? (() => {
+                            const [obtained, total] = examResults.stats.score.split('/').map(Number);
+                            const percentage = total > 0 ? Math.round((obtained / total) * 100) : 0;
+                            return percentage >= 70 ? "#10b981" : percentage >= 40 ? "#f59e0b" : "#ef4444";
+                          })()
                         : examResultsLoading 
-                        ? "inherit"
-                        : "#ef4444"
+                        ? "#64748b"
+                        : "#64748b"
                     }}
                   >
                     {examResults 
-                      ? `${examResults.stats.correct}/${examResults.stats.totalQuestions} (${examResults.stats.score}${examResults.stats.score.includes('%') ? '' : '%'})`
+                      ? (() => {
+                          const [obtained, total] = examResults.stats.score.split('/').map(Number);
+                          return `${obtained} / ${total}`;
+                        })()
                       : examResultsLoading 
                       ? "Loading..." 
-                      : "0 (0%)"}
+                      : "Not loaded yet"}
+                  </span>
+                </div>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>Percentage</span>
+                  <span
+                    className={styles.statValue}
+                    style={{ 
+                      color: examResults 
+                        ? (() => {
+                            const [obtained, total] = examResults.stats.score.split('/').map(Number);
+                            const percentage = total > 0 ? Math.round((obtained / total) * 100) : 0;
+                            return percentage >= 70 ? "#10b981" : percentage >= 40 ? "#f59e0b" : "#ef4444";
+                          })()
+                        : examResultsLoading 
+                        ? "#64748b"
+                        : "#64748b"
+                    }}
+                  >
+                    {examResults 
+                      ? (() => {
+                          const [obtained, total] = examResults.stats.score.split('/').map(Number);
+                          const percentage = total > 0 ? Math.round((obtained / total) * 100) : 0;
+                          return `${percentage}%`;
+                        })()
+                      : examResultsLoading 
+                      ? "Loading..." 
+                      : "Not loaded yet"}
                   </span>
                 </div>
                 <div className={styles.statItem}>
@@ -2417,7 +2713,7 @@ const ParticipantDetailsPage: React.FC = () => {
             <div
               style={{
                 fontSize: "0.9rem",
-                color: "var(--text-secondary)",
+                color: "#64748b",
                 marginBottom: 20,
                 background: "rgba(0,123,255,0.05)",
                 padding: "12px 16px",
@@ -2785,11 +3081,11 @@ const ParticipantDetailsPage: React.FC = () => {
                   style={{
                     textAlign: "center",
                     padding: "60px 40px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     fontStyle: "italic",
-                    background: "var(--card-bg)",
+                    background: "#ffffff",
                     borderRadius: "12px",
-                    border: "1px dashed var(--border-color)",
+                    border: "1px dashed #e2e8f0",
                   }}
                 >
                   <div style={{ fontSize: "2rem", marginBottom: "16px" }}>
@@ -2810,7 +3106,7 @@ const ParticipantDetailsPage: React.FC = () => {
                   <h4
                     style={{
                       margin: "0 0 8px 0",
-                      color: "var(--text-primary)",
+                      color: "#1e293b",
                     }}
                   >
                     No Timeline Data Available
@@ -2839,7 +3135,7 @@ const ParticipantDetailsPage: React.FC = () => {
                   style={{
                     marginBottom: "8px",
                     fontSize: "1rem",
-                    color: "var(--text-primary)",
+                    color: "#1e293b",
                   }}
                 >
                   <strong>Interactive Video Review:</strong> Stream exam
@@ -2849,7 +3145,7 @@ const ParticipantDetailsPage: React.FC = () => {
                 <div
                   style={{
                     fontSize: "0.9rem",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     background: "rgba(0,123,255,0.05)",
                     padding: "12px 16px",
                     borderRadius: "8px",
@@ -2896,7 +3192,7 @@ const ParticipantDetailsPage: React.FC = () => {
                     checkAllVideosAvailability();
                   }}
                   style={{
-                    background: "var(--primary-color)",
+                    background: "#3b82f6",
                     color: "white",
                     border: "none",
                     borderRadius: "6px",
@@ -2924,7 +3220,7 @@ const ParticipantDetailsPage: React.FC = () => {
                   style={{
                     textAlign: "center",
                     padding: "40px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     fontStyle: "italic",
                   }}
                 >
@@ -2984,10 +3280,10 @@ const ParticipantDetailsPage: React.FC = () => {
                   style={{
                     textAlign: "center",
                     padding: "60px 40px",
-                    color: "var(--text-secondary)",
-                    background: "var(--card-bg)",
+                    color: "#64748b",
+                    background: "#ffffff",
                     borderRadius: "12px",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                   }}
                 >
                   <div style={{ fontSize: "2rem", marginBottom: "16px" }}>
@@ -3008,7 +3304,7 @@ const ParticipantDetailsPage: React.FC = () => {
                   <h4
                     style={{
                       margin: "0 0 8px 0",
-                      color: "var(--text-primary)",
+                      color: "#1e293b",
                     }}
                   >
                     No Video Data Available
@@ -3028,7 +3324,7 @@ const ParticipantDetailsPage: React.FC = () => {
                   <div
                     style={{
                       fontSize: "0.8rem",
-                      color: "var(--text-secondary)",
+                      color: "#64748b",
                       background: "rgba(0,0,0,0.05)",
                       padding: "12px",
                       borderRadius: "6px",
@@ -3057,7 +3353,7 @@ const ParticipantDetailsPage: React.FC = () => {
               <p
                 style={{
                   fontSize: "0.9rem",
-                  color: "var(--text-secondary)",
+                  color: "#64748b",
                   marginBottom: "16px",
                   fontStyle: "italic",
                   background: "rgba(0,123,255,0.05)",
@@ -3093,21 +3389,21 @@ const ParticipantDetailsPage: React.FC = () => {
                         borderRadius: "8px",
                         padding: "12px",
                         marginBottom: "8px",
-                        background: "var(--card-bg)",
+                        background: "#ffffff",
                         boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor =
                           "rgba(0,123,255,0.05)";
                         e.currentTarget.style.borderColor =
-                          "var(--primary-color)";
+                          "#3b82f6";
                         e.currentTarget.style.transform = "translateY(-2px)";
                         e.currentTarget.style.boxShadow =
                           "0 4px 12px rgba(0,123,255,0.15)";
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor =
-                          "var(--card-bg)";
+                          "#ffffff";
                         e.currentTarget.style.borderColor = "transparent";
                         e.currentTarget.style.transform = "translateY(0)";
                         e.currentTarget.style.boxShadow =
@@ -3147,7 +3443,7 @@ const ParticipantDetailsPage: React.FC = () => {
                             className={styles.violationType}
                             style={{
                               fontWeight: "600",
-                              color: "var(--text-primary)",
+                              color: "#1e293b",
                               fontSize: "1rem",
                               cursor: "help",
                             }}
@@ -3163,7 +3459,7 @@ const ParticipantDetailsPage: React.FC = () => {
                               className={styles.violationTime}
                               style={{
                                 fontSize: "0.85rem",
-                                color: "var(--primary-color)",
+                                color: "#3b82f6",
                                 fontWeight: "500",
                               }}
                             >
@@ -3174,7 +3470,7 @@ const ParticipantDetailsPage: React.FC = () => {
                             </div>
                             <small
                               style={{
-                                color: "var(--text-secondary)",
+                                color: "#64748b",
                                 fontSize: "0.75rem",
                                 display: "block",
                                 marginTop: "2px",
@@ -3196,7 +3492,7 @@ const ParticipantDetailsPage: React.FC = () => {
                             className={styles.violationDescription}
                             style={{
                               margin: "8px 0 0 0",
-                              color: "var(--text-secondary)",
+                              color: "#64748b",
                               fontSize: "0.9rem",
                               lineHeight: "1.4",
                             }}
@@ -3207,7 +3503,7 @@ const ParticipantDetailsPage: React.FC = () => {
                             style={{
                               marginTop: "8px",
                               fontSize: "0.8rem",
-                              color: "var(--primary-color)",
+                              color: "#3b82f6",
                               fontWeight: "500",
                               display: "flex",
                               alignItems: "center",
@@ -3251,11 +3547,11 @@ const ParticipantDetailsPage: React.FC = () => {
                     style={{
                       textAlign: "center",
                       padding: "60px 40px",
-                      color: "var(--text-secondary)",
+                      color: "#64748b",
                       fontStyle: "italic",
-                      background: "var(--card-bg)",
+                      background: "#ffffff",
                       borderRadius: "12px",
-                      border: "1px dashed var(--border-color)",
+                      border: "1px dashed #e2e8f0",
                     }}
                   >
                     <div style={{ fontSize: "2rem", marginBottom: "16px" }}>
@@ -3280,7 +3576,7 @@ const ParticipantDetailsPage: React.FC = () => {
                     <h4
                       style={{
                         margin: "0 0 8px 0",
-                        color: "var(--text-primary)",
+                        color: "#1e293b",
                       }}
                     >
                       No Violations Recorded
@@ -3301,7 +3597,7 @@ const ParticipantDetailsPage: React.FC = () => {
           <div className={styles.examResultsTab}>
             {examResultsLoading ? (
               <div className={styles.loadingState}>Loading exam results...</div>
-            ) : examResults ? (
+            ) : examResults && examResults.stats && examResults.stats.score ? (
               <div className={styles.examResultsContent}>
                 {/* Stats summary */}
                 <div className={styles.statsGrid}>
@@ -3330,7 +3626,7 @@ const ParticipantDetailsPage: React.FC = () => {
                     </div>
                   </div>
                   <div className={styles.statCard} style={{
-                    background: "linear-gradient(135deg, var(--accent-color) 0%, #0284c7 100%)",
+                    background: "linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)",
                     color: "white",
                     gridColumn: "1 / -1"
                   }}>
@@ -3340,9 +3636,63 @@ const ParticipantDetailsPage: React.FC = () => {
                     <div className={styles.statValue} style={{ 
                       color: "white",
                       fontSize: "2rem",
-                      fontWeight: 700
+                      fontWeight: 700,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "16px",
+                      justifyContent: "center"
                     }}>
-                      {examResults.stats.score}
+                      <span>{examResults.stats.score}</span>
+                      <span style={{
+                        fontSize: "1.5rem",
+                        padding: "6px 16px",
+                        background: "rgba(255,255,255,0.2)",
+                        borderRadius: "8px",
+                        fontWeight: 600
+                      }}>
+                        {(() => {
+                          try {
+                            if (!examResults?.stats?.score) {
+                              console.warn('⚠️ No score available');
+                              return '0%';
+                            }
+                            
+                            console.log('🎯 Calculating percentage from:', examResults.stats.score);
+                            
+                            const scoreString = String(examResults.stats.score);
+                            const scoreParts = scoreString.split('/');
+                            console.log('🎯 Score parts:', scoreParts);
+                            
+                            if (scoreParts.length !== 2) {
+                              console.warn('⚠️ Invalid score format:', scoreString);
+                              return '0%';
+                            }
+                            
+                            const obtained = parseFloat(scoreParts[0].trim());
+                            const total = parseFloat(scoreParts[1].trim());
+                            
+                            console.log('🎯 Obtained:', obtained, 'Total:', total);
+                            
+                            if (isNaN(obtained) || isNaN(total)) {
+                              console.warn('⚠️ Invalid numbers in score');
+                              return '0%';
+                            }
+                            
+                            if (total === 0) {
+                              console.warn('⚠️ Total marks is 0');
+                              return '0%';
+                            }
+                            
+                            const percentage = Math.round((obtained / total) * 100);
+                            console.log('🎯 Final percentage:', percentage + '%');
+                            
+                            return `${percentage}%`;
+                          } catch (error) {
+                            console.error('❌ Error calculating percentage:', error);
+                            return '0%';
+                          }
+                        })()}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -3369,9 +3719,9 @@ const ParticipantDetailsPage: React.FC = () => {
                           <span style={{ 
                             fontSize: "14px", 
                             fontWeight: 600,
-                            color: "var(--text-secondary)",
+                            color: "#64748b",
                             padding: "4px 12px",
-                            background: "var(--secondary-bg)",
+                            background: "#f1f5f9",
                             borderRadius: "6px"
                           }}>
                             {item.isCorrect ? item.question.marks : 0}/{item.question.marks} marks
@@ -3407,10 +3757,10 @@ const ParticipantDetailsPage: React.FC = () => {
                           borderRadius: "8px",
                           marginBottom: "12px"
                         }}>
-                          <div style={{ fontSize: "13px", fontWeight: 600, marginBottom: "4px", color: "var(--text-secondary)" }}>
+                          <div style={{ fontSize: "13px", fontWeight: 600, marginBottom: "4px", color: "#64748b" }}>
                             Student's Answer:
                           </div>
-                          <div style={{ fontSize: "15px", fontWeight: 500, color: "var(--text-primary)" }}>
+                          <div style={{ fontSize: "15px", fontWeight: 500, color: "#1e293b" }}>
                             {item.selectedOption.option_text}
                           </div>
                         </div>
@@ -3523,3 +3873,4 @@ const ParticipantDetailsPage: React.FC = () => {
 };
 
 export default ParticipantDetailsPage;
+

@@ -19,9 +19,7 @@ import {
   Eye, 
   Camera,
   Volume2,
-  MousePointer,
-  Moon,
-  Sun
+  MousePointer
 } from 'lucide-react';
 
 
@@ -32,16 +30,12 @@ const fullscreen = () => {
     const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
     const [rulesAccepted, setRulesAccepted] = useState(false);
     const [screenShareError, setScreenShareError] = useState(false);
-    const [isDarkTheme, setIsDarkTheme] = useState(false);
+  
     const { theme } = useTheme();
     const { getMicrophoneCount } = useMicrophoneDevices();
 
     // ✅ Save theme preference to localStorage when changed
-    const handleThemeToggle = () => {
-        const newTheme = !isDarkTheme;
-        setIsDarkTheme(newTheme);
-        localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-    };
+  
 
     // All useRef hooks must be called before any conditional returns
     const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
@@ -69,11 +63,6 @@ const fullscreen = () => {
             setNumberOfMicrophones(cnt);
         });
         
-        // ✅ Load theme preference from localStorage
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            setIsDarkTheme(savedTheme === 'dark');
-        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     },[])
 
@@ -132,25 +121,25 @@ const fullscreen = () => {
     // Professional High-Tech Black Theme Configuration
     const themes = {
         dark: {
-            background: "linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #0f0f0f 100%)",
-            cardBg: "rgba(12, 12, 12, 0.98)",
-            cardBorder: "rgba(0, 255, 255, 0.15)",
+            background: "#0f172a",
+            cardBg: "rgba(30, 41, 59, 0.98)",
+            cardBorder: "rgba(71, 85, 105, 0.5)",
             textPrimary: "#ffffff",
-            textSecondary: "#a0aec0",
-            textMuted: "#718096",
-            accentPrimary: "#00ffff",
-            ruleBg: "rgba(15, 15, 15, 0.8)",
-            ruleBorder: "rgba(0, 255, 255, 0.2)",
-            iconBg: "rgba(0, 255, 255, 0.12)",
-            iconColor: "#00ffff",
-            buttonPrimaryBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
-            buttonPrimaryShadow: "0 0 30px rgba(0, 255, 255, 0.5), 0 10px 40px rgba(0, 153, 255, 0.3)",
-            errorBg: "rgba(255, 51, 102, 0.08)",
-            errorBorder: "rgba(255, 51, 102, 0.5)",
-            errorText: "#ff3366",
+            textSecondary: "#e2e8f0",
+            textMuted: "#94a3b8",
+            accentPrimary: "#3b82f6",
+            ruleBg: "rgba(30, 41, 59, 0.8)",
+            ruleBorder: "rgba(71, 85, 105, 0.5)",
+            iconBg: "rgba(59, 130, 246, 0.12)",
+            iconColor: "#3b82f6",
+            buttonPrimaryBg: "#3b82f6",
+            buttonPrimaryShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
+            errorBg: "rgba(239, 68, 68, 0.08)",
+            errorBorder: "rgba(239, 68, 68, 0.5)",
+            errorText: "#ef4444",
         },
         light: {
-            background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",
+            background: "#f8fafc",
             cardBg: "rgba(255, 255, 255, 0.95)",
             cardBorder: "rgba(226, 232, 240, 0.9)",
             textPrimary: "#0f172a",
@@ -161,15 +150,15 @@ const fullscreen = () => {
             ruleBorder: "rgba(226, 232, 240, 0.8)",
             iconBg: "rgba(59, 130, 246, 0.1)",
             iconColor: "#3b82f6",
-            buttonPrimaryBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-            buttonPrimaryShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
+            buttonPrimaryBg: "#3b82f6",
+            buttonPrimaryShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
             errorBg: "rgba(239, 68, 68, 0.1)",
             errorBorder: "rgba(239, 68, 68, 0.3)",
             errorText: "#dc2626",
         }
     };
 
-    const currentTheme = isDarkTheme ? themes.dark : themes.light;
+    const currentTheme = themes.light;
 
     // 2️⃣ NOW conditional returns are safe - after ALL hooks
     // ✅ Show error screen if exam state is invalid
@@ -277,11 +266,12 @@ const fullscreen = () => {
                 try {
                     if (e && e.data && e.data.size > 0) {
                         const chunkNum = screenChunkCounterRef.current++;
+                        const blob = e.data; // Store blob reference
                         
                         // ✅ Track this chunk as pending
                         pendingScreenChunksRef.current.add(chunkNum);
                         
-                        e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
+                        blob.arrayBuffer().then((buffer: ArrayBuffer) => {
                             // ✅ Check if MediaRecorder is inactive (meaning this is likely the final chunk)
                             const isFinalChunk = screenRecorderMediaRecorderRef.current?.state === 'inactive';
                             
@@ -307,6 +297,10 @@ const fullscreen = () => {
                             // ✅ Remove from pending after successful emit
                             pendingScreenChunksRef.current.delete(chunkNum);
                             console.log(`✅ Screen chunk #${chunkNum} sent, ${pendingScreenChunksRef.current.size} pending`);
+                            
+                            // ✅ CRITICAL: Clear buffer reference to allow garbage collection
+                            // @ts-ignore
+                            chunkData.chunk = null;
                         }).catch((err: any) => {
                             console.error(`Failed to convert screen chunk #${chunkNum}:`, err);
                             // ✅ Remove from pending even on error
@@ -325,6 +319,21 @@ const fullscreen = () => {
                 console.log(`⏳ Waiting for ${pendingScreenChunksRef.current.size} pending screen chunks...`);
                 await waitForPendingScreenChunks();
                 console.log("✅ All screen chunks sent!");
+                
+                // ✅ Stop screen stream tracks NOW (after recorder stopped)
+                if (screenStreamRef.current) {
+                    try {
+                        console.log("🖥️ Stopping screen stream tracks...");
+                        screenStreamRef.current.getTracks().forEach((t) => {
+                            console.log(`  Stopping screen track: ${t.kind}, state: ${t.readyState}`);
+                            t.stop();
+                        });
+                        screenStreamRef.current = null;
+                        console.log("✅ Screen stream tracks stopped");
+                    } catch (e) {
+                        console.warn("Error stopping screen stream tracks:", e);
+                    }
+                }
                 
                 // ✅ Wait additional 500ms to ensure chunks are fully transmitted over network
                 console.log("⏳ Additional 500ms network safety delay...");
@@ -361,8 +370,8 @@ const fullscreen = () => {
             };
 
             try {
-                console.log("Starting screen recorder with 1 second chunks");
-                screenRecorderMediaRecorderRef.current.start(1000); // ✅ Changed from 500ms to 1000ms to reduce memory overhead
+                console.log("Starting screen recorder with 2 second chunks");
+                screenRecorderMediaRecorderRef.current.start(2000); // ✅ Changed from 1000ms to 2000ms to reduce memory overhead
             } catch (err) {
                 console.error("Failed to start screen MediaRecorder:", err);
                 if (screenStreamRef.current) {
@@ -475,9 +484,7 @@ const fullscreen = () => {
                     right: "-5%",
                     width: "500px",
                     height: "500px",
-                    background: isDarkTheme 
-                        ? "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)"
-                        : "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
+                    background: "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
                     borderRadius: "50%",
                     filter: "blur(60px)",
                     animation: "float 8s ease-in-out infinite",
@@ -489,9 +496,7 @@ const fullscreen = () => {
                     left: "-5%",
                     width: "400px",
                     height: "400px",
-                    background: isDarkTheme
-                        ? "radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, transparent 70%)"
-                        : "radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%)",
+                    background: "radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%)",
                     borderRadius: "50%",
                     filter: "blur(60px)",
                     animation: "float 10s ease-in-out infinite reverse",
@@ -519,12 +524,12 @@ const fullscreen = () => {
                             width: "64px",
                             height: "64px",
                             borderRadius: "20px",
-                            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                            background: "#3b82f6",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             margin: "0 auto 24px",
-                            boxShadow: "0 12px 40px rgba(59, 130, 246, 0.4)",
+                            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
                         }}>
                             <Monitor size={32} color="white" strokeWidth={2} />
                         </div>
@@ -716,7 +721,7 @@ const fullscreen = () => {
                             gap: "12px",
                             padding: "16px",
                             borderRadius: "16px",
-                            background: isDarkTheme ? "rgba(51, 65, 85, 0.3)" : "rgba(226, 232, 240, 0.5)",
+                            background: "rgba(226, 232, 240, 0.5)",
                             border: `1px solid ${currentTheme.cardBorder}`,
                             transition: "all 0.3s ease",
                         }}>
@@ -784,7 +789,7 @@ const fullscreen = () => {
                     zIndex: 1000,
                 }}>
                     <button
-                        onClick={handleThemeToggle}
+                        
                         style={{
                             display: "flex",
                             alignItems: "center",
@@ -807,48 +812,6 @@ const fullscreen = () => {
                             e.currentTarget.style.boxShadow = "0 10px 40px rgba(0, 0, 0, 0.2)";
                         }}
                     >
-                        <div style={{
-                            width: "50px",
-                            height: "26px",
-                            borderRadius: "100px",
-                            background: isDarkTheme 
-                                ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
-                                : "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-                            position: "relative",
-                            transition: "all 0.3s ease",
-                            boxShadow: isDarkTheme
-                                ? "0 4px 12px rgba(59, 130, 246, 0.4) inset"
-                                : "0 4px 12px rgba(251, 191, 36, 0.4) inset",
-                        }}>
-                            <div style={{
-                                position: "absolute",
-                                top: "3px",
-                                left: isDarkTheme ? "3px" : "27px",
-                                width: "20px",
-                                height: "20px",
-                                borderRadius: "50%",
-                                background: "white",
-                                transition: "all 0.3s ease",
-                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}>
-                                {isDarkTheme ? (
-                                    <Moon size={12} color="#3b82f6" strokeWidth={2.5} />
-                                ) : (
-                                    <Sun size={12} color="#f59e0b" strokeWidth={2.5} />
-                                )}
-                            </div>
-                        </div>
-                        <span style={{
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            color: currentTheme.textPrimary,
-                            transition: "color 0.3s ease",
-                        }}>
-                            {isDarkTheme ? "Dark" : "Light"} Theme
-                        </span>
                     </button>
                 </div>
 

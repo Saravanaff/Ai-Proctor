@@ -8,11 +8,11 @@ import MCQQuestionList from "../../components/exam/MCQQuestionList";
 import QuestionTableEditor from "../../components/exam/QuestionTableEditor";
 import PDFQuestionUploader from "../../components/exam/PDFQuestionUploader";
 import { MCQQuestion } from "../../types/mcq";
-import { ThemeToggle } from "../../components/ThemeToggle";
 import axios from "axios";
 import * as XLSX from 'xlsx';
 import { downloadQuestionsTemplate } from "@/utils/excelUtils";
 import { getTokenFromCookie } from "@/constants/AuthStore";
+import { LoadingScreen } from "@/components/PageTransition";
 import { ExaminerGuard } from "@/components/guards";
 import { Plus, FileText, Upload, Download, FolderOpen, PenLine, Trash2, X, FileSpreadsheet, AlertTriangle } from "lucide-react";
 
@@ -52,6 +52,19 @@ const EditExamQuestions = () => {
 
     return () => {
       axios.interceptors.request.eject(interceptor);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Set light theme background
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    document.documentElement.style.background = "#f8fafc";
+    
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+      document.documentElement.style.background = "";
     };
   }, []);
 
@@ -345,7 +358,7 @@ const EditExamQuestions = () => {
           justifyContent: "center",
         }}
       >
-        <div style={{ textAlign: "center", color: "var(--text-primary)" }}>
+        <div style={{ textAlign: "center", color: "#1e293b" }}>
           <div
             style={{
               fontSize: "48px",
@@ -364,24 +377,24 @@ const EditExamQuestions = () => {
   return (
     <ExaminerGuard>
     <div
-      className={`${styles.examinerContainer} ${styles.enterpriseRoot} theme-transition`}
+      className={`${styles.examinerContainer} ${styles.enterpriseRoot}`}
       style={{
-        background: "var(--app-bg, var(--background, var(--body-bg, #0f1115)))",
+        background: "#f8fafc",
         minHeight: "100vh",
-        color: "var(--text-primary)",
+        color: "#1e293b",
       }}
     >
       <header className={`${styles.header} ${styles.fadeIn} theme-transition`}>
         <div className={styles.headerContent}>
           <h1
             className={`${styles.title} theme-transition`}
-            style={{ color: "var(--text-primary)" }}
+            style={{ color: "#1e293b" }}
           >
             Edit Questions - {examTitle}
           </h1>
           <p
             className={`${styles.subtitle} theme-transition`}
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "#64748b" }}
           >
             Update the questions for this exam
           </p>
@@ -420,8 +433,8 @@ const EditExamQuestions = () => {
           style={{
             padding: "40px",
             borderRadius: "16px",
-            background: "var(--card-bg)",
-            border: "1px solid var(--border-color)",
+            background: "#ffffff",
+            border: "1px solid #e2e8f0",
             minHeight: "calc(100vh - 180px)",
             display: "flex",
             flexDirection: "column",
@@ -455,13 +468,13 @@ const EditExamQuestions = () => {
                   style={{
                     fontSize: "24px",
                     fontWeight: "700",
-                    color: "var(--text-primary)",
+                    color: "#1e293b",
                     margin: 0,
                   }}
                 >
                   Questions ({mcqQuestions.length})
                 </h2>
-                <span style={{ fontSize: "15px", color: "var(--text-secondary)" }}>
+                <span style={{ fontSize: "15px", color: "#64748b" }}>
                   Click cells to edit directly
                 </span>
               </div>
@@ -503,15 +516,15 @@ const EditExamQuestions = () => {
                 style={{
                   textAlign: "center",
                   padding: "80px 40px",
-                  color: "var(--text-secondary)",
+                  color: "#64748b",
                   flex: 1,
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: "var(--secondary-bg)",
+                  background: "#f1f5f9",
                   borderRadius: "16px",
-                  border: "2px dashed var(--border-color)",
+                  border: "2px dashed #e2e8f0",
                 }}
               >
                 <FileSpreadsheet size={64} color="var(--text-tertiary)" strokeWidth={1.5} style={{ marginBottom: "24px" }} />
@@ -520,7 +533,7 @@ const EditExamQuestions = () => {
                   style={{
                     fontSize: "22px",
                     fontWeight: 700,
-                    color: "var(--text-primary)",
+                    color: "#1e293b",
                     marginBottom: "12px",
                   }}
                 >
@@ -608,7 +621,7 @@ const EditExamQuestions = () => {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: "var(--card-bg)",
+              background: "#ffffff",
               borderRadius: "16px",
               padding: "32px",
               maxWidth: "900px",
@@ -616,7 +629,7 @@ const EditExamQuestions = () => {
               maxHeight: "85vh",
               overflow: "auto",
               boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-              border: "1px solid var(--border-color)",
+              border: "1px solid #e2e8f0",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
@@ -633,8 +646,8 @@ const EditExamQuestions = () => {
                   <FileSpreadsheet size={24} color="#0ea5e9" />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "var(--text-primary)" }}>Upload Questions</h3>
-                  <p style={{ margin: 0, fontSize: "13px", color: "var(--text-secondary)" }}>Excel or CSV file</p>
+                  <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>Upload Questions</h3>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>Excel or CSV file</p>
                 </div>
               </div>
               <button
@@ -643,7 +656,7 @@ const EditExamQuestions = () => {
                   setUploadError('');
                 }}
                 style={{
-                  background: "var(--secondary-bg)",
+                  background: "#f1f5f9",
                   border: "none",
                   width: "36px",
                   height: "36px",
@@ -652,7 +665,7 @@ const EditExamQuestions = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "var(--text-secondary)",
+                  color: "#64748b",
                 }}
               >
                 <X size={20} />
@@ -667,9 +680,9 @@ const EditExamQuestions = () => {
                 width: "100%",
                 padding: "14px 20px",
                 borderRadius: "10px",
-                border: "1px solid var(--accent-color)",
+                border: "1px solid #0ea5e9",
                 background: "rgba(14, 165, 233, 0.1)",
-                color: "var(--accent-color)",
+                color: "#0ea5e9",
                 fontSize: "14px",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -705,11 +718,11 @@ const EditExamQuestions = () => {
             {/* File Drop Zone */}
             <div
               style={{
-                border: "2px dashed var(--accent-color)",
+                border: "2px dashed #0ea5e9",
                 borderRadius: "12px",
                 padding: "40px",
                 textAlign: "center",
-                background: "var(--secondary-bg)",
+                background: "#f1f5f9",
                 cursor: "pointer",
               }}
               onDragOver={(e) => {
@@ -717,11 +730,11 @@ const EditExamQuestions = () => {
                 e.currentTarget.style.background = "rgba(14, 165, 233, 0.1)";
               }}
               onDragLeave={(e) => {
-                e.currentTarget.style.background = "var(--secondary-bg)";
+                e.currentTarget.style.background = "#f1f5f9";
               }}
               onDrop={(e) => {
                 e.preventDefault();
-                e.currentTarget.style.background = "var(--secondary-bg)";
+                e.currentTarget.style.background = "#f1f5f9";
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
                   const input = document.getElementById('popup-file-upload') as HTMLInputElement;
@@ -740,11 +753,11 @@ const EditExamQuestions = () => {
                 style={{ display: "none" }}
               />
               <label htmlFor="popup-file-upload" style={{ cursor: "pointer", display: "block" }}>
-                <FolderOpen size={52} color="var(--accent-color)" strokeWidth={1.5} style={{ marginBottom: "16px" }} />
-                <p style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: 600, color: "var(--text-primary)" }}>
+                <FolderOpen size={52} color="#0ea5e9" strokeWidth={1.5} style={{ marginBottom: "16px" }} />
+                <p style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: 600, color: "#1e293b" }}>
                   Click to upload or drag and drop
                 </p>
-                <p style={{ margin: 0, fontSize: "13px", color: "var(--text-secondary)" }}>
+                <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
                   Excel (.xlsx, .xls) or CSV files
                 </p>
               </label>
@@ -774,21 +787,21 @@ const EditExamQuestions = () => {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: "var(--card-bg)",
+              background: "#ffffff",
               borderRadius: "16px",
               padding: "28px",
               maxWidth: "520px",
               width: "90%",
               boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-              border: "1px solid var(--border-color)",
+              border: "1px solid #e2e8f0",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "var(--text-primary)" }}>Add Questions</h3>
+              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>Add Questions</h3>
               <button
                 onClick={() => setShowAddOptionsPopup(false)}
                 style={{
-                  background: "var(--secondary-bg)",
+                  background: "#f1f5f9",
                   border: "none",
                   width: "32px",
                   height: "32px",
@@ -797,7 +810,7 @@ const EditExamQuestions = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "var(--text-secondary)",
+                  color: "#64748b",
                 }}
               >
                 <X size={18} />
@@ -816,20 +829,20 @@ const EditExamQuestions = () => {
                   alignItems: "center",
                   gap: "14px",
                   padding: "16px",
-                  background: "var(--secondary-bg)",
-                  border: "1px solid var(--border-color)",
+                  background: "#f1f5f9",
+                  border: "1px solid #e2e8f0",
                   borderRadius: "12px",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
                   textAlign: "left",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--accent-color)";
+                  e.currentTarget.style.borderColor = "#0ea5e9";
                   e.currentTarget.style.background = "rgba(14, 165, 233, 0.05)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-color)";
-                  e.currentTarget.style.background = "var(--secondary-bg)";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
+                  e.currentTarget.style.background = "#f1f5f9";
                 }}
               >
                 <div style={{ 
@@ -840,8 +853,8 @@ const EditExamQuestions = () => {
                   <Upload size={22} color="#0ea5e9" />
                 </div>
                 <div>
-                  <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "2px" }}>Upload Excel/CSV</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Import questions from spreadsheet</div>
+                  <div style={{ fontSize: "15px", fontWeight: 600, color: "#1e293b", marginBottom: "2px" }}>Upload Excel/CSV</div>
+                  <div style={{ fontSize: "12px", color: "#64748b" }}>Import questions from spreadsheet</div>
                 </div>
               </button>
 
@@ -856,20 +869,20 @@ const EditExamQuestions = () => {
                   alignItems: "center",
                   gap: "14px",
                   padding: "16px",
-                  background: "var(--secondary-bg)",
-                  border: "1px solid var(--border-color)",
+                  background: "#f1f5f9",
+                  border: "1px solid #e2e8f0",
                   borderRadius: "12px",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
                   textAlign: "left",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--accent-color)";
+                  e.currentTarget.style.borderColor = "#0ea5e9";
                   e.currentTarget.style.background = "rgba(14, 165, 233, 0.05)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-color)";
-                  e.currentTarget.style.background = "var(--secondary-bg)";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
+                  e.currentTarget.style.background = "#f1f5f9";
                 }}
               >
                 <div style={{ 
@@ -880,8 +893,8 @@ const EditExamQuestions = () => {
                   <FileText size={22} color="#a855f7" />
                 </div>
                 <div>
-                  <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "2px" }}>Upload PDF</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Extract questions from PDF file</div>
+                  <div style={{ fontSize: "15px", fontWeight: 600, color: "#1e293b", marginBottom: "2px" }}>Upload PDF</div>
+                  <div style={{ fontSize: "12px", color: "#64748b" }}>Extract questions from PDF file</div>
                 </div>
               </button>
 
@@ -897,20 +910,20 @@ const EditExamQuestions = () => {
                   alignItems: "center",
                   gap: "14px",
                   padding: "16px",
-                  background: "var(--secondary-bg)",
-                  border: "1px solid var(--border-color)",
+                  background: "#f1f5f9",
+                  border: "1px solid #e2e8f0",
                   borderRadius: "12px",
                   cursor: "pointer",
                   transition: "all 0.2s ease",
                   textAlign: "left",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--accent-color)";
+                  e.currentTarget.style.borderColor = "#0ea5e9";
                   e.currentTarget.style.background = "rgba(14, 165, 233, 0.05)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-color)";
-                  e.currentTarget.style.background = "var(--secondary-bg)";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
+                  e.currentTarget.style.background = "#f1f5f9";
                 }}
               >
                 <div style={{ 
@@ -921,40 +934,18 @@ const EditExamQuestions = () => {
                   <PenLine size={22} color="#22c55e" />
                 </div>
                 <div>
-                  <div style={{ fontSize: "15px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "2px" }}>Add Manually</div>
-                  <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Create questions one by one</div>
+                  <div style={{ fontSize: "15px", fontWeight: 600, color: "#1e293b", marginBottom: "2px" }}>Add Manually</div>
+                  <div style={{ fontSize: "12px", color: "#64748b" }}>Create questions one by one</div>
                 </div>
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Floating Theme Toggle */}
-      <div
-        style={{
-          position: "fixed",
-          right: 20,
-          bottom: 20,
-          zIndex: 1200,
-        }}
-      >
-        <div
-          style={{
-            background: "var(--card-bg)",
-            border: "1px solid var(--border-color)",
-            borderRadius: 12,
-            padding: 8,
-            boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-          }}
-          className="theme-transition"
-        >
-          <ThemeToggle />
-        </div>
-      </div>
     </div>
     </ExaminerGuard>
   );
 };
 
 export default EditExamQuestions;
+

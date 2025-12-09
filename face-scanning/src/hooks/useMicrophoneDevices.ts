@@ -64,6 +64,7 @@ const useMicrophoneDevices = () => {
 
   const getMicrophoneCount = async () => {
     let micCount = 0;
+    let tempStream: MediaStream | null = null; // ✅ Track stream to close it
 
     // Check if MediaDevices API is supported
     if (!isMicrophoneApiSupported()) {
@@ -74,8 +75,8 @@ const useMicrophoneDevices = () => {
     }
 
     try {
-      // Request permission first to get device labels and accurate count
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      // ✅ Request permission first to get device labels and accurate count
+      tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       // Get all media devices
       const devices = await navigator.mediaDevices.enumerateDevices();
@@ -101,19 +102,30 @@ const useMicrophoneDevices = () => {
       // - NotAllowedError: User denied microphone permission
       // - NotFoundError: No microphone devices found
       // - NotSupportedError: getUserMedia not supported
+    } finally {
+      // ✅ CRITICAL: Stop the temporary stream immediately
+      if (tempStream) {
+        tempStream.getTracks().forEach((track) => {
+          console.log(`🎤 Stopping temporary microphone track from getMicrophoneCount: ${track.kind}`);
+          track.stop();
+        });
+        tempStream = null;
+      }
     }
 
     return micCount;
   };
 
   const getMicrophoneDetails = async (): Promise<MicrophoneDevice[]> => {
+    let tempStream: MediaStream | null = null; // ✅ Track stream to close it
+    
     if (!isMicrophoneApiSupported()) {
       return [];
     }
 
     try {
-      // Request permission first
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      // ✅ Request permission first
+      tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       const devices = await navigator.mediaDevices.enumerateDevices();
 
@@ -131,17 +143,28 @@ const useMicrophoneDevices = () => {
     } catch (err) {
       console.error("Error getting microphone details:", err);
       return [];
+    } finally {
+      // ✅ CRITICAL: Stop the temporary stream immediately
+      if (tempStream) {
+        tempStream.getTracks().forEach((track) => {
+          console.log(`🎤 Stopping temporary microphone track from getMicrophoneDetails: ${track.kind}`);
+          track.stop();
+        });
+        tempStream = null;
+      }
     }
   };
 
   const debugAllAudioDevices = async () => {
+    let tempStream: MediaStream | null = null; // ✅ Track stream to close it
+    
     if (!isMicrophoneApiSupported()) {
       console.log("MediaDevices API not supported");
       return;
     }
 
     try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioInputs = devices.filter(
         (device) => device.kind === "audioinput"
@@ -165,6 +188,15 @@ const useMicrophoneDevices = () => {
       });
     } catch (err) {
       console.error("Debug error:", err);
+    } finally {
+      // ✅ CRITICAL: Stop the temporary stream immediately
+      if (tempStream) {
+        tempStream.getTracks().forEach((track) => {
+          console.log(`🎤 Stopping temporary microphone track from debugAllAudioDevices: ${track.kind}`);
+          track.stop();
+        });
+        tempStream = null;
+      }
     }
   };
 

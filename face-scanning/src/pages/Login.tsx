@@ -12,6 +12,20 @@ export default function AuthPage() {
   const name = router.query.name as string;
 
   useEffect(() => {
+    // Set body background to match login form
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    document.documentElement.style.background = "#f8fafc";
+    
+    return () => {
+      // Cleanup on unmount
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+      document.documentElement.style.background = "";
+    };
+  }, []);
+
+  useEffect(() => {
     // Auto-login if all parameters are provided
     if (
       typeof userId === "string" &&

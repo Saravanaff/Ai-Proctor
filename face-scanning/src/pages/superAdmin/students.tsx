@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import styles from "../../styles/SuperAdminPage.module.css";
-import { ThemeToggle } from "../../components/ThemeToggle";
 import { SuperAdminGuard } from "../../components/guards";
+import { LoadingScreen } from "../../components/PageTransition";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { configureAxiosInterceptor } from "@/utils/axiosConfig";
 import { logout as authLogout } from "@/utils/auth";
@@ -39,6 +39,8 @@ export default function StudentsManagement() {
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [navigating, setNavigating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -68,6 +70,9 @@ export default function StudentsManagement() {
   const fetchStudents = async () => {
     try {
       setLoading(true);
+      console.log('📊 Fetching students...');
+      const startTime = Date.now();
+      
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
       const response = await axios.get(`${base}/admin/students?page=${currentPage}&limit=${studentsPerPage}`);
       
@@ -76,10 +81,18 @@ export default function StudentsManagement() {
         setTotalPages(response.data.data.totalPages || 1);
         setTotalCount(response.data.data.totalCount || 0);
       }
+      
+      // Ensure loading screen shows for at least 500ms
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, 500 - elapsedTime);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+      
+      console.log('✅ Students loaded');
     } catch (error) {
       console.error("Failed to fetch students:", error);
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -103,6 +116,19 @@ export default function StudentsManagement() {
   const handleLogout = () => {
     authLogout();
   };
+
+  useEffect(() => {
+    // Set light theme background
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    document.documentElement.style.background = "#f8fafc";
+    
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+      document.documentElement.style.background = "";
+    };
+  }, []);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -142,6 +168,8 @@ export default function StudentsManagement() {
   };
 
   const handleExamClick = (examId: number, userId: number) => {
+    console.log('📊 Navigating to participant details...');
+    setNavigating(true);
     // Navigate to participant details page
     router.push(`/examiner/participant-details?examId=${examId}&userId=${userId}`);
   };
@@ -151,6 +179,26 @@ export default function StudentsManagement() {
     setSelectedStudent(null);
     setStudentExams([]);
   };
+
+  // Show full page loading screen only on initial load
+  if (initialLoading) {
+    console.log('🔄 Students page - showing loading screen');
+    return (
+      <SuperAdminGuard>
+        <LoadingScreen message="Loading students..." />
+      </SuperAdminGuard>
+    );
+  }
+
+  // Show loading screen when navigating to exam details
+  if (navigating) {
+    console.log('🔄 Navigating to participant details...');
+    return (
+      <SuperAdminGuard>
+        <LoadingScreen message="Loading participant details..." />
+      </SuperAdminGuard>
+    );
+  }
 
   return (
     <SuperAdminGuard>
@@ -235,11 +283,11 @@ export default function StudentsManagement() {
           <header style={{ marginBottom: "32px" }}>
             <div
               style={{
-                background: "linear-gradient(135deg, var(--card-bg), var(--secondary-bg))",
+                background: "linear-gradient(135deg, #ffffff, #f1f5f9)",
                 borderRadius: "24px",
                 padding: "32px",
-                border: "1px solid var(--border-color)",
-                boxShadow: "0 8px 32px var(--shadow)",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
                 position: "relative",
                 overflow: "hidden",
               }}
@@ -251,7 +299,7 @@ export default function StudentsManagement() {
                   left: 0,
                   right: 0,
                   height: "5px",
-                  background: "linear-gradient(90deg, var(--accent-color), var(--primary-color))",
+                  background: "linear-gradient(90deg, #0ea5e9, #3b82f6)",
                 }}
               />
               
@@ -262,7 +310,7 @@ export default function StudentsManagement() {
                       width: "60px",
                       height: "60px",
                       borderRadius: "16px",
-                      background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                      background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -275,17 +323,13 @@ export default function StudentsManagement() {
                     SA
                   </div>
                   <div>
-                    <h1 style={{ margin: "0 0 8px 0", fontSize: "28px", fontWeight: "700", color: "var(--text-primary)" }}>
+                    <h1 style={{ margin: "0 0 8px 0", fontSize: "28px", fontWeight: "700", color: "#1e293b" }}>
                       Student Management
                     </h1>
-                    <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "14px" }}>
+                    <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>
                       View and manage all registered students
                     </p>
                   </div>
-                </div>
-                
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <ThemeToggle />
                 </div>
               </div>
             </div>
@@ -304,28 +348,28 @@ export default function StudentsManagement() {
                 >
                   <path
                     d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
-                    stroke="var(--accent-color)"
+                    stroke="#0ea5e9"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                   <path
                     d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z"
-                    stroke="var(--accent-color)"
+                    stroke="#0ea5e9"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                   <path
                     d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13"
-                    stroke="var(--accent-color)"
+                    stroke="#0ea5e9"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                   <path
                     d="M16 3.13C16.8604 3.35031 17.623 3.85071 18.1676 4.55232C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89318 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88"
-                    stroke="var(--accent-color)"
+                    stroke="#0ea5e9"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -514,7 +558,6 @@ export default function StudentsManagement() {
                     className={styles.paginationButton}
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    style={{ opacity: currentPage === 1 ? 0.5 : 1, cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
                   >
                     Previous
                   </button>
@@ -525,10 +568,6 @@ export default function StudentsManagement() {
                         key={page}
                         className={`${styles.pageNumber} ${currentPage === page ? styles.activePage : ''}`}
                         onClick={() => setCurrentPage(page)}
-                        style={{
-                          background: currentPage === page ? 'var(--primary-color)' : 'var(--card-bg)',
-                          color: currentPage === page ? '#fff' : 'var(--text-color)',
-                        }}
                       >
                         {page}
                       </button>
@@ -539,7 +578,6 @@ export default function StudentsManagement() {
                     className={styles.paginationButton}
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    style={{ opacity: currentPage === totalPages ? 0.5 : 1, cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
                   >
                     Next
                   </button>

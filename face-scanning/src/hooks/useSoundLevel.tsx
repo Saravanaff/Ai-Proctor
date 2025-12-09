@@ -1,13 +1,55 @@
 import { useEffect, useState, useRef } from 'react';
 import { soundLimit } from '@/constants/soundConfig';
 
-const useSoundLevel = () => {
+const useSoundLevel = (examSubmitted: boolean = false) => {
     const [isSoundDetected, setIsSoundDetected] = useState(false);
     const [audioLevel, setAudioLevel] = useState(0);
     const animationFrameRef = useRef<number | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const isMountedRef = useRef(true);
+
+    // ✅ Cleanup function to stop all microphone resources
+    const cleanupMicrophone = () => {
+      console.log("🎬 Cleaning up useSoundLevel microphone...");
+      
+      isMountedRef.current = false;
+
+      // Cancel animation frame
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+
+      // Close audio context
+      if (audioContextRef.current) {
+        try {
+          audioContextRef.current.close();
+          console.log("✅ AudioContext closed");
+        } catch (e) {
+          console.warn("Error closing AudioContext:", e);
+        }
+        audioContextRef.current = null;
+      }
+
+      // ✅ Stop microphone stream tracks
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => {
+          console.log(`🎬 Stopping useSoundLevel microphone track: ${track.kind}, state: ${track.readyState}`);
+          track.stop();
+        });
+        streamRef.current = null;
+        console.log("✅ Microphone stream stopped in useSoundLevel");
+      }
+    };
+
+    // ✅ Stop microphone immediately when exam is submitted
+    useEffect(() => {
+      if (examSubmitted) {
+        console.log("🛑 Exam submitted - stopping useSoundLevel microphone immediately");
+        cleanupMicrophone();
+      }
+    }, [examSubmitted]);
 
     useEffect(() => {
       isMountedRef.current = true;
@@ -93,27 +135,8 @@ const useSoundLevel = () => {
 
       initSound();
 
-      return () => {
-        isMountedRef.current = false;
-
-        // Cancel animation frame
-        if (animationFrameRef.current !== null) {
-          cancelAnimationFrame(animationFrameRef.current);
-          animationFrameRef.current = null;
-        }
-
-        // Close audio context
-        if (audioContextRef.current) {
-          audioContextRef.current.close();
-          audioContextRef.current = null;
-        }
-
-        // Stop media stream
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop());
-          streamRef.current = null;
-        }
-      };
+      // ✅ Cleanup on unmount
+      return cleanupMicrophone;
     }, []); // Empty dependency array - only run once
 
     return { isSoundDetected, audioLevel };

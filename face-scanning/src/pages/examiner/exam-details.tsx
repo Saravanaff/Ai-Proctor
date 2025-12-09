@@ -6,6 +6,7 @@ import styles from "../../styles/ExamDetailsPage.module.css";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { ExaminerGuard } from "@/components/guards";
 import { BarChart3 } from "lucide-react";
+import { LoadingScreen } from "@/components/PageTransition";
 interface User {
   id: number;
   name: string;
@@ -60,6 +61,19 @@ const ExamDetailsPage: React.FC = () => {
   const [riskScoreSortOrder, setRiskScoreSortOrder] = useState<"none" | "asc" | "desc">("none");
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  useEffect(() => {
+    // Set light theme background
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    document.documentElement.style.background = "#f8fafc";
+    
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+      document.documentElement.style.background = "";
+    };
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -439,10 +453,10 @@ const ExamDetailsPage: React.FC = () => {
             alignItems: "center",
             gap: "8px",
             padding: "10px 20px",
-            background: "var(--secondary-bg)",
-            border: "1px solid var(--border-color)",
+            background: "#f1f5f9",
+            border: "1px solid #e2e8f0",
             borderRadius: "12px",
-            color: "var(--text-primary)",
+            color: "#1e293b",
             fontSize: "14px",
             fontWeight: "600",
             cursor: "pointer",
@@ -451,11 +465,11 @@ const ExamDetailsPage: React.FC = () => {
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "translateX(-4px)";
-            e.currentTarget.style.background = "var(--card-bg)";
+            e.currentTarget.style.background = "#ffffff";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "translateX(0)";
-            e.currentTarget.style.background = "var(--secondary-bg)";
+            e.currentTarget.style.background = "#f1f5f9";
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -465,11 +479,11 @@ const ExamDetailsPage: React.FC = () => {
         </button>
 
         <div style={{
-          background: "linear-gradient(135deg, var(--card-bg), var(--secondary-bg))",
+          background: "linear-gradient(135deg, #ffffff, #f1f5f9)",
           borderRadius: "24px",
           padding: "32px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 8px 32px var(--shadow)",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
           position: "relative",
           overflow: "hidden"
         }}>
@@ -479,7 +493,7 @@ const ExamDetailsPage: React.FC = () => {
             left: 0,
             right: 0,
             height: "5px",
-            background: "linear-gradient(90deg, var(--accent-color), var(--primary-color))"
+            background: "linear-gradient(90deg, #0ea5e9, #3b82f6)"
           }} />
           
           <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
@@ -487,7 +501,7 @@ const ExamDetailsPage: React.FC = () => {
               width: "60px",
               height: "60px",
               borderRadius: "16px",
-              background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+              background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -501,15 +515,15 @@ const ExamDetailsPage: React.FC = () => {
                 margin: "0 0 8px 0",
                 fontSize: "28px",
                 fontWeight: "700",
-                color: "var(--text-primary)",
+                color: "#1e293b",
                 letterSpacing: "-0.02em"
               }}>
                 {examDetails.exam_name}
               </h1>
-              <div style={{ display: "flex", gap: "16px", fontSize: "14px", color: "var(--text-secondary)", flexWrap: "wrap" }}>
-                <span style={{ fontWeight: "500" }}>Exam ID: <strong style={{ color: "var(--text-primary)" }}>{examDetails.id}</strong></span>
+              <div style={{ display: "flex", gap: "16px", fontSize: "14px", color: "#64748b", flexWrap: "wrap" }}>
+                <span style={{ fontWeight: "500" }}>Exam ID: <strong style={{ color: "#1e293b" }}>{examDetails.id}</strong></span>
                 <span style={{ fontWeight: "500" }}>Access Key: <strong style={{ 
-                  color: "var(--accent-color)",
+                  color: "#0ea5e9",
                   background: "rgba(var(--accent-rgb), 0.1)",
                   padding: "4px 12px",
                   borderRadius: "8px",
@@ -523,9 +537,9 @@ const ExamDetailsPage: React.FC = () => {
                 {/* Exam Duration, Start Time, End Time */}
                 {examDetails.startTime && examDetails.endTime && (
                   <span style={{ fontWeight: "500" }}>
-                    Start: <strong style={{ color: "var(--primary-color)" }}>{new Date(examDetails.startTime).toLocaleString()}</strong>
-                    {' | '}End: <strong style={{ color: "var(--primary-color)" }}>{new Date(examDetails.endTime).toLocaleString()}</strong>
-                    {' | '}Duration: <strong style={{ color: "var(--accent-color)" }}>{Math.round((new Date(examDetails.endTime).getTime() - new Date(examDetails.startTime).getTime()) / (1000 * 60))} min</strong>
+                    Start: <strong style={{ color: "#3b82f6" }}>{new Date(examDetails.startTime).toLocaleString()}</strong>
+                    {' | '}End: <strong style={{ color: "#3b82f6" }}>{new Date(examDetails.endTime).toLocaleString()}</strong>
+                    {' | '}Duration: <strong style={{ color: "#0ea5e9" }}>{Math.round((new Date(examDetails.endTime).getTime() - new Date(examDetails.startTime).getTime()) / (1000 * 60))} min</strong>
                   </span>
                 )}
               </div>
@@ -543,87 +557,87 @@ const ExamDetailsPage: React.FC = () => {
         animation: "fadeIn 0.7s ease-out 0.2s backwards"
       }}>
         <div style={{
-          background: "var(--card-bg)",
+          background: "#ffffff",
           borderRadius: "16px",
           padding: "24px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 4px 16px var(--shadow)",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
           transition: "all 0.3s ease"
         }}>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <div style={{ fontSize: "13px", fontWeight: "600", color: "#64748b", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Total Participants
           </div>
-          <div style={{ fontSize: "36px", fontWeight: "700", color: "var(--text-primary)", marginBottom: "4px" }}>
+          <div style={{ fontSize: "36px", fontWeight: "700", color: "#1e293b", marginBottom: "4px" }}>
             {totalParticipants}
           </div>
-          <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+          <div style={{ fontSize: "13px", color: "#64748b" }}>
             Students attended
           </div>
         </div>
 
         <div style={{
-          background: "var(--card-bg)",
+          background: "#ffffff",
           borderRadius: "16px",
           padding: "24px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 4px 16px var(--shadow)",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
           transition: "all 0.3s ease"
         }}>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <div style={{ fontSize: "13px", fontWeight: "600", color: "#64748b", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Average Risk Score
           </div>
           <div style={{ fontSize: "36px", fontWeight: "700", color: averageRiskScore > 60 ? "#ef4444" : averageRiskScore > 30 ? "#f59e0b" : "#10b981", marginBottom: "4px" }}>
             {participantsWithScores > 0 ? averageRiskScore.toFixed(1) : "N/A"}
             {participantsWithScores > 0 && <span style={{ fontSize: "20px" }}>%</span>}
           </div>
-          <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+          <div style={{ fontSize: "13px", color: "#64748b" }}>
             {participantsWithScores > 0 ? `${participantsWithScores} scored` : "No scores yet"}
           </div>
         </div>
 
         <div style={{
-          background: "var(--card-bg)",
+          background: "#ffffff",
           borderRadius: "16px",
           padding: "24px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 4px 16px var(--shadow)",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
           transition: "all 0.3s ease"
         }}>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <div style={{ fontSize: "13px", fontWeight: "600", color: "#64748b", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Average Marks
           </div>
           <div style={{ fontSize: "36px", fontWeight: "700", color: averageMarks >= 70 ? "#10b981" : averageMarks >= 40 ? "#f59e0b" : "#ef4444", marginBottom: "4px" }}>
             {participantsWithExamScores > 0 ? averageMarks.toFixed(1) : "N/A"}
             {participantsWithExamScores > 0 && <span style={{ fontSize: "20px" }}>%</span>}
           </div>
-          <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+          <div style={{ fontSize: "13px", color: "#64748b" }}>
             {participantsWithExamScores > 0 ? `${participantsWithExamScores} students` : "No scores yet"}
           </div>
         </div>
 
         <div style={{
-          background: "var(--card-bg)",
+          background: "#ffffff",
           borderRadius: "16px",
           padding: "24px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 4px 16px var(--shadow)",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
           transition: "all 0.3s ease"
         }}>
-          <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-secondary)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <div style={{ fontSize: "13px", fontWeight: "600", color: "#64748b", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Risk Distribution
           </div>
           <div style={{ display: "flex", gap: "16px", alignItems: "baseline", marginTop: "8px" }}>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "28px", fontWeight: "700", color: "#ef4444" }}>{highRiskCount}</div>
-              <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px", fontWeight: "600" }}>High</div>
+              <div style={{ fontSize: "11px", color: "#64748b", marginTop: "4px", fontWeight: "600" }}>High</div>
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "28px", fontWeight: "700", color: "#f59e0b" }}>{mediumRiskCount}</div>
-              <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px", fontWeight: "600" }}>Medium</div>
+              <div style={{ fontSize: "11px", color: "#64748b", marginTop: "4px", fontWeight: "600" }}>Medium</div>
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: "28px", fontWeight: "700", color: "#10b981" }}>{lowRiskCount}</div>
-              <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px", fontWeight: "600" }}>Low</div>
+              <div style={{ fontSize: "11px", color: "#64748b", marginTop: "4px", fontWeight: "600" }}>Low</div>
             </div>
           </div>
         </div>
@@ -980,17 +994,17 @@ const ExamDetailsPage: React.FC = () => {
       }}>
         {/* Performance Bar Chart */}
         <div style={{
-          background: "var(--card-bg)",
+          background: "#ffffff",
           borderRadius: "16px",
           padding: "28px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 4px 16px var(--shadow)"
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)"
         }}>
           <h3 style={{
             margin: "0 0 24px 0",
             fontSize: "18px",
             fontWeight: "700",
-            color: "var(--text-primary)"
+            color: "#1e293b"
           }}>
             Score Performance Distribution
           </h3>
@@ -1046,13 +1060,13 @@ const ExamDetailsPage: React.FC = () => {
                             <span style={{
                               fontSize: "13px",
                               fontWeight: "600",
-                              color: "var(--text-primary)"
+                              color: "#1e293b"
                             }}>
                               {d.label}
                             </span>
                             <span style={{
                               fontSize: "11px",
-                              color: "var(--text-secondary)"
+                              color: "#64748b"
                             }}>
                               {d.range}
                             </span>
@@ -1072,7 +1086,7 @@ const ExamDetailsPage: React.FC = () => {
                             <span style={{
                               fontSize: "11px",
                               fontWeight: "600",
-                              color: "var(--text-secondary)"
+                              color: "#64748b"
                             }}>
                               ({studentPercentage}%)
                             </span>
@@ -1163,7 +1177,7 @@ const ExamDetailsPage: React.FC = () => {
               </div>
             );
           })() : (
-            <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--text-secondary)" }}>
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "#64748b" }}>
               <div style={{ fontSize: "48px", marginBottom: "8px" }}>📈</div>
               <p style={{ margin: 0, fontSize: "14px" }}>No performance data available yet</p>
             </div>
@@ -1173,11 +1187,11 @@ const ExamDetailsPage: React.FC = () => {
 
       {/* Participants Section */}
       <div style={{
-        background: "var(--card-bg)",
+        background: "#ffffff",
         borderRadius: "16px",
         padding: "28px",
-        border: "1px solid var(--border-color)",
-        boxShadow: "0 4px 16px var(--shadow)",
+        border: "1px solid #e2e8f0",
+        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
         animation: "fadeIn 0.8s ease-out 0.3s backwards"
       }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
@@ -1185,7 +1199,7 @@ const ExamDetailsPage: React.FC = () => {
             margin: 0,
             fontSize: "20px",
             fontWeight: "700",
-            color: "var(--text-primary)",
+            color: "#1e293b",
             display: "flex",
             alignItems: "center",
             gap: "10px"
@@ -1197,13 +1211,13 @@ const ExamDetailsPage: React.FC = () => {
             Participants
           </h2>
           <span style={{
-            background: "var(--secondary-bg)",
+            background: "#f1f5f9",
             padding: "8px 16px",
             borderRadius: "10px",
             fontSize: "14px",
             fontWeight: "600",
-            color: "var(--text-primary)",
-            border: "1px solid var(--border-color)"
+            color: "#1e293b",
+            border: "1px solid #e2e8f0"
           }}>
             {filteredParticipants.length} {filteredParticipants.length === 1 ? 'student' : 'students'}
           </span>
@@ -1224,7 +1238,7 @@ const ExamDetailsPage: React.FC = () => {
                 left: "16px",
                 width: "18px",
                 height: "18px",
-                color: "var(--text-secondary)",
+                color: "#64748b",
                 pointerEvents: "none"
               }}
               viewBox="0 0 24 24"
@@ -1243,21 +1257,21 @@ const ExamDetailsPage: React.FC = () => {
               style={{
                 width: "100%",
                 padding: "14px 16px 14px 48px",
-                background: "var(--secondary-bg)",
-                border: "1px solid var(--border-color)",
+                background: "#f1f5f9",
+                border: "1px solid #e2e8f0",
                 borderRadius: "12px",
                 fontSize: "14px",
                 fontWeight: "500",
-                color: "var(--text-primary)",
+                color: "#1e293b",
                 outline: "none",
                 transition: "all 0.3s ease"
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = "var(--accent-color)";
+                e.currentTarget.style.borderColor = "#0ea5e9";
                 e.currentTarget.style.boxShadow = "0 0 0 3px rgba(var(--accent-rgb), 0.1)";
               }}
               onBlur={(e) => {
-                e.currentTarget.style.borderColor = "var(--border-color)";
+                e.currentTarget.style.borderColor = "#e2e8f0";
                 e.currentTarget.style.boxShadow = "none";
               }}
             />
@@ -1272,20 +1286,20 @@ const ExamDetailsPage: React.FC = () => {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: "var(--secondary-bg)",
-                  border: "1px solid var(--border-color)",
+                  background: "#f1f5f9",
+                  border: "1px solid #e2e8f0",
                   borderRadius: "8px",
                   cursor: "pointer",
-                  color: "var(--text-secondary)",
+                  color: "#64748b",
                   transition: "all 0.2s ease"
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--card-bg)";
-                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.background = "#ffffff";
+                  e.currentTarget.style.color = "#1e293b";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "var(--secondary-bg)";
-                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.background = "#f1f5f9";
+                  e.currentTarget.style.color = "#64748b";
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1306,7 +1320,7 @@ const ExamDetailsPage: React.FC = () => {
             }}>
               <span style={{
                 fontSize: "12px",
-                color: "var(--text-secondary)",
+                color: "#64748b",
                 fontWeight: "600"
               }}>
                 Active Filters:
@@ -1317,7 +1331,7 @@ const ExamDetailsPage: React.FC = () => {
                   alignItems: "center",
                   gap: "6px",
                   padding: "4px 10px",
-                  background: "var(--accent-color)",
+                  background: "#0ea5e9",
                   color: "white",
                   borderRadius: "6px",
                   fontSize: "12px",
@@ -1349,7 +1363,7 @@ const ExamDetailsPage: React.FC = () => {
                   alignItems: "center",
                   gap: "6px",
                   padding: "4px 10px",
-                  background: "var(--accent-color)",
+                  background: "#0ea5e9",
                   color: "white",
                   borderRadius: "6px",
                   fontSize: "12px",
@@ -1381,7 +1395,7 @@ const ExamDetailsPage: React.FC = () => {
                   alignItems: "center",
                   gap: "6px",
                   padding: "4px 10px",
-                  background: "var(--accent-color)",
+                  background: "#0ea5e9",
                   color: "white",
                   borderRadius: "6px",
                   fontSize: "12px",
@@ -1435,7 +1449,7 @@ const ExamDetailsPage: React.FC = () => {
           <div style={{
             overflowX: "auto",
             borderRadius: "12px",
-            border: "1px solid var(--border-color)"
+            border: "1px solid #e2e8f0"
           }}>
             <table style={{
               width: "100%",
@@ -1444,15 +1458,15 @@ const ExamDetailsPage: React.FC = () => {
             }}>
               <thead>
                 <tr style={{
-                  background: "var(--secondary-bg)",
-                  borderBottom: "2px solid var(--border-color)"
+                  background: "#f1f5f9",
+                  borderBottom: "2px solid #e2e8f0"
                 }}>
                   <th style={{
                     padding: "16px",
                     textAlign: "left",
                     fontWeight: "700",
                     fontSize: "12px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
@@ -1464,7 +1478,7 @@ const ExamDetailsPage: React.FC = () => {
                     textAlign: "left",
                     fontWeight: "700",
                     fontSize: "12px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
@@ -1476,7 +1490,7 @@ const ExamDetailsPage: React.FC = () => {
                     textAlign: "left",
                     fontWeight: "700",
                     fontSize: "12px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
@@ -1493,24 +1507,24 @@ const ExamDetailsPage: React.FC = () => {
                             }
                           }}
                           style={{
-                            background: selectedDepartment !== "all" ? "var(--accent-color)" : "transparent",
+                            background: selectedDepartment !== "all" ? "#0ea5e9" : "transparent",
                             border: "none",
                             padding: "4px",
                             cursor: "pointer",
                             borderRadius: "4px",
                             display: "flex",
                             alignItems: "center",
-                            color: selectedDepartment !== "all" ? "white" : "var(--text-secondary)",
+                            color: selectedDepartment !== "all" ? "white" : "#64748b",
                             transition: "all 0.2s ease"
                           }}
                           onMouseEnter={(e) => {
                             if (selectedDepartment === "all") {
-                              e.currentTarget.style.color = "var(--accent-color)";
+                              e.currentTarget.style.color = "#0ea5e9";
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (selectedDepartment === "all") {
-                              e.currentTarget.style.color = "var(--text-secondary)";
+                              e.currentTarget.style.color = "#64748b";
                             }
                           }}
                         >
@@ -1526,12 +1540,12 @@ const ExamDetailsPage: React.FC = () => {
                             top: "100%",
                             left: "0",
                             marginTop: "8px",
-                            background: "var(--card-bg)",
-                            border: "1px solid var(--border-color)",
+                            background: "#ffffff",
+                            border: "1px solid #e2e8f0",
                             borderRadius: "8px",
                             padding: "8px",
                             minWidth: "180px",
-                            boxShadow: "0 4px 12px var(--shadow)",
+                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
                             zIndex: 1000
                           }}
                           onClick={(e) => e.stopPropagation()}
@@ -1546,11 +1560,11 @@ const ExamDetailsPage: React.FC = () => {
                             style={{
                               width: "100%",
                               padding: "8px",
-                              background: "var(--secondary-bg)",
-                              border: "1px solid var(--border-color)",
+                              background: "#f1f5f9",
+                              border: "1px solid #e2e8f0",
                               borderRadius: "6px",
                               fontSize: "13px",
-                              color: "var(--text-primary)",
+                              color: "#1e293b",
                               cursor: "pointer",
                               outline: "none"
                             }}
@@ -1569,7 +1583,7 @@ const ExamDetailsPage: React.FC = () => {
                     textAlign: "left",
                     fontWeight: "700",
                     fontSize: "12px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
@@ -1581,7 +1595,7 @@ const ExamDetailsPage: React.FC = () => {
                     textAlign: "left",
                     fontWeight: "700",
                     fontSize: "12px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
@@ -1600,24 +1614,24 @@ const ExamDetailsPage: React.FC = () => {
                             }
                           }}
                           style={{
-                            background: regNoFilter !== "" ? "var(--accent-color)" : "transparent",
+                            background: regNoFilter !== "" ? "#0ea5e9" : "transparent",
                             border: "none",
                             padding: "4px",
                             cursor: "pointer",
                             borderRadius: "4px",
                             display: "flex",
                             alignItems: "center",
-                            color: regNoFilter !== "" ? "white" : "var(--text-secondary)",
+                            color: regNoFilter !== "" ? "white" : "#64748b",
                             transition: "all 0.2s ease"
                           }}
                           onMouseEnter={(e) => {
                             if (regNoFilter === "") {
-                              e.currentTarget.style.color = "var(--accent-color)";
+                              e.currentTarget.style.color = "#0ea5e9";
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (regNoFilter === "") {
-                              e.currentTarget.style.color = "var(--text-secondary)";
+                              e.currentTarget.style.color = "#64748b";
                             }
                           }}
                         >
@@ -1633,12 +1647,12 @@ const ExamDetailsPage: React.FC = () => {
                             top: "100%",
                             left: "0",
                             marginTop: "8px",
-                            background: "var(--card-bg)",
-                            border: "1px solid var(--border-color)",
+                            background: "#ffffff",
+                            border: "1px solid #e2e8f0",
                             borderRadius: "8px",
                             padding: "12px",
                             minWidth: "200px",
-                            boxShadow: "0 4px 12px var(--shadow)",
+                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
                             zIndex: 1000
                           }}
                           onClick={(e) => e.stopPropagation()}
@@ -1651,11 +1665,11 @@ const ExamDetailsPage: React.FC = () => {
                             style={{
                               width: "100%",
                               padding: "8px",
-                              background: "var(--secondary-bg)",
-                              border: "1px solid var(--border-color)",
+                              background: "#f1f5f9",
+                              border: "1px solid #e2e8f0",
                               borderRadius: "6px",
                               fontSize: "13px",
-                              color: "var(--text-primary)",
+                              color: "#1e293b",
                               outline: "none"
                             }}
                           />
@@ -1668,7 +1682,7 @@ const ExamDetailsPage: React.FC = () => {
                     textAlign: "center",
                     fontWeight: "700",
                     fontSize: "12px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
@@ -1680,7 +1694,7 @@ const ExamDetailsPage: React.FC = () => {
                     textAlign: "center",
                     fontWeight: "700",
                     fontSize: "12px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
@@ -1697,19 +1711,19 @@ const ExamDetailsPage: React.FC = () => {
                           });
                         }}
                         style={{
-                          background: riskScoreSortOrder !== "none" ? "var(--accent-color)" : "transparent",
+                          background: riskScoreSortOrder !== "none" ? "#0ea5e9" : "transparent",
                           border: "none",
                           padding: "4px",
                           cursor: "pointer",
                           borderRadius: "4px",
                           display: "flex",
                           alignItems: "center",
-                          color: riskScoreSortOrder !== "none" ? "white" : "var(--text-secondary)",
+                          color: riskScoreSortOrder !== "none" ? "white" : "#64748b",
                           transition: "all 0.2s ease"
                         }}
                         onMouseEnter={(e) => {
                           if (riskScoreSortOrder === "none") {
-                            e.currentTarget.style.background = "var(--secondary-bg)";
+                            e.currentTarget.style.background = "#f1f5f9";
                           }
                         }}
                         onMouseLeave={(e) => {
@@ -1748,7 +1762,7 @@ const ExamDetailsPage: React.FC = () => {
                     textAlign: "center",
                     fontWeight: "700",
                     fontSize: "12px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
@@ -1767,24 +1781,24 @@ const ExamDetailsPage: React.FC = () => {
                             }
                           }}
                           style={{
-                            background: violationFilter !== "" ? "var(--accent-color)" : "transparent",
+                            background: violationFilter !== "" ? "#0ea5e9" : "transparent",
                             border: "none",
                             padding: "4px",
                             cursor: "pointer",
                             borderRadius: "4px",
                             display: "flex",
                             alignItems: "center",
-                            color: violationFilter !== "" ? "white" : "var(--text-secondary)",
+                            color: violationFilter !== "" ? "white" : "#64748b",
                             transition: "all 0.2s ease"
                           }}
                           onMouseEnter={(e) => {
                             if (violationFilter === "") {
-                              e.currentTarget.style.color = "var(--accent-color)";
+                              e.currentTarget.style.color = "#0ea5e9";
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (violationFilter === "") {
-                              e.currentTarget.style.color = "var(--text-secondary)";
+                              e.currentTarget.style.color = "#64748b";
                             }
                           }}
                         >
@@ -1800,12 +1814,12 @@ const ExamDetailsPage: React.FC = () => {
                             top: "100%",
                             right: "0",
                             marginTop: "8px",
-                            background: "var(--card-bg)",
-                            border: "1px solid var(--border-color)",
+                            background: "#ffffff",
+                            border: "1px solid #e2e8f0",
                             borderRadius: "8px",
                             padding: "12px",
                             minWidth: "200px",
-                            boxShadow: "0 4px 12px var(--shadow)",
+                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
                             zIndex: 1000
                           }}
                           onClick={(e) => e.stopPropagation()}
@@ -1818,11 +1832,11 @@ const ExamDetailsPage: React.FC = () => {
                             style={{
                               width: "100%",
                               padding: "8px",
-                              background: "var(--secondary-bg)",
-                              border: "1px solid var(--border-color)",
+                              background: "#f1f5f9",
+                              border: "1px solid #e2e8f0",
                               borderRadius: "6px",
                               fontSize: "13px",
-                              color: "var(--text-primary)",
+                              color: "#1e293b",
                               outline: "none"
                             }}
                           />
@@ -1835,7 +1849,7 @@ const ExamDetailsPage: React.FC = () => {
                     textAlign: "center",
                     fontWeight: "700",
                     fontSize: "12px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
@@ -1847,7 +1861,7 @@ const ExamDetailsPage: React.FC = () => {
                     textAlign: "center",
                     fontWeight: "700",
                     fontSize: "12px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
                     whiteSpace: "nowrap"
@@ -1864,12 +1878,12 @@ const ExamDetailsPage: React.FC = () => {
                     <tr
                       key={index}
                       style={{
-                        borderBottom: "1px solid var(--border-color)",
+                        borderBottom: "1px solid #e2e8f0",
                         transition: "background 0.2s ease",
                         cursor: "pointer"
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "var(--secondary-bg)";
+                        e.currentTarget.style.background = "#f1f5f9";
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = "transparent";
@@ -1889,7 +1903,7 @@ const ExamDetailsPage: React.FC = () => {
                             width: "40px",
                             height: "40px",
                             borderRadius: "10px",
-                            background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                            background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -1902,7 +1916,7 @@ const ExamDetailsPage: React.FC = () => {
                           </div>
                           <span style={{
                             fontWeight: "600",
-                            color: "var(--text-primary)"
+                            color: "#1e293b"
                           }}>
                             {attendance.user.name}
                           </span>
@@ -1910,7 +1924,7 @@ const ExamDetailsPage: React.FC = () => {
                       </td>
                       <td style={{
                         padding: "16px",
-                        color: "var(--text-secondary)",
+                        color: "#64748b",
                         whiteSpace: "nowrap"
                       }}>
                         {attendance.user.email}
@@ -1933,7 +1947,7 @@ const ExamDetailsPage: React.FC = () => {
                       </td>
                       <td style={{
                         padding: "16px",
-                        color: "var(--text-secondary)",
+                        color: "#64748b",
                         whiteSpace: "nowrap"
                       }}>
                         {attendance.user.dob || "N/A"}
@@ -1959,7 +1973,7 @@ const ExamDetailsPage: React.FC = () => {
                         padding: "16px",
                         textAlign: "center",
                         fontWeight: "600",
-                        color: "var(--text-primary)",
+                        color: "#1e293b",
                         whiteSpace: "nowrap"
                       }}>
                         {calculateDuration(attendance)}
@@ -1977,10 +1991,10 @@ const ExamDetailsPage: React.FC = () => {
                           fontWeight: "700",
                           background: riskScore !== null && riskScore !== undefined 
                             ? (riskScore > 60 ? "#FEE2E2" : riskScore > 30 ? "#FEF3C7" : "#DCFCE7")
-                            : "var(--secondary-bg)",
+                            : "#f1f5f9",
                           color: riskScore !== null && riskScore !== undefined 
                             ? getRiskColor(riskScore) 
-                            : "var(--text-secondary)"
+                            : "#64748b"
                         }}>
                           {stats?.loading ? "..." : riskScore !== null && riskScore !== undefined ? `${riskScore}%` : "N/A"}
                         </span>
@@ -1996,8 +2010,8 @@ const ExamDetailsPage: React.FC = () => {
                           borderRadius: "8px",
                           fontSize: "14px",
                           fontWeight: "700",
-                          background: (stats?.violationCount || 0) > 0 ? "#FEE2E2" : "var(--secondary-bg)",
-                          color: (stats?.violationCount || 0) > 0 ? "#ef4444" : "var(--text-primary)"
+                          background: (stats?.violationCount || 0) > 0 ? "#FEE2E2" : "#f1f5f9",
+                          color: (stats?.violationCount || 0) > 0 ? "#ef4444" : "#1e293b"
                         }}>
                           {stats?.loading ? "..." : stats?.violationCount || 0}
                         </span>
@@ -2008,7 +2022,7 @@ const ExamDetailsPage: React.FC = () => {
                         whiteSpace: "nowrap"
                       }}>
                         {stats?.loading ? (
-                          <span style={{ color: "var(--text-secondary)" }}>...</span>
+                          <span style={{ color: "#64748b" }}>...</span>
                         ) : stats?.examScore !== null && stats?.examScore !== undefined ? (
                           <span style={{
                             display: "inline-block",
@@ -2023,7 +2037,7 @@ const ExamDetailsPage: React.FC = () => {
                           </span>
                         ) : (
                           <span style={{
-                            color: "var(--text-secondary)",
+                            color: "#64748b",
                             fontSize: "13px",
                             fontStyle: "italic"
                           }}>
@@ -2042,7 +2056,7 @@ const ExamDetailsPage: React.FC = () => {
                           }}
                           style={{
                             padding: "8px 16px",
-                            background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                            background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                             color: "white",
                             border: "none",
                             borderRadius: "8px",
@@ -2074,14 +2088,14 @@ const ExamDetailsPage: React.FC = () => {
           <div style={{
             textAlign: "center",
             padding: "48px 20px",
-            color: "var(--text-secondary)"
+            color: "#64748b"
           }}>
             <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔍</div>
             <h3 style={{
               margin: "0 0 8px 0",
               fontSize: "18px",
               fontWeight: "600",
-              color: "var(--text-primary)"
+              color: "#1e293b"
             }}>
               No participants found
             </h3>
@@ -2093,14 +2107,14 @@ const ExamDetailsPage: React.FC = () => {
           <div style={{
             textAlign: "center",
             padding: "48px 20px",
-            color: "var(--text-secondary)"
+            color: "#64748b"
           }}>
             <div style={{ fontSize: "48px", marginBottom: "16px" }}>👥</div>
             <h3 style={{
               margin: "0 0 8px 0",
               fontSize: "18px",
               fontWeight: "600",
-              color: "var(--text-primary)"
+              color: "#1e293b"
             }}>
               No Participants Yet
             </h3>
@@ -2110,7 +2124,7 @@ const ExamDetailsPage: React.FC = () => {
             <div style={{
               display: "inline-block",
               background: "rgba(var(--accent-rgb), 0.1)",
-              color: "var(--accent-color)",
+              color: "#0ea5e9",
               padding: "8px 16px",
               borderRadius: "8px",
               fontSize: "18px",
@@ -2128,3 +2142,4 @@ const ExamDetailsPage: React.FC = () => {
 };
 
 export default ExamDetailsPage;
+

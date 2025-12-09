@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import styles from "../../styles/ExaminerDashboard.module.css";
+import { LoadingScreen } from "@/components/PageTransition";
 
 interface Exam {
   id: number;
@@ -47,6 +48,19 @@ export default function ExaminerDashboard() {
     checkAuth();
     fetchExams();
     fetchExaminerInfo();
+  }, []);
+
+  useEffect(() => {
+    // Set light theme background
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    document.documentElement.style.background = "#f8fafc";
+    
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+      document.documentElement.style.background = "";
+    };
   }, []);
 
   useEffect(() => {
@@ -188,6 +202,10 @@ export default function ExaminerDashboard() {
       minute: "2-digit",
     });
   };
+
+  if (loading) {
+    return <LoadingScreen message="Loading dashboard..." />;
+  }
 
   return (
     <div className={styles.dashboardContainer}>
@@ -673,3 +691,4 @@ export default function ExaminerDashboard() {
     </div>
   );
 }
+

@@ -4,6 +4,7 @@ import { getTokenFromCookie, setExamId } from "@/constants/AuthStore";
 import { configureAxiosInterceptor } from "@/utils/axiosConfig";
 import { logout as authLogout, getUserName, getUserInitials } from "@/utils/auth";
 import { useRouter } from "next/router";
+import { LoadingScreen } from "@/components/PageTransition";
 import { 
   KeyRound, 
   ArrowRight, 
@@ -14,9 +15,7 @@ import {
   Mic, 
   Monitor,
   LogOut,
-  Sparkles,
-  Moon,
-  Sun
+  Sparkles
 } from "lucide-react";
 
 const JoinExam = () => {
@@ -26,28 +25,22 @@ const JoinExam = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileInitials, setProfileInitials] = useState<string>("U");
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
   const router = useRouter();
+
+  // Enforce light theme
+  useEffect(() => {
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+    };
+  }, []);
 
   // Configure axios interceptor once
   useEffect(() => {
     configureAxiosInterceptor();
   }, []);
-
-  // ✅ Load theme preference from localStorage on mount
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setIsDarkTheme(savedTheme === 'dark');
-    }
-  }, []);
-
-  // ✅ Save theme preference to localStorage when changed
-  const handleThemeToggle = () => {
-    const newTheme = !isDarkTheme;
-    setIsDarkTheme(newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-  };
 
   const handleJoinExam = async () => {
     if (!examKey.trim()) {
@@ -104,63 +97,59 @@ const JoinExam = () => {
   // Professional High-Tech Black Theme Configuration
   const themes = {
     dark: {
-      background: "linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #0f0f0f 100%)",
-      orb1: "radial-gradient(circle, rgba(0, 255, 255, 0.12) 0%, rgba(0, 153, 255, 0.06) 40%, transparent 70%)",
-      orb2: "radial-gradient(circle, rgba(0, 153, 255, 0.15) 0%, rgba(0, 255, 255, 0.08) 40%, transparent 70%)",
-      navBg: "rgba(8, 8, 8, 0.95)",
-      navBorder: "rgba(0, 255, 255, 0.15)",
-      logoBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
-      logoBorder: "rgba(0, 255, 255, 0.3)",
-      logoShadow: "0 0 40px rgba(0, 255, 255, 0.5), 0 15px 50px rgba(0, 153, 255, 0.4)",
+      background: "#0f172a",
+      navBg: "rgba(26, 26, 46, 0.95)",
+      navBorder: "rgba(71, 85, 105, 0.5)",
+      logoBg: "#3b82f6",
+      logoBorder: "rgba(71, 85, 105, 0.5)",
+      logoShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
       titleColor: "white",
-      subtitleColor: "rgba(160, 174, 192, 1)",
+      subtitleColor: "rgba(226, 232, 240, 1)",
       textColor: "white",
-      textSecondary: "rgba(160, 174, 192, 1)",
-      featureCardBg: "rgba(15, 15, 15, 0.8)",
-      featureCardBorder: "rgba(0, 255, 255, 0.2)",
-      featureIconBg: "linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 153, 255, 0.15) 100%)",
-      featureIconColor: "#00ffff",
+      textSecondary: "rgba(226, 232, 240, 1)",
+      featureCardBg: "rgba(30, 41, 59, 0.8)",
+      featureCardBorder: "rgba(71, 85, 105, 0.5)",
+      featureIconBg: "rgba(59, 130, 246, 0.15)",
+      featureIconColor: "#3b82f6",
       formBg: "rgba(255, 255, 255, 0.98)",
-      formShadow: "0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset",
+      formShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
       formBorder: "rgba(226, 232, 240, 0.2)",
-      formHeaderBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
-      formHeaderShadow: "0 0 30px rgba(0, 255, 255, 0.5), 0 10px 40px rgba(0, 153, 255, 0.3)",
-      formTitleColor: "#0f172a",
+      formHeaderBg: "#3b82f6",
+      formHeaderShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
+      formTitleColor: "#ffffff",
       formTextColor: "#64748b",
       inputBorder: "#e2e8f0",
       inputBg: "#f8fafc",
       inputColor: "#0f172a",
-      inputFocusBorder: "#00ffff",
-      inputFocusShadow: "0 0 0 4px rgba(0, 255, 255, 0.15)",
-      buttonBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
-      buttonShadow: "0 0 30px rgba(0, 255, 255, 0.5), 0 10px 40px rgba(0, 153, 255, 0.3)",
-      buttonHoverShadow: "0 0 40px rgba(0, 255, 255, 0.6), 0 15px 50px rgba(0, 153, 255, 0.4)",
+      inputFocusBorder: "#3b82f6",
+      inputFocusShadow: "0 0 0 4px rgba(59, 130, 246, 0.15)",
+      buttonBg: "#3b82f6",
+      buttonShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
+      buttonHoverShadow: "0 2px 6px rgba(0, 0, 0, 0.4)",
       instructionBg: "#f8fafc",
       instructionBorder: "#e2e8f0",
-      bulletColor: "#00ffff",
+      bulletColor: "#3b82f6",
     },
     light: {
-      background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",
-      orb1: "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
-      orb2: "radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%)",
+      background: "#f8fafc",
       navBg: "rgba(255, 255, 255, 0.8)",
       navBorder: "rgba(226, 232, 240, 0.8)",
-      logoBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-      logoBorder: "rgba(59, 130, 246, 0.3)",
-      logoShadow: "0 8px 32px rgba(59, 130, 246, 0.3)",
+      logoBg: "#3b82f6",
+      logoBorder: "rgba(203, 213, 225, 0.5)",
+      logoShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
       titleColor: "#0f172a",
       subtitleColor: "rgba(100, 116, 139, 1)",
       textColor: "#0f172a",
       textSecondary: "rgba(71, 85, 105, 1)",
       featureCardBg: "rgba(255, 255, 255, 0.7)",
       featureCardBorder: "rgba(226, 232, 240, 0.8)",
-      featureIconBg: "linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%)",
+      featureIconBg: "rgba(59, 130, 246, 0.15)",
       featureIconColor: "#3b82f6",
       formBg: "rgba(255, 255, 255, 0.95)",
-      formShadow: "0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.8) inset",
+      formShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
       formBorder: "rgba(226, 232, 240, 0.5)",
-      formHeaderBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-      formHeaderShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
+      formHeaderBg: "#3b82f6",
+      formHeaderShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
       formTitleColor: "#0f172a",
       formTextColor: "#64748b",
       inputBorder: "#cbd5e1",
@@ -168,16 +157,16 @@ const JoinExam = () => {
       inputColor: "#0f172a",
       inputFocusBorder: "#3b82f6",
       inputFocusShadow: "0 0 0 4px rgba(59, 130, 246, 0.1)",
-      buttonBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-      buttonShadow: "0 10px 30px rgba(59, 130, 246, 0.4)",
-      buttonHoverShadow: "0 15px 40px rgba(59, 130, 246, 0.5)",
+      buttonBg: "#3b82f6",
+      buttonShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+      buttonHoverShadow: "0 2px 6px rgba(0, 0, 0, 0.2)",
       instructionBg: "#ffffff",
       instructionBorder: "#e2e8f0",
       bulletColor: "#3b82f6",
     }
   };
 
-  const theme = isDarkTheme ? themes.dark : themes.light;
+  const theme = themes.light;
 
   return (
     <div
@@ -189,36 +178,6 @@ const JoinExam = () => {
         transition: "background 0.3s ease",
       }}
     >
-      {/* Animated Background Elements */}
-      <div
-        style={{
-          position: "absolute",
-          top: "-10%",
-          right: "-5%",
-          width: "500px",
-          height: "500px",
-          background: theme.orb1,
-          borderRadius: "50%",
-          filter: "blur(60px)",
-          animation: "float 8s ease-in-out infinite",
-          transition: "background 0.3s ease",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          bottom: "-10%",
-          left: "-5%",
-          width: "400px",
-          height: "400px",
-          background: theme.orb2,
-          borderRadius: "50%",
-          filter: "blur(60px)",
-          animation: "float 10s ease-in-out infinite reverse",
-          transition: "background 0.3s ease",
-        }}
-      />
-
       {/* Top Navigation */}
       <nav
         style={{
@@ -297,14 +256,14 @@ const JoinExam = () => {
                 width: "36px",
                 height: "36px",
                 borderRadius: "50%",
-                background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                background: "#3b82f6",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: "14px",
                 fontWeight: "700",
                 color: "white",
-                boxShadow: "0 4px 12px rgba(59, 130, 246, 0.4)",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
               }}
             >
               {profileInitials}
@@ -339,7 +298,7 @@ const JoinExam = () => {
               transition: "all 0.3s ease",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = isDarkTheme ? "rgba(51, 65, 85, 0.9)" : "rgba(226, 232, 240, 0.9)";
+              e.currentTarget.style.background = "rgba(226, 232, 240, 0.9)";
               e.currentTarget.style.transform = "translateY(-2px)";
             }}
             onMouseLeave={(e) => {
@@ -790,91 +749,6 @@ const JoinExam = () => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Theme Toggle Switch - Bottom Center */}
-      <div
-        style={{
-          position: "fixed",
-          bottom: "30px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 1000,
-        }}
-      >
-        <button
-          onClick={() => setIsDarkTheme(!isDarkTheme)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            padding: "12px 24px",
-            borderRadius: "100px",
-            background: theme.navBg,
-            backdropFilter: "blur(20px)",
-            border: `2px solid ${theme.navBorder}`,
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-3px)";
-            e.currentTarget.style.boxShadow = "0 15px 50px rgba(0, 0, 0, 0.3)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 10px 40px rgba(0, 0, 0, 0.2)";
-          }}
-        >
-          <div
-            style={{
-              width: "50px",
-              height: "26px",
-              borderRadius: "100px",
-              background: isDarkTheme 
-                ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
-                : "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-              position: "relative",
-              transition: "all 0.3s ease",
-              boxShadow: isDarkTheme
-                ? "0 4px 12px rgba(59, 130, 246, 0.4) inset"
-                : "0 4px 12px rgba(251, 191, 36, 0.4) inset",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: "3px",
-                left: isDarkTheme ? "3px" : "27px",
-                width: "20px",
-                height: "20px",
-                borderRadius: "50%",
-                background: "white",
-                transition: "all 0.3s ease",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {isDarkTheme ? (
-                <Moon size={12} color="#3b82f6" strokeWidth={2.5} />
-              ) : (
-                <Sun size={12} color="#f59e0b" strokeWidth={2.5} />
-              )}
-            </div>
-          </div>
-          <span
-            style={{
-              fontSize: "14px",
-              fontWeight: "600",
-              color: theme.titleColor,
-              transition: "color 0.3s ease",
-            }}
-          >
-            {isDarkTheme ? "Dark" : "Light"} Theme
-          </span>
-        </button>
       </div>
 
       {/* Animations */}

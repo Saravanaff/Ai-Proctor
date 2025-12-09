@@ -46,7 +46,6 @@ router.put(
 
 router.post("/saveUserAnswers", requireStudentRole, saveUserAnswers);
 
-// ✅ Mark exam exit when user leaves unexpectedly (no auth required for beacon/unload events)
 router.post("/markExamExit", markExamExit);
 
 router.get("/exam/:examId/results", getExamResults);

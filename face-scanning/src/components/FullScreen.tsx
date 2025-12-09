@@ -10,6 +10,7 @@ import { getTokenFromCookie } from "@/constants/AuthStore";
 import { Brain, FileText, Loader, Upload, CheckCircle, Clock, AlertTriangle, Moon, Sun } from "lucide-react";
 import { useExamState } from "@/hooks/useExamState";
 import ExamStateError from "./ExamStateError";
+import { getNumberOfMicrophones, getTabSwitchViolations } from "@/constants/violationConsts";
 
 // const questions = Array.from({ length: 10 }, (_, i) => ({
 //   id: i + 1,
@@ -49,23 +50,8 @@ const ExamPage = ({
   // ✅ Use exam state hook for validation and error handling
   const examState = useExamState();
   
-  // ✅ Theme state - default to light
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
-
-  // ✅ Load theme preference from localStorage on mount
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setIsDarkTheme(savedTheme === 'dark');
-    }
-  }, []);
-
-  // ✅ Save theme preference to localStorage when changed
-  const handleThemeToggle = () => {
-    const newTheme = !isDarkTheme;
-    setIsDarkTheme(newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-  };
+  // ✅ Fixed to light theme only
+  const isDarkTheme = false;
   
   const [answers, setAnswers] = useState<{ [key: number]: Answer }>({});
   const [blocked, setBlocked] = useState(false);
@@ -143,7 +129,7 @@ const ExamPage = ({
     }
   };
 
-  const currentTheme = isDarkTheme ? themes.dark : themes.light;
+  const currentTheme = themes.light; // Always use light theme
 
   // ✅ Debug logging
   useEffect(() => {
@@ -422,79 +408,6 @@ const ExamPage = ({
     }
   };
 
-  // ✅ Track when user exits exam (browser close, tab close, navigation away)
-  useEffect(() => {
-    const handleExamExit = async () => {
-      // Only track exit if exam has started and not yet submitted
-      if (!examStarted || examSubmitted) return;
-
-      const exitTime = new Date();
-      console.log("🚪 User exiting exam - marking end time:", exitTime);
-
-      try {
-        // ✅ Use sendBeacon for reliable delivery even during page unload
-        const exitData = JSON.stringify({
-          userId: Number(userId),
-          examId: Number(examId),
-          endTime: exitTime.toISOString(),
-          exitType: "unexpected_exit",
-        });
-
-        const beaconSent = navigator.sendBeacon(
-          `${baseUrl}/markExamExit`,
-          new Blob([exitData], { type: "application/json" })
-        );
-
-        if (beaconSent) {
-          console.log("✅ Exam exit beacon sent successfully");
-        } else {
-          console.warn("⚠️ Beacon failed, trying synchronous request");
-          // Fallback to synchronous AJAX if beacon fails
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", `${baseUrl}/markExamExit`, false); // synchronous
-          xhr.setRequestHeader("Content-Type", "application/json");
-          xhr.setRequestHeader("Authorization", `Bearer ${getTokenFromCookie()}`);
-          xhr.send(exitData);
-        }
-
-        // Also emit socket event as backup
-        socket.emit("exam-unexpected-exit", {
-          user_id: userId,
-          exam_id: examId,
-          exit_time: exitTime,
-          timestamp: exitTime,
-        });
-      } catch (error) {
-        console.error("❌ Failed to mark exam exit:", error);
-      }
-    };
-
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      handleExamExit();
-      // Show confirmation dialog
-      e.preventDefault();
-      e.returnValue = ""; // Chrome requires returnValue to be set
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.hidden && examStarted && !examSubmitted) {
-        console.log("⚠️ User switched tab/minimized browser");
-        handleExamExit();
-      }
-    };
-
-    // Listen for page unload events
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    window.addEventListener("unload", handleExamExit);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      window.removeEventListener("unload", handleExamExit);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [examStarted, examSubmitted, userId, examId, baseUrl]);
-
   useEffect(() => {
     try {
       const preventActions: any = (e: any) => {
@@ -693,6 +606,10 @@ const ExamPage = ({
           screenRecorderMediaRecorderRef.current.stop();
           console.log("✅ Screen MediaRecorder stopped");
         }
+        // ✅ Clear event handlers to prevent memory leaks
+        screenRecorderMediaRecorderRef.current.ondataavailable = null;
+        screenRecorderMediaRecorderRef.current.onstop = null;
+        screenRecorderMediaRecorderRef.current.onerror = null;
       } catch (err) {
         console.error("Error stopping screen recorder:", err);
       }
@@ -709,6 +626,10 @@ const ExamPage = ({
           frontCameraMediaRecorderRef.current.stop();
           console.log("✅ Face camera MediaRecorder stopped");
         }
+        // ✅ Clear event handlers to prevent memory leaks
+        frontCameraMediaRecorderRef.current.ondataavailable = null;
+        frontCameraMediaRecorderRef.current.onstop = null;
+        frontCameraMediaRecorderRef.current.onerror = null;
       } catch (err) {
         console.error("Error stopping face camera recorder:", err);
       }
@@ -866,11 +787,57 @@ const ExamPage = ({
     });
     console.log("✅ end-exam event emitted");
 
-    // Wait a moment for the socket event to be processed
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    // ✅ Wait for socket event to be processed
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Navigate to end page after cleanup
-    console.log("✅ Navigating to end page");
+    // ✅ CRITICAL: Calculate and save score BEFORE navigation
+    let scoreSaved = false;
+    const scoreMaxRetries = 3;
+    
+    for (let attempt = 1; attempt <= scoreMaxRetries; attempt++) {
+      try {
+        console.log(`💾 Calculating and saving exam score (Attempt ${attempt}/${scoreMaxRetries})...`);
+        
+        const scoreResponse = await axios.post(
+          `${baseUrl}/saveScore`,
+          {
+            status: "completed",
+            userId: Number(userId),
+            examId: Number(examId),
+            numberOfMicrophones: getNumberOfMicrophones() || 0,
+            tabSwitchViolations: getTabSwitchViolations() || 0,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${getTokenFromCookie()}`,
+            },
+            timeout: 15000, // 15 second timeout for score calculation
+          }
+        );
+        
+        console.log("✅ Score calculated and saved:", scoreResponse.data);
+        scoreSaved = true;
+        break; // Success - exit retry loop
+      } catch (error: any) {
+        console.error(
+          `❌ Error saving score (Attempt ${attempt}/${scoreMaxRetries}):`,
+          error.response?.data || error.message
+        );
+        
+        if (attempt < scoreMaxRetries) {
+          // Wait before retrying (exponential backoff)
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        }
+      }
+    }
+
+    if (!scoreSaved) {
+      console.warn("⚠️ Score save failed after retries - will show on end page");
+      // Continue to end page anyway - backend might have saved it
+    }
+
+    // Navigate to end page after all operations complete
+    console.log("✅ All data saved - Navigating to end page");
     router.push("/end");
   };
 
@@ -1328,7 +1295,7 @@ const ExamPage = ({
             number={() => {}}
             onAuthFaceMissing={() => {}}
             onHeadDirection={() => {}}
-            examSubmitted={false}
+            examSubmitted={examSubmitted}
             mediaRecorderRef={frontCameraMediaRecorderRef}
             screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
             onAuthPause={() => {}}
@@ -1990,70 +1957,6 @@ const ExamPage = ({
           </button>
         </div>
       </main>
-
-      {/* Theme Toggle Button */}
-      <button
-        onClick={handleThemeToggle}
-        style={{
-          position: "fixed",
-          bottom: "32px",
-          right: "32px",
-          padding: "14px 28px",
-          borderRadius: "50px",
-          background: currentTheme.cardBg,
-          backdropFilter: "blur(20px)",
-          border: `2px solid ${currentTheme.cardBorder}`,
-          cursor: "pointer",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-          transition: "all 0.3s ease",
-          zIndex: 1000,
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateX(-50%) translateY(-2px)";
-          e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.2)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateX(-50%)";
-          e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.15)";
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", position: "relative", width: "60px", height: "28px" }}>
-          <div style={{
-            position: "absolute",
-            width: "60px",
-            height: "28px",
-            background: isDarkTheme ? "rgba(59, 130, 246, 0.2)" : "rgba(203, 213, 225, 0.3)",
-            borderRadius: "14px",
-            transition: "background 0.3s ease",
-          }} />
-          <div style={{
-            position: "absolute",
-            left: isDarkTheme ? "32px" : "0",
-            width: "28px",
-            height: "28px",
-            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "left 0.3s ease",
-            boxShadow: "0 2px 8px rgba(59, 130, 246, 0.4)",
-          }}>
-            {isDarkTheme ? <Moon size={14} color="#ffffff" strokeWidth={2.5} /> : <Sun size={14} color="#ffffff" strokeWidth={2.5} />}
-          </div>
-        </div>
-        <span style={{
-          fontSize: "14px",
-          fontWeight: "600",
-          color: currentTheme.textPrimary,
-          transition: "color 0.3s ease",
-        }}>
-          {isDarkTheme ? "Dark" : "Light"}
-        </span>
-      </button>
 
       {/* FloatingCamera Component */}
       <div style={{ display: examSubmitted ? "none" : "block" }}>

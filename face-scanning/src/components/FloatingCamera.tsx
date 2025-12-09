@@ -40,6 +40,8 @@ const logViolation = async (violationName: string) => {
     // This gives us the actual time when the violation STARTED, not when it was logged
     const actualViolationTime = new Date(Date.now() - 2000);
 
+    console.log(`📝 Logging violation: ${violationName} for user ${userId}, exam ${examId}`);
+    
     await axios.post(
       `${baseUrlGlobal}/storeLogs`,
       {
@@ -55,10 +57,10 @@ const logViolation = async (violationName: string) => {
       }
     );
     console.log(
-      `📝 Logged ${violationName} at ${actualViolationTime.toISOString()} (2s before detection)`
+      `✅ Successfully logged ${violationName} at ${actualViolationTime.toISOString()} (2s before detection)`
     );
   } catch (error) {
-    console.error(`Failed to log ${violationName}:`, error);
+    console.error(`❌ Failed to log ${violationName}:`, error);
   }
 };
 
@@ -339,7 +341,7 @@ const FloatingCamera = ({
     };
   }, []);
 
-  const { isSoundDetected, audioLevel } = useSoundLevel();
+  const { isSoundDetected, audioLevel } = useSoundLevel(examSubmitted);
 
   // Debug: Log sound detection status
   useEffect(() => {
@@ -539,6 +541,7 @@ const FloatingCamera = ({
           mediaRecorderRef.current.ondataavailable = (e: any) => {
             if (e.data.size > 0) {
               const chunkNum = faceChunkCounterRef.current++;
+              const blob = e.data; // Store blob reference
 
               // ✅ CRITICAL: Check if exam is already submitted - if so, ignore this chunk
               if (examSubmittedRef.current && mediaRecorderRef.current?.state === 'recording') {
@@ -552,7 +555,7 @@ const FloatingCamera = ({
                 pendingChunksRef.current.add(chunkNum);
               }
 
-              e.data.arrayBuffer().then((buffer: ArrayBuffer) => {
+              blob.arrayBuffer().then((buffer: ArrayBuffer) => {
                 // ✅ CRITICAL: Double-check exam submission status before sending
                 if (examSubmittedRef.current && mediaRecorderRef.current?.state === 'recording') {
                   console.warn(`⚠️ Dropping face chunk #${chunkNum} inside arrayBuffer - exam submitted but recorder still active`);
@@ -593,6 +596,10 @@ const FloatingCamera = ({
                   pendingChunksRef.current.delete(chunkNum);
                 }
                 console.log(`✅ Face chunk #${chunkNum} sent, ${pendingFaceChunksRef.current.size} pending`);
+                
+                // ✅ CRITICAL: Clear buffer reference to allow garbage collection
+                // @ts-ignore
+                chunkData.chunk = null;
               }).catch((err: any) => {
                 console.error(`Failed to send face chunk #${chunkNum}:`, err);
                 // ✅ Remove from pending even on error (both refs)
@@ -638,7 +645,7 @@ const FloatingCamera = ({
             }
           };
 
-          mediaRecorderRef.current.start(1000);
+          mediaRecorderRef.current.start(2000); // ✅ Changed from 1000ms to 2000ms to reduce memory usage
         } else {
           console.error("❌ Cannot create MediaRecorder: No stream available");
         }
@@ -660,7 +667,13 @@ const FloatingCamera = ({
             return;
           }
 
-        // ✅ Reduce interval frequency from 10 FPS to 2 FPS (500ms) to reduce CPU/memory usage
+        // ✅ Clear any existing interval before creating new one
+        if (interRef.current) {
+          clearInterval(interRef.current);
+          interRef.current = null;
+        }
+        
+        // ✅ Reduce interval frequency from 10 FPS to 1 FPS (1000ms) to reduce CPU/memory usage
         interRef.current = setInterval(async () => {
           if (!isMounted) {
             clearInterval(interRef.current);
@@ -678,6 +691,8 @@ const FloatingCamera = ({
             canvas.height = height;
           }
 
+          // ✅ CRITICAL: Clear canvas before drawing to prevent memory buildup
+          ctx.clearRect(0, 0, width, height);
           ctx.drawImage(video, 0, 0, width, height);
 
           if (
@@ -972,7 +987,7 @@ const FloatingCamera = ({
               console.error("Object Detector processing error:", error);
             }
           }
-        }, 500); // ✅ Changed from 1000/10 (100ms) to 500ms (2 FPS)
+        }, 1000); // ✅ Changed from 100ms to 1000ms (1 FPS) to reduce CPU/memory usage
       } catch (error) {
         console.error("Camera access failed:", error);
 
@@ -1064,7 +1079,7 @@ const FloatingCamera = ({
           console.log(
             `Stopping FloatingCamera track: ${track.kind}, state: ${track.readyState}`
           );
-          track.stop();
+          track.stop(); // ✅ This stops both camera AND microphone
         });
         streamRef.current = null;
       }
@@ -1073,6 +1088,7 @@ const FloatingCamera = ({
         videoRef.current.srcObject = null;
         videoRef.current.pause();
         videoRef.current.load(); // ✅ Force video element to release resources
+        videoRef.current.remove(); // ✅ Remove from DOM to free memory
       }
 
       // ✅ Clean up canvas and free memory

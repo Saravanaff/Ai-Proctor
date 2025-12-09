@@ -24,57 +24,24 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
 
-  const themes = {
-    dark: {
-      background: "linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #0f0f0f 100%)",
-      cardBg: "rgba(10, 10, 10, 0.95)",
-      cardBorder: "rgba(0, 255, 255, 0.3)",
-      textPrimary: "#ffffff",
-      textSecondary: "#e0e0e0",
-      textMuted: "#a0a0a0",
-      accentPrimary: "#00ffff",
-      accentSecondary: "#00d9ff",
-      inputBg: "rgba(0, 0, 0, 0.8)",
-      inputBorder: "rgba(0, 255, 255, 0.2)",
-      glowColor: "rgba(0, 255, 255, 0.4)",
-      stepActive: "rgba(0, 255, 255, 0.2)",
-      stepInactive: "rgba(80, 80, 80, 0.3)",
-    },
-    light: {
-      background: "linear-gradient(135deg, #ffffff 0%, #f5f5f5 50%, #e8e8e8 100%)",
-      cardBg: "rgba(255, 255, 255, 0.95)",
-      cardBorder: "rgba(0, 153, 255, 0.2)",
-      textPrimary: "#1a1a1a",
-      textSecondary: "#4a4a4a",
-      textMuted: "#6a6a6a",
-      accentPrimary: "#0099ff",
-      accentSecondary: "#00d9ff",
-      inputBg: "rgba(248, 248, 248, 0.9)",
-      inputBorder: "rgba(0, 153, 255, 0.15)",
-      glowColor: "rgba(0, 153, 255, 0.3)",
-      stepActive: "rgba(0, 153, 255, 0.15)",
-      stepInactive: "rgba(203, 213, 225, 0.5)",
-    }
+  const currentTheme = {
+    background: "#f8fafc",
+    cardBg: "rgba(255, 255, 255, 0.95)",
+    cardBorder: "rgba(203, 213, 225, 0.6)",
+    textPrimary: "#0f172a",
+    textSecondary: "#475569",
+    textMuted: "#64748b",
+    accentPrimary: "#3b82f6",
+    accentSecondary: "#2563eb",
+    inputBg: "rgba(248, 250, 252, 0.9)",
+    inputBorder: "rgba(203, 213, 225, 0.7)",
+    glowColor: "rgba(59, 130, 246, 0.2)",
+    stepActive: "rgba(59, 130, 246, 0.15)",
+    stepInactive: "rgba(203, 213, 225, 0.5)",
   };
-
-  const currentTheme = isDarkTheme ? themes.dark : themes.light;
 
   const router = useRouter();
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setIsDarkTheme(savedTheme === 'dark');
-    }
-  }, []);
-
-  const handleThemeToggle = () => {
-    const newTheme = !isDarkTheme;
-    setIsDarkTheme(newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-  };
 
   const validatePassword = () => {
     const passwordChecks = {
@@ -252,12 +219,14 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
   return (
     <div style={{
       minHeight: "100vh",
+      height: "100%",
       background: currentTheme.background,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       padding: "24px",
       position: "relative",
+      overflow: "hidden",
       transition: "background 0.3s ease",
     }}>
       {/* Animated Background Orbs */}
@@ -266,7 +235,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
         width: "400px",
         height: "400px",
         borderRadius: "50%",
-        background: isDarkTheme ? "rgba(0, 255, 255, 0.15)" : "rgba(0, 153, 255, 0.08)",
+        background: "rgba(59, 130, 246, 0.08)",
         filter: "blur(80px)",
         top: "-200px",
         right: "-100px",
@@ -278,7 +247,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
         width: "300px",
         height: "300px",
         borderRadius: "50%",
-        background: isDarkTheme ? "rgba(0, 217, 255, 0.15)" : "rgba(0, 217, 255, 0.08)",
+        background: "rgba(59, 130, 246, 0.06)",
         filter: "blur(80px)",
         bottom: "-150px",
         left: "-50px",
@@ -308,11 +277,11 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
               width: "48px",
               height: "48px",
               borderRadius: "12px",
-              background: isDarkTheme ? "linear-gradient(135deg, #00ffff 0%, #00d9ff 100%)" : "linear-gradient(135deg, #0099ff 0%, #00d9ff 100%)",
+              background: "#3b82f6",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: isDarkTheme ? "0 8px 24px rgba(0, 255, 255, 0.6), 0 0 40px rgba(0, 255, 255, 0.3)" : "0 8px 24px rgba(0, 153, 255, 0.4)",
+              boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
             }}>
               <Lock size={24} color="#ffffff" strokeWidth={2.5} />
             </div>
@@ -359,7 +328,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                 width: "40px",
                 height: "40px",
                 borderRadius: "50%",
-                background: step >= 1 ? (isDarkTheme ? "linear-gradient(135deg, #00ffff 0%, #00d9ff 100%)" : "linear-gradient(135deg, #0099ff 0%, #00d9ff 100%)") : currentTheme.stepInactive,
+                background: step >= 1 ? currentTheme.accentPrimary : currentTheme.stepInactive,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -367,7 +336,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                 fontWeight: "700",
                 fontSize: "16px",
                 transition: "all 0.3s ease",
-                boxShadow: step >= 1 ? (isDarkTheme ? "0 4px 12px rgba(0, 255, 255, 0.5), 0 0 24px rgba(0, 255, 255, 0.3)" : "0 4px 12px rgba(0, 153, 255, 0.4)") : "none",
+                boxShadow: step >= 1 ? ("0 4px 12px rgba(0, 153, 255, 0.4)") : "none",
               }}>
                 {step > 1 ? <CheckCircle size={20} strokeWidth={2.5} /> : "1"}
               </div>
@@ -394,7 +363,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                 width: "40px",
                 height: "40px",
                 borderRadius: "50%",
-                background: step >= 2 ? (isDarkTheme ? "linear-gradient(135deg, #00ffff 0%, #00d9ff 100%)" : "linear-gradient(135deg, #0099ff 0%, #00d9ff 100%)") : currentTheme.stepInactive,
+                background: step >= 2 ? currentTheme.accentPrimary : currentTheme.stepInactive,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -402,7 +371,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                 fontWeight: "700",
                 fontSize: "16px",
                 transition: "all 0.3s ease",
-                boxShadow: step >= 2 ? (isDarkTheme ? "0 4px 12px rgba(0, 255, 255, 0.5), 0 0 24px rgba(0, 255, 255, 0.3)" : "0 4px 12px rgba(0, 153, 255, 0.4)") : "none",
+                boxShadow: step >= 2 ? ("0 4px 12px rgba(0, 153, 255, 0.4)") : "none",
               }}>2</div>
               <span style={{
                 fontSize: "12px",
@@ -471,7 +440,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                       }}
                       onFocus={(e) => {
                         e.currentTarget.style.borderColor = currentTheme.accentPrimary;
-                        e.currentTarget.style.boxShadow = `0 0 0 3px ${isDarkTheme ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)'}`;
+                        e.currentTarget.style.boxShadow = `0 0 0 3px ${'rgba(59, 130, 246, 0.15)'}`;
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = currentTheme.inputBorder;
@@ -517,7 +486,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                       }}
                       onFocus={(e) => {
                         e.currentTarget.style.borderColor = currentTheme.accentPrimary;
-                        e.currentTarget.style.boxShadow = isDarkTheme ? `0 0 0 3px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.15)` : `0 0 0 3px rgba(0, 153, 255, 0.15)`;
+                        e.currentTarget.style.boxShadow = `0 0 0 3px rgba(0, 153, 255, 0.15)`;
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = currentTheme.inputBorder;
@@ -566,7 +535,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                       }}
                       onFocus={(e) => {
                         e.currentTarget.style.borderColor = currentTheme.accentPrimary;
-                        e.currentTarget.style.boxShadow = isDarkTheme ? `0 0 0 3px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.15)` : `0 0 0 3px rgba(0, 153, 255, 0.15)`;
+                        e.currentTarget.style.boxShadow = `0 0 0 3px rgba(0, 153, 255, 0.15)`;
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = currentTheme.inputBorder;
@@ -612,7 +581,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                       }}
                       onFocus={(e) => {
                         e.currentTarget.style.borderColor = currentTheme.accentPrimary;
-                        e.currentTarget.style.boxShadow = isDarkTheme ? `0 0 0 3px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.15)` : `0 0 0 3px rgba(0, 153, 255, 0.15)`;
+                        e.currentTarget.style.boxShadow = `0 0 0 3px rgba(0, 153, 255, 0.15)`;
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = currentTheme.inputBorder;
@@ -661,7 +630,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                     }}
                     onFocus={(e) => {
                       e.currentTarget.style.borderColor = currentTheme.accentPrimary;
-                      e.currentTarget.style.boxShadow = isDarkTheme ? `0 0 0 3px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.15)` : `0 0 0 3px rgba(0, 153, 255, 0.15)`;
+                      e.currentTarget.style.boxShadow = `0 0 0 3px rgba(0, 153, 255, 0.15)`;
                     }}
                     onBlur={(e) => {
                       e.currentTarget.style.borderColor = currentTheme.inputBorder;
@@ -736,9 +705,9 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                   <div style={{
                     marginTop: "12px",
                     padding: "16px",
-                    background: isDarkTheme ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.08)",
+                    background: "rgba(59, 130, 246, 0.08)",
                     borderRadius: "12px",
-                    border: `1px solid ${isDarkTheme ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.15)"}`,
+                    border: `1px solid ${"rgba(59, 130, 246, 0.15)"}`,
                   }}>
                     {passwordRequirements.map((req) => (
                       <div key={req.key} style={{
@@ -781,8 +750,8 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                 <div style={{
                   padding: "14px 16px",
                   borderRadius: "12px",
-                  background: isDarkTheme ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.1)",
-                  border: `1px solid ${isDarkTheme ? "rgba(239, 68, 68, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+                  background: "rgba(239, 68, 68, 0.1)",
+                  border: `1px solid ${"rgba(239, 68, 68, 0.3)"}`,
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
@@ -807,13 +776,13 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                   fontWeight: "700",
                   color: "#ffffff",
                   background: loading
-                    ? (isDarkTheme ? "rgba(100, 116, 139, 0.5)" : "rgba(148, 163, 184, 0.5)")
-                    : (isDarkTheme ? "linear-gradient(135deg, #00ffff 0%, #00d9ff 100%)" : "linear-gradient(135deg, #0099ff 0%, #00d9ff 100%)"),
+                    ? "rgba(148, 163, 184, 0.5)"
+                    : "#3b82f6",
                   border: "none",
                   borderRadius: "12px",
                   cursor: loading ? "not-allowed" : "pointer",
                   transition: "all 0.3s ease",
-                  boxShadow: loading ? "none" : (isDarkTheme ? "0 4px 16px rgba(0, 255, 255, 0.5), 0 0 30px rgba(0, 255, 255, 0.3)" : "0 4px 16px rgba(0, 153, 255, 0.4)"),
+                  boxShadow: loading ? "none" : "0 1px 3px rgba(0, 0, 0, 0.1)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -823,13 +792,13 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                 onMouseEnter={(e) => {
                   if (!loading) {
                     e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = isDarkTheme ? "0 6px 24px rgba(0, 255, 255, 0.6), 0 0 40px rgba(0, 255, 255, 0.4)" : "0 6px 24px rgba(0, 153, 255, 0.5)";
+                    e.currentTarget.style.boxShadow = "0 2px 6px rgba(0, 0, 0, 0.2)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!loading) {
                     e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = isDarkTheme ? "0 4px 16px rgba(0, 255, 255, 0.5), 0 0 30px rgba(0, 255, 255, 0.3)" : "0 4px 16px rgba(0, 153, 255, 0.4)";
+                    e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)";
                   }
                 }}
               >
@@ -856,7 +825,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                 width: "80px",
                 height: "80px",
                 borderRadius: "50%",
-                background: isDarkTheme ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.15)",
+                background: "rgba(59, 130, 246, 0.15)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -921,7 +890,7 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                   }}
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = currentTheme.accentPrimary;
-                    e.currentTarget.style.boxShadow = isDarkTheme ? `0 0 0 3px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.15)` : `0 0 0 3px rgba(0, 153, 255, 0.15)`;
+                    e.currentTarget.style.boxShadow = `0 0 0 3px rgba(0, 153, 255, 0.15)`;
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.borderColor = currentTheme.inputBorder;
@@ -935,8 +904,8 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                   width: "100%",
                   padding: "14px 16px",
                   borderRadius: "12px",
-                  background: isDarkTheme ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.1)",
-                  border: `1px solid ${isDarkTheme ? "rgba(239, 68, 68, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+                  background: "rgba(239, 68, 68, 0.1)",
+                  border: `1px solid ${"rgba(239, 68, 68, 0.3)"}`,
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
@@ -961,13 +930,13 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                   fontWeight: "700",
                   color: "#ffffff",
                   background: (loading || otp.length !== 6)
-                    ? (isDarkTheme ? "rgba(100, 116, 139, 0.5)" : "rgba(148, 163, 184, 0.5)")
-                    : "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+                    ? "rgba(148, 163, 184, 0.5)"
+                    : "#3b82f6",
                   border: "none",
                   borderRadius: "12px",
                   cursor: (loading || otp.length !== 6) ? "not-allowed" : "pointer",
                   transition: "all 0.3s ease",
-                  boxShadow: (loading || otp.length !== 6) ? "none" : "0 4px 16px rgba(34, 197, 94, 0.4)",
+                  boxShadow: (loading || otp.length !== 6) ? "none" : "0 1px 3px rgba(0, 0, 0, 0.1)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -977,13 +946,13 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                 onMouseEnter={(e) => {
                   if (!loading && otp.length === 6) {
                     e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 6px 24px rgba(34, 197, 94, 0.5)";
+                    e.currentTarget.style.boxShadow = "0 2px 6px rgba(0, 0, 0, 0.2)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!loading && otp.length === 6) {
                     e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(34, 197, 94, 0.4)";
+                    e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)";
                   }
                 }}
               >
@@ -1024,8 +993,8 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
                       fontSize: "14px",
                       fontWeight: "600",
                       color: currentTheme.accentPrimary,
-                      background: isDarkTheme ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.08)",
-                      border: `2px solid ${isDarkTheme ? "rgba(59, 130, 246, 0.3)" : "rgba(59, 130, 246, 0.2)"}`,
+                      background: "rgba(59, 130, 246, 0.08)",
+                      border: `2px solid rgba(59, 130, 246, 0.2)`,
                       borderRadius: "10px",
                       cursor: loading ? "not-allowed" : "pointer",
                       transition: "all 0.3s ease",
@@ -1079,8 +1048,8 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
             fontSize: "15px",
             fontWeight: "600",
             color: currentTheme.accentPrimary,
-            background: isDarkTheme ? "rgba(0, 255, 255, 0.1)" : "rgba(0, 153, 255, 0.08)",
-            border: `2px solid ${isDarkTheme ? "rgba(0, 255, 255, 0.3)" : "rgba(0, 153, 255, 0.2)"}`,
+            background: "rgba(0, 153, 255, 0.08)",
+            border: `2px solid rgba(0, 153, 255, 0.2)`,
             borderRadius: "12px",
             textAlign: "center",
             textDecoration: "none",
@@ -1099,38 +1068,6 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
           By continuing, you agree to our Terms of Service and Privacy Policy
         </p>
       </div>
-
-      {/* Theme Toggle Button */}
-      <button
-        onClick={handleThemeToggle}
-        style={{
-          position: "fixed",
-          bottom: "32px",
-          right: "32px",
-          padding: "14px",
-          borderRadius: "50%",
-          background: currentTheme.cardBg,
-          backdropFilter: "blur(20px)",
-          border: `2px solid ${currentTheme.cardBorder}`,
-          cursor: "pointer",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-          transition: "all 0.3s ease",
-          zIndex: 1000,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-          e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.2)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.15)";
-        }}
-      >
-        {isDarkTheme ? <Sun size={20} color={currentTheme.textPrimary} strokeWidth={2.5} /> : <Moon size={20} color={currentTheme.textPrimary} strokeWidth={2.5} />}
-      </button>
 
       <style jsx>{`
         @keyframes float {
@@ -1160,3 +1097,4 @@ const RegisterForm = ({ redirect }: RegisterFormProps) => {
 };
 
 export default RegisterForm;
+

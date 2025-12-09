@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import { setGlobalIdentity } from "@/constants/AuthStore";
 import Link from "next/link";
-import { Moon, Sun, Eye, EyeOff, ArrowRight, AlertCircle, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, AlertCircle, Lock, Mail } from "lucide-react";
 
 interface LoginFormProps {
   redirect: string;
@@ -15,53 +15,22 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
 
-  const themes = {
-    dark: {
-      background: "linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #0f0f0f 100%)",
-      cardBg: "rgba(10, 10, 10, 0.95)",
-      cardBorder: "rgba(0, 255, 255, 0.3)",
-      textPrimary: "#ffffff",
-      textSecondary: "#e0e0e0",
-      textMuted: "#a0a0a0",
-      accentPrimary: "#00ffff",
-      accentSecondary: "#00d9ff",
-      inputBg: "rgba(0, 0, 0, 0.8)",
-      inputBorder: "rgba(0, 255, 255, 0.2)",
-      glowColor: "rgba(0, 255, 255, 0.4)",
-    },
-    light: {
-      background: "linear-gradient(135deg, #ffffff 0%, #f5f5f5 50%, #e8e8e8 100%)",
-      cardBg: "rgba(255, 255, 255, 0.95)",
-      cardBorder: "rgba(0, 153, 255, 0.2)",
-      textPrimary: "#1a1a1a",
-      textSecondary: "#4a4a4a",
-      textMuted: "#6a6a6a",
-      accentPrimary: "#0099ff",
-      accentSecondary: "#00d9ff",
-      inputBg: "rgba(248, 248, 248, 0.9)",
-      inputBorder: "rgba(0, 153, 255, 0.15)",
-      glowColor: "rgba(0, 153, 255, 0.3)",
-    }
+  const currentTheme = {
+    background: "#f8fafc",
+    cardBg: "rgba(255, 255, 255, 0.95)",
+    cardBorder: "rgba(203, 213, 225, 0.6)",
+    textPrimary: "#0f172a",
+    textSecondary: "#475569",
+    textMuted: "#64748b",
+    accentPrimary: "#3b82f6",
+    accentSecondary: "#2563eb",
+    inputBg: "rgba(248, 250, 252, 0.9)",
+    inputBorder: "rgba(203, 213, 225, 0.7)",
+    glowColor: "rgba(59, 130, 246, 0.2)",
   };
-
-  const currentTheme = isDarkTheme ? themes.dark : themes.light;
 
   const router = useRouter();
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setIsDarkTheme(savedTheme === 'dark');
-    }
-  }, []);
-
-  const handleThemeToggle = () => {
-    const newTheme = !isDarkTheme;
-    setIsDarkTheme(newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,12 +93,14 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
   return (
     <div style={{
       minHeight: "100vh",
+      height: "100%",
       background: currentTheme.background,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       padding: "24px",
       position: "relative",
+      overflow: "hidden",
       transition: "background 0.3s ease",
     }}>
       {/* Animated Background Orbs */}
@@ -138,7 +109,7 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
         width: "400px",
         height: "400px",
         borderRadius: "50%",
-        background: isDarkTheme ? "rgba(0, 255, 255, 0.15)" : "rgba(0, 153, 255, 0.08)",
+        background: "rgba(59, 130, 246, 0.08)",
         filter: "blur(80px)",
         top: "-200px",
         right: "-100px",
@@ -150,7 +121,7 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
         width: "300px",
         height: "300px",
         borderRadius: "50%",
-        background: isDarkTheme ? "rgba(0, 217, 255, 0.15)" : "rgba(0, 217, 255, 0.08)",
+        background: "rgba(37, 99, 235, 0.08)",
         filter: "blur(80px)",
         bottom: "-150px",
         left: "-50px",
@@ -180,11 +151,11 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
               width: "48px",
               height: "48px",
               borderRadius: "12px",
-              background: isDarkTheme ? "linear-gradient(135deg, #00ffff 0%, #00d9ff 100%)" : "linear-gradient(135deg, #0099ff 0%, #00d9ff 100%)",
+              background: "#3b82f6",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: isDarkTheme ? "0 8px 24px rgba(0, 255, 255, 0.6), 0 0 40px rgba(0, 255, 255, 0.3)" : "0 8px 24px rgba(0, 153, 255, 0.4)",
+              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
             }}>
               <Lock size={24} color="#ffffff" strokeWidth={2.5} />
             </div>
@@ -262,7 +233,7 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
                   }}
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = currentTheme.accentPrimary;
-                    e.currentTarget.style.boxShadow = isDarkTheme ? `0 0 0 3px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.15)` : `0 0 0 3px rgba(0, 153, 255, 0.15)`;
+                    e.currentTarget.style.boxShadow = `0 0 0 3px rgba(59, 130, 246, 0.15)`;
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.borderColor = currentTheme.inputBorder;
@@ -309,7 +280,7 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
                   }}
                   onFocus={(e) => {
                     e.currentTarget.style.borderColor = currentTheme.accentPrimary;
-                    e.currentTarget.style.boxShadow = isDarkTheme ? `0 0 0 3px rgba(0, 255, 255, 0.2), 0 0 20px rgba(0, 255, 255, 0.15)` : `0 0 0 3px rgba(0, 153, 255, 0.15)`;
+                    e.currentTarget.style.boxShadow = `0 0 0 3px rgba(59, 130, 246, 0.15)`;
                   }}
                   onBlur={(e) => {
                     e.currentTarget.style.borderColor = currentTheme.inputBorder;
@@ -357,8 +328,8 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
               <div style={{
                 padding: "14px 16px",
                 borderRadius: "12px",
-                background: isDarkTheme ? "rgba(239, 68, 68, 0.15)" : "rgba(239, 68, 68, 0.1)",
-                border: `1px solid ${isDarkTheme ? "rgba(239, 68, 68, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+                background: "rgba(239, 68, 68, 0.1)",
+                border: `1px solid ${"rgba(239, 68, 68, 0.3)"}`,
                 display: "flex",
                 alignItems: "center",
                 gap: "12px",
@@ -383,13 +354,13 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
                 fontWeight: "700",
                 color: "#ffffff",
                 background: loading
-                  ? (isDarkTheme ? "rgba(100, 116, 139, 0.5)" : "rgba(148, 163, 184, 0.5)")
-                  : (isDarkTheme ? "linear-gradient(135deg, #00ffff 0%, #00d9ff 100%)" : "linear-gradient(135deg, #0099ff 0%, #00d9ff 100%)"),
+                  ? "rgba(148, 163, 184, 0.5)"
+                  : "#3b82f6",
                 border: "none",
                 borderRadius: "12px",
                 cursor: loading ? "not-allowed" : "pointer",
                 transition: "all 0.3s ease",
-                boxShadow: loading ? "none" : (isDarkTheme ? "0 4px 16px rgba(0, 255, 255, 0.5), 0 0 30px rgba(0, 255, 255, 0.3)" : "0 4px 16px rgba(0, 153, 255, 0.4)"),
+                boxShadow: loading ? "none" : "0 1px 3px rgba(0, 0, 0, 0.1)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -399,13 +370,13 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
               onMouseEnter={(e) => {
                 if (!loading) {
                   e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = isDarkTheme ? "0 6px 24px rgba(0, 255, 255, 0.6), 0 0 40px rgba(0, 255, 255, 0.4)" : "0 6px 24px rgba(0, 153, 255, 0.5)";
+                  e.currentTarget.style.boxShadow = "0 2px 6px rgba(0, 0, 0, 0.2)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (!loading) {
                   e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow = isDarkTheme ? "0 4px 16px rgba(0, 255, 255, 0.5), 0 0 30px rgba(0, 255, 255, 0.3)" : "0 4px 16px rgba(0, 153, 255, 0.4)";
+                  e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.1)";
                 }
               }}
             >
@@ -445,8 +416,8 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
             fontSize: "15px",
             fontWeight: "600",
             color: currentTheme.accentPrimary,
-            background: isDarkTheme ? "rgba(0, 255, 255, 0.1)" : "rgba(0, 153, 255, 0.08)",
-            border: `2px solid ${isDarkTheme ? "rgba(0, 255, 255, 0.3)" : "rgba(0, 153, 255, 0.2)"}`,
+            background: "rgba(59, 130, 246, 0.08)",
+            border: `2px solid rgba(59, 130, 246, 0.2)`,
             borderRadius: "12px",
             textAlign: "center",
             textDecoration: "none",
@@ -465,38 +436,6 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
           By continuing, you agree to our Terms of Service and Privacy Policy
         </p>
       </div>
-
-      {/* Theme Toggle Button */}
-      <button
-        onClick={handleThemeToggle}
-        style={{
-          position: "fixed",
-          bottom: "32px",
-          right: "32px",
-          padding: "14px",
-          borderRadius: "50%",
-          background: currentTheme.cardBg,
-          backdropFilter: "blur(20px)",
-          border: `2px solid ${currentTheme.cardBorder}`,
-          cursor: "pointer",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-          transition: "all 0.3s ease",
-          zIndex: 1000,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-2px)";
-          e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.2)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.15)";
-        }}
-      >
-        {isDarkTheme ? <Sun size={20} color={currentTheme.textPrimary} strokeWidth={2.5} /> : <Moon size={20} color={currentTheme.textPrimary} strokeWidth={2.5} />}
-      </button>
 
       <style jsx>{`
         @keyframes float {
@@ -526,3 +465,4 @@ const LoginForm = ({ redirect }: LoginFormProps) => {
 };
 
 export default LoginForm;
+

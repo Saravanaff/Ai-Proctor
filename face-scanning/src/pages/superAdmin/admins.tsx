@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import styles from "../../styles/SuperAdminPage.module.css";
-import { ThemeToggle } from "../../components/ThemeToggle";
 import { SuperAdminGuard } from "../../components/guards";
+import { LoadingScreen } from "../../components/PageTransition";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { configureAxiosInterceptor } from "@/utils/axiosConfig";
@@ -23,6 +23,7 @@ const SuperAdminDashboard = () => {
   const router = useRouter();
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "active" | "suspended">("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -53,6 +54,10 @@ const SuperAdminDashboard = () => {
 
   const fetchAdmins = async () => {
     try {
+      setLoading(true);
+      console.log('👥 Fetching admins...');
+      const startTime = Date.now();
+      
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await axios.get(`${base}/admin/emails?page=${currentPage}&limit=${adminsPerPage}`);
       if (res.data?.success) {
@@ -65,10 +70,18 @@ const SuperAdminDashboard = () => {
         setTotalPages(res.data.data.totalPages || 1);
         setTotalCount(res.data.data.totalCount || 0);
       }
+      
+      // Ensure loading screen shows for at least 500ms
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, 500 - elapsedTime);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+      
+      console.log('✅ Admins loaded');
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   };
 
@@ -217,6 +230,19 @@ const SuperAdminDashboard = () => {
     authLogout();
   };
 
+  useEffect(() => {
+    // Set light theme background
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    document.documentElement.style.background = "#f8fafc";
+    
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+      document.documentElement.style.background = "";
+    };
+  }, []);
+
   const filtered = admins.filter((a) => {
     const matchesSearch =
       a.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -228,6 +254,16 @@ const SuperAdminDashboard = () => {
     
     return matchesSearch;
   });
+
+  // Show full page loading screen only on initial load
+  if (initialLoading) {
+    console.log('🔄 Admins page - showing loading screen');
+    return (
+      <SuperAdminGuard>
+        <LoadingScreen message="Loading administrators..." />
+      </SuperAdminGuard>
+    );
+  }
 
   return (
     <SuperAdminGuard>
@@ -312,11 +348,11 @@ const SuperAdminDashboard = () => {
       <header style={{ marginBottom: "32px" }}>
         <div
           style={{
-            background: "linear-gradient(135deg, var(--card-bg), var(--secondary-bg))",
+            background: "linear-gradient(135deg, #ffffff, #f1f5f9)",
             borderRadius: "24px",
             padding: "32px",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 8px 32px var(--shadow)",
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
             position: "relative",
             overflow: "hidden",
           }}
@@ -328,7 +364,7 @@ const SuperAdminDashboard = () => {
               left: 0,
               right: 0,
               height: "5px",
-              background: "linear-gradient(90deg, var(--accent-color), var(--primary-color))",
+              background: "linear-gradient(90deg, #0ea5e9, #3b82f6)",
             }}
           />
           
@@ -339,7 +375,7 @@ const SuperAdminDashboard = () => {
                   width: "60px",
                   height: "60px",
                   borderRadius: "16px",
-                  background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                  background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -352,10 +388,10 @@ const SuperAdminDashboard = () => {
                 SA
               </div>
               <div>
-                <h1 style={{ margin: "0 0 8px 0", fontSize: "28px", fontWeight: "700", color: "var(--text-primary)" }}>
+                <h1 style={{ margin: "0 0 8px 0", fontSize: "28px", fontWeight: "700", color: "#1e293b" }}>
                   Admin Management
                 </h1>
-                <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "14px" }}>
+                <p style={{ margin: 0, color: "#64748b", fontSize: "14px" }}>
                   Manage your administrator team
                 </p>
               </div>
@@ -366,9 +402,9 @@ const SuperAdminDashboard = () => {
                 onClick={() => setShowUploadModal(true)}
                 style={{
                   padding: "12px 24px",
-                  background: "var(--secondary-bg)",
-                  color: "var(--text-primary)",
-                  border: "1px solid var(--border-color)",
+                  background: "#f1f5f9",
+                  color: "#1e293b",
+                  border: "1px solid #e2e8f0",
                   borderRadius: "12px",
                   fontWeight: "600",
                   fontSize: "14px",
@@ -380,11 +416,11 @@ const SuperAdminDashboard = () => {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.borderColor = "var(--accent-color)";
+                  e.currentTarget.style.borderColor = "#0ea5e9";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.borderColor = "var(--border-color)";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
                 }}
               >
                 <svg 
@@ -407,7 +443,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => setShowCreateModal(true)}
                 style={{
                   padding: "12px 24px",
-                  background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                  background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                   color: "white",
                   border: "none",
                   borderRadius: "12px",
@@ -446,9 +482,9 @@ const SuperAdminDashboard = () => {
               onClick={() => setActiveTab(tab)}
               style={{
                 padding: "10px 20px",
-                background: activeTab === tab ? "var(--accent-color)" : "var(--secondary-bg)",
-                color: activeTab === tab ? "white" : "var(--text-secondary)",
-                border: activeTab === tab ? "none" : "1px solid var(--border-color)",
+                background: activeTab === tab ? "#0ea5e9" : "#f1f5f9",
+                color: activeTab === tab ? "white" : "#64748b",
+                border: activeTab === tab ? "none" : "1px solid #e2e8f0",
                 borderRadius: "10px",
                 fontWeight: "600",
                 fontSize: "14px",
@@ -458,14 +494,14 @@ const SuperAdminDashboard = () => {
               }}
               onMouseEnter={(e) => {
                 if (activeTab !== tab) {
-                  e.currentTarget.style.background = "var(--card-bg)";
-                  e.currentTarget.style.borderColor = "var(--accent-color)";
+                  e.currentTarget.style.background = "#ffffff";
+                  e.currentTarget.style.borderColor = "#0ea5e9";
                 }
               }}
               onMouseLeave={(e) => {
                 if (activeTab !== tab) {
-                  e.currentTarget.style.background = "var(--secondary-bg)";
-                  e.currentTarget.style.borderColor = "var(--border-color)";
+                  e.currentTarget.style.background = "#f1f5f9";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
                 }
               }}
             >
@@ -483,21 +519,21 @@ const SuperAdminDashboard = () => {
             width: "100%",
             padding: "14px 20px",
             borderRadius: "12px",
-            border: "2px solid var(--border-color)",
-            background: "var(--input-bg)",
-            color: "var(--text-primary)",
+            border: "2px solid #e2e8f0",
+            background: "#f8fafc",
+            color: "#1e293b",
             fontSize: "15px",
             transition: "all 0.3s ease",
-            boxShadow: "0 2px 8px var(--shadow)",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
             boxSizing: "border-box",
           }}
           onFocus={(e) => {
-            e.target.style.borderColor = "var(--accent-color)";
+            e.target.style.borderColor = "#0ea5e9";
             e.target.style.boxShadow = "0 4px 16px rgba(14, 165, 233, 0.2)";
           }}
           onBlur={(e) => {
-            e.target.style.borderColor = "var(--border-color)";
-            e.target.style.boxShadow = "0 2px 8px var(--shadow)";
+            e.target.style.borderColor = "#e2e8f0";
+            e.target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.08)";
           }}
         />
       </div>
@@ -508,38 +544,38 @@ const SuperAdminDashboard = () => {
           style={{
             textAlign: "center",
             padding: "60px 20px",
-            background: "var(--card-bg)",
+            background: "#ffffff",
             borderRadius: "16px",
-            border: "1px solid var(--border-color)"
+            border: "1px solid #e2e8f0"
           }}
         >
-          <p style={{ color: "var(--text-secondary)", fontSize: "16px" }}>Loading administrators...</p>
+          <p style={{ color: "#64748b", fontSize: "16px" }}>Loading administrators...</p>
         </div>
       ) : filtered.length === 0 ? (
         <div
           style={{
             textAlign: "center",
             padding: "60px 20px",
-            background: "var(--card-bg)",
+            background: "#ffffff",
             borderRadius: "16px",
-            border: "1px solid var(--border-color)"
+            border: "1px solid #e2e8f0"
           }}
         >
-          <p style={{ color: "var(--text-primary)", fontSize: "18px", fontWeight: "600", marginBottom: "8px" }}>
+          <p style={{ color: "#1e293b", fontSize: "18px", fontWeight: "600", marginBottom: "8px" }}>
             No Admins Found
           </p>
-          <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
+          <p style={{ color: "#64748b", fontSize: "14px" }}>
             {search ? "Try adjusting your search criteria" : "Get started by creating your first admin"}
           </p>
         </div>
       ) : (
         <div
           style={{
-            background: "var(--card-bg)",
+            background: "#ffffff",
             borderRadius: "16px",
-            border: "1px solid var(--border-color)",
+            border: "1px solid #e2e8f0",
             overflow: "hidden",
-            boxShadow: "0 4px 20px var(--shadow)"
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)"
           }}
         >
           {/* Table Header */}
@@ -548,11 +584,11 @@ const SuperAdminDashboard = () => {
               display: "grid",
               gridTemplateColumns: "2fr 1fr 1fr 1fr 240px",
               padding: "16px 24px",
-              background: "var(--secondary-bg)",
-              borderBottom: "1px solid var(--border-color)",
+              background: "#f1f5f9",
+              borderBottom: "1px solid #e2e8f0",
               fontWeight: "700",
               fontSize: "13px",
-              color: "var(--text-secondary)",
+              color: "#64748b",
               textTransform: "uppercase",
               letterSpacing: "0.5px",
             }}
@@ -572,14 +608,14 @@ const SuperAdminDashboard = () => {
                 display: "grid",
                 gridTemplateColumns: "2fr 1fr 1fr 1fr 240px",
                 padding: "20px 24px",
-                borderBottom: "1px solid var(--border-color)",
+                borderBottom: "1px solid #e2e8f0",
                 alignItems: "center",
                 transition: "all 0.2s ease",
                 cursor: "pointer",
               }}
               onClick={() => handleAdminClick(admin.email)}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--secondary-bg)";
+                e.currentTarget.style.background = "#f1f5f9";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -592,7 +628,7 @@ const SuperAdminDashboard = () => {
                     width: "40px",
                     height: "40px",
                     borderRadius: "10px",
-                    background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                    background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -605,10 +641,10 @@ const SuperAdminDashboard = () => {
                   {admin.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <div style={{ fontWeight: "600", color: "var(--text-primary)", fontSize: "15px" }}>
+                  <div style={{ fontWeight: "600", color: "#1e293b", fontSize: "15px" }}>
                     {admin.name}
                   </div>
-                  <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                  <div style={{ fontSize: "13px", color: "#64748b" }}>
                     {admin.email}
                   </div>
                 </div>
@@ -624,8 +660,8 @@ const SuperAdminDashboard = () => {
                     fontSize: "12px",
                     fontWeight: "600",
                     background: admin.status === "Active" ? "var(--success-bg)" : "var(--danger-bg)",
-                    color: admin.status === "Active" ? "var(--success-color)" : "var(--danger-color)",
-                    border: `1.5px solid ${admin.status === "Active" ? "var(--success-color)" : "var(--danger-color)"}`,
+                    color: admin.status === "Active" ? "#10b981" : "#dc2626",
+                    border: `1.5px solid ${admin.status === "Active" ? "#10b981" : "#dc2626"}`,
                   }}
                 >
                   {admin.status || "Active"}
@@ -642,8 +678,8 @@ const SuperAdminDashboard = () => {
                     fontSize: "12px",
                     fontWeight: "600",
                     background: "var(--primary-bg-light)",
-                    color: "var(--accent-color)",
-                    border: "1px solid var(--accent-color)",
+                    color: "#0ea5e9",
+                    border: "1px solid #0ea5e9",
                   }}
                 >
                   {admin.role || "Admin"}
@@ -651,7 +687,7 @@ const SuperAdminDashboard = () => {
               </div>
 
               {/* Joined Date */}
-              <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
+              <div style={{ fontSize: "14px", color: "#64748b" }}>
                 {new Date(admin.createdAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -665,9 +701,9 @@ const SuperAdminDashboard = () => {
                   style={{
                     padding: "8px 14px",
                     background: "transparent",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "8px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     cursor: "pointer",
                     fontSize: "12px",
                     fontWeight: "600",
@@ -680,14 +716,14 @@ const SuperAdminDashboard = () => {
                     handleAdminClick(admin.email);
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--accent-color)";
+                    e.currentTarget.style.background = "#0ea5e9";
                     e.currentTarget.style.color = "white";
-                    e.currentTarget.style.borderColor = "var(--accent-color)";
+                    e.currentTarget.style.borderColor = "#0ea5e9";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "var(--text-secondary)";
-                    e.currentTarget.style.borderColor = "var(--border-color)";
+                    e.currentTarget.style.color = "#64748b";
+                    e.currentTarget.style.borderColor = "#e2e8f0";
                   }}
                 >
                   View
@@ -696,9 +732,9 @@ const SuperAdminDashboard = () => {
                   style={{
                     padding: "8px 14px",
                     background: "transparent",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "8px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     cursor: "pointer",
                     fontSize: "12px",
                     fontWeight: "600",
@@ -715,8 +751,8 @@ const SuperAdminDashboard = () => {
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "var(--text-secondary)";
-                    e.currentTarget.style.borderColor = "var(--border-color)";
+                    e.currentTarget.style.color = "#64748b";
+                    e.currentTarget.style.borderColor = "#e2e8f0";
                   }}
                   disabled={isTogglingStatus}
                 >
@@ -726,9 +762,9 @@ const SuperAdminDashboard = () => {
                   style={{
                     padding: "8px 14px",
                     background: "transparent",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "8px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     cursor: "pointer",
                     fontSize: "12px",
                     fontWeight: "600",
@@ -744,8 +780,8 @@ const SuperAdminDashboard = () => {
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "var(--text-secondary)";
-                    e.currentTarget.style.borderColor = "var(--border-color)";
+                    e.currentTarget.style.color = "#64748b";
+                    e.currentTarget.style.borderColor = "#e2e8f0";
                   }}
                 >
                   Delete
@@ -779,7 +815,7 @@ const SuperAdminDashboard = () => {
                   className={`${styles.pageNumber} ${currentPage === page ? styles.activePage : ''}`}
                   onClick={() => setCurrentPage(page)}
                   style={{
-                    background: currentPage === page ? 'var(--primary-color)' : 'var(--card-bg)',
+                    background: currentPage === page ? '#3b82f6' : '#ffffff',
                     color: currentPage === page ? '#fff' : 'var(--text-color)',
                   }}
                 >
@@ -820,14 +856,16 @@ const SuperAdminDashboard = () => {
           onClick={() => setShowUploadModal(false)}
         >
           <div
-            className={styles.glassPanel}
             style={{ 
               maxWidth: "600px", 
               width: "90%", 
               padding: "32px", 
               animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
               maxHeight: "90vh",
-              overflowY: "auto"
+              overflowY: "auto",
+              background: "#ffffff",
+              borderRadius: "16px",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -835,7 +873,7 @@ const SuperAdminDashboard = () => {
               margin: "0 0 8px 0", 
               fontSize: "24px", 
               fontWeight: "700", 
-              color: "var(--text-primary)",
+              color: "#1e293b",
               display: "flex",
               alignItems: "center",
               gap: "12px"
@@ -854,7 +892,7 @@ const SuperAdminDashboard = () => {
               </svg>
               Import Admins from CSV
             </h2>
-            <p style={{ margin: "0 0 24px 0", color: "var(--text-secondary)", fontSize: "14px" }}>
+            <p style={{ margin: "0 0 24px 0", color: "#64748b", fontSize: "14px" }}>
               Upload a CSV or Excel file to bulk create admin accounts
             </p>
 
@@ -864,20 +902,20 @@ const SuperAdminDashboard = () => {
                 style={{
                   display: "block",
                   padding: "40px 20px",
-                  border: "2px dashed var(--border-color)",
+                  border: "2px dashed #e2e8f0",
                   borderRadius: "12px",
-                  background: "var(--secondary-bg)",
+                  background: "#f1f5f9",
                   cursor: "pointer",
                   textAlign: "center",
                   transition: "all 0.3s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--accent-color)";
-                  e.currentTarget.style.background = "var(--card-bg)";
+                  e.currentTarget.style.borderColor = "#0ea5e9";
+                  e.currentTarget.style.background = "#ffffff";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-color)";
-                  e.currentTarget.style.background = "var(--secondary-bg)";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
+                  e.currentTarget.style.background = "#f1f5f9";
                 }}
               >
                 <svg 
@@ -885,7 +923,7 @@ const SuperAdminDashboard = () => {
                   height="48" 
                   viewBox="0 0 24 24" 
                   fill="none" 
-                  stroke="var(--accent-color)" 
+                  stroke="#0ea5e9" 
                   strokeWidth="2"
                   style={{ margin: "0 auto 16px" }}
                 >
@@ -894,10 +932,10 @@ const SuperAdminDashboard = () => {
                   <line x1="12" y1="18" x2="12" y2="12" />
                   <line x1="9" y1="15" x2="15" y2="15" />
                 </svg>
-                <div style={{ fontSize: "16px", fontWeight: "600", color: "var(--text-primary)", marginBottom: "8px" }}>
+                <div style={{ fontSize: "16px", fontWeight: "600", color: "#1e293b", marginBottom: "8px" }}>
                   {isImporting ? "Uploading..." : "Click to upload CSV or Excel file"}
                 </div>
-                <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                <div style={{ fontSize: "13px", color: "#64748b" }}>
                   Supports .csv and .xlsx files
                 </div>
                 <input
@@ -914,15 +952,15 @@ const SuperAdminDashboard = () => {
             <div style={{ 
               marginBottom: "24px",
               padding: "16px",
-              background: "var(--secondary-bg)",
+              background: "#f1f5f9",
               borderRadius: "12px",
-              border: "1px solid var(--border-color)"
+              border: "1px solid #e2e8f0"
             }}>
               <div style={{ 
                 fontSize: "14px", 
                 fontWeight: "600", 
                 marginBottom: "12px", 
-                color: "var(--text-primary)",
+                color: "#1e293b",
                 display: "flex",
                 alignItems: "center",
                 gap: "8px"
@@ -945,11 +983,11 @@ const SuperAdminDashboard = () => {
                 margin: "0", 
                 paddingLeft: "20px", 
                 fontSize: "13px", 
-                color: "var(--text-secondary)",
+                color: "#64748b",
                 lineHeight: "1.8"
               }}>
                 <li>First row must be the header: <code style={{ 
-                  background: "var(--card-bg)", 
+                  background: "#ffffff", 
                   padding: "2px 6px", 
                   borderRadius: "4px",
                   fontSize: "12px"
@@ -964,15 +1002,15 @@ const SuperAdminDashboard = () => {
             <div style={{ 
               marginBottom: "24px",
               padding: "16px",
-              background: "var(--secondary-bg)",
+              background: "#f1f5f9",
               borderRadius: "12px",
-              border: "1px solid var(--border-color)"
+              border: "1px solid #e2e8f0"
             }}>
               <div style={{ 
                 fontSize: "14px", 
                 fontWeight: "600", 
                 marginBottom: "12px", 
-                color: "var(--text-primary)",
+                color: "#1e293b",
                 display: "flex",
                 alignItems: "center",
                 gap: "8px"
@@ -993,13 +1031,13 @@ const SuperAdminDashboard = () => {
               <pre style={{ 
                 margin: 0, 
                 padding: "12px", 
-                background: "var(--card-bg)", 
+                background: "#ffffff", 
                 borderRadius: "8px", 
                 fontSize: "12px",
                 fontFamily: "monospace",
-                color: "var(--text-secondary)",
+                color: "#64748b",
                 overflowX: "auto",
-                border: "1px solid var(--border-color)",
+                border: "1px solid #e2e8f0",
                 lineHeight: "1.6"
               }}>
 {`name,email,phone,dob
@@ -1024,10 +1062,10 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                 style={{
                   marginTop: "12px",
                   padding: "8px 16px",
-                  background: "var(--card-bg)",
-                  border: "1px solid var(--border-color)",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
                   borderRadius: "8px",
-                  color: "var(--text-primary)",
+                  color: "#1e293b",
                   fontSize: "13px",
                   fontWeight: "600",
                   cursor: "pointer",
@@ -1037,12 +1075,12 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                   transition: "all 0.3s ease"
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--accent-color)";
-                  e.currentTarget.style.background = "var(--secondary-bg)";
+                  e.currentTarget.style.borderColor = "#0ea5e9";
+                  e.currentTarget.style.background = "#f1f5f9";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-color)";
-                  e.currentTarget.style.background = "var(--card-bg)";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
+                  e.currentTarget.style.background = "#ffffff";
                 }}
               >
                 <svg 
@@ -1065,8 +1103,25 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <button
                 onClick={() => setShowUploadModal(false)}
-                className={`${styles.btn} ${styles.btnGhost}`}
-                style={{ padding: "12px 24px", borderRadius: "10px", fontWeight: "600" }}
+                style={{
+                  padding: "12px 24px",
+                  background: "transparent",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "10px",
+                  color: "#64748b",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#f1f5f9";
+                  e.currentTarget.style.borderColor = "#cbd5e1";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
+                }}
               >
                 Close
               </button>
@@ -1095,8 +1150,15 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
           onClick={() => setShowCreateModal(false)}
         >
           <div
-            className={styles.glassPanel}
-            style={{ maxWidth: "500px", width: "90%", padding: "24px", animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)" }}
+            style={{ 
+              maxWidth: "500px", 
+              width: "90%", 
+              padding: "24px", 
+              animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+              background: "#ffffff",
+              borderRadius: "16px",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <h2 style={{ margin: "0 0 24px 0", fontSize: "24px", fontWeight: "700" }}>
@@ -1116,10 +1178,10 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                   style={{
                     width: "100%",
                     padding: "12px",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "8px",
-                    background: "var(--card-bg)",
-                    color: "var(--text-primary)",
+                    background: "#ffffff",
+                    color: "#1e293b",
                     fontSize: "14px",
                     boxSizing: "border-box",
                   }}
@@ -1138,10 +1200,10 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                   style={{
                     width: "100%",
                     padding: "12px",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "8px",
-                    background: "var(--card-bg)",
-                    color: "var(--text-primary)",
+                    background: "#ffffff",
+                    color: "#1e293b",
                     fontSize: "14px",
                     boxSizing: "border-box",
                   }}
@@ -1160,10 +1222,10 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                   style={{
                     width: "100%",
                     padding: "12px",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "8px",
-                    background: "var(--card-bg)",
-                    color: "var(--text-primary)",
+                    background: "#ffffff",
+                    color: "#1e293b",
                     fontSize: "14px",
                     boxSizing: "border-box",
                   }}
@@ -1182,10 +1244,10 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                   style={{
                     width: "100%",
                     padding: "12px",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "8px",
-                    background: "var(--card-bg)",
-                    color: "var(--text-primary)",
+                    background: "#ffffff",
+                    color: "#1e293b",
                     fontSize: "14px",
                     boxSizing: "border-box",
                   }}
@@ -1195,15 +1257,58 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className={`${styles.btn} ${styles.btnGhost}`}
                   disabled={isCreating}
+                  style={{
+                    padding: "12px 24px",
+                    background: "transparent",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "10px",
+                    color: "#64748b",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: isCreating ? "not-allowed" : "pointer",
+                    opacity: isCreating ? 0.6 : 1,
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isCreating) {
+                      e.currentTarget.style.background = "#f1f5f9";
+                      e.currentTarget.style.borderColor = "#cbd5e1";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.borderColor = "#e2e8f0";
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className={`${styles.btn} ${styles.btnPrimary}`}
                   disabled={isCreating}
+                  style={{
+                    padding: "12px 24px",
+                    background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
+                    border: "none",
+                    borderRadius: "10px",
+                    color: "white",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: isCreating ? "not-allowed" : "pointer",
+                    opacity: isCreating ? 0.6 : 1,
+                    boxShadow: "0 4px 16px rgba(14, 165, 233, 0.3)",
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isCreating) {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 6px 24px rgba(14, 165, 233, 0.4)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(14, 165, 233, 0.3)";
+                  }}
                 >
                   {isCreating ? "Creating..." : "Create Admin"}
                 </button>
@@ -1233,17 +1338,24 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
           onClick={() => setShowDeleteModal(false)}
         >
           <div
-            className={styles.glassPanel}
-            style={{ maxWidth: "500px", width: "90%", padding: "24px", animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)" }}
+            style={{ 
+              maxWidth: "500px", 
+              width: "90%", 
+              padding: "24px", 
+              animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+              background: "#ffffff",
+              borderRadius: "16px",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ margin: "0 0 16px 0", fontSize: "24px", fontWeight: "700", color: "var(--text-primary)" }}>
+            <h2 style={{ margin: "0 0 16px 0", fontSize: "24px", fontWeight: "700", color: "#1e293b" }}>
               Delete Admin
             </h2>
-            <p style={{ margin: "0 0 24px 0", fontSize: "15px", color: "var(--text-secondary)", lineHeight: "1.6" }}>
-              Are you sure you want to delete <strong style={{ color: "var(--text-primary)" }}>{adminToDelete.name}</strong> ({adminToDelete.email})?
+            <p style={{ margin: "0 0 24px 0", fontSize: "15px", color: "#64748b", lineHeight: "1.6" }}>
+              Are you sure you want to delete <strong style={{ color: "#1e293b" }}>{adminToDelete.name}</strong> ({adminToDelete.email})?
               <br />
-              <span style={{ color: "var(--danger-color)", fontWeight: "600", marginTop: "8px", display: "block" }}>
+              <span style={{ color: "#dc2626", fontWeight: "600", marginTop: "8px", display: "block" }}>
                 This action cannot be undone.
               </span>
             </p>
@@ -1254,12 +1366,28 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                   setShowDeleteModal(false);
                   setAdminToDelete(null);
                 }}
-                className={`${styles.btn} ${styles.btnGhost}`}
                 disabled={isDeleting}
                 style={{
                   padding: "12px 24px",
+                  background: "transparent",
+                  border: "1px solid #e2e8f0",
                   borderRadius: "10px",
+                  color: "#64748b",
+                  fontSize: "14px",
                   fontWeight: "600",
+                  cursor: isDeleting ? "not-allowed" : "pointer",
+                  opacity: isDeleting ? 0.6 : 1,
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isDeleting) {
+                    e.currentTarget.style.background = "#f1f5f9";
+                    e.currentTarget.style.borderColor = "#cbd5e1";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
                 }}
               >
                 Cancel
@@ -1270,7 +1398,7 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                 disabled={isDeleting}
                 style={{
                   padding: "12px 24px",
-                  background: "var(--danger-color)",
+                  background: "#dc2626",
                   color: "white",
                   border: "none",
                   borderRadius: "10px",
@@ -1320,18 +1448,20 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
           }}
         >
           <div
-            className={styles.glassPanel}
             style={{ 
               maxWidth: "700px", 
               width: "90%", 
               padding: "24px", 
               animation: "modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
               maxHeight: "80vh",
-              overflowY: "auto"
+              overflowY: "auto",
+              background: "#ffffff",
+              borderRadius: "16px",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)"
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ margin: "0 0 24px 0", fontSize: "24px", fontWeight: "700", color: "var(--text-primary)" }}>
+            <h2 style={{ margin: "0 0 24px 0", fontSize: "24px", fontWeight: "700", color: "#1e293b" }}>
               CSV Import Results
             </h2>
             
@@ -1342,38 +1472,38 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                   padding: "16px", 
                   background: "var(--success-bg)", 
                   borderRadius: "12px",
-                  border: "1px solid var(--success-color)"
+                  border: "1px solid #10b981"
                 }}>
-                  <div style={{ fontSize: "24px", fontWeight: "700", color: "var(--success-color)" }}>
+                  <div style={{ fontSize: "24px", fontWeight: "700", color: "#10b981" }}>
                     {importResults.successful?.length || 0}
                   </div>
-                  <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>Successful</div>
+                  <div style={{ fontSize: "14px", color: "#64748b" }}>Successful</div>
                 </div>
                 <div style={{ 
                   flex: 1, 
                   padding: "16px", 
                   background: "var(--danger-bg)", 
                   borderRadius: "12px",
-                  border: "1px solid var(--danger-color)"
+                  border: "1px solid #dc2626"
                 }}>
-                  <div style={{ fontSize: "24px", fontWeight: "700", color: "var(--danger-color)" }}>
+                  <div style={{ fontSize: "24px", fontWeight: "700", color: "#dc2626" }}>
                     {importResults.failed?.length || 0}
                   </div>
-                  <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>Failed</div>
+                  <div style={{ fontSize: "14px", color: "#64748b" }}>Failed</div>
                 </div>
               </div>
             </div>
 
             {importResults.successful?.length > 0 && (
               <div style={{ marginBottom: "20px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "var(--success-color)", display: "flex", alignItems: "center", gap: "8px" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "#10b981", display: "flex", alignItems: "center", gap: "8px" }}>
                   <CheckCircle size={18} /> Successfully Created ({importResults.successful.length})
                 </h3>
-                <div style={{ maxHeight: "200px", overflowY: "auto", background: "var(--secondary-bg)", padding: "12px", borderRadius: "8px" }}>
+                <div style={{ maxHeight: "200px", overflowY: "auto", background: "#f1f5f9", padding: "12px", borderRadius: "8px" }}>
                   {importResults.successful.map((admin: any, index: number) => (
                     <div key={index} style={{ 
                       padding: "8px 0", 
-                      borderBottom: index < importResults.successful.length - 1 ? "1px solid var(--border-color)" : "none",
+                      borderBottom: index < importResults.successful.length - 1 ? "1px solid #e2e8f0" : "none",
                       fontSize: "14px"
                     }}>
                       <strong>{admin.name}</strong> ({admin.email})
@@ -1388,18 +1518,18 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
 
             {importResults.failed?.length > 0 && (
               <div style={{ marginBottom: "20px" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "var(--danger-color)", display: "flex", alignItems: "center", gap: "8px" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "#dc2626", display: "flex", alignItems: "center", gap: "8px" }}>
                   <XCircle size={18} /> Failed ({importResults.failed.length})
                 </h3>
-                <div style={{ maxHeight: "200px", overflowY: "auto", background: "var(--secondary-bg)", padding: "12px", borderRadius: "8px" }}>
+                <div style={{ maxHeight: "200px", overflowY: "auto", background: "#f1f5f9", padding: "12px", borderRadius: "8px" }}>
                   {importResults.failed.map((admin: any, index: number) => (
                     <div key={index} style={{ 
                       padding: "8px 0", 
-                      borderBottom: index < importResults.failed.length - 1 ? "1px solid var(--border-color)" : "none",
+                      borderBottom: index < importResults.failed.length - 1 ? "1px solid #e2e8f0" : "none",
                       fontSize: "14px"
                     }}>
                       <strong>{admin.name}</strong> ({admin.email})
-                      <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}>
+                      <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
                         Reason: {admin.reason}
                       </div>
                     </div>
@@ -1414,8 +1544,26 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
                   setShowImportModal(false);
                   setImportResults(null);
                 }}
-                className={`${styles.btn} ${styles.btnPrimary}`}
-                style={{ padding: "12px 24px", borderRadius: "10px", fontWeight: "600" }}
+                style={{
+                  padding: "12px 24px",
+                  background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
+                  border: "none",
+                  borderRadius: "10px",
+                  color: "white",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 16px rgba(14, 165, 233, 0.3)",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 6px 24px rgba(14, 165, 233, 0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 4px 16px rgba(14, 165, 233, 0.3)";
+                }}
               >
                 Close
               </button>
@@ -1424,27 +1572,7 @@ Bob Wilson,bob@example.com,+1122334455,1991-08-10`;
         </div>
       )}
 
-        {/* Floating Theme Toggle */}
-        <div
-          style={{
-            position: "fixed",
-            right: 20,
-            bottom: 20,
-            zIndex: 1200,
-          }}
-        >
-          <div
-            style={{
-              background: "var(--card-bg)",
-              border: "1px solid var(--border-color)",
-              borderRadius: 12,
-              padding: 8,
-              boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-            }}
-          >
-            <ThemeToggle />
-          </div>
-        </div>
+
         </main>
       </div>
     </SuperAdminGuard>

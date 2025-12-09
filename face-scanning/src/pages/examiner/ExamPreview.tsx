@@ -7,6 +7,7 @@ import { getTokenFromCookie } from "@/constants/AuthStore";
 import styles from "../../styles/CreateExamPage.module.css";
 import { ExaminerGuard } from "@/components/guards";
 import { FileText, Mail, CheckCircle, Loader } from "lucide-react";
+import { LoadingScreen } from "@/components/PageTransition";
 
 const ExamPreview = () => {
   const router = useRouter();
@@ -33,6 +34,19 @@ const ExamPreview = () => {
       router.push("/examiner/CreateExamPage");
     }
   }, [router]);
+
+  useEffect(() => {
+    // Set light theme background
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    document.documentElement.style.background = "#f8fafc";
+    
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+      document.documentElement.style.background = "";
+    };
+  }, []);
 
   const handleOptionSelect = (questionId: string, optionId: string) => {
     setSelectedAnswers((prev) => ({
@@ -206,20 +220,7 @@ const ExamPreview = () => {
   };
 
   if (!examData) {
-    return (
-      <div
-        className="theme-transition"
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "var(--app-bg)",
-        }}
-      >
-        <p style={{ color: "var(--text-secondary)" }}>Loading...</p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   const { examName, mcqQuestions } = examData;
@@ -227,10 +228,9 @@ const ExamPreview = () => {
   return (
     <ExaminerGuard>
     <div
-      className="theme-transition"
       style={{
         minHeight: "100vh",
-        background: "var(--app-bg)",
+        background: "#f8fafc",
         padding: "40px 20px",
       }}
     >
@@ -242,12 +242,11 @@ const ExamPreview = () => {
       >
         {/* Header */}
         <div
-          className="theme-transition"
           style={{
             padding: "32px",
-            background: "var(--card-bg)",
+            background: "#ffffff",
             borderRadius: "16px",
-            border: "1px solid var(--border-color)",
+            border: "1px solid #e2e8f0",
             marginBottom: "24px",
           }}
         >
@@ -255,7 +254,7 @@ const ExamPreview = () => {
             className="theme-transition"
             style={{
               margin: "0 0 12px",
-              color: "var(--text-primary)",
+              color: "#1e293b",
               fontSize: "32px",
               fontWeight: 700,
             }}
@@ -266,12 +265,12 @@ const ExamPreview = () => {
             className="theme-transition"
             style={{
               margin: "0 0 24px",
-              color: "var(--text-secondary)",
+              color: "#64748b",
               fontSize: "16px",
             }}
           >
             This is how students will see the exam:{" "}
-            <strong style={{ color: "var(--text-primary)" }}>{examName}</strong>
+            <strong style={{ color: "#1e293b" }}>{examName}</strong>
           </p>
 
           {/* Exam Info */}
@@ -279,9 +278,9 @@ const ExamPreview = () => {
             className="theme-transition"
             style={{
               padding: "16px 20px",
-              background: "var(--secondary-bg)",
+              background: "#f1f5f9",
               borderRadius: "12px",
-              border: "1px solid var(--border-color)",
+              border: "1px solid #e2e8f0",
               display: "flex",
               gap: "32px",
               flexWrap: "wrap",
@@ -289,24 +288,24 @@ const ExamPreview = () => {
           >
             <div>
               <span
-                style={{ color: "var(--text-secondary)", fontSize: "14px" }}
+                style={{ color: "#64748b", fontSize: "14px" }}
               >
                 Total Questions:{" "}
               </span>
               <strong
-                style={{ color: "var(--text-primary)", fontSize: "16px" }}
+                style={{ color: "#1e293b", fontSize: "16px" }}
               >
                 {mcqQuestions.length}
               </strong>
             </div>
             <div>
               <span
-                style={{ color: "var(--text-secondary)", fontSize: "14px" }}
+                style={{ color: "#64748b", fontSize: "14px" }}
               >
                 Question Type:{" "}
               </span>
               <strong
-                style={{ color: "var(--text-primary)", fontSize: "16px" }}
+                style={{ color: "#1e293b", fontSize: "16px" }}
               >
                 Multiple Choice
               </strong>
@@ -321,16 +320,16 @@ const ExamPreview = () => {
             style={{
               textAlign: "center",
               padding: "80px 20px",
-              background: "var(--card-bg)",
+              background: "#ffffff",
               borderRadius: "16px",
-              border: "1px solid var(--border-color)",
+              border: "1px solid #e2e8f0",
             }}
           >
             <div style={{ fontSize: "64px", marginBottom: "16px" }}>📝</div>
             <p
               className="theme-transition"
               style={{
-                color: "var(--text-secondary)",
+                color: "#64748b",
                 fontSize: "18px",
                 margin: 0,
               }}
@@ -343,9 +342,9 @@ const ExamPreview = () => {
             className="theme-transition"
             style={{
               padding: "32px",
-              background: "var(--card-bg)",
+              background: "#ffffff",
               borderRadius: "16px",
-              border: "2px solid var(--border-color)",
+              border: "2px solid #e2e8f0",
               marginBottom: "24px",
             }}
           >
@@ -354,7 +353,7 @@ const ExamPreview = () => {
                 margin: "0 0 20px 0",
                 fontSize: "20px",
                 fontWeight: 700,
-                color: "var(--text-primary)",
+                color: "#1e293b",
               }}
             >
               📚 Questions Summary
@@ -369,16 +368,16 @@ const ExamPreview = () => {
               <div
                 style={{
                   padding: "16px",
-                  background: "var(--secondary-bg)",
+                  background: "#f1f5f9",
                   borderRadius: "12px",
-                  border: "1px solid var(--border-color)",
+                  border: "1px solid #e2e8f0",
                 }}
               >
                 <div
                   style={{
                     fontSize: "32px",
                     fontWeight: 700,
-                    color: "var(--accent-color)",
+                    color: "#0ea5e9",
                     marginBottom: "4px",
                   }}
                 >
@@ -387,7 +386,7 @@ const ExamPreview = () => {
                 <div
                   style={{
                     fontSize: "14px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     fontWeight: 500,
                   }}
                 >
@@ -397,9 +396,9 @@ const ExamPreview = () => {
               <div
                 style={{
                   padding: "16px",
-                  background: "var(--secondary-bg)",
+                  background: "#f1f5f9",
                   borderRadius: "12px",
-                  border: "1px solid var(--border-color)",
+                  border: "1px solid #e2e8f0",
                 }}
               >
                 <div
@@ -415,7 +414,7 @@ const ExamPreview = () => {
                 <div
                   style={{
                     fontSize: "14px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     fontWeight: 500,
                   }}
                 >
@@ -425,9 +424,9 @@ const ExamPreview = () => {
               <div
                 style={{
                   padding: "16px",
-                  background: "var(--secondary-bg)",
+                  background: "#f1f5f9",
                   borderRadius: "12px",
-                  border: "1px solid var(--border-color)",
+                  border: "1px solid #e2e8f0",
                 }}
               >
                 <div
@@ -443,7 +442,7 @@ const ExamPreview = () => {
                 <div
                   style={{
                     fontSize: "14px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     fontWeight: 500,
                   }}
                 >
@@ -456,16 +455,16 @@ const ExamPreview = () => {
               style={{
                 marginTop: "20px",
                 padding: "16px",
-                background: "var(--secondary-bg)",
+                background: "#f1f5f9",
                 borderRadius: "12px",
-                border: "1px solid var(--border-color)",
+                border: "1px solid #e2e8f0",
               }}
             >
               <p
                 style={{
                   margin: 0,
                   fontSize: "14px",
-                  color: "var(--text-secondary)",
+                  color: "#64748b",
                   lineHeight: "1.6",
                 }}
               >
@@ -480,9 +479,9 @@ const ExamPreview = () => {
           className="theme-transition"
           style={{
             padding: "24px 32px",
-            background: "var(--card-bg)",
+            background: "#ffffff",
             borderRadius: "16px",
-            border: "1px solid var(--border-color)",
+            border: "1px solid #e2e8f0",
             display: "flex",
             flexDirection: "column",
             gap: "20px",
@@ -504,7 +503,7 @@ const ExamPreview = () => {
             <span
               className="theme-transition"
               style={{
-                color: "var(--text-secondary)",
+                color: "#64748b",
                 fontSize: "14px",
               }}
             >
@@ -522,9 +521,9 @@ const ExamPreview = () => {
               style={{
                 padding: "14px 28px",
                 borderRadius: "12px",
-                border: "1px solid var(--border-color)",
-                background: "var(--secondary-bg)",
-                color: "var(--text-primary)",
+                border: "1px solid #e2e8f0",
+                background: "#f1f5f9",
+                color: "#1e293b",
                 fontSize: "16px",
                 fontWeight: 600,
                 cursor: isCreating ? "not-allowed" : "pointer",
@@ -541,7 +540,7 @@ const ExamPreview = () => {
                 padding: "14px 28px",
                 borderRadius: "12px",
                 border: "none",
-                background: "var(--accent-color)",
+                background: "#0ea5e9",
                 color: "#fff",
                 fontSize: "16px",
                 fontWeight: 700,
@@ -576,13 +575,13 @@ const ExamPreview = () => {
           <div
             className="theme-transition"
             style={{
-              background: "var(--card-bg)",
+              background: "#ffffff",
               borderRadius: "20px",
               padding: "48px",
               maxWidth: "500px",
               width: "90%",
               boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-              border: "1px solid var(--border-color)",
+              border: "1px solid #e2e8f0",
             }}
           >
             {/* Header */}
@@ -593,7 +592,7 @@ const ExamPreview = () => {
                   marginBottom: "16px",
                   display: "flex",
                   justifyContent: "center",
-                  color: "var(--accent-color)",
+                  color: "#0ea5e9",
                 }}
               >
                 {loadingStep === 'exam' && <FileText size={64} strokeWidth={2} />}
@@ -605,7 +604,7 @@ const ExamPreview = () => {
                   margin: "0 0 8px 0",
                   fontSize: "24px",
                   fontWeight: 700,
-                  color: "var(--text-primary)",
+                  color: "#1e293b",
                 }}
               >
                 {loadingStep === 'exam' && "Creating Exam..."}
@@ -616,7 +615,7 @@ const ExamPreview = () => {
                 style={{
                   margin: 0,
                   fontSize: "14px",
-                  color: "var(--text-secondary)",
+                  color: "#64748b",
                 }}
               >
                 {loadingStep === 'exam' && "Setting up your exam with all questions and settings"}
@@ -635,7 +634,7 @@ const ExamPreview = () => {
                       justifyContent: "space-between",
                       marginBottom: "8px",
                       fontSize: "13px",
-                      color: "var(--text-secondary)",
+                      color: "#64748b",
                       fontWeight: 600,
                     }}
                   >
@@ -646,7 +645,7 @@ const ExamPreview = () => {
                     style={{
                       width: "100%",
                       height: "8px",
-                      background: "var(--secondary-bg)",
+                      background: "#f1f5f9",
                       borderRadius: "4px",
                       overflow: "hidden",
                     }}
@@ -654,7 +653,7 @@ const ExamPreview = () => {
                     <div
                       style={{
                         height: "100%",
-                        background: "linear-gradient(90deg, var(--accent-color), #10b981)",
+                        background: "linear-gradient(90deg, #0ea5e9, #10b981)",
                         borderRadius: "4px",
                         width: `${(studentProgress.current / studentProgress.total) * 100}%`,
                         transition: "width 0.3s ease",
@@ -669,7 +668,7 @@ const ExamPreview = () => {
                   <Loader 
                     size={60} 
                     strokeWidth={3}
-                    color="var(--accent-color)"
+                    color="#0ea5e9"
                     style={{
                       animation: "spin 1s linear infinite",
                     }}
@@ -712,10 +711,10 @@ const ExamPreview = () => {
                   gap: "12px",
                   padding: "12px",
                   background: loadingStep === 'exam' || loadingStep === 'students' || loadingStep === 'done' 
-                    ? "var(--secondary-bg)" 
+                    ? "#f1f5f9" 
                     : "transparent",
                   borderRadius: "8px",
-                  border: "1px solid var(--border-color)",
+                  border: "1px solid #e2e8f0",
                 }}
               >
                 <div
@@ -725,7 +724,7 @@ const ExamPreview = () => {
                     borderRadius: "50%",
                     background: loadingStep === 'students' || loadingStep === 'done'
                       ? "#10b981"
-                      : "var(--accent-color)",
+                      : "#0ea5e9",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -740,7 +739,7 @@ const ExamPreview = () => {
                   style={{
                     fontSize: "14px",
                     fontWeight: 600,
-                    color: "var(--text-primary)",
+                    color: "#1e293b",
                   }}
                 >
                   Exam Creation
@@ -754,10 +753,10 @@ const ExamPreview = () => {
                   gap: "12px",
                   padding: "12px",
                   background: loadingStep === 'students' || loadingStep === 'done'
-                    ? "var(--secondary-bg)"
+                    ? "#f1f5f9"
                     : "transparent",
                   borderRadius: "8px",
-                  border: "1px solid var(--border-color)",
+                  border: "1px solid #e2e8f0",
                   opacity: loadingStep === 'exam' ? 0.5 : 1,
                 }}
               >
@@ -769,8 +768,8 @@ const ExamPreview = () => {
                     background: loadingStep === 'done'
                       ? "#10b981"
                       : loadingStep === 'students'
-                      ? "var(--accent-color)"
-                      : "var(--border-color)",
+                      ? "#0ea5e9"
+                      : "#e2e8f0",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -785,7 +784,7 @@ const ExamPreview = () => {
                   style={{
                     fontSize: "14px",
                     fontWeight: 600,
-                    color: "var(--text-primary)",
+                    color: "#1e293b",
                   }}
                 >
                   Sending Invitations
@@ -798,12 +797,12 @@ const ExamPreview = () => {
               style={{
                 marginTop: "24px",
                 padding: "12px 16px",
-                background: "var(--secondary-bg)",
+                background: "#f1f5f9",
                 borderRadius: "8px",
                 fontSize: "12px",
-                color: "var(--text-secondary)",
+                color: "#64748b",
                 textAlign: "center",
-                border: "1px solid var(--border-color)",
+                border: "1px solid #e2e8f0",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -840,3 +839,4 @@ const ExamPreview = () => {
 };
 
 export default ExamPreview;
+

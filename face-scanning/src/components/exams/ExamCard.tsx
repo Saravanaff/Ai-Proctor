@@ -1113,47 +1113,6 @@ const ExamCard: React.FC<Props> = ({
               Add Students
             </button>
 
-            {onViewResults && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewResults(exam);
-                }}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--secondary-bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--success-color)';
-                  e.currentTarget.style.color = 'white';
-                  e.currentTarget.style.borderColor = 'var(--success-color)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--secondary-bg)';
-                  e.currentTarget.style.color = 'var(--text-primary)';
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                }}
-                title="View exam results"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 3v18h18"></path>
-                  <path d="m19 9-5 5-4-4-5 5"></path>
-                </svg>
-                Results
-              </button>
-            )}
-
             {onDelete && (
               <button
                 onClick={(e) => {

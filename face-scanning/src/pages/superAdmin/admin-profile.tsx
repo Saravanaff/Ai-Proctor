@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import styles from "../../styles/CreateExamPage.module.css";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { SuperAdminGuard } from "../../components/guards";
+import { LoadingScreen } from "../../components/PageTransition";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { Check, Mail, User, FileText, Users } from "lucide-react";
@@ -38,6 +39,7 @@ const AdminProfilePage = () => {
   const [admin, setAdmin] = useState<AdminData | null>(null);
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
+  const [navigating, setNavigating] = useState(false);
   const [search, setSearch] = useState("");
 
   axios.interceptors.request.use((config) => {
@@ -49,10 +51,26 @@ const AdminProfilePage = () => {
     return config;
   });
 
+  useEffect(() => {
+    // Set light theme background
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    document.documentElement.style.background = "#f8fafc";
+    
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+      document.documentElement.style.background = "";
+    };
+  }, []);
+
   const fetchAdminExams = async () => {
     if (!adminEmail) return;
 
     try {
+      console.log('👤 Fetching admin profile and exams...');
+      const startTime = Date.now();
+      
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await axios.get(`${base}/admin/${adminEmail}/exams`);
 
@@ -60,6 +78,13 @@ const AdminProfilePage = () => {
         setAdmin(res.data.data.admin);
         setExams(res.data.data.exams);
       }
+      
+      // Ensure loading screen shows for at least 500ms
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, 500 - elapsedTime);
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+      
+      console.log('✅ Admin profile loaded');
     } catch (e) {
       console.error(e);
       alert("Failed to fetch admin exams");
@@ -73,6 +98,8 @@ const AdminProfilePage = () => {
   }, [adminEmail]);
 
   const handleExamClick = (examId: number) => {
+    console.log('📊 Navigating to exam details...');
+    setNavigating(true);
     router.push(`/examiner/exam-details?examId=${examId}`);
   };
 
@@ -84,20 +111,40 @@ const AdminProfilePage = () => {
     exam.exam_name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Show loading screen during initial data fetch
+  if (loading) {
+    console.log('🔄 Admin profile - showing loading screen');
+    return (
+      <SuperAdminGuard>
+        <LoadingScreen message="Loading admin profile..." />
+      </SuperAdminGuard>
+    );
+  }
+
+  // Show loading screen when navigating to exam details
+  if (navigating) {
+    console.log('🔄 Navigating to exam details...');
+    return (
+      <SuperAdminGuard>
+        <LoadingScreen message="Loading exam details..." />
+      </SuperAdminGuard>
+    );
+  }
+
   return (
     <SuperAdminGuard>
       <div
         className={styles.examinerContainer}
-        style={{ minHeight: "100vh", background: "var(--background)" }}
+        style={{ minHeight: "100vh", background: "#f8fafc" }}
       >
       <header style={{ marginBottom: "32px" }}>
         <div
           style={{
-            background: "linear-gradient(135deg, var(--card-bg), var(--secondary-bg))",
+            background: "linear-gradient(135deg, #ffffff, #f1f5f9)",
             borderRadius: "24px",
             padding: "32px",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 8px 32px var(--shadow)",
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
             position: "relative",
             overflow: "hidden",
           }}
@@ -109,7 +156,7 @@ const AdminProfilePage = () => {
               left: 0,
               right: 0,
               height: "5px",
-              background: "linear-gradient(90deg, var(--accent-color), var(--primary-color))",
+              background: "linear-gradient(90deg, #0ea5e9, #3b82f6)",
             }}
           />
           
@@ -142,12 +189,12 @@ const AdminProfilePage = () => {
                 alignItems: "center",
                 gap: "8px",
                 padding: "10px 20px",
-                background: "var(--success-bg)",
-                color: "var(--success-color)",
+                background: "#d1fae5",
+                color: "#10b981",
                 borderRadius: "10px",
                 fontSize: "14px",
                 fontWeight: "600",
-                border: "1.5px solid var(--success-color)",
+                border: "1.5px solid #10b981",
               }}
             >
               <Check size={16} /> Active
@@ -167,7 +214,7 @@ const AdminProfilePage = () => {
                 width: "100px",
                 height: "100px",
                 borderRadius: "20px",
-                background: "linear-gradient(135deg, var(--accent-color), var(--primary-color))",
+                background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -186,7 +233,7 @@ const AdminProfilePage = () => {
                   margin: "0 0 12px 0",
                   fontSize: "32px",
                   fontWeight: "700",
-                  color: "var(--text-primary)",
+                  color: "#1e293b",
                   lineHeight: "1.2",
                   letterSpacing: "-0.02em",
                 }}
@@ -207,12 +254,12 @@ const AdminProfilePage = () => {
                     alignItems: "center",
                     gap: "8px",
                     padding: "8px 16px",
-                    background: "var(--info-bg)",
-                    color: "var(--text-secondary)",
+                    background: "#e0f2fe",
+                    color: "#64748b",
                     borderRadius: "10px",
                     fontSize: "15px",
                     fontWeight: "500",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                   }}
                 >
                   <Mail size={16} />
@@ -225,11 +272,11 @@ const AdminProfilePage = () => {
                     gap: "6px",
                     padding: "8px 16px",
                     background: "var(--primary-bg-light)",
-                    color: "var(--accent-color)",
+                    color: "#0ea5e9",
                     borderRadius: "10px",
                     fontSize: "14px",
                     fontWeight: "600",
-                    border: "1px solid var(--accent-color)",
+                    border: "1px solid #0ea5e9",
                   }}
                 >
                   <User size={16} />
@@ -241,12 +288,12 @@ const AdminProfilePage = () => {
                     alignItems: "center",
                     gap: "6px",
                     padding: "8px 16px",
-                    background: "var(--secondary-bg)",
-                    color: "var(--text-primary)",
+                    background: "#f1f5f9",
+                    color: "#1e293b",
                     borderRadius: "10px",
                     fontSize: "14px",
                     fontWeight: "600",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                   }}
                 >
                   <FileText size={16} />
@@ -272,7 +319,7 @@ const AdminProfilePage = () => {
               fontSize: "22px",
               fontWeight: "600",
               margin: 0,
-              color: "var(--text-primary)",
+              color: "#1e293b",
             }}
           >
             Examinations
@@ -281,11 +328,11 @@ const AdminProfilePage = () => {
                 marginLeft: "12px",
                 fontSize: "16px",
                 fontWeight: "500",
-                color: "var(--text-secondary)",
-                background: "var(--info-bg)",
+                color: "#64748b",
+                background: "#e0f2fe",
                 padding: "4px 12px",
                 borderRadius: "12px",
-                border: "1px solid var(--border-color)",
+                border: "1px solid #e2e8f0",
               }}
             >
               {exams.length}
@@ -303,20 +350,20 @@ const AdminProfilePage = () => {
               padding: "14px 20px",
               marginBottom: "20px",
               borderRadius: "12px",
-              border: "2px solid var(--border-color)",
+              border: "2px solid #e2e8f0",
               background: "var(--input-bg)",
-              color: "var(--text-primary)",
+              color: "#1e293b",
               fontSize: "15px",
               transition: "all 0.3s ease",
-              boxShadow: "0 2px 8px var(--shadow)",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
             }}
             onFocus={(e) => {
-              e.target.style.borderColor = "var(--accent-color)";
+              e.target.style.borderColor = "#0ea5e9";
               e.target.style.boxShadow = "0 4px 16px rgba(14, 165, 233, 0.2)";
             }}
             onBlur={(e) => {
-              e.target.style.borderColor = "var(--border-color)";
-              e.target.style.boxShadow = "0 2px 8px var(--shadow)";
+              e.target.style.borderColor = "#e2e8f0";
+              e.target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.08)";
             }}
           />
         </div>
@@ -327,12 +374,12 @@ const AdminProfilePage = () => {
           style={{
             textAlign: "center",
             padding: "60px 20px",
-            background: "var(--card-bg)",
+            background: "#ffffff",
             borderRadius: "16px",
-            border: "1px solid var(--border-color)",
+            border: "1px solid #e2e8f0",
           }}
         >
-          <p style={{ color: "var(--text-secondary)", fontSize: "16px" }}>
+          <p style={{ color: "#64748b", fontSize: "16px" }}>
             Loading examinations...
           </p>
         </div>
@@ -341,14 +388,14 @@ const AdminProfilePage = () => {
           style={{
             textAlign: "center",
             padding: "60px 20px",
-            background: "var(--card-bg)",
+            background: "#ffffff",
             borderRadius: "16px",
-            border: "1px solid var(--border-color)",
+            border: "1px solid #e2e8f0",
           }}
         >
           <p
             style={{
-              color: "var(--text-primary)",
+              color: "#1e293b",
               fontSize: "18px",
               fontWeight: "600",
               marginBottom: "8px",
@@ -356,7 +403,7 @@ const AdminProfilePage = () => {
           >
             {search ? "No Results Found" : "No Examinations"}
           </p>
-          <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
+          <p style={{ color: "#64748b", fontSize: "14px" }}>
             {search
               ? "Please refine your search criteria and try again"
               : "This administrator has not created any examinations"}
@@ -365,11 +412,11 @@ const AdminProfilePage = () => {
       ) : (
         <div
           style={{
-            background: "var(--card-bg)",
+            background: "#ffffff",
             borderRadius: "16px",
-            border: "1px solid var(--border-color)",
+            border: "1px solid #e2e8f0",
             overflow: "hidden",
-            boxShadow: "0 4px 20px var(--shadow)",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
           }}
         >
           {/* Table Header */}
@@ -378,11 +425,11 @@ const AdminProfilePage = () => {
               display: "grid",
               gridTemplateColumns: "2fr 1fr 1fr 1fr 120px",
               padding: "16px 24px",
-              background: "var(--secondary-bg)",
-              borderBottom: "1px solid var(--border-color)",
+              background: "#f1f5f9",
+              borderBottom: "1px solid #e2e8f0",
               fontWeight: "700",
               fontSize: "13px",
-              color: "var(--text-secondary)",
+              color: "#64748b",
               textTransform: "uppercase",
               letterSpacing: "0.5px",
             }}
@@ -402,14 +449,14 @@ const AdminProfilePage = () => {
                 display: "grid",
                 gridTemplateColumns: "2fr 1fr 1fr 1fr 120px",
                 padding: "20px 24px",
-                borderBottom: "1px solid var(--border-color)",
+                borderBottom: "1px solid #e2e8f0",
                 alignItems: "center",
                 transition: "all 0.2s ease",
                 cursor: "pointer",
               }}
               onClick={() => handleExamClick(exam.id)}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--secondary-bg)";
+                e.currentTarget.style.background = "#f1f5f9";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
@@ -417,7 +464,7 @@ const AdminProfilePage = () => {
             >
               {/* Exam Name */}
               <div>
-                <div style={{ fontWeight: "600", color: "var(--text-primary)", fontSize: "15px", marginBottom: "4px" }}>
+                <div style={{ fontWeight: "600", color: "#1e293b", fontSize: "15px", marginBottom: "4px" }}>
                   {exam.exam_name}
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
@@ -425,12 +472,12 @@ const AdminProfilePage = () => {
                     <span
                       style={{
                         padding: "4px 8px",
-                        background: "var(--success-bg)",
-                        color: "var(--success-color)",
+                        background: "#d1fae5",
+                        color: "#10b981",
                         borderRadius: "6px",
                         fontSize: "10px",
                         fontWeight: "600",
-                        border: "1px solid var(--success-color)",
+                        border: "1px solid #10b981",
                       }}
                     >
                       Third Eye
@@ -440,12 +487,12 @@ const AdminProfilePage = () => {
                     <span
                       style={{
                         padding: "4px 8px",
-                        background: "var(--success-bg)",
-                        color: "var(--success-color)",
+                        background: "#d1fae5",
+                        color: "#10b981",
                         borderRadius: "6px",
                         fontSize: "10px",
                         fontWeight: "600",
-                        border: "1px solid var(--success-color)",
+                        border: "1px solid #10b981",
                       }}
                     >
                       Eye Track
@@ -455,12 +502,12 @@ const AdminProfilePage = () => {
                     <span
                       style={{
                         padding: "4px 8px",
-                        background: "var(--success-bg)",
-                        color: "var(--success-color)",
+                        background: "#d1fae5",
+                        color: "#10b981",
                         borderRadius: "6px",
                         fontSize: "10px",
                         fontWeight: "600",
-                        border: "1px solid var(--success-color)",
+                        border: "1px solid #10b981",
                       }}
                     >
                       Object Detect
@@ -470,12 +517,12 @@ const AdminProfilePage = () => {
                     <span
                       style={{
                         padding: "4px 8px",
-                        background: "var(--success-bg)",
-                        color: "var(--success-color)",
+                        background: "#d1fae5",
+                        color: "#10b981",
                         borderRadius: "6px",
                         fontSize: "10px",
                         fontWeight: "600",
-                        border: "1px solid var(--success-color)",
+                        border: "1px solid #10b981",
                       }}
                     >
                       Recording
@@ -493,9 +540,9 @@ const AdminProfilePage = () => {
                     borderRadius: "8px",
                     fontSize: "13px",
                     fontWeight: "700",
-                    background: "var(--secondary-bg)",
-                    color: "var(--text-primary)",
-                    border: "1px solid var(--border-color)",
+                    background: "#f1f5f9",
+                    color: "#1e293b",
+                    border: "1px solid #e2e8f0",
                   }}
                 >
                   {exam.key}
@@ -513,9 +560,9 @@ const AdminProfilePage = () => {
                     borderRadius: "8px",
                     fontSize: "13px",
                     fontWeight: "600",
-                    background: "var(--info-bg)",
-                    color: "var(--accent-color)",
-                    border: "1px solid var(--accent-color)",
+                    background: "#e0f2fe",
+                    color: "#0ea5e9",
+                    border: "1px solid #0ea5e9",
                   }}
                 >
                   <Users size={14} />
@@ -524,7 +571,7 @@ const AdminProfilePage = () => {
               </div>
 
               {/* Created Date */}
-              <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
+              <div style={{ fontSize: "14px", color: "#64748b" }}>
                 {new Date(exam.createdAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -538,9 +585,9 @@ const AdminProfilePage = () => {
                   style={{
                     padding: "6px 12px",
                     background: "transparent",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "8px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                     cursor: "pointer",
                     fontSize: "12px",
                     fontWeight: "600",
@@ -551,14 +598,14 @@ const AdminProfilePage = () => {
                     handleExamClick(exam.id);
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "var(--accent-color)";
+                    e.currentTarget.style.background = "#0ea5e9";
                     e.currentTarget.style.color = "white";
-                    e.currentTarget.style.borderColor = "var(--accent-color)";
+                    e.currentTarget.style.borderColor = "#0ea5e9";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "var(--text-secondary)";
-                    e.currentTarget.style.borderColor = "var(--border-color)";
+                    e.currentTarget.style.color = "#64748b";
+                    e.currentTarget.style.borderColor = "#e2e8f0";
                   }}
                 >
                   View
@@ -568,8 +615,6 @@ const AdminProfilePage = () => {
           ))}
         </div>
       )}
-
-      <ThemeToggle />
     </div>
     </SuperAdminGuard>
   );

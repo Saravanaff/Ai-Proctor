@@ -2,10 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import styles from "../../styles/CreateExamPage.module.css";
 import { Exam } from "../../types/exam";
 import SearchBar from "../../components/exams/SearchBar";
-import ExamStats from "../../components/exams/ExamStats";
 import ExamsGrid from "../../components/exams/ExamsGrid";
 import ExamResultsModal from "../../components/exams/ExamResultsModal";
-import { ThemeToggle } from "../../components/ThemeToggle";
 import { ExaminerGuard } from "../../components/guards";
 import axios from "axios";
 import { getTokenFromCookie } from "@/constants/AuthStore";
@@ -13,11 +11,13 @@ import { configureAxiosInterceptor } from "@/utils/axiosConfig";
 import { logout as authLogout, getUserName, getUserInitials } from "@/utils/auth";
 import { useRouter } from "next/router";
 import { LayoutDashboard, Plus } from "lucide-react";
+import { LoadingScreen } from "@/components/PageTransition";
 
 const CreateExam = () => {
   const router = useRouter();
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "suspended"
@@ -35,9 +35,25 @@ const CreateExam = () => {
   }, []);
 
   useEffect(() => {
+    // Set light theme background
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    document.documentElement.style.background = "#f8fafc";
+    
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+      document.documentElement.style.background = "";
+    };
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     const fetchExams = async () => {
+      console.log("📊 Fetching exams...");
       setLoading(true);
+      const startTime = Date.now();
+      
       try {
         const base = process.env.NEXT_PUBLIC_BACKEND_URL;
         const res = await axios.get(`${base}/exam`);
@@ -58,10 +74,20 @@ const CreateExam = () => {
           );
           setExams(examsWithParticipants);
         }
+        
+        // Ensure minimum display time of 500ms for loading screen
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, 500 - elapsedTime);
+        
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+        console.log("✅ Exams loaded");
       } catch (e: unknown) {
         console.error(e);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setInitialLoading(false);
+        }
       }
     };
     fetchExams();
@@ -201,6 +227,10 @@ const CreateExam = () => {
     setSelectedExamForResults(null);
   };
 
+  if (initialLoading) {
+    return <LoadingScreen message="Loading exams..." />;
+  }
+
   return (
     <ExaminerGuard>
       <div
@@ -323,9 +353,6 @@ const CreateExam = () => {
               <Plus size={16} />
               New Exam
             </button>
-
-            {/* Theme Toggle */}
-            <ThemeToggle />
 
             {/* Divider */}
             <div
@@ -706,3 +733,4 @@ const CreateExam = () => {
 };
 
 export default CreateExam;
+

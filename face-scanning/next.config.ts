@@ -13,6 +13,27 @@ const nextConfig: NextConfig = {
     // your project has type errors.
     ignoreBuildErrors: true,
   },
+  webpack: (config, { isServer }) => {
+    // Fix for face-api.js and other packages that try to use Node.js modules in browser
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+        stream: false,
+        os: false,
+      };
+    }
+    
+    // Handle seedrandom package
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      seedrandom: false,
+    };
+
+    return config;
+  },
 };
 
 export default nextConfig;

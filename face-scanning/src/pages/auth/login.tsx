@@ -8,18 +8,32 @@ const LoginPage = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Enforce light theme
   useEffect(() => {
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+    };
+  }, []);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
     if (registered === "true") {
       setSuccessMessage("Registration successful! Please login.");
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 5000);
+      timer = setTimeout(() => setShowSuccess(false), 5000);
     } else if (reset === "true") {
       setSuccessMessage(
         "Password reset successful! Please login with your new password."
       );
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 5000);
+      timer = setTimeout(() => setShowSuccess(false), 5000);
     }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [registered, reset]);
 
   return (

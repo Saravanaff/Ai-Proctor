@@ -4,7 +4,6 @@ import MCQQuestionEditor from "../../components/exam/MCQQuestionEditor";
 import MCQQuestionList from "../../components/exam/MCQQuestionList";
 import QuestionTableEditor from "../../components/exam/QuestionTableEditor";
 import { MCQQuestion } from "../../types/mcq";
-import { ThemeToggle } from "../../components/ThemeToggle";
 import { ExaminerGuard } from "@/components/guards";
 import * as XLSX from 'xlsx';
 import { downloadQuestionsTemplate, downloadStudentsTemplate, parseSpreadsheetFile } from "@/utils/excelUtils";
@@ -60,8 +59,8 @@ const Toggle = ({
       justifyContent: "space-between",
       padding: "14px 16px",
       borderRadius: 12,
-      background: enabled && !disabled ? "rgba(var(--accent-color-rgb), 0.08)" : "var(--secondary-bg)",
-      border: enabled && !disabled ? "1px solid rgba(var(--accent-color-rgb), 0.3)" : "1px solid var(--border-color)",
+      background: enabled && !disabled ? "rgba(var(--accent-color-rgb), 0.08)" : "#f1f5f9",
+      border: enabled && !disabled ? "1px solid rgba(var(--accent-color-rgb), 0.3)" : "1px solid #e2e8f0",
       transition: "all 0.25s ease",
       cursor: disabled ? "not-allowed" : "pointer",
     }}
@@ -74,7 +73,7 @@ const Toggle = ({
           width: 8,
           height: 8,
           borderRadius: "50%",
-          background: enabled ? "var(--accent-color)" : "var(--text-tertiary)",
+          background: enabled ? "#0ea5e9" : "var(--text-tertiary)",
           opacity: disabled ? 0.4 : 1,
           transition: "all 0.25s ease",
         }}
@@ -84,7 +83,7 @@ const Toggle = ({
         style={{
           fontSize: 14,
           fontWeight: 500,
-          color: disabled ? "var(--text-tertiary)" : "var(--text-primary)",
+          color: disabled ? "var(--text-tertiary)" : "#1e293b",
           transition: "color 0.3s ease",
         }}
       >
@@ -106,7 +105,7 @@ const Toggle = ({
         height: 28,
         borderRadius: 999,
         border: "none",
-        background: enabled ? "var(--accent-color)" : "var(--border-color)",
+        background: enabled ? "#0ea5e9" : "#e2e8f0",
         cursor: disabled ? "not-allowed" : "pointer",
         transition: "all 0.25s ease",
         opacity: disabled ? 0.5 : 1,
@@ -131,7 +130,7 @@ const Toggle = ({
         }}
       >
         {enabled && (
-          <Check size={12} style={{ color: "var(--accent-color)" }} />
+          <Check size={12} style={{ color: "#0ea5e9" }} />
         )}
       </span>
     </button>
@@ -167,7 +166,7 @@ const CollapsibleSection = React.memo(({
     style={{
       marginBottom: fullHeight ? 0 : 20,
       borderRadius: 16,
-      background: "var(--card-bg)",
+      background: "#ffffff",
       flex: fullHeight ? 1 : undefined,
       display: fullHeight ? "flex" : undefined,
       flexDirection: fullHeight ? "column" : undefined,
@@ -176,7 +175,7 @@ const CollapsibleSection = React.memo(({
       boxShadow: isOpen 
         ? "0 8px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 16px -4px rgba(0, 0, 0, 0.08)" 
         : "0 2px 8px -2px rgba(0, 0, 0, 0.08)",
-      border: "1px solid var(--border-color)",
+      border: "1px solid #e2e8f0",
     }}
   >
     {/* Header */}
@@ -189,7 +188,7 @@ const CollapsibleSection = React.memo(({
         background: isOpen 
           ? "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.05) 0%, transparent 100%)" 
           : "transparent",
-        borderBottom: isOpen ? "1px solid var(--border-color)" : "none",
+        borderBottom: isOpen ? "1px solid #e2e8f0" : "none",
         cursor: "pointer",
         transition: "all 0.3s ease",
       }}
@@ -210,7 +209,7 @@ const CollapsibleSection = React.memo(({
             borderRadius: 12,
             background: masterEnabled !== false 
               ? "linear-gradient(135deg, rgba(var(--accent-color-rgb), 0.15) 0%, rgba(var(--accent-color-rgb), 0.05) 100%)" 
-              : "var(--secondary-bg)",
+              : "#f1f5f9",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -226,7 +225,7 @@ const CollapsibleSection = React.memo(({
               margin: 0,
               fontSize: 17,
               fontWeight: 600,
-              color: "var(--text-primary)",
+              color: "#1e293b",
               letterSpacing: "-0.01em",
             }}
           >
@@ -237,7 +236,7 @@ const CollapsibleSection = React.memo(({
             style={{
               margin: "4px 0 0 0",
               fontSize: 13,
-              color: "var(--text-secondary)",
+              color: "#64748b",
               lineHeight: 1.4,
             }}
           >
@@ -255,7 +254,7 @@ const CollapsibleSection = React.memo(({
               style={{ 
                 fontSize: 12, 
                 fontWeight: 600,
-                color: masterEnabled ? "var(--accent-color)" : "var(--text-tertiary)",
+                color: masterEnabled ? "#0ea5e9" : "var(--text-tertiary)",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
               }}
@@ -272,7 +271,7 @@ const CollapsibleSection = React.memo(({
                 height: 30,
                 borderRadius: 999,
                 border: "none",
-                background: masterEnabled ? "var(--accent-color)" : "var(--border-color)",
+                background: masterEnabled ? "#0ea5e9" : "#e2e8f0",
                 cursor: "pointer",
                 transition: "all 0.25s ease",
                 boxShadow: masterEnabled 
@@ -297,7 +296,7 @@ const CollapsibleSection = React.memo(({
                 }}
               >
                 {masterEnabled && (
-                  <Check size={12} style={{ color: "var(--accent-color)" }} />
+                  <Check size={12} style={{ color: "#0ea5e9" }} />
                 )}
               </span>
             </button>
@@ -308,7 +307,7 @@ const CollapsibleSection = React.memo(({
             width: 32,
             height: 32,
             borderRadius: 8,
-            background: isOpen ? "var(--secondary-bg)" : "transparent",
+            background: isOpen ? "#f1f5f9" : "transparent",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -316,9 +315,9 @@ const CollapsibleSection = React.memo(({
           }}
         >
           {isOpen ? (
-            <ChevronUp size={20} color="var(--text-secondary)" />
+            <ChevronUp size={20} color="#64748b" />
           ) : (
-            <ChevronDown size={20} color="var(--text-secondary)" />
+            <ChevronDown size={20} color="#64748b" />
           )}
         </div>
       </div>
@@ -331,7 +330,7 @@ const CollapsibleSection = React.memo(({
         onMouseDown={(e) => e.stopPropagation()}
         style={{ 
           padding: "24px",
-          background: "var(--secondary-bg)",
+          background: "#f1f5f9",
           flex: fullHeight ? 1 : undefined,
           display: fullHeight ? "flex" : undefined,
           flexDirection: fullHeight ? "column" : undefined,
@@ -404,6 +403,19 @@ const NewExam = () => {
     MCQQuestion | undefined
   >(undefined);
   const [uploadError, setUploadError] = useState<string>("");
+
+  useEffect(() => {
+    // Set light theme background
+    document.body.style.background = "#f8fafc";
+    document.body.style.minHeight = "100vh";
+    document.documentElement.style.background = "#f8fafc";
+    
+    return () => {
+      document.body.style.background = "";
+      document.body.style.minHeight = "";
+      document.documentElement.style.background = "";
+    };
+  }, []);
 
   // Restore data from sessionStorage when component mounts (for back navigation from preview)
   useEffect(() => {
@@ -1135,7 +1147,7 @@ const NewExam = () => {
             background: "rgba(var(--card-bg-rgb), 0.85)",
             backdropFilter: "blur(12px)",
             WebkitBackdropFilter: "blur(12px)",
-            borderBottom: "1px solid var(--border-color)",
+            borderBottom: "1px solid #e2e8f0",
             padding: "0 32px",
           }}
         >
@@ -1163,24 +1175,24 @@ const NewExam = () => {
                   alignItems: "center",
                   gap: "6px",
                   cursor: "pointer",
-                  color: "var(--text-secondary)",
+                  color: "#64748b",
                   fontSize: "14px",
                   fontWeight: 500,
                   transition: "all 0.2s ease",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "var(--text-primary)";
-                  e.currentTarget.style.background = "var(--secondary-bg)";
+                  e.currentTarget.style.color = "#1e293b";
+                  e.currentTarget.style.background = "#f1f5f9";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.color = "#64748b";
                   e.currentTarget.style.background = "transparent";
                 }}
               >
                 <ArrowLeft size={18} /> Back
               </button>
               
-              <div style={{ height: "32px", width: "1px", background: "var(--border-color)" }} />
+              <div style={{ height: "32px", width: "1px", background: "#e2e8f0" }} />
               
               <div>
                 <h1
@@ -1188,7 +1200,7 @@ const NewExam = () => {
                   style={{
                     fontSize: "20px",
                     fontWeight: 700,
-                    color: "var(--text-primary)",
+                    color: "#1e293b",
                     margin: 0,
                     letterSpacing: "-0.02em",
                   }}
@@ -1205,7 +1217,7 @@ const NewExam = () => {
                   display: "flex", 
                   alignItems: "center", 
                   gap: "8px",
-                  background: "var(--secondary-bg)",
+                  background: "#f1f5f9",
                   padding: "6px 16px",
                   borderRadius: "100px",
                 }}
@@ -1220,7 +1232,7 @@ const NewExam = () => {
                         style={{
                           width: "24px",
                           height: "2px",
-                          background: currentStep >= step ? "var(--accent-color)" : "var(--border-color)",
+                          background: currentStep >= step ? "#0ea5e9" : "#e2e8f0",
                           transition: "all 0.3s ease",
                         }}
                       />
@@ -1232,7 +1244,7 @@ const NewExam = () => {
                         gap: "8px",
                         padding: "4px 8px",
                         borderRadius: "100px",
-                        background: currentStep === step ? "var(--accent-color)" : "transparent",
+                        background: currentStep === step ? "#0ea5e9" : "transparent",
                         transition: "all 0.3s ease",
                       }}
                     >
@@ -1242,9 +1254,9 @@ const NewExam = () => {
                           height: "22px",
                           borderRadius: "50%",
                           background: currentStep >= step 
-                            ? currentStep === step ? "white" : "var(--accent-color)"
-                            : "var(--border-color)",
-                          color: currentStep === step ? "var(--accent-color)" : currentStep > step ? "white" : "var(--text-tertiary)",
+                            ? currentStep === step ? "white" : "#0ea5e9"
+                            : "#e2e8f0",
+                          color: currentStep === step ? "#0ea5e9" : currentStep > step ? "white" : "var(--text-tertiary)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -1259,7 +1271,7 @@ const NewExam = () => {
                         style={{
                           fontSize: "13px",
                           fontWeight: 600,
-                          color: currentStep === step ? "white" : "var(--text-secondary)",
+                          color: currentStep === step ? "white" : "#64748b",
                           transition: "all 0.3s ease",
                         }}
                       >
@@ -1269,7 +1281,6 @@ const NewExam = () => {
                   </React.Fragment>
                 ))}
               </div>
-              <ThemeToggle />
             </div>
           </div>
         </header>
@@ -1304,7 +1315,7 @@ const NewExam = () => {
                   width: "48px",
                   height: "48px",
                   borderRadius: "12px",
-                  background: "var(--accent-color)",
+                  background: "#0ea5e9",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -1322,7 +1333,7 @@ const NewExam = () => {
                     margin: 0,
                     fontSize: "18px",
                     fontWeight: 700,
-                    color: "var(--text-primary)",
+                    color: "#1e293b",
                   }}
                 >
                   {currentStep === 1 ? "Exam Details & Questions" : "Proctoring Settings"}
@@ -1331,7 +1342,7 @@ const NewExam = () => {
                   style={{
                     margin: "4px 0 0 0",
                     fontSize: "14px",
-                    color: "var(--text-secondary)",
+                    color: "#64748b",
                   }}
                 >
                   {currentStep === 1 
@@ -1343,14 +1354,14 @@ const NewExam = () => {
             {currentStep === 1 && mcqQuestions.length > 0 && (
               <div
                 style={{
-                  background: "var(--card-bg)",
+                  background: "#ffffff",
                   padding: "10px 16px",
                   borderRadius: "10px",
-                  border: "1px solid var(--border-color)",
+                  border: "1px solid #e2e8f0",
                 }}
               >
-                <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Questions: </span>
-                <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--accent-color)" }}>{mcqQuestions.length}</span>
+                <span style={{ fontSize: "13px", color: "#64748b" }}>Questions: </span>
+                <span style={{ fontSize: "15px", fontWeight: 700, color: "#0ea5e9" }}>{mcqQuestions.length}</span>
               </div>
             )}
           </div>
@@ -1372,10 +1383,10 @@ const NewExam = () => {
                   <div
                     className="theme-transition"
                     style={{
-                      background: "var(--card-bg)",
+                      background: "#ffffff",
                       borderRadius: "14px",
                       padding: "24px",
-                      border: "1px solid var(--border-color)",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
@@ -1390,7 +1401,7 @@ const NewExam = () => {
                       }}>
                         <FileText size={22} color="#0ea5e9" />
                       </div>
-                      <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)" }}>
+                      <span style={{ fontSize: "17px", fontWeight: 600, color: "#1e293b" }}>
                         Exam Name
                       </span>
                     </div>
@@ -1406,9 +1417,9 @@ const NewExam = () => {
                         borderRadius: "10px",
                         fontSize: "15px",
                         outline: "none",
-                        border: "1px solid var(--border-color)",
-                        background: "var(--secondary-bg)",
-                        color: "var(--text-primary)",
+                        border: "1px solid #e2e8f0",
+                        background: "#f1f5f9",
+                        color: "#1e293b",
                       }}
                     />
                   </div>
@@ -1417,10 +1428,10 @@ const NewExam = () => {
                   <div
                     className="theme-transition"
                     style={{
-                      background: "var(--card-bg)",
+                      background: "#ffffff",
                       borderRadius: "14px",
                       padding: "24px",
-                      border: "1px solid var(--border-color)",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
@@ -1435,7 +1446,7 @@ const NewExam = () => {
                       }}>
                         <Calendar size={22} color="#0ea5e9" />
                       </div>
-                      <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)" }}>
+                      <span style={{ fontSize: "17px", fontWeight: 600, color: "#1e293b" }}>
                         Schedule & Timing
                       </span>
                     </div>
@@ -1443,7 +1454,7 @@ const NewExam = () => {
                     <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
                       {/* Start Date & Time */}
                       <div>
-                        <label style={{ display: "block", marginBottom: "8px", color: "var(--text-secondary)", fontSize: "14px", fontWeight: 500 }}>
+                        <label style={{ display: "block", marginBottom: "8px", color: "#64748b", fontSize: "14px", fontWeight: 500 }}>
                           Start Date & Time
                         </label>
                         <input
@@ -1455,9 +1466,9 @@ const NewExam = () => {
                             width: "100%",
                             padding: "12px 14px",
                             borderRadius: "10px",
-                            border: "1px solid var(--border-color)",
-                            background: "var(--secondary-bg)",
-                            color: "var(--text-primary)",
+                            border: "1px solid #e2e8f0",
+                            background: "#f1f5f9",
+                            color: "#1e293b",
                             fontSize: "14px",
                             outline: "none",
                           }}
@@ -1466,7 +1477,7 @@ const NewExam = () => {
 
                       {/* End Date & Time */}
                       <div>
-                        <label style={{ display: "block", marginBottom: "8px", color: "var(--text-secondary)", fontSize: "14px", fontWeight: 500 }}>
+                        <label style={{ display: "block", marginBottom: "8px", color: "#64748b", fontSize: "14px", fontWeight: 500 }}>
                           End Date & Time
                         </label>
                         <input
@@ -1478,9 +1489,9 @@ const NewExam = () => {
                             width: "100%",
                             padding: "12px 14px",
                             borderRadius: "10px",
-                            border: "1px solid var(--border-color)",
-                            background: "var(--secondary-bg)",
-                            color: "var(--text-primary)",
+                            border: "1px solid #e2e8f0",
+                            background: "#f1f5f9",
+                            color: "#1e293b",
                             fontSize: "14px",
                             outline: "none",
                           }}
@@ -1489,7 +1500,7 @@ const NewExam = () => {
 
                       {/* Exam Duration */}
                       <div>
-                        <label style={{ display: "block", marginBottom: "10px", color: "var(--text-secondary)", fontSize: "14px", fontWeight: 500 }}>
+                        <label style={{ display: "block", marginBottom: "10px", color: "#64748b", fontSize: "14px", fontWeight: 500 }}>
                           Exam Duration
                         </label>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -1509,9 +1520,9 @@ const NewExam = () => {
                                 width: "100%",
                                 padding: "12px",
                                 borderRadius: "10px",
-                                border: "1px solid var(--border-color)",
-                                background: "var(--secondary-bg)",
-                                color: "var(--text-primary)",
+                                border: "1px solid #e2e8f0",
+                                background: "#f1f5f9",
+                                color: "#1e293b",
                                 fontSize: "16px",
                                 textAlign: "center",
                                 outline: "none",
@@ -1536,9 +1547,9 @@ const NewExam = () => {
                                 width: "100%",
                                 padding: "12px",
                                 borderRadius: "10px",
-                                border: "1px solid var(--border-color)",
-                                background: "var(--secondary-bg)",
-                                color: "var(--text-primary)",
+                                border: "1px solid #e2e8f0",
+                                background: "#f1f5f9",
+                                color: "#1e293b",
                                 fontSize: "16px",
                                 textAlign: "center",
                                 outline: "none",
@@ -1576,10 +1587,10 @@ const NewExam = () => {
                 <div
                   className="theme-transition"
                   style={{
-                    background: "var(--card-bg)",
+                    background: "#ffffff",
                     borderRadius: "14px",
                     padding: "28px",
-                    border: "1px solid var(--border-color)",
+                    border: "1px solid #e2e8f0",
                     display: "flex",
                     flexDirection: "column",
                     minHeight: "600px",
@@ -1602,8 +1613,8 @@ const NewExam = () => {
                         <HelpCircle size={22} color="#0ea5e9" />
                       </div>
                       <div>
-                        <span style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-primary)" }}>Exam Questions</span>
-                        <div style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "2px" }}>
+                        <span style={{ fontSize: "17px", fontWeight: 600, color: "#1e293b" }}>Exam Questions</span>
+                        <div style={{ fontSize: "13px", color: "#64748b", marginTop: "2px" }}>
                           {mcqQuestions.length} questions • Click cells to edit directly
                         </div>
                       </div>
@@ -1618,8 +1629,8 @@ const NewExam = () => {
                           style={{
                             padding: "10px 16px",
                             borderRadius: "8px",
-                            border: "1px solid var(--accent-color)",
-                            background: "var(--accent-color)",
+                            border: "1px solid #0ea5e9",
+                            background: "#0ea5e9",
                             color: "white",
                             fontSize: "13px",
                             fontWeight: 600,
@@ -1671,20 +1682,20 @@ const NewExam = () => {
                         style={{
                           textAlign: "center",
                           padding: "60px 20px",
-                          color: "var(--text-secondary)",
+                          color: "#64748b",
                           fontSize: "15px",
                           flex: 1,
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
                           justifyContent: "center",
-                          background: "var(--secondary-bg)",
+                          background: "#f1f5f9",
                           borderRadius: "12px",
-                          border: "2px dashed var(--border-color)",
+                          border: "2px dashed #e2e8f0",
                         }}
                       >
                         <FileSpreadsheet size={48} color="var(--text-tertiary)" strokeWidth={1.5} style={{ marginBottom: "16px" }} />
-                        <p style={{ margin: "0 0 8px 0", fontWeight: 600, color: "var(--text-primary)" }}>No questions added yet</p>
+                        <p style={{ margin: "0 0 8px 0", fontWeight: 600, color: "#1e293b" }}>No questions added yet</p>
                         <p style={{ margin: "0 0 24px 0", fontSize: "14px" }}>Upload an Excel/CSV file or add questions manually</p>
                         <div style={{ display: "flex", gap: "12px" }}>
                           <button
@@ -1695,7 +1706,7 @@ const NewExam = () => {
                               padding: "12px 24px",
                               borderRadius: 10,
                               border: "none",
-                              background: "var(--accent-color)",
+                              background: "#0ea5e9",
                               color: "white",
                               fontSize: 14,
                               fontWeight: 600,
@@ -1714,9 +1725,9 @@ const NewExam = () => {
                             style={{
                               padding: "12px 24px",
                               borderRadius: 10,
-                              border: "1px solid var(--border-color)",
-                              background: "var(--card-bg)",
-                              color: "var(--text-primary)",
+                              border: "1px solid #e2e8f0",
+                              background: "#ffffff",
+                              color: "#1e293b",
                               fontSize: 14,
                               fontWeight: 600,
                               cursor: "pointer",
@@ -1741,7 +1752,7 @@ const NewExam = () => {
                     gap: "16px",
                     marginTop: "40px",
                     paddingTop: "32px",
-                    borderTop: "1px solid var(--border-color)",
+                    borderTop: "1px solid #e2e8f0",
                   }}
                 >
                   <button
@@ -1754,20 +1765,20 @@ const NewExam = () => {
                       fontWeight: 600,
                       cursor: "pointer",
                       background: "transparent",
-                      border: "1px solid var(--border-color)",
-                      color: "var(--text-secondary)",
+                      border: "1px solid #e2e8f0",
+                      color: "#64748b",
                       display: "flex",
                       alignItems: "center",
                       gap: "8px",
                       transition: "all 0.2s ease",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--secondary-bg)";
-                      e.currentTarget.style.color = "var(--text-primary)";
+                      e.currentTarget.style.background = "#f1f5f9";
+                      e.currentTarget.style.color = "#1e293b";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.color = "var(--text-secondary)";
+                      e.currentTarget.style.color = "#64748b";
                     }}
                   >
                     <X size={18} /> Cancel
@@ -1783,8 +1794,8 @@ const NewExam = () => {
                       fontSize: "14px",
                       fontWeight: 600,
                       background: !examName.trim() || mcqQuestions.length === 0 
-                        ? "var(--border-color)" 
-                        : "var(--accent-color)",
+                        ? "#e2e8f0" 
+                        : "#0ea5e9",
                       border: "none",
                       color: "white",
                       display: "flex",
@@ -1812,7 +1823,7 @@ const NewExam = () => {
                 <CollapsibleSection
                   title="Normal Proctoring"
                   subtitle="Basic monitoring and browser control features"
-                  icon={<Monitor size={24} color="var(--accent-color)" />}
+                  icon={<Monitor size={24} color="#0ea5e9" />}
                   isOpen={normalProctoringOpen}
                   onToggle={() =>
                     setNormalProctoringOpen(!normalProctoringOpen)
@@ -1865,7 +1876,7 @@ const NewExam = () => {
                 <CollapsibleSection
                   title="AI Powered Proctoring"
                   subtitle="Advanced AI-based monitoring and detection"
-                  icon={<Bot size={24} color="var(--accent-color)" />}
+                  icon={<Bot size={24} color="#0ea5e9" />}
                   isOpen={aiProctoringOpen}
                   onToggle={() => setAiProctoringOpen(!aiProctoringOpen)}
                   masterToggle
@@ -1922,7 +1933,7 @@ const NewExam = () => {
                 <CollapsibleSection
                   title="Recorded Manual Proctoring"
                   subtitle="Recording and manual review capabilities"
-                  icon={<Video size={24} color="var(--accent-color)" />}
+                  icon={<Video size={24} color="#0ea5e9" />}
                   isOpen={manualProctoringOpen}
                   onToggle={() =>
                     setManualProctoringOpen(!manualProctoringOpen)
@@ -1973,7 +1984,7 @@ const NewExam = () => {
                     gap: "16px",
                     marginTop: "32px",
                     paddingTop: "24px",
-                    borderTop: "1px solid var(--border-color)",
+                    borderTop: "1px solid #e2e8f0",
                   }}
                 >
                   <button
@@ -1986,20 +1997,20 @@ const NewExam = () => {
                       fontWeight: 600,
                       cursor: "pointer",
                       background: "transparent",
-                      border: "1px solid var(--border-color)",
-                      color: "var(--text-secondary)",
+                      border: "1px solid #e2e8f0",
+                      color: "#64748b",
                       display: "flex",
                       alignItems: "center",
                       gap: "8px",
                       transition: "all 0.2s ease",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--secondary-bg)";
-                      e.currentTarget.style.color = "var(--text-primary)";
+                      e.currentTarget.style.background = "#f1f5f9";
+                      e.currentTarget.style.color = "#1e293b";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.color = "var(--text-secondary)";
+                      e.currentTarget.style.color = "#64748b";
                     }}
                   >
                     <ArrowLeft size={18} /> Back to Questions
@@ -2013,7 +2024,7 @@ const NewExam = () => {
                       borderRadius: "12px",
                       fontSize: "14px",
                       fontWeight: 600,
-                      background: "var(--accent-color)",
+                      background: "#0ea5e9",
                       border: "none",
                       color: "white",
                       display: "flex",
@@ -2039,7 +2050,7 @@ const NewExam = () => {
                 <CollapsibleSection
                   title="Add Students"
                   subtitle={`Invite students to this exam (${students.length} students added)`}
-                  icon={<Users size={24} color="var(--accent-color)" />}
+                  icon={<Users size={24} color="#0ea5e9" />}
                   isOpen={studentsSectionOpen}
                   onToggle={() => setStudentsSectionOpen(!studentsSectionOpen)}
                 >
@@ -2051,9 +2062,9 @@ const NewExam = () => {
                       onMouseDown={(e) => e.stopPropagation()}
                       style={{
                         padding: "24px",
-                        background: "var(--secondary-bg)",
+                        background: "#f1f5f9",
                         borderRadius: "12px",
-                        border: "2px solid var(--border-color)",
+                        border: "2px solid #e2e8f0",
                         marginBottom: "16px",
                       }}
                     >
@@ -2062,7 +2073,7 @@ const NewExam = () => {
                           margin: "0 0 16px 0",
                           fontSize: "16px",
                           fontWeight: 600,
-                          color: "var(--text-primary)",
+                          color: "#1e293b",
                         }}
                       >
                         Add Student Manually
@@ -2095,7 +2106,7 @@ const NewExam = () => {
                               marginBottom: "8px",
                               fontSize: "14px",
                               fontWeight: 500,
-                              color: "var(--text-secondary)",
+                              color: "#64748b",
                             }}
                           >
                             Student Name (Optional)
@@ -2110,9 +2121,9 @@ const NewExam = () => {
                               width: "100%",
                               padding: "12px 16px",
                               borderRadius: "10px",
-                              border: "1px solid var(--border-color)",
-                              background: "var(--card-bg)",
-                              color: "var(--text-primary)",
+                              border: "1px solid #e2e8f0",
+                              background: "#ffffff",
+                              color: "#1e293b",
                               fontSize: "14px",
                               outline: "none",
                             }}
@@ -2126,7 +2137,7 @@ const NewExam = () => {
                               marginBottom: "8px",
                               fontSize: "14px",
                               fontWeight: 500,
-                              color: "var(--text-secondary)",
+                              color: "#64748b",
                             }}
                           >
                             Email Address *
@@ -2141,9 +2152,9 @@ const NewExam = () => {
                               width: "100%",
                               padding: "12px 16px",
                               borderRadius: "10px",
-                              border: "1px solid var(--border-color)",
-                              background: "var(--card-bg)",
-                              color: "var(--text-primary)",
+                              border: "1px solid #e2e8f0",
+                              background: "#ffffff",
+                              color: "#1e293b",
                               fontSize: "14px",
                               outline: "none",
                             }}
@@ -2157,7 +2168,7 @@ const NewExam = () => {
                               marginBottom: "8px",
                               fontSize: "14px",
                               fontWeight: 500,
-                              color: "var(--text-secondary)",
+                              color: "#64748b",
                             }}
                           >
                             Password *
@@ -2172,9 +2183,9 @@ const NewExam = () => {
                               width: "100%",
                               padding: "12px 16px",
                               borderRadius: "10px",
-                              border: "1px solid var(--border-color)",
-                              background: "var(--card-bg)",
-                              color: "var(--text-primary)",
+                              border: "1px solid #e2e8f0",
+                              background: "#ffffff",
+                              color: "#1e293b",
                               fontSize: "14px",
                               outline: "none",
                             }}
@@ -2190,7 +2201,7 @@ const NewExam = () => {
                               marginBottom: "8px",
                               fontSize: "14px",
                               fontWeight: 500,
-                              color: "var(--text-secondary)",
+                              color: "#64748b",
                             }}
                           >
                             Registration Number
@@ -2205,9 +2216,9 @@ const NewExam = () => {
                               width: "100%",
                               padding: "12px 16px",
                               borderRadius: "10px",
-                              border: "1px solid var(--border-color)",
-                              background: "var(--card-bg)",
-                              color: "var(--text-primary)",
+                              border: "1px solid #e2e8f0",
+                              background: "#ffffff",
+                              color: "#1e293b",
                               fontSize: "14px",
                               outline: "none",
                             }}
@@ -2221,7 +2232,7 @@ const NewExam = () => {
                               marginBottom: "8px",
                               fontSize: "14px",
                               fontWeight: 500,
-                              color: "var(--text-secondary)",
+                              color: "#64748b",
                             }}
                           >
                             Department
@@ -2236,9 +2247,9 @@ const NewExam = () => {
                               width: "100%",
                               padding: "12px 16px",
                               borderRadius: "10px",
-                              border: "1px solid var(--border-color)",
-                              background: "var(--card-bg)",
-                              color: "var(--text-primary)",
+                              border: "1px solid #e2e8f0",
+                              background: "#ffffff",
+                              color: "#1e293b",
                               fontSize: "14px",
                               outline: "none",
                             }}
@@ -2262,9 +2273,9 @@ const NewExam = () => {
                           style={{
                             padding: "10px 20px",
                             borderRadius: "8px",
-                            border: "1px solid var(--border-color)",
-                            background: "var(--secondary-bg)",
-                            color: "var(--text-primary)",
+                            border: "1px solid #e2e8f0",
+                            background: "#f1f5f9",
+                            color: "#1e293b",
                             fontSize: "14px",
                             fontWeight: 600,
                             cursor: "pointer",
@@ -2281,7 +2292,7 @@ const NewExam = () => {
                             padding: "10px 20px",
                             borderRadius: "8px",
                             border: "none",
-                            background: "var(--accent-color)",
+                            background: "#0ea5e9",
                             color: "white",
                             fontSize: "14px",
                             fontWeight: 600,
@@ -2300,20 +2311,20 @@ const NewExam = () => {
                     <div
                       style={{
                         marginBottom: "16px",
-                        border: "1px solid var(--border-color)",
+                        border: "1px solid #e2e8f0",
                         borderRadius: "12px",
                         overflow: "hidden",
-                        background: "var(--card-bg)",
+                        background: "#ffffff",
                       }}
                     >
                       <div
                         style={{
                           padding: "12px 16px",
-                          background: "var(--secondary-bg)",
-                          borderBottom: "1px solid var(--border-color)",
+                          background: "#f1f5f9",
+                          borderBottom: "1px solid #e2e8f0",
                           fontWeight: 600,
                           fontSize: "14px",
-                          color: "var(--text-primary)",
+                          color: "#1e293b",
                           display: "grid",
                           gridTemplateColumns: "1.5fr 2fr 1fr 1.5fr 1.5fr auto",
                           gap: "12px",
@@ -2333,14 +2344,14 @@ const NewExam = () => {
                             padding: "12px 16px",
                             borderBottom:
                               index < students.length - 1
-                                ? "1px solid var(--border-color)"
+                                ? "1px solid #e2e8f0"
                                 : "none",
                             display: "grid",
                             gridTemplateColumns: "1.5fr 2fr 1fr 1.5fr 1.5fr auto",
                             gap: "12px",
                             alignItems: "center",
                             fontSize: "14px",
-                            color: "var(--text-primary)",
+                            color: "#1e293b",
                           }}
                         >
                           <div>{student.name || "-"}</div>
@@ -2377,7 +2388,7 @@ const NewExam = () => {
                       style={{
                         textAlign: "center",
                         padding: "40px 20px",
-                        color: "var(--text-secondary)",
+                        color: "#64748b",
                         fontSize: "14px",
                       }}
                     >
@@ -2394,9 +2405,9 @@ const NewExam = () => {
                         style={{
                           padding: "12px 20px",
                           borderRadius: 10,
-                          border: "2px dashed var(--accent-color)",
+                          border: "2px dashed #0ea5e9",
                           background: "transparent",
-                          color: "var(--accent-color)",
+                          color: "#0ea5e9",
                           fontSize: 14,
                           fontWeight: 600,
                           cursor: "pointer",
@@ -2425,9 +2436,9 @@ const NewExam = () => {
                         style={{
                           padding: "12px 20px",
                           borderRadius: 10,
-                          border: "1px solid var(--border-color)",
-                          background: "var(--secondary-bg)",
-                          color: "var(--text-primary)",
+                          border: "1px solid #e2e8f0",
+                          background: "#f1f5f9",
+                          color: "#1e293b",
                           fontSize: 14,
                           fontWeight: 600,
                           cursor: "pointer",
@@ -2443,9 +2454,9 @@ const NewExam = () => {
                         style={{
                           padding: "12px 20px",
                           borderRadius: 10,
-                          border: "2px dashed var(--accent-color)",
+                          border: "2px dashed #0ea5e9",
                           background: "transparent",
-                          color: "var(--accent-color)",
+                          color: "#0ea5e9",
                           fontSize: 14,
                           fontWeight: 600,
                           cursor: "pointer",
@@ -2467,8 +2478,8 @@ const NewExam = () => {
                 <div
                   style={{
                     padding: "16px",
-                    background: "var(--secondary-bg)",
-                    border: "1px solid var(--border-color)",
+                    background: "#f1f5f9",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "12px",
                     marginBottom: "16px",
                   }}
@@ -2480,14 +2491,14 @@ const NewExam = () => {
                       alignItems: "flex-start",
                     }}
                   >
-                    <Mail size={20} color="var(--accent-color)" />
+                    <Mail size={20} color="#0ea5e9" />
                     <div style={{ flex: 1 }}>
                       <h4
                         style={{
                           margin: "0 0 8px 0",
                           fontSize: "14px",
                           fontWeight: 600,
-                          color: "var(--text-primary)",
+                          color: "#1e293b",
                         }}
                       >
                         Student Accounts & Notifications
@@ -2496,7 +2507,7 @@ const NewExam = () => {
                         style={{
                           margin: 0,
                           fontSize: "13px",
-                          color: "var(--text-secondary)",
+                          color: "#64748b",
                           lineHeight: "1.6",
                         }}
                       >
@@ -2508,7 +2519,7 @@ const NewExam = () => {
                           margin: "8px 0 0 0",
                           paddingLeft: "20px",
                           fontSize: "13px",
-                          color: "var(--text-secondary)",
+                          color: "#64748b",
                         }}
                       >
                         <li>Exam name and schedule (start time & end time)</li>
@@ -2587,7 +2598,7 @@ const NewExam = () => {
           <div
             className="theme-transition"
             style={{
-              background: "var(--card-bg)",
+              background: "#ffffff",
               borderRadius: "16px",
               padding: "28px",
               maxWidth: "600px",
@@ -2595,12 +2606,12 @@ const NewExam = () => {
               maxHeight: "85vh",
               overflow: "auto",
               boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-              border: "1px solid var(--border-color)",
+              border: "1px solid #e2e8f0",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "10px" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 600, color: "#1e293b", display: "flex", alignItems: "center", gap: "10px" }}>
                 <FileSpreadsheet size={24} color="#0ea5e9" />
                 Upload Excel/CSV File
               </h3>
@@ -2611,7 +2622,7 @@ const NewExam = () => {
                   setUploadError('');
                 }}
                 style={{
-                  background: "var(--secondary-bg)",
+                  background: "#f1f5f9",
                   border: "none",
                   borderRadius: "8px",
                   padding: "8px",
@@ -2621,11 +2632,11 @@ const NewExam = () => {
                   justifyContent: "center",
                 }}
               >
-                <X size={20} color="var(--text-secondary)" />
+                <X size={20} color="#64748b" />
               </button>
             </div>
 
-            <p style={{ margin: "0 0 20px 0", fontSize: "14px", color: "var(--text-secondary)" }}>
+            <p style={{ margin: "0 0 20px 0", fontSize: "14px", color: "#64748b" }}>
               Upload an Excel (.xlsx, .xls) or CSV file with your questions. Download the sample template to see the required format.
             </p>
 
@@ -2675,11 +2686,11 @@ const NewExam = () => {
             {/* File Drop Zone */}
             <div
               style={{
-                border: "2px dashed var(--accent-color)",
+                border: "2px dashed #0ea5e9",
                 borderRadius: "12px",
                 padding: "40px",
                 textAlign: "center",
-                background: "var(--secondary-bg)",
+                background: "#f1f5f9",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
               }}
@@ -2689,11 +2700,11 @@ const NewExam = () => {
                 e.currentTarget.style.borderColor = "#0ea5e9";
               }}
               onDragLeave={(e) => {
-                e.currentTarget.style.background = "var(--secondary-bg)";
+                e.currentTarget.style.background = "#f1f5f9";
               }}
               onDrop={(e) => {
                 e.preventDefault();
-                e.currentTarget.style.background = "var(--secondary-bg)";
+                e.currentTarget.style.background = "#f1f5f9";
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
                   const input = document.getElementById('popup-file-upload') as HTMLInputElement;
@@ -2718,11 +2729,11 @@ const NewExam = () => {
                 style={{ display: "none" }}
               />
               <label htmlFor="popup-file-upload" style={{ cursor: "pointer", display: "block" }}>
-                <FolderOpen size={56} color="var(--accent-color)" strokeWidth={1.5} style={{ marginBottom: "16px" }} />
-                <p style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: 600, color: "var(--text-primary)" }}>
+                <FolderOpen size={56} color="#0ea5e9" strokeWidth={1.5} style={{ marginBottom: "16px" }} />
+                <p style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: 600, color: "#1e293b" }}>
                   Click to upload or drag and drop
                 </p>
-                <p style={{ margin: 0, fontSize: "13px", color: "var(--text-secondary)" }}>
+                <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
                   Excel (.xlsx, .xls) or CSV files
                 </p>
               </label>
@@ -2752,25 +2763,25 @@ const NewExam = () => {
           <div
             className="theme-transition"
             style={{
-              background: "var(--card-bg)",
+              background: "#ffffff",
               borderRadius: "16px",
               padding: "28px",
               maxWidth: "420px",
               width: "90%",
               boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-              border: "1px solid var(--border-color)",
+              border: "1px solid #e2e8f0",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
-              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 600, color: "var(--text-primary)" }}>
+              <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 600, color: "#1e293b" }}>
                 Add More Questions
               </h3>
               <button
                 type="button"
                 onClick={() => setShowAddOptionsPopup(false)}
                 style={{
-                  background: "var(--secondary-bg)",
+                  background: "#f1f5f9",
                   border: "none",
                   borderRadius: "8px",
                   padding: "8px",
@@ -2780,7 +2791,7 @@ const NewExam = () => {
                   justifyContent: "center",
                 }}
               >
-                <X size={20} color="var(--text-secondary)" />
+                <X size={20} color="#64748b" />
               </button>
             </div>
 
@@ -2796,9 +2807,9 @@ const NewExam = () => {
                 style={{
                   padding: "16px 20px",
                   borderRadius: "12px",
-                  border: "1px solid var(--border-color)",
-                  background: "var(--secondary-bg)",
-                  color: "var(--text-primary)",
+                  border: "1px solid #e2e8f0",
+                  background: "#f1f5f9",
+                  color: "#1e293b",
                   fontSize: "15px",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -2813,8 +2824,8 @@ const NewExam = () => {
                   e.currentTarget.style.borderColor = "#0ea5e9";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "var(--secondary-bg)";
-                  e.currentTarget.style.borderColor = "var(--border-color)";
+                  e.currentTarget.style.background = "#f1f5f9";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
                 }}
               >
                 <div style={{
@@ -2830,7 +2841,7 @@ const NewExam = () => {
                 </div>
                 <div>
                   <div>Upload Excel/CSV</div>
-                  <div style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-secondary)", marginTop: "2px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 400, color: "#64748b", marginTop: "2px" }}>
                     Import questions from a spreadsheet
                   </div>
                 </div>
@@ -2847,9 +2858,9 @@ const NewExam = () => {
                 style={{
                   padding: "16px 20px",
                   borderRadius: "12px",
-                  border: "1px solid var(--border-color)",
-                  background: "var(--secondary-bg)",
-                  color: "var(--text-primary)",
+                  border: "1px solid #e2e8f0",
+                  background: "#f1f5f9",
+                  color: "#1e293b",
                   fontSize: "15px",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -2864,8 +2875,8 @@ const NewExam = () => {
                   e.currentTarget.style.borderColor = "#22c55e";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "var(--secondary-bg)";
-                  e.currentTarget.style.borderColor = "var(--border-color)";
+                  e.currentTarget.style.background = "#f1f5f9";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
                 }}
               >
                 <div style={{
@@ -2881,14 +2892,14 @@ const NewExam = () => {
                 </div>
                 <div>
                   <div>Add Manually</div>
-                  <div style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-secondary)", marginTop: "2px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 400, color: "#64748b", marginTop: "2px" }}>
                     Create a new question from scratch
                   </div>
                 </div>
               </button>
 
               {/* Divider */}
-              <div style={{ height: "1px", background: "var(--border-color)", margin: "8px 0" }} />
+              <div style={{ height: "1px", background: "#e2e8f0", margin: "8px 0" }} />
 
               {/* Delete All Option */}
               <button
@@ -2932,7 +2943,7 @@ const NewExam = () => {
                 </div>
                 <div>
                   <div>Delete All Questions</div>
-                  <div style={{ fontSize: "12px", fontWeight: 400, color: "var(--text-secondary)", marginTop: "2px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 400, color: "#64748b", marginTop: "2px" }}>
                     Remove all {mcqQuestions.length} questions
                   </div>
                 </div>
@@ -2946,3 +2957,4 @@ const NewExam = () => {
 };
 
 export default NewExam;
+

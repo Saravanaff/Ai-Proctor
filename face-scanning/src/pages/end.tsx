@@ -1,124 +1,50 @@
-import { useRef, useEffect, useState } from "react";
-import socket from "@/components/socket";
+import { useEffect, useState } from "react";
 import { getExamId, getUserId } from "@/constants/AuthStore";
-import axios from "axios";
-import { getTokenFromCookie } from "@/constants/AuthStore";
-import {
-  getNumberOfMicrophones,
-  getTabSwitchViolations,
-} from "@/constants/violationConsts";
-import { CheckCircle2, XCircle, AlertCircle, Moon, Sun } from "lucide-react";
-
-const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+import { CheckCircle2, Loader } from "lucide-react";
 
 const EndPage = () => {
-  const hasSavedScore = useRef(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
 
-  // ✅ Load theme preference from localStorage on mount
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setIsDarkTheme(savedTheme === 'dark');
-    }
-  }, []);
-
-  // ✅ Save theme preference to localStorage when changed
-  const handleThemeToggle = () => {
-    const newTheme = !isDarkTheme;
-    setIsDarkTheme(newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-  };
-  
   // ✅ Get userId and examId inside component
   const userId = getUserId() || "unknown";
   const examId = getExamId();
 
-  const postData = async (endpoint: string, data: any) => {
-    const token = getTokenFromCookie();
-    console.log(`Posting to: ${baseUrl}${endpoint}`);
-    console.log("Request data:", data);
-    console.log("Token:", token ? "Present" : "Missing");
-
-    try {
-      const response = await axios.post(`${baseUrl}${endpoint}`, data, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
-        },
-        timeout: 10000, // ✅ 10 second timeout
-      });
-      console.log("✅ Request successful:", response.data);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        // Server responded with error status
-        console.error("❌ Server error:", {
-          status: error.response.status,
-          data: error.response.data,
-          endpoint
-        });
-      } else if (error.request) {
-        // Request made but no response
-        console.error("❌ No response from server:", endpoint);
-      } else {
-        // Something else happened
-        console.error("❌ Request error:", error.message);
-      }
-      throw error;
-    }
-  };
-
   useEffect(() => {
-    console.log("📊 End page mounted - saving final score");
-    if (!hasSavedScore.current) {
-      hasSavedScore.current = true;
-      
-      // ✅ Add a small delay to ensure backend is ready
-      setTimeout(() => {
-        postData("/saveScore", {
-          status: "completed",
-          userId: Number(userId),
-          examId: Number(examId),
-          numberOfMicrophones: getNumberOfMicrophones() || 0,
-          tabSwitchViolations: getTabSwitchViolations() || 0,
-        })
-        .then((data) => {
-          console.log("✅ Score saved successfully:", data);
-          setIsLoading(false);
-        })
-        .catch((err) => {
-          console.error("❌ Failed to save score:", {
-            error: err.response?.data || err.message,
-            userId,
-            examId,
-          });
-        });
-      }, 1000); // Wait 1 second for backend to be ready
-    }
-  }, []);
+    console.log("=".repeat(60));
+    console.log("📊 END PAGE MOUNTED");
+    console.log("User ID:", userId);
+    console.log("Exam ID:", examId);
+    console.log("=".repeat(60));
+    
+    // ✅ Just show success after a brief moment
+    // All data was already saved in FullScreen.tsx before navigation
+    const timer = setTimeout(() => {
+      console.log("✅ Showing success screen (data already saved)");
+      setIsLoading(false);
+    }, 1500);
+    
+    return () => clearTimeout(timer);
+  }, [userId, examId]);
 
   // Professional High-Tech Black Theme
   const themes = {
     dark: {
-      background: "linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #0f0f0f 100%)",
-      cardBg: "rgba(12, 12, 12, 0.98)",
-      cardBorder: "rgba(0, 255, 255, 0.15)",
+      background: "#0f172a",
+      cardBg: "rgba(30, 41, 59, 0.98)",
+      cardBorder: "rgba(71, 85, 105, 0.5)",
       textPrimary: "#ffffff",
-      textSecondary: "#a0aec0",
-      textMuted: "#718096",
-      successBg: "rgba(0, 255, 157, 0.08)",
-      successBorder: "rgba(0, 255, 157, 0.4)",
-      successText: "#00ff9d",
-      errorBg: "rgba(255, 51, 102, 0.08)",
-      errorBorder: "rgba(255, 51, 102, 0.4)",
-      errorText: "#ff3366",
-      iconBg: "linear-gradient(135deg, #00ffff 0%, #0099ff 100%)",
+      textSecondary: "#e2e8f0",
+      textMuted: "#94a3b8",
+      successBg: "rgba(34, 197, 94, 0.08)",
+      successBorder: "rgba(34, 197, 94, 0.4)",
+      successText: "#22c55e",
+      errorBg: "rgba(239, 68, 68, 0.08)",
+      errorBorder: "rgba(239, 68, 68, 0.4)",
+      errorText: "#ef4444",
+      iconBg: "#3b82f6",
     },
     light: {
-      background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)",
+      background: "#f8fafc",
       cardBg: "rgba(255, 255, 255, 0.95)",
       cardBorder: "rgba(226, 232, 240, 0.9)",
       textPrimary: "#0f172a",
@@ -130,16 +56,16 @@ const EndPage = () => {
       errorBg: "rgba(239, 68, 68, 0.1)",
       errorBorder: "rgba(239, 68, 68, 0.3)",
       errorText: "#dc2626",
-      iconBg: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+      iconBg: "#3b82f6",
     }
   };
 
-  const theme = isDarkTheme ? themes.dark : themes.light;
+  const currentTheme = themes.light;
 
   return (
     <div style={{
       minHeight: "100vh",
-      background: theme.background,
+      background: currentTheme.background,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -155,9 +81,7 @@ const EndPage = () => {
         right: "-5%",
         width: "600px",
         height: "600px",
-        background: isDarkTheme 
-          ? "radial-gradient(circle, rgba(0, 255, 255, 0.12) 0%, rgba(0, 153, 255, 0.06) 40%, transparent 70%)"
-          : "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
+        background: "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
         borderRadius: "50%",
         filter: "blur(80px)",
         animation: "float 8s ease-in-out infinite, pulse 4s ease-in-out infinite",
@@ -169,9 +93,7 @@ const EndPage = () => {
         left: "-5%",
         width: "500px",
         height: "500px",
-        background: isDarkTheme
-          ? "radial-gradient(circle, rgba(0, 153, 255, 0.15) 0%, rgba(0, 255, 255, 0.08) 40%, transparent 70%)"
-          : "radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%)",
+        background: "radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, transparent 70%)",
         borderRadius: "50%",
         filter: "blur(80px)",
         animation: "float 10s ease-in-out infinite reverse, pulse 6s ease-in-out infinite",
@@ -181,11 +103,11 @@ const EndPage = () => {
       <div style={{
         width: "100%",
         maxWidth: "600px",
-        background: theme.cardBg,
+        background: currentTheme.cardBg,
         backdropFilter: "blur(40px)",
         borderRadius: "32px",
         padding: "64px 48px",
-        border: `1px solid ${theme.cardBorder}`,
+        border: `1px solid ${currentTheme.cardBorder}`,
         boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
         position: "relative",
         zIndex: 10,
@@ -198,108 +120,58 @@ const EndPage = () => {
               width: "90px",
               height: "90px",
               borderRadius: "50%",
-              background: theme.iconBg,
+              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               margin: "0 auto 32px",
-              boxShadow: isDarkTheme 
-                ? "0 0 40px rgba(0, 255, 255, 0.5), 0 15px 50px rgba(0, 153, 255, 0.4)"
-                : "0 12px 40px rgba(59, 130, 246, 0.4)",
-              animation: "glow 2s ease-in-out infinite",
+              boxShadow: "0 12px 40px rgba(59, 130, 246, 0.4), 0 0 80px rgba(59, 130, 246, 0.2)",
+              animation: "glow 2s ease-in-out infinite, spin 2s linear infinite",
             }}>
-              <div style={{
-                width: "40px",
-                height: "40px",
-                border: "4px solid rgba(255, 255, 255, 0.3)",
-                borderTopColor: "white",
-                borderRadius: "50%",
-                animation: "spin 1s linear infinite",
-              }} />
+              <Loader size={40} color="white" strokeWidth={3} />
             </div>
             <h1 style={{
               fontSize: "32px",
               fontWeight: "800",
-              color: theme.textPrimary,
+              color: currentTheme.textPrimary,
               marginBottom: "16px",
               letterSpacing: "-0.02em",
               transition: "color 0.3s ease",
-            }}>Submitting Exam...</h1>
+            }}>Processing Results...</h1>
             <p style={{
               fontSize: "16px",
-              color: theme.textSecondary,
+              color: currentTheme.textSecondary,
               lineHeight: "1.6",
-              transition: "color 0.3s ease",
-            }}>Please wait while we save your results</p>
-          </>
-        ) : errorMessage ? (
-          <>
-            <div style={{
-              width: "80px",
-              height: "80px",
-              borderRadius: "50%",
-              background: theme.errorBg,
-              border: `2px solid ${theme.errorBorder}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 32px",
-              animation: "slideDown 0.4s ease",
-            }}>
-              <XCircle size={48} color={theme.errorText} strokeWidth={2} />
-            </div>
-            <h1 style={{
-              fontSize: "32px",
-              fontWeight: "800",
-              color: theme.textPrimary,
-              marginBottom: "16px",
-              letterSpacing: "-0.02em",
-              transition: "color 0.3s ease",
-            }}>Submission Error</h1>
-            <div style={{
-              padding: "24px",
-              borderRadius: "16px",
-              background: theme.errorBg,
-              border: `2px solid ${theme.errorBorder}`,
               marginBottom: "24px",
-              transition: "all 0.3s ease",
-            }}>
-              <p style={{
-                fontSize: "15px",
-                color: theme.errorText,
-                fontWeight: "600",
-                marginBottom: "12px",
-              }}>{errorMessage}</p>
-            </div>
+              transition: "color 0.3s ease",
+            }}>Your exam has been submitted successfully</p>
             <div style={{
-              padding: "20px",
-              borderRadius: "16px",
-              background: isDarkTheme ? "rgba(51, 65, 85, 0.3)" : "rgba(226, 232, 240, 0.5)",
-              border: `1px solid ${theme.cardBorder}`,
-              transition: "all 0.3s ease",
+              display: "flex",
+              justifyContent: "center",
+              gap: "8px",
+              marginTop: "32px",
             }}>
               <div style={{
-                display: "flex",
-                alignItems: "start",
-                gap: "12px",
-                marginBottom: "12px",
-              }}>
-                <AlertCircle size={20} color={theme.textSecondary} style={{ flexShrink: 0, marginTop: "2px" }} />
-                <p style={{
-                  fontSize: "14px",
-                  color: theme.textSecondary,
-                  textAlign: "left",
-                  lineHeight: "1.6",
-                  transition: "color 0.3s ease",
-                }}>Please contact your exam administrator with the error above.</p>
-              </div>
-              <p style={{
-                fontSize: "13px",
-                color: theme.textMuted,
-                textAlign: "left",
-                lineHeight: "1.5",
-                transition: "color 0.3s ease",
-              }}>Check the browser console (F12) for more details.</p>
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                background: currentTheme.iconBg,
+                animation: "bounce 1.4s ease-in-out infinite",
+              }} />
+              <div style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                background: currentTheme.iconBg,
+                animation: "bounce 1.4s ease-in-out 0.2s infinite",
+              }} />
+              <div style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                background: currentTheme.iconBg,
+                animation: "bounce 1.4s ease-in-out 0.4s infinite",
+              }} />
             </div>
           </>
         ) : (
@@ -308,156 +180,164 @@ const EndPage = () => {
               width: "110px",
               height: "110px",
               borderRadius: "50%",
-              background: theme.successBg,
-              border: `3px solid ${theme.successBorder}`,
+              background: currentTheme.successBg,
+              border: `3px solid ${currentTheme.successBorder}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               margin: "0 auto 32px",
               animation: "scaleIn 0.5s ease",
-              boxShadow: isDarkTheme
-                ? "0 0 30px rgba(0, 255, 157, 0.4), 0 10px 40px rgba(0, 255, 157, 0.2)"
-                : "0 8px 24px rgba(34, 197, 94, 0.3)",
+              boxShadow: "0 8px 24px rgba(34, 197, 94, 0.3)",
             }}>
-              <CheckCircle2 size={60} color={theme.successText} strokeWidth={2.5} />
+              <CheckCircle2 size={60} color={currentTheme.successText} strokeWidth={2.5} />
             </div>
             <h1 style={{
               fontSize: "36px",
               fontWeight: "800",
-              color: theme.textPrimary,
+              color: currentTheme.textPrimary,
               marginBottom: "16px",
               letterSpacing: "-0.02em",
               transition: "color 0.3s ease",
             }}>Exam Submitted Successfully</h1>
             <p style={{
               fontSize: "18px",
-              color: theme.textSecondary,
+              color: currentTheme.textSecondary,
               lineHeight: "1.6",
-              marginBottom: "32px",
+              marginBottom: "40px",
               transition: "color 0.3s ease",
             }}>Thank you for participating in the examination</p>
+            
+            {/* Success Details Card */}
             <div style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "16px",
-              padding: "24px",
-              borderRadius: "16px",
-              background: isDarkTheme ? "rgba(51, 65, 85, 0.3)" : "rgba(226, 232, 240, 0.5)",
-              border: `1px solid ${theme.cardBorder}`,
+              padding: "32px",
+              borderRadius: "20px",
+              background: "linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%)",
+              border: `2px solid ${currentTheme.successBorder}`,
+              marginBottom: "24px",
               transition: "all 0.3s ease",
             }}>
-              <div style={{ textAlign: "left" }}>
-                <p style={{
-                  fontSize: "12px",
-                  color: theme.textMuted,
-                  marginBottom: "4px",
-                  fontWeight: "600",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  transition: "color 0.3s ease",
-                }}>Status</p>
-                <p style={{
-                  fontSize: "16px",
-                  color: theme.successText,
-                  fontWeight: "700",
-                }}>Completed</p>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "24px",
+                marginBottom: "24px",
+              }}>
+                <div style={{ textAlign: "left" }}>
+                  <p style={{
+                    fontSize: "12px",
+                    color: currentTheme.textMuted,
+                    marginBottom: "8px",
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    transition: "color 0.3s ease",
+                  }}>Exam ID</p>
+                  <p style={{
+                    fontSize: "18px",
+                    color: currentTheme.textPrimary,
+                    fontWeight: "700",
+                    transition: "color 0.3s ease",
+                  }}>#{examId}</p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{
+                    fontSize: "12px",
+                    color: currentTheme.textMuted,
+                    marginBottom: "8px",
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    transition: "color 0.3s ease",
+                  }}>User ID</p>
+                  <p style={{
+                    fontSize: "18px",
+                    color: currentTheme.textPrimary,
+                    fontWeight: "700",
+                    transition: "color 0.3s ease",
+                  }}>#{userId}</p>
+                </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <p style={{
-                  fontSize: "12px",
-                  color: theme.textMuted,
-                  marginBottom: "4px",
-                  fontWeight: "600",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  transition: "color 0.3s ease",
-                }}>Time</p>
-                <p style={{
-                  fontSize: "16px",
-                  color: theme.textPrimary,
-                  fontWeight: "700",
-                  transition: "color 0.3s ease",
-                }}>{new Date().toLocaleTimeString()}</p>
+              
+              <div style={{
+                height: "1px",
+                background: currentTheme.cardBorder,
+                marginBottom: "24px",
+              }} />
+              
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "24px",
+              }}>
+                <div style={{ textAlign: "left" }}>
+                  <p style={{
+                    fontSize: "12px",
+                    color: currentTheme.textMuted,
+                    marginBottom: "8px",
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    transition: "color 0.3s ease",
+                  }}>Status</p>
+                  <p style={{
+                    fontSize: "16px",
+                    color: currentTheme.successText,
+                    fontWeight: "700",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}>
+                    <span style={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      background: currentTheme.successText,
+                      display: "inline-block",
+                      animation: "pulse 2s ease-in-out infinite",
+                    }} />
+                    Completed
+                  </p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{
+                    fontSize: "12px",
+                    color: currentTheme.textMuted,
+                    marginBottom: "8px",
+                    fontWeight: "600",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    transition: "color 0.3s ease",
+                  }}>Submitted At</p>
+                  <p style={{
+                    fontSize: "16px",
+                    color: currentTheme.textPrimary,
+                    fontWeight: "700",
+                    transition: "color 0.3s ease",
+                  }}>{new Date().toLocaleTimeString()}</p>
+                </div>
               </div>
+            </div>
+            
+            {/* Info Message */}
+            <div style={{
+              padding: "20px",
+              borderRadius: "16px",
+              background: "rgba(59, 130, 246, 0.05)",
+              border: `1px solid rgba(59, 130, 246, 0.2)`,
+              transition: "all 0.3s ease",
+            }}>
+              <p style={{
+                fontSize: "14px",
+                color: currentTheme.textSecondary,
+                lineHeight: "1.6",
+                margin: 0,
+                transition: "color 0.3s ease",
+              }}>
+                Your responses have been recorded and saved. You will be notified once your results are available.
+              </p>
             </div>
           </>
         )}
-      </div>
-
-      {/* Theme Toggle Switch */}
-      <div style={{
-        position: "fixed",
-        bottom: "30px",
-        right: "30px",
-        zIndex: 1000,
-      }}>
-        <button
-          onClick={handleThemeToggle}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            padding: "12px 24px",
-            borderRadius: "100px",
-            background: theme.cardBg,
-            backdropFilter: "blur(20px)",
-            border: `2px solid ${theme.cardBorder}`,
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-3px)";
-            e.currentTarget.style.boxShadow = "0 15px 50px rgba(0, 0, 0, 0.3)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 10px 40px rgba(0, 0, 0, 0.2)";
-          }}
-        >
-          <div style={{
-            width: "50px",
-            height: "26px",
-            borderRadius: "100px",
-            background: isDarkTheme 
-              ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
-              : "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-            position: "relative",
-            transition: "all 0.3s ease",
-            boxShadow: isDarkTheme
-              ? "0 4px 12px rgba(59, 130, 246, 0.4) inset"
-              : "0 4px 12px rgba(251, 191, 36, 0.4) inset",
-          }}>
-            <div style={{
-              position: "absolute",
-              top: "3px",
-              left: isDarkTheme ? "3px" : "27px",
-              width: "20px",
-              height: "20px",
-              borderRadius: "50%",
-              background: "white",
-              transition: "all 0.3s ease",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}>
-              {isDarkTheme ? (
-                <Moon size={12} color="#3b82f6" strokeWidth={2.5} />
-              ) : (
-                <Sun size={12} color="#f59e0b" strokeWidth={2.5} />
-              )}
-            </div>
-          </div>
-          <span style={{
-            fontSize: "14px",
-            fontWeight: "600",
-            color: theme.textPrimary,
-            transition: "color 0.3s ease",
-          }}>
-            {isDarkTheme ? "Dark" : "Light"} Theme
-          </span>
-        </button>
       </div>
 
       {/* Advanced Professional Animations */}
@@ -485,6 +365,15 @@ const EndPage = () => {
         @keyframes spin {
           to {
             transform: rotate(360deg);
+          }
+        }
+
+        @keyframes bounce {
+          0%, 80%, 100% {
+            transform: translateY(0);
+          }
+          40% {
+            transform: translateY(-10px);
           }
         }
 
