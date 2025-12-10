@@ -131,6 +131,8 @@ const FloatingCamera = ({
   const pendingFaceChunksRef = useRef<Set<number>>(new Set());
   const faceChunkCounterRef = useRef<number>(0);
   const examSubmittedRef = useRef(false);
+  const AUTH_INTERVAL = 10000;
+  const FACE_INTERVAL = 1000;
 
   const countersRef = useRef({
     look: 0,
@@ -300,11 +302,11 @@ const FloatingCamera = ({
       ) {
         try {
           console.log(`� Stopping MediaRecorder immediately - current state: ${mediaRecorderRef.current.state}`);
-          
+
           // ✅ STOP IMMEDIATELY - Don't request data first, just stop
           mediaRecorderRef.current.stop();
           console.log("✅ Face camera MediaRecorder.stop() called - waiting for onstop event");
-          
+
           // ✅ The onstop handler will handle waiting for pending chunks
         } catch (e) {
           console.error("❌ Error stopping MediaRecorder:", e);
@@ -592,7 +594,7 @@ const FloatingCamera = ({
                   pendingChunksRef.current.delete(chunkNum);
                 }
                 console.log(`✅ Face chunk #${chunkNum} sent, ${pendingFaceChunksRef.current.size} pending`);
-                
+
                 // ✅ CRITICAL: Clear buffer reference to allow garbage collection
                 // @ts-ignore
                 chunkData.chunk = null;
@@ -651,7 +653,8 @@ const FloatingCamera = ({
           clearInterval(interRef.current);
           interRef.current = null;
         }
-        
+        let lastFace = 0;
+        let lastAuth = 0;
         // ✅ Reduce interval frequency from 10 FPS to 1 FPS (1000ms) to reduce CPU/memory usage
         interRef.current = setInterval(async () => {
           if (!isMounted) {
@@ -666,12 +669,10 @@ const FloatingCamera = ({
             videoRef.current
           ) {
             try {
-              const currentTime = videoRef.current.currentTime;
+              const startTimeMs = performance.now();
 
-              if (currentTime !== lastVideoTimeRef.current) {
-                lastVideoTimeRef.current = currentTime;
+              if (startTimeMs - lastFace >= FACE_INTERVAL) {
 
-                const startTimeMs = performance.now();
                 const results = faceLandmarkerRef.current.detectForVideo(
                   videoRef.current,
                   startTimeMs
@@ -687,30 +688,33 @@ const FloatingCamera = ({
 
                   const headPos = calculateHeadPosition(landmarks);
                   console.log(`📍 Head Position: ${headPos}`);
+                  if (startTimeMs - lastAuth >= AUTH_INTERVAL) {
+                    const liveDetection = await faceAuthRef.current
+                      .detectSingleFace(videoRef.current, new faceAuthRef.current.TinyFaceDetectorOptions())
+                      .withFaceLandmarks()
+                      .withFaceDescriptor();
 
-                  const liveDetection = await faceAuthRef.current
-                    .detectSingleFace(videoRef.current, new faceAuthRef.current.TinyFaceDetectorOptions())
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
+                    const reference = getEmbeddings();
+                    console.log("Reference embeddings loaded:", reference ? reference.length : 0);
 
-                  const reference = getEmbeddings();
-                  console.log("Reference embeddings loaded:", reference ? reference.length : 0);
+                    let isAuth = false;
 
-                  let isAuth = false;
-                  if (liveDetection && reference && reference.length > 0) {
-                    for (let i = 0; i < reference.length; i++) {
-                      const refEmbedding = new Float32Array(reference[i]);
-                      console.log("refEmbedding:", refEmbedding);
-                      const labeledDescriptor = new faceAuthRef.current.LabeledFaceDescriptors("User", [refEmbedding,]);
-                      const matcher = new faceAuthRef.current.FaceMatcher(labeledDescriptor, 0.6);
-                      const bestMatch = matcher.findBestMatch(liveDetection.descriptor);
-                      if (bestMatch.label === "User") {
-                        isAuth = true;
-                        break;
+                    if (liveDetection && reference && reference.length > 0) {
+                      for (let i = 0; i < reference.length; i++) {
+                        const refEmbedding = new Float32Array(reference[i]);
+                        console.log("refEmbedding:", refEmbedding);
+                        const labeledDescriptor = new faceAuthRef.current.LabeledFaceDescriptors("User", [refEmbedding,]);
+                        const matcher = new faceAuthRef.current.FaceMatcher(labeledDescriptor, 0.6);
+                        const bestMatch = matcher.findBestMatch(liveDetection.descriptor);
+                        if (bestMatch.label === "User") {
+                          isAuth = true;
+                          break;
+                        }
                       }
                     }
+                    console.log("Face Authentication : ", isAuth);
+                    lastAuth = startTimeMs;
                   }
-                  console.log("Face Authentication : ", isAuth);
 
                   if (examSettings?.head_direction_enabled) {
                     if (
@@ -760,7 +764,7 @@ const FloatingCamera = ({
                   // ✅ Only check eye position if head is in forward/down position
                   // When head is turned, eye detection is unreliable
                   const isHeadNormal = headPos.toLowerCase() === "forward" || headPos.toLowerCase() === "down";
-                  
+
                   if (examSettings?.eyeball_detection_enabled && isHeadNormal) {
                     if (eyeGaze.toLowerCase() !== "center") {
                       const now = Date.now();
@@ -837,13 +841,13 @@ const FloatingCamera = ({
                   if (examSettings?.object_detection_enabled && detection.phone > 0) {
                     // Increment frame counter for consecutive detections
                     mobileFrameCountRef.current += 1;
-                    
+
                     // Track start time on first detection
                     if (mobileFrameCountRef.current === 1) {
                       mobileDetectionStartTimeRef.current = now;
                       console.log(`📱 Mobile phone first detected at ${new Date(now).toISOString()}`);
                     }
-                    
+
                     console.log(`📱 Mobile phone detected - Frame count: ${mobileFrameCountRef.current}/${MOBILE_FRAME_THRESHOLD}`);
 
                     if (
@@ -961,7 +965,7 @@ const FloatingCamera = ({
               console.error("Object Detector processing error:", error);
             }
           }
-        }, 1000/10); // ✅ Changed from 100ms to 1000ms (1 FPS) to reduce CPU/memory usage
+        }, 1000 / 1); // ✅ Changed from 100ms to 1000ms (1 FPS) to reduce CPU/memory usage
       } catch (error) {
         console.error("Camera access failed:", error);
 
