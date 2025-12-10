@@ -1,5 +1,5 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
-import type { Server as HttpServer } from "https";
+import type { Server as HttpServer } from "http";
 import dotenv from "dotenv";
 import { io as ioClient } from "socket.io-client";
 import { getExamScore, addScore, calculateExamScore } from "../utils/calculate";

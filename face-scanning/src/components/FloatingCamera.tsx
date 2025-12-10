@@ -121,7 +121,6 @@ const FloatingCamera = ({
   const hasPausedOnceRef = useRef(false);
   const lastToastAtRef = useRef<number>(0);
   const pausedRef = useRef(false);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
   const objectDetectorRef = useRef<ObjectDetector | null>(null);
   const faceAuthRef = useRef<any | null>(null);
@@ -173,7 +172,6 @@ const FloatingCamera = ({
     soundDetected: false,
   });
 
-  // ✅ NEW: Frame counters for mobile phone detection
   const mobileFrameCountRef = useRef(0);
   const mobileDetectionStartTimeRef = useRef<number | null>(null);
   const MOBILE_FRAME_THRESHOLD = 5; // 5 consecutive frames
@@ -212,7 +210,6 @@ const FloatingCamera = ({
     setTimeout(() => setBorderColor("white"), 3000);
   }, []);
 
-  // Calculate head position from landmarks
   const calculateHeadPosition = useCallback((landmarks: any[]): string => {
     let head = headPos(landmarks);
     return head;
@@ -496,7 +493,7 @@ const FloatingCamera = ({
             }
 
             const [faceLandmarker, objectDetector] = await Promise.all(modelPromises);
-            // const faceAuth = await loadFaceModel();
+            const faceAuth = await loadFaceModel();
 
             if (faceLandmarker && !faceLandmarkerRef.current) {
               faceLandmarkerRef.current = faceLandmarker;
@@ -506,10 +503,10 @@ const FloatingCamera = ({
               objectDetectorRef.current = objectDetector;
               console.log("✅ MediaPipe Object Detector initialized");
             }
-            // if (faceAuth && !faceAuthRef.current) {
-            //   faceAuthRef.current = faceAuth;
-            //   console.log("✅ Face Authentication model initialized");
-            // }
+            if (faceAuth && !faceAuthRef.current) {
+              faceAuthRef.current = faceAuth;
+              console.log("✅ Face Authentication model initialized");
+            }
 
             // ✅ Notify parent component that models are loaded
             console.log("✅ All AI models loaded successfully");
@@ -649,23 +646,6 @@ const FloatingCamera = ({
           console.error("❌ Cannot create MediaRecorder: No stream available");
         }
 
-        // ✅ Create canvas and context ONCE outside the interval
-          let canvas = canvasRef.current;
-          if (!canvas) {
-            canvas = document.createElement("canvas");
-            canvas.id = "auth-canvas";
-            canvas.style.display = "none";
-            document.body.appendChild(canvas);
-            canvasRef.current = canvas;
-          }
-
-          // ✅ Get context ONCE - reuse it in the interval
-          const ctx = canvas.getContext("2d", { willReadFrequently: true });
-          if (!ctx) {
-            console.error("Failed to get canvas context");
-            return;
-          }
-
         // ✅ Clear any existing interval before creating new one
         if (interRef.current) {
           clearInterval(interRef.current);
@@ -680,24 +660,10 @@ const FloatingCamera = ({
           }
           const video = videoRef.current;
           if (!video || video.readyState < 2) return;
-          
-          const width = video.videoWidth;
-          const height = video.videoHeight;
-
-          // ✅ Only resize canvas if dimensions changed
-          if (canvas.width !== width || canvas.height !== height) {
-            canvas.width = width;
-            canvas.height = height;
-          }
-
-          // ✅ CRITICAL: Clear canvas before drawing to prevent memory buildup
-          ctx.clearRect(0, 0, width, height);
-          ctx.drawImage(video, 0, 0, width, height);
 
           if (
             faceLandmarkerRef.current &&
-            videoRef.current &&
-            canvasRef.current
+            videoRef.current
           ) {
             try {
               const currentTime = videoRef.current.currentTime;
@@ -722,29 +688,29 @@ const FloatingCamera = ({
                   const headPos = calculateHeadPosition(landmarks);
                   console.log(`📍 Head Position: ${headPos}`);
 
-                  // const liveDetection = await faceAuthRef.current
-                  //   .detectSingleFace(videoRef.current, new faceAuthRef.current.TinyFaceDetectorOptions())
-                  //   .withFaceLandmarks()
-                  //   .withFaceDescriptor();
+                  const liveDetection = await faceAuthRef.current
+                    .detectSingleFace(videoRef.current, new faceAuthRef.current.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
 
-                  // const reference = getEmbeddings();
-                  // console.log("Reference embeddings loaded:", reference ? reference.length : 0);
+                  const reference = getEmbeddings();
+                  console.log("Reference embeddings loaded:", reference ? reference.length : 0);
 
-                  // let isAuth = false;
-                  // if (liveDetection && reference && reference.length > 0) {
-                  //   for (let i = 0; i < reference.length; i++) {
-                  //     const refEmbedding = new Float32Array(reference[i]);
-                  //     console.log("refEmbedding:", refEmbedding);
-                  //     const labeledDescriptor = new faceAuthRef.current.LabeledFaceDescriptors("User", [refEmbedding,]);
-                  //     const matcher = new faceAuthRef.current.FaceMatcher(labeledDescriptor, 0.6);
-                  //     const bestMatch = matcher.findBestMatch(liveDetection.descriptor);
-                  //     if (bestMatch.label === "User") {
-                  //       isAuth = true;
-                  //       break;
-                  //     }
-                  //   }
-                  // }
-                  // console.log("Face Authentication : ", isAuth);
+                  let isAuth = false;
+                  if (liveDetection && reference && reference.length > 0) {
+                    for (let i = 0; i < reference.length; i++) {
+                      const refEmbedding = new Float32Array(reference[i]);
+                      console.log("refEmbedding:", refEmbedding);
+                      const labeledDescriptor = new faceAuthRef.current.LabeledFaceDescriptors("User", [refEmbedding,]);
+                      const matcher = new faceAuthRef.current.FaceMatcher(labeledDescriptor, 0.6);
+                      const bestMatch = matcher.findBestMatch(liveDetection.descriptor);
+                      if (bestMatch.label === "User") {
+                        isAuth = true;
+                        break;
+                      }
+                    }
+                  }
+                  console.log("Face Authentication : ", isAuth);
 
                   if (examSettings?.head_direction_enabled) {
                     if (
@@ -791,7 +757,11 @@ const FloatingCamera = ({
                   const eyeGaze = calculateEyeGaze(landmarks);
                   console.log(`👁️ Eye Gaze: ${eyeGaze}`);
 
-                  if (examSettings?.eyeball_detection_enabled) {
+                  // ✅ Only check eye position if head is in forward/down position
+                  // When head is turned, eye detection is unreliable
+                  const isHeadNormal = headPos.toLowerCase() === "forward" || headPos.toLowerCase() === "down";
+                  
+                  if (examSettings?.eyeball_detection_enabled && isHeadNormal) {
                     if (eyeGaze.toLowerCase() !== "center") {
                       const now = Date.now();
 
@@ -827,6 +797,13 @@ const FloatingCamera = ({
                         violationStartTimeRef.current.eyePosition = null;
                         violationLoggedRef.current.eyePosition = false;
                       }
+                    }
+                  } else if (!isHeadNormal) {
+                    // ✅ Reset eye tracking when head is not in normal position
+                    if (violationStartTimeRef.current.eyePosition !== null) {
+                      console.log("✅ Eye position tracking paused (head not forward)");
+                      violationStartTimeRef.current.eyePosition = null;
+                      violationLoggedRef.current.eyePosition = false;
                     }
                   }
                 }
@@ -869,7 +846,6 @@ const FloatingCamera = ({
                     
                     console.log(`📱 Mobile phone detected - Frame count: ${mobileFrameCountRef.current}/${MOBILE_FRAME_THRESHOLD}`);
 
-                    // Flag only after 5 consecutive frames
                     if (
                       mobileFrameCountRef.current >= MOBILE_FRAME_THRESHOLD &&
                       !violationLoggedRef.current.deviceDetected &&
@@ -881,7 +857,6 @@ const FloatingCamera = ({
                       logViolation("object_detection_violation");
                       violationLoggedRef.current.deviceDetected = true;
 
-                      // Trigger UI notification
                       if (
                         now - lastNotificationRef.current.deviceDetected >=
                         NOTIFICATION_THROTTLE_MS
@@ -905,7 +880,6 @@ const FloatingCamera = ({
                       }
                     }
                   } else {
-                    // ✅ Reset frame counter when phone is no longer detected
                     if (mobileFrameCountRef.current > 0) {
                       console.log(`✅ Mobile phone no longer detected - Resetting counter from ${mobileFrameCountRef.current}`);
                       mobileFrameCountRef.current = 0;
@@ -914,9 +888,7 @@ const FloatingCamera = ({
                     }
                   }
 
-                  // ✅ NEW: Track continuous multiple persons violation (only if enabled)
                   if (examSettings?.multiple_person_detection_enabled && detection.person > 1) {
-                    // Start tracking if not already tracking
                     if (
                       violationStartTimeRef.current.multiplePersons === null
                     ) {
@@ -925,7 +897,6 @@ const FloatingCamera = ({
                       console.log("⚠️ Multiple persons violation started");
                     }
 
-                    // Check if violation has been continuous for 4 seconds
                     const violationDuration =
                       now - violationStartTimeRef.current.multiplePersons;
                     if (
@@ -938,7 +909,6 @@ const FloatingCamera = ({
                       logViolation("multiple_persons_detected");
                       violationLoggedRef.current.multiplePersons = true;
 
-                      // Trigger UI notification
                       if (
                         now - lastNotificationRef.current.multiplePersons >=
                         NOTIFICATION_THROTTLE_MS
@@ -949,7 +919,6 @@ const FloatingCamera = ({
                       }
                     }
                   } else {
-                    // ✅ Reset tracking when multiple persons are no longer detected
                     if (
                       violationStartTimeRef.current.multiplePersons !== null
                     ) {
@@ -959,16 +928,13 @@ const FloatingCamera = ({
                     }
                   }
 
-                  // ✅ NEW: Track continuous no person violation
                   if (detection.person === 0) {
-                    // Start tracking if not already tracking
                     if (violationStartTimeRef.current.noCandidate === null) {
                       violationStartTimeRef.current.noCandidate = now;
                       violationLoggedRef.current.noCandidate = false;
                       console.log("⚠️ No person violation started");
                     }
 
-                    // Check if violation has been continuous for 4 seconds
                     const violationDuration =
                       now - violationStartTimeRef.current.noCandidate;
                     if (
@@ -1099,23 +1065,6 @@ const FloatingCamera = ({
         videoRef.current.remove(); // ✅ Remove from DOM to free memory
       }
 
-      // ✅ Clean up canvas and free memory
-      if (canvasRef.current) {
-        const ctx = canvasRef.current.getContext("2d");
-        if (ctx) {
-          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        }
-        canvasRef.current.width = 0;
-        canvasRef.current.height = 0;
-        canvasRef.current.remove();
-        canvasRef.current = null;
-      }
-
-      const canvas = document.getElementById("auth-canvas");
-      if (canvas) {
-        canvas.remove();
-      }
-
       // ✅ REMOVE ALL SOCKET EVENT LISTENERS (PREVENT MEMORY LEAKS)
       socket.off("thirdeye_alert");
       socket.off("alert");
@@ -1134,7 +1083,6 @@ const FloatingCamera = ({
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!dragging) return;
-      // ✅ Use requestAnimationFrame to throttle position updates and reduce memory usage
       requestAnimationFrame(() => {
         setPosition({
           x: e.clientX - offset.x,
@@ -1249,23 +1197,6 @@ const FloatingCamera = ({
         muted
         width={400}
         height={300}
-      />
-      {/* ✅ HIDDEN: Canvas overlay not needed for display (only used for processing) */}
-      <canvas
-        ref={canvasRef}
-        className={styles.overlayCanvas}
-        width={400}
-        height={300}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-          zIndex: 10,
-          display: "none", // ✅ Hide the canvas overlay
-        }}
       />
     </div>
   );
