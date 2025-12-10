@@ -11,13 +11,13 @@ export function eye_direction(p1: any, p2: any, p3: any, p4: any, eye: string, w
     let iris_ratio = (iris_center - i_cor.norm) / eye_width
 
     if (eye == "right") {
-        if (iris_ratio < 0.35) gaze_direction = "left";
-        else if (iris_ratio > 0.65) gaze_direction = "right";
+        if (iris_ratio < 0.40) gaze_direction = "left";
+        else if (iris_ratio > 0.60) gaze_direction = "right";
         else gaze_direction = "center";
     }
     else {
-        if (iris_ratio < 0.35) gaze_direction = "right";
-        else if (iris_ratio > 0.65) gaze_direction = "left";
+        if (iris_ratio < 0.40) gaze_direction = "right";
+        else if (iris_ratio > 0.60) gaze_direction = "left";
         else gaze_direction = "center";
     }
     return gaze_direction;

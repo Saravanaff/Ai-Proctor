@@ -131,7 +131,6 @@ const ExamPage = ({
 
   const currentTheme = themes.light; // Always use light theme
 
-  // ✅ Debug logging
   useEffect(() => {
     console.log("📊 Exam State Debug:", {
       isValid: examState.isValid,

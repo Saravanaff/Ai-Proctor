@@ -40,8 +40,6 @@ const logViolation = async (violationName: string) => {
     // This gives us the actual time when the violation STARTED, not when it was logged
     const actualViolationTime = new Date(Date.now() - 2000);
 
-    console.log(`📝 Logging violation: ${violationName} for user ${userId}, exam ${examId}`);
-    
     await axios.post(
       `${baseUrlGlobal}/storeLogs`,
       {
@@ -57,10 +55,10 @@ const logViolation = async (violationName: string) => {
       }
     );
     console.log(
-      `✅ Successfully logged ${violationName} at ${actualViolationTime.toISOString()} (2s before detection)`
+      `📝 Logged ${violationName} at ${actualViolationTime.toISOString()} (2s before detection)`
     );
   } catch (error) {
-    console.error(`❌ Failed to log ${violationName}:`, error);
+    console.error(`Failed to log ${violationName}:`, error);
   }
 };
 
@@ -177,12 +175,13 @@ const FloatingCamera = ({
 
   // ✅ NEW: Frame counters for mobile phone detection
   const mobileFrameCountRef = useRef(0);
-  const MOBILE_FRAME_THRESHOLD = 5; // 3 consecutive frames
+  const mobileDetectionStartTimeRef = useRef<number | null>(null);
+  const MOBILE_FRAME_THRESHOLD = 5; // 5 consecutive frames
 
 
 
-  const NOTIFICATION_THROTTLE_MS = 2000;
-  const CONTINUOUS_VIOLATION_THRESHOLD_MS = 2000; // ✅ Changed from 4 seconds to 2 seconds
+  const NOTIFICATION_THROTTLE_MS = 2000; // 2 seconds gap
+  const CONTINUOUS_VIOLATION_THRESHOLD_MS = 2000; // 2 seconds continuous violation
 
 
   const settingsRef = useRef<any>({});
@@ -497,7 +496,7 @@ const FloatingCamera = ({
             }
 
             const [faceLandmarker, objectDetector] = await Promise.all(modelPromises);
-            const faceAuth = await loadFaceModel();
+            // const faceAuth = await loadFaceModel();
 
             if (faceLandmarker && !faceLandmarkerRef.current) {
               faceLandmarkerRef.current = faceLandmarker;
@@ -507,10 +506,10 @@ const FloatingCamera = ({
               objectDetectorRef.current = objectDetector;
               console.log("✅ MediaPipe Object Detector initialized");
             }
-            if (faceAuth && !faceAuthRef.current) {
-              faceAuthRef.current = faceAuth;
-              console.log("✅ Face Authentication model initialized");
-            }
+            // if (faceAuth && !faceAuthRef.current) {
+            //   faceAuthRef.current = faceAuth;
+            //   console.log("✅ Face Authentication model initialized");
+            // }
 
             // ✅ Notify parent component that models are loaded
             console.log("✅ All AI models loaded successfully");
@@ -723,29 +722,29 @@ const FloatingCamera = ({
                   const headPos = calculateHeadPosition(landmarks);
                   console.log(`📍 Head Position: ${headPos}`);
 
-                  const liveDetection = await faceAuthRef.current
-                    .detectSingleFace(videoRef.current, new faceAuthRef.current.TinyFaceDetectorOptions())
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
+                  // const liveDetection = await faceAuthRef.current
+                  //   .detectSingleFace(videoRef.current, new faceAuthRef.current.TinyFaceDetectorOptions())
+                  //   .withFaceLandmarks()
+                  //   .withFaceDescriptor();
 
-                  const reference = getEmbeddings();
-                  console.log("Reference embeddings loaded:", reference ? reference.length : 0);
+                  // const reference = getEmbeddings();
+                  // console.log("Reference embeddings loaded:", reference ? reference.length : 0);
 
-                  let isAuth = false;
-                  if (liveDetection && reference && reference.length > 0) {
-                    for (let i = 0; i < reference.length; i++) {
-                      const refEmbedding = new Float32Array(reference[i]);
-                      console.log("refEmbedding:", refEmbedding);
-                      const labeledDescriptor = new faceAuthRef.current.LabeledFaceDescriptors("User", [refEmbedding,]);
-                      const matcher = new faceAuthRef.current.FaceMatcher(labeledDescriptor, 0.6);
-                      const bestMatch = matcher.findBestMatch(liveDetection.descriptor);
-                      if (bestMatch.label === "User") {
-                        isAuth = true;
-                        break;
-                      }
-                    }
-                  }
-                  console.log("Face Authentication : ", isAuth);
+                  // let isAuth = false;
+                  // if (liveDetection && reference && reference.length > 0) {
+                  //   for (let i = 0; i < reference.length; i++) {
+                  //     const refEmbedding = new Float32Array(reference[i]);
+                  //     console.log("refEmbedding:", refEmbedding);
+                  //     const labeledDescriptor = new faceAuthRef.current.LabeledFaceDescriptors("User", [refEmbedding,]);
+                  //     const matcher = new faceAuthRef.current.FaceMatcher(labeledDescriptor, 0.6);
+                  //     const bestMatch = matcher.findBestMatch(liveDetection.descriptor);
+                  //     if (bestMatch.label === "User") {
+                  //       isAuth = true;
+                  //       break;
+                  //     }
+                  //   }
+                  // }
+                  // console.log("Face Authentication : ", isAuth);
 
                   if (examSettings?.head_direction_enabled) {
                     if (
@@ -757,7 +756,7 @@ const FloatingCamera = ({
                       if (violationStartTimeRef.current.headDirection === null) {
                         violationStartTimeRef.current.headDirection = now;
                         violationLoggedRef.current.headDirection = false;
-                        console.log("⚠️ Head direction violation started");
+                        console.log(`⚠️ Head direction violation started at ${new Date(now).toISOString()} (${headPos})`);
                       }
 
                       const violationDuration =
@@ -799,7 +798,7 @@ const FloatingCamera = ({
                       if (violationStartTimeRef.current.eyePosition === null) {
                         violationStartTimeRef.current.eyePosition = now;
                         violationLoggedRef.current.eyePosition = false;
-                        console.log("⚠️ Eye position violation started");
+                        console.log(`⚠️ Eye position violation started at ${new Date(now).toISOString()} (${eyeGaze})`);
                       }
 
                       const violationDuration =
@@ -857,16 +856,24 @@ const FloatingCamera = ({
 
                   const now = Date.now();
 
-                  // ✅ UPDATED: Track mobile phone detection by frames (3 consecutive frames to flag)
+                  // ✅ UPDATED: Track mobile phone detection by frames (5 consecutive frames to flag)
                   if (examSettings?.object_detection_enabled && detection.phone > 0) {
                     // Increment frame counter for consecutive detections
                     mobileFrameCountRef.current += 1;
+                    
+                    // Track start time on first detection
+                    if (mobileFrameCountRef.current === 1) {
+                      mobileDetectionStartTimeRef.current = now;
+                      console.log(`📱 Mobile phone first detected at ${new Date(now).toISOString()}`);
+                    }
+                    
                     console.log(`📱 Mobile phone detected - Frame count: ${mobileFrameCountRef.current}/${MOBILE_FRAME_THRESHOLD}`);
 
-                    // Flag only after 3 consecutive frames
+                    // Flag only after 5 consecutive frames
                     if (
                       mobileFrameCountRef.current >= MOBILE_FRAME_THRESHOLD &&
-                      !violationLoggedRef.current.deviceDetected
+                      !violationLoggedRef.current.deviceDetected &&
+                      mobileDetectionStartTimeRef.current !== null
                     ) {
                       console.log(
                         `🚨 Mobile phone detected for ${mobileFrameCountRef.current} consecutive frames - Logging violation`
@@ -902,6 +909,7 @@ const FloatingCamera = ({
                     if (mobileFrameCountRef.current > 0) {
                       console.log(`✅ Mobile phone no longer detected - Resetting counter from ${mobileFrameCountRef.current}`);
                       mobileFrameCountRef.current = 0;
+                      mobileDetectionStartTimeRef.current = null;
                       violationLoggedRef.current.deviceDetected = false;
                     }
                   }
@@ -987,7 +995,7 @@ const FloatingCamera = ({
               console.error("Object Detector processing error:", error);
             }
           }
-        }, 1000); // ✅ Changed from 100ms to 1000ms (1 FPS) to reduce CPU/memory usage
+        }, 1000/10); // ✅ Changed from 100ms to 1000ms (1 FPS) to reduce CPU/memory usage
       } catch (error) {
         console.error("Camera access failed:", error);
 

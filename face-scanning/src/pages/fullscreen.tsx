@@ -77,6 +77,7 @@ const fullscreen = () => {
             setFullscreenAllowed(active);
         };
         document.addEventListener('fullscreenchange', onFsChange);
+
         document.addEventListener('webkitfullscreenchange', onFsChange);
         document.addEventListener('msfullscreenchange', onFsChange);
         return () => {
@@ -233,6 +234,11 @@ const fullscreen = () => {
     };
 
     const startScreenRecording = async () => {
+        if (!examSettings.screen_sharing_enabled) {
+            // If screen sharing is not required, allow navigation to ExamPage
+            setFullscreenAllowed(true);
+            return;
+        }
         try {
             socket.emit("start-exam", {
                 user_id: userId,
@@ -242,6 +248,15 @@ const fullscreen = () => {
             });
 
             const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+            const videoTrack = screenStream.getVideoTracks()[0];
+            console.log(videoTrack.label.toLowerCase());
+            if (!videoTrack.label.toLowerCase().includes("primary monitor")) {
+                alert("You must share your entire screen to attend the exam.");
+                screenStream.getTracks().forEach(track => track.stop());
+                setScreenShareError(true);
+                setFullscreenAllowed(false);
+                return;
+            }
             console.log("screenStream : ", screenStream);
 
             if (!screenStream) {
@@ -251,7 +266,7 @@ const fullscreen = () => {
             screenStreamRef.current = screenStream;
 
             const mimeType = "video/webm; codecs=vp8";
-            const options: any = { videoBitsPerSecond: 250000 };  // ✅ Reduced from 500Kbps to 250Kbps to save memory
+            const options: any = { videoBitsPerSecond: 250000 };
             if (MediaRecorder && typeof (MediaRecorder as any).isTypeSupported === 'function') {
                 if ((MediaRecorder as any).isTypeSupported(mimeType)) {
                     options.mimeType = mimeType;
