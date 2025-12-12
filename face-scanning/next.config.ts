@@ -26,6 +26,17 @@ const nextConfig: NextConfig = {
       };
     }
     
+    config.module.rules.push({
+      test: /\.worker\.ts$/,
+      use: {
+        loader: "worker-loader",
+        options: {
+          filename: "static/workers/[name].[hash].js",
+          publicPath: "/_next/",
+        },
+      },
+    });
+
     // Handle seedrandom package
     config.resolve.alias = {
       ...config.resolve.alias,
