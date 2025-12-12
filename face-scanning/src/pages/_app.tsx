@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { ToastProvider } from "@/components/Toaster";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+// import { ThemeProvider } from "@/contexts/ThemeContext"; // Removed - Light theme only
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { Loader } from "lucide-react";
@@ -134,7 +134,7 @@ function PageTransition({ children }: { children: React.ReactNode }) {
     const handleStart = () => {
       setIsLoading(true);
     };
-    
+
     const handleComplete = () => {
       // Small delay to ensure smooth transition
       setTimeout(() => setIsLoading(false), 300);
@@ -211,14 +211,12 @@ function ClientAuth({ children }: { children: React.ReactNode }) {
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <ThemeProvider>
-      <ClientAuth>
-        <ToastProvider>
-          <PageTransition>
-            <Component {...pageProps} />
-          </PageTransition>
-        </ToastProvider>
-      </ClientAuth>
-    </ThemeProvider>
+    <ClientAuth>
+      <ToastProvider>
+        <PageTransition>
+          <Component {...pageProps} />
+        </PageTransition>
+      </ToastProvider>
+    </ClientAuth>
   );
 }

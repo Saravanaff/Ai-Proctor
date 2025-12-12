@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import QRCode from "qrcode";
 import { getUserEmail, getUserId, getGlobalName, getExamId } from "@/constants/AuthStore";
-import { useTheme } from "@/contexts/ThemeContext";
+// import { useTheme } from "@/contexts/ThemeContext"; // Removed - Light theme only
 import styles from "@/styles/ThirdEyeSetup.module.css";
 // Use the shared socket connection (adjust the import path/name if different)
 import socket from "@/components/socket";
@@ -17,7 +17,7 @@ const ThirdEyeSetup = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState("");
   const router = useRouter();
-  const { theme } = useTheme();
+  // const { theme } = useTheme(); // Removed - Light theme only
 
   // Remove the spinner animation effect since we'll use CSS
 
@@ -172,18 +172,16 @@ const ThirdEyeSetup = () => {
                   aria-current={currentStep === step.id ? "step" : undefined}
                 >
                   <div
-                    className={`${styles.stepIndicator} ${
-                      currentStep >= step.id ? styles.stepCompleted : ""
-                    }`}
+                    className={`${styles.stepIndicator} ${currentStep >= step.id ? styles.stepCompleted : ""
+                      }`}
                     aria-label={`Step ${step.id}: ${step.title}`}
                   >
                     {currentStep > step.id ? "✓" : step.id}
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`${styles.stepConnector} ${
-                        currentStep > step.id ? styles.connectorCompleted : ""
-                      }`}
+                      className={`${styles.stepConnector} ${currentStep > step.id ? styles.connectorCompleted : ""
+                        }`}
                       aria-hidden="true"
                     />
                   )}

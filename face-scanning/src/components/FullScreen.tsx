@@ -49,10 +49,10 @@ const ExamPage = ({
 }: any) => {
   // ✅ Use exam state hook for validation and error handling
   const examState = useExamState();
-  
+
   // ✅ Fixed to light theme only
   const isDarkTheme = false;
-  
+
   const [answers, setAnswers] = useState<{ [key: number]: Answer }>({});
   const [blocked, setBlocked] = useState(false);
   const [lookAlert, setlookAlert] = useState(false);
@@ -73,7 +73,7 @@ const ExamPage = ({
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [modelsLoaded, setModelsLoaded] = useState(false); // Models preloaded in useEffect
   const [modelsLoadingError, setModelsLoadingError] = useState(false);
   const [isUploadingChunks, setIsUploadingChunks] = useState(false);
 
@@ -171,6 +171,95 @@ const ExamPage = ({
     }
   }, [toast]);
 
+  // ✅ OPTIMIZED: Preload AI models without starting camera
+  useEffect(() => {
+    let isCancelled = false;
+
+    const preloadModels = async () => {
+      try {
+        console.log("🚀 Preloading AI models...");
+
+        // Dynamically import MediaPipe to avoid blocking initial render
+        const { FilesetResolver, FaceLandmarker, ObjectDetector } = await import("@mediapipe/tasks-vision");
+
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+        );
+
+        if (isCancelled) return;
+
+        // Load models in parallel
+        const modelPromises: Promise<any>[] = [];
+
+        // Load Face Landmarker
+        if (examSettings?.head_direction_enabled || examSettings?.eyeball_detection_enabled) {
+          modelPromises.push(
+            FaceLandmarker.createFromOptions(vision, {
+              baseOptions: {
+                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+                delegate: "GPU",
+              },
+              runningMode: "VIDEO",
+              numFaces: 1,
+            }).then(model => {
+              console.log("✅ Face Landmarker preloaded");
+              return model;
+            })
+          );
+        }
+
+        // Load Object Detector
+        if (examSettings?.object_detection_enabled || examSettings?.multiple_person_detection_enabled) {
+          modelPromises.push(
+            ObjectDetector.createFromOptions(vision, {
+              baseOptions: {
+                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite",
+              },
+              scoreThreshold: 0.4,
+              runningMode: "VIDEO",
+              maxResults: 10,
+            }).then(model => {
+              console.log("✅ Object Detector preloaded");
+              return model;
+            })
+          );
+        }
+
+        if (modelPromises.length > 0) {
+          await Promise.all(modelPromises);
+        }
+
+        if (!isCancelled) {
+          console.log("✅ All AI models preloaded successfully!");
+          setModelsLoaded(true);
+        }
+      } catch (error) {
+        console.error("❌ Failed to preload AI models:", error);
+        if (!isCancelled) {
+          setModelsLoaded(true); // Continue anyway
+          setModelsLoadingError(true);
+        }
+      }
+    };
+
+    // Only preload if exam settings are loaded
+    if (examSettings && Object.keys(examSettings).length > 0) {
+      preloadModels();
+    } else {
+      // If no exam settings yet, just set models loaded after a timeout
+      const timeout = setTimeout(() => {
+        if (!isCancelled) {
+          setModelsLoaded(true);
+        }
+      }, 3000); // Max 3 second wait
+      return () => clearTimeout(timeout);
+    }
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [examSettings]);
+
   // Fetch exam questions - runs once exam state is valid
   useEffect(() => {
     // Wait for exam state to be valid before fetching
@@ -178,7 +267,7 @@ const ExamPage = ({
       console.log("⏳ Waiting for exam state validation...", { isValid: examState.isValid, isLoading: examState.isLoading });
       return;
     }
-    
+
     const fetchExamQuestions = async () => {
       try {
         setIsLoadingQuestions(true);
@@ -250,7 +339,7 @@ const ExamPage = ({
       console.log("⏳ Waiting for exam state validation before fetching settings...");
       return;
     }
-    
+
     const fetchExamSettings = async () => {
       try {
         const examId = getExamId();
@@ -687,11 +776,11 @@ const ExamPage = ({
     // ✅ CRITICAL: Save user answers to database with retry logic
     let answersSaved = false;
     const maxRetries = 3;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`💾 Saving user answers to database (Attempt ${attempt}/${maxRetries})...`);
-        
+
         // Validate answers before submission
         const validatedAnswers = submissionAnswers.map(answer => ({
           question_id: Number(answer.question_id),
@@ -700,7 +789,7 @@ const ExamPage = ({
         }));
 
         console.log("Validated answers:", validatedAnswers);
-        
+
         const response = await axios.post(
           `${baseUrl}/saveUserAnswers`,
           {
@@ -714,12 +803,12 @@ const ExamPage = ({
             timeout: 10000, // 10 second timeout
           }
         );
-        
+
         if (response.data.success) {
           console.log("✅ Answers saved successfully:", response.data);
           console.log(`✅ Total answers saved: ${response.data.data?.totalAnswers || validatedAnswers.length}`);
           answersSaved = true;
-          
+
           toast({
             title: "Success",
             description: `Exam submitted! ${validatedAnswers.length} answers saved.`,
@@ -734,7 +823,7 @@ const ExamPage = ({
           `❌ Error saving answers (Attempt ${attempt}/${maxRetries}):`,
           error.response?.data || error.message
         );
-        
+
         // If this is the last attempt, show error to user
         if (attempt === maxRetries) {
           toast({
@@ -758,12 +847,12 @@ const ExamPage = ({
       console.error("Exam ID:", examId);
       console.error("User ID:", userId);
       console.error("Answers that failed to save:", submissionAnswers);
-      
+
       // ✅ Reset all submission states so user can retry
       setIsSubmitting(false);
       setIsUploadingChunks(false);
       setExamSubmitted(false);
-      
+
       // ✅ DO NOT PROCEED if answers failed to save
       // Keep user on exam page and show blocking modal
       return;
@@ -792,11 +881,11 @@ const ExamPage = ({
     // ✅ CRITICAL: Calculate and save score BEFORE navigation
     let scoreSaved = false;
     const scoreMaxRetries = 3;
-    
+
     for (let attempt = 1; attempt <= scoreMaxRetries; attempt++) {
       try {
         console.log(`💾 Calculating and saving exam score (Attempt ${attempt}/${scoreMaxRetries})...`);
-        
+
         const scoreResponse = await axios.post(
           `${baseUrl}/saveScore`,
           {
@@ -813,7 +902,7 @@ const ExamPage = ({
             timeout: 15000, // 15 second timeout for score calculation
           }
         );
-        
+
         console.log("✅ Score calculated and saved:", scoreResponse.data);
         scoreSaved = true;
         break; // Success - exit retry loop
@@ -822,7 +911,7 @@ const ExamPage = ({
           `❌ Error saving score (Attempt ${attempt}/${scoreMaxRetries}):`,
           error.response?.data || error.message
         );
-        
+
         if (attempt < scoreMaxRetries) {
           // Wait before retrying (exponential backoff)
           await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
@@ -919,7 +1008,7 @@ const ExamPage = ({
           right: "-5%",
           width: "500px",
           height: "500px",
-          background: isDarkTheme 
+          background: isDarkTheme
             ? "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)"
             : "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
           borderRadius: "50%",
@@ -1083,7 +1172,7 @@ const ExamPage = ({
           left: "-5%",
           width: "450px",
           height: "450px",
-          background: isDarkTheme 
+          background: isDarkTheme
             ? "radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)"
             : "radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%)",
           borderRadius: "50%",
@@ -1159,10 +1248,10 @@ const ExamPage = ({
   }
 
   // ✅ Show loading screen while AI models are initializing
-  if (!modelsLoaded && (examSettings?.head_direction_enabled || 
-      examSettings?.eyeball_detection_enabled || 
-      examSettings?.object_detection_enabled || 
-      examSettings?.multiple_person_detection_enabled)) {
+  if (!modelsLoaded && (examSettings?.head_direction_enabled ||
+    examSettings?.eyeball_detection_enabled ||
+    examSettings?.object_detection_enabled ||
+    examSettings?.multiple_person_detection_enabled)) {
     return (
       <div style={{
         minHeight: "100vh",
@@ -1283,26 +1372,27 @@ const ExamPage = ({
             <span>Please ensure your camera is enabled and you&apos;re in a well-lit area</span>
           </div>
         </div>
-        
-        {/* Hidden FloatingCamera to trigger model loading */}
+
+        {/* ✅ DISABLED: Hidden FloatingCamera was causing duplicate camera access and high CPU usage
         <div style={{ display: "none" }}>
           <FloatingCamera
             settings={examSettings}
             socket={socket}
-            onLookingAway={() => {}}
-            detect={() => {}}
-            number={() => {}}
-            onAuthFaceMissing={() => {}}
-            onHeadDirection={() => {}}
+            onLookingAway={() => { }}
+            detect={() => { }}
+            number={() => { }}
+            onAuthFaceMissing={() => { }}
+            onHeadDirection={() => { }}
             examSubmitted={examSubmitted}
             mediaRecorderRef={frontCameraMediaRecorderRef}
             screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
-            onAuthPause={() => {}}
-            onAuthResume={() => {}}
+            onAuthPause={() => { }}
+            onAuthResume={() => { }}
             pendingChunksRef={pendingFaceChunksRef}
             onModelsLoaded={handleModelsLoaded}
           />
         </div>
+        */}
 
         <style jsx>{`
           @keyframes float {
@@ -1410,7 +1500,7 @@ const ExamPage = ({
 
   // 🔥 CRITICAL: Check for error/loading INSIDE the return, not before hooks
   // This ensures all hooks are called in the same order every render
-  
+
   // ✅ Show error screen if exam state is invalid
   if (examState.error) {
     return (
@@ -1752,7 +1842,7 @@ const ExamPage = ({
             backdropFilter: "blur(30px)",
             border: `2px solid ${currentTheme.cardBorder}`,
             borderRadius: "24px",
-            boxShadow: isDarkTheme 
+            boxShadow: isDarkTheme
               ? "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 255, 255, 0.05) inset"
               : "0 4px 20px rgba(0,0,0,0.1)",
             transition: "all 0.3s ease",
@@ -1764,7 +1854,7 @@ const ExamPage = ({
               marginBottom: "20px",
             }}>
               <div style={{
-                background: answers[q.id] 
+                background: answers[q.id]
                   ? (isDarkTheme ? "linear-gradient(135deg, #00ff9d 0%, #00d4aa 100%)" : "#22c55e")
                   : currentTheme.questionNumberBg,
                 color: answers[q.id] ? "#000000" : currentTheme.textPrimary,
@@ -1777,12 +1867,12 @@ const ExamPage = ({
                 fontSize: "16px",
                 fontWeight: "800",
                 flexShrink: 0,
-                border: `2px solid ${answers[q.id] 
+                border: `2px solid ${answers[q.id]
                   ? (isDarkTheme ? "rgba(0, 255, 157, 0.4)" : "#22c55e")
                   : currentTheme.cardBorder}`,
                 transition: "all 0.3s ease",
-                boxShadow: answers[q.id] 
-                  ? (isDarkTheme 
+                boxShadow: answers[q.id]
+                  ? (isDarkTheme
                     ? "0 0 25px rgba(0, 255, 157, 0.5), 0 4px 15px rgba(0, 255, 157, 0.3)"
                     : "0 4px 12px rgba(34, 197, 94, 0.3)")
                   : "none",
@@ -1812,14 +1902,14 @@ const ExamPage = ({
                       padding: "20px 26px",
                       borderRadius: "16px",
                       background: isSelected
-                        ? (isDarkTheme 
-                          ? "rgba(0, 255, 255, 0.08)" 
+                        ? (isDarkTheme
+                          ? "rgba(0, 255, 255, 0.08)"
                           : "rgba(59, 130, 246, 0.15)")
                         : currentTheme.optionBg,
-                      color: isSelected 
+                      color: isSelected
                         ? (isDarkTheme ? "#00ffff" : currentTheme.accentPrimary)
                         : currentTheme.textPrimary,
-                      border: `2px solid ${isSelected 
+                      border: `2px solid ${isSelected
                         ? (isDarkTheme ? "rgba(0, 255, 255, 0.5)" : currentTheme.accentPrimary)
                         : currentTheme.cardBorder}`,
                       cursor: "pointer",
@@ -1829,8 +1919,8 @@ const ExamPage = ({
                       gap: "14px",
                       fontWeight: isSelected ? "700" : "500",
                       fontSize: "16px",
-                      boxShadow: isSelected 
-                        ? (isDarkTheme 
+                      boxShadow: isSelected
+                        ? (isDarkTheme
                           ? "0 0 25px rgba(0, 255, 255, 0.25), 0 4px 20px rgba(0, 255, 255, 0.15)"
                           : "0 4px 16px rgba(59, 130, 246, 0.2)")
                         : "none",
@@ -1838,8 +1928,8 @@ const ExamPage = ({
                     onMouseEnter={(e) => {
                       if (!isSelected) {
                         e.currentTarget.style.background = currentTheme.optionHoverBg;
-                        e.currentTarget.style.borderColor = isDarkTheme 
-                          ? "rgba(0, 255, 255, 0.3)" 
+                        e.currentTarget.style.borderColor = isDarkTheme
+                          ? "rgba(0, 255, 255, 0.3)"
                           : currentTheme.accentSecondary;
                         e.currentTarget.style.boxShadow = isDarkTheme
                           ? "0 0 20px rgba(0, 255, 255, 0.15)"
@@ -1866,7 +1956,7 @@ const ExamPage = ({
                       width: "24px",
                       height: "24px",
                       borderRadius: "50%",
-                      border: `2.5px solid ${isSelected 
+                      border: `2.5px solid ${isSelected
                         ? (isDarkTheme ? "#00ffff" : currentTheme.accentPrimary)
                         : currentTheme.cardBorder}`,
                       display: "flex",
@@ -1981,11 +2071,12 @@ const ExamPage = ({
       {lookAlert && (
         <div style={{
           position: "fixed",
-          bottom: "100px",
-          right: "30px",
+          top: "20px",
+          left: "50%",
+          transform: "translateX(-50%)",
           padding: "18px 26px",
           borderRadius: "18px",
-          background: isDarkTheme 
+          background: isDarkTheme
             ? "rgba(255, 170, 0, 0.1)"
             : "rgba(234, 88, 12, 0.95)",
           backdropFilter: "blur(25px)",
@@ -2021,11 +2112,12 @@ const ExamPage = ({
       {object && (
         <div style={{
           position: "fixed",
-          bottom: "100px",
-          right: "30px",
+          top: "20px",
+          left: "50%",
+          transform: "translateX(-50%)",
           padding: "18px 26px",
           borderRadius: "18px",
-          background: isDarkTheme 
+          background: isDarkTheme
             ? "rgba(255, 51, 102, 0.1)"
             : "rgba(239, 68, 68, 0.95)",
           backdropFilter: "blur(25px)",
@@ -2061,16 +2153,17 @@ const ExamPage = ({
       {num && (
         <div style={{
           position: "fixed",
-          bottom: "100px",
-          right: "30px",
+          top: "20px",
+          left: "50%",
+          transform: "translateX(-50%)",
           padding: "18px 26px",
           borderRadius: "18px",
-          background: isDarkTheme 
-            ? "rgba(0, 153, 255, 0.1)" 
+          background: isDarkTheme
+            ? "rgba(0, 153, 255, 0.1)"
             : "rgba(59, 130, 246, 0.95)",
           backdropFilter: "blur(25px)",
           border: `3px solid ${isDarkTheme ? "rgba(0, 153, 255, 0.5)" : "rgba(37, 99, 235, 0.9)"}`,
-          boxShadow: isDarkTheme 
+          boxShadow: isDarkTheme
             ? "0 0 30px rgba(0, 153, 255, 0.4), 0 10px 40px rgba(0, 153, 255, 0.2)"
             : "0 0 30px rgba(59, 130, 246, 0.5), 0 15px 50px rgba(0, 0, 0, 0.3)",
           zIndex: 1000,
@@ -2101,12 +2194,13 @@ const ExamPage = ({
       {authFaceMissing && (
         <div style={{
           position: "fixed",
-          bottom: "100px",
-          right: "30px",
+          top: "20px",
+          left: "50%",
+          transform: "translateX(-50%)",
           padding: "18px 26px",
           borderRadius: "18px",
-          background: isDarkTheme 
-            ? "rgba(255, 170, 0, 0.1)" 
+          background: isDarkTheme
+            ? "rgba(255, 170, 0, 0.1)"
             : "rgba(234, 88, 12, 0.95)",
           backdropFilter: "blur(25px)",
           border: `3px solid ${isDarkTheme ? "rgba(255, 170, 0, 0.6)" : "rgba(194, 65, 12, 0.8)"}`,
@@ -2142,12 +2236,13 @@ const ExamPage = ({
       {headDirection && (
         <div style={{
           position: "fixed",
-          bottom: "100px",
-          right: "30px",
+          top: "20px",
+          left: "50%",
+          transform: "translateX(-50%)",
           padding: "18px 26px",
           borderRadius: "18px",
-          background: isDarkTheme 
-            ? "rgba(255, 170, 0, 0.1)" 
+          background: isDarkTheme
+            ? "rgba(255, 170, 0, 0.1)"
             : "rgba(234, 88, 12, 0.95)",
           backdropFilter: "blur(25px)",
           border: `3px solid ${isDarkTheme ? "rgba(255, 170, 0, 0.6)" : "rgba(194, 65, 12, 0.8)"}`,
@@ -2194,11 +2289,11 @@ const ExamPage = ({
         @keyframes slideIn {
           from {
             opacity: 0;
-            transform: translateX(20px);
+            transform: translateX(-50%) translateY(-20px);
           }
           to {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateX(-50%) translateY(0);
           }
         }
         @keyframes pulse {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import styles from "../../styles/CreateExamPage.module.css";
-import { ThemeToggle } from "../../components/ThemeToggle";
+// import { ThemeToggle } from "../../components/ThemeToggle"; // Removed - Light theme only
 import { SuperAdminGuard } from "../../components/guards";
 import { LoadingScreen } from "../../components/PageTransition";
 import axios from "axios";
@@ -56,7 +56,7 @@ const AdminProfilePage = () => {
     document.body.style.background = "#f8fafc";
     document.body.style.minHeight = "100vh";
     document.documentElement.style.background = "#f8fafc";
-    
+
     return () => {
       document.body.style.background = "";
       document.body.style.minHeight = "";
@@ -70,7 +70,7 @@ const AdminProfilePage = () => {
     try {
       console.log('👤 Fetching admin profile and exams...');
       const startTime = Date.now();
-      
+
       const base = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await axios.get(`${base}/admin/${adminEmail}/exams`);
 
@@ -78,12 +78,12 @@ const AdminProfilePage = () => {
         setAdmin(res.data.data.admin);
         setExams(res.data.data.exams);
       }
-      
+
       // Ensure loading screen shows for at least 500ms
       const elapsedTime = Date.now() - startTime;
       const remainingTime = Math.max(0, 500 - elapsedTime);
       await new Promise(resolve => setTimeout(resolve, remainingTime));
-      
+
       console.log('✅ Admin profile loaded');
     } catch (e) {
       console.error(e);
@@ -137,476 +137,476 @@ const AdminProfilePage = () => {
         className={styles.examinerContainer}
         style={{ minHeight: "100vh", background: "#f8fafc" }}
       >
-      <header style={{ marginBottom: "32px" }}>
-        <div
-          style={{
-            background: "linear-gradient(135deg, #ffffff, #f1f5f9)",
-            borderRadius: "24px",
-            padding: "32px",
-            border: "1px solid #e2e8f0",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          
-          
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px", marginBottom: "24px" }}>
-            <button
-              onClick={handleBack}
-              className={`${styles.btn} ${styles.btnGhost}`}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "12px 20px",
-                borderRadius: "10px",
-                fontWeight: "600",
-                fontSize: "14px",
-                transition: "all 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateX(-4px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateX(0)";
-              }}
-            >
-              ← Back to Dashboard
-            </button>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "10px 20px",
-                background: "#d1fae5",
-                color: "#10b981",
-                borderRadius: "10px",
-                fontSize: "14px",
-                fontWeight: "600",
-                border: "1.5px solid #10b981",
-              }}
-            >
-              <Check size={16} /> Active
-            </div>
-          </div>
-
+        <header style={{ marginBottom: "32px" }}>
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "32px",
-              flexWrap: "wrap",
+              background: "linear-gradient(135deg, #ffffff, #f1f5f9)",
+              borderRadius: "24px",
+              padding: "32px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            <div
-              style={{
-                width: "100px",
-                height: "100px",
-                borderRadius: "20px",
-                background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "42px",
-                fontWeight: "700",
-                color: "white",
-                boxShadow: "0 12px 32px rgba(14, 165, 233, 0.4)",
-                flexShrink: 0,
-              }}
-            >
-              {admin?.name?.charAt(0).toUpperCase() || "A"}
-            </div>
-            <div style={{ flex: 1, minWidth: "280px" }}>
-              <h1
+
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px", marginBottom: "24px" }}>
+              <button
+                onClick={handleBack}
+                className={`${styles.btn} ${styles.btnGhost}`}
                 style={{
-                  margin: "0 0 12px 0",
-                  fontSize: "32px",
-                  fontWeight: "700",
-                  color: "#1e293b",
-                  lineHeight: "1.2",
-                  letterSpacing: "-0.02em",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "12px 20px",
+                  borderRadius: "10px",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateX(-4px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateX(0)";
                 }}
               >
-                {admin?.name || "Admin Profile"}
-              </h1>
+                ← Back to Dashboard
+              </button>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "12px",
-                  flexWrap: "wrap",
+                  gap: "8px",
+                  padding: "10px 20px",
+                  background: "#d1fae5",
+                  color: "#10b981",
+                  borderRadius: "10px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  border: "1.5px solid #10b981",
                 }}
               >
-                <div
+                <Check size={16} /> Active
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "32px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div
+                style={{
+                  width: "100px",
+                  height: "100px",
+                  borderRadius: "20px",
+                  background: "linear-gradient(135deg, #0ea5e9, #3b82f6)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "42px",
+                  fontWeight: "700",
+                  color: "white",
+                  boxShadow: "0 12px 32px rgba(14, 165, 233, 0.4)",
+                  flexShrink: 0,
+                }}
+              >
+                {admin?.name?.charAt(0).toUpperCase() || "A"}
+              </div>
+              <div style={{ flex: 1, minWidth: "280px" }}>
+                <h1
                   style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 16px",
-                    background: "#e0f2fe",
-                    color: "#64748b",
-                    borderRadius: "10px",
-                    fontSize: "15px",
-                    fontWeight: "500",
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
-                  <Mail size={16} />
-                  {admin?.email}
-                </div>
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "8px 16px",
-                    background: "var(--primary-bg-light)",
-                    color: "#0ea5e9",
-                    borderRadius: "10px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #0ea5e9",
-                  }}
-                >
-                  <User size={16} />
-                  Administrator
-                </div>
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "8px 16px",
-                    background: "#f1f5f9",
+                    margin: "0 0 12px 0",
+                    fontSize: "32px",
+                    fontWeight: "700",
                     color: "#1e293b",
-                    borderRadius: "10px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    border: "1px solid #e2e8f0",
+                    lineHeight: "1.2",
+                    letterSpacing: "-0.02em",
                   }}
                 >
-                  <FileText size={16} />
-                  {exams.length} Exams
+                  {admin?.name || "Admin Profile"}
+                </h1>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "8px 16px",
+                      background: "#e0f2fe",
+                      color: "#64748b",
+                      borderRadius: "10px",
+                      fontSize: "15px",
+                      fontWeight: "500",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <Mail size={16} />
+                    {admin?.email}
+                  </div>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "8px 16px",
+                      background: "var(--primary-bg-light)",
+                      color: "#0ea5e9",
+                      borderRadius: "10px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      border: "1px solid #0ea5e9",
+                    }}
+                  >
+                    <User size={16} />
+                    Administrator
+                  </div>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "8px 16px",
+                      background: "#f1f5f9",
+                      color: "#1e293b",
+                      borderRadius: "10px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <FileText size={16} />
+                    {exams.length} Exams
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div style={{ marginBottom: "32px" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "16px",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "22px",
-              fontWeight: "600",
-              margin: 0,
-              color: "#1e293b",
-            }}
-          >
-            Examinations
-            <span
-              style={{
-                marginLeft: "12px",
-                fontSize: "16px",
-                fontWeight: "500",
-                color: "#64748b",
-                background: "#e0f2fe",
-                padding: "4px 12px",
-                borderRadius: "12px",
-                border: "1px solid #e2e8f0",
-              }}
-            >
-              {exams.length}
-            </span>
-          </h2>
-        </div>
-        <div style={{ position: "relative" }}>
-          <input
-            type="text"
-            placeholder="Search examinations..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "14px 20px",
-              marginBottom: "20px",
-              borderRadius: "12px",
-              border: "2px solid #e2e8f0",
-              background: "var(--input-bg)",
-              color: "#1e293b",
-              fontSize: "15px",
-              transition: "all 0.3s ease",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = "#0ea5e9";
-              e.target.style.boxShadow = "0 4px 16px rgba(14, 165, 233, 0.2)";
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = "#e2e8f0";
-              e.target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.08)";
-            }}
-          />
-        </div>
-      </div>
-
-      {loading ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "60px 20px",
-            background: "#ffffff",
-            borderRadius: "16px",
-            border: "1px solid #e2e8f0",
-          }}
-        >
-          <p style={{ color: "#64748b", fontSize: "16px" }}>
-            Loading examinations...
-          </p>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "60px 20px",
-            background: "#ffffff",
-            borderRadius: "16px",
-            border: "1px solid #e2e8f0",
-          }}
-        >
-          <p
-            style={{
-              color: "#1e293b",
-              fontSize: "18px",
-              fontWeight: "600",
-              marginBottom: "8px",
-            }}
-          >
-            {search ? "No Results Found" : "No Examinations"}
-          </p>
-          <p style={{ color: "#64748b", fontSize: "14px" }}>
-            {search
-              ? "Please refine your search criteria and try again"
-              : "This administrator has not created any examinations"}
-          </p>
-        </div>
-      ) : (
-        <div
-          style={{
-            background: "#ffffff",
-            borderRadius: "16px",
-            border: "1px solid #e2e8f0",
-            overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-          }}
-        >
-          {/* Table Header */}
+        <div style={{ marginBottom: "32px" }}>
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "2fr 1fr 1fr 1fr 120px",
-              padding: "16px 24px",
-              background: "#f1f5f9",
-              borderBottom: "1px solid #e2e8f0",
-              fontWeight: "700",
-              fontSize: "13px",
-              color: "#64748b",
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "16px",
             }}
           >
-            <div>Exam Name</div>
-            <div>Key</div>
-            <div>Participants</div>
-            <div>Created</div>
-            <div style={{ textAlign: "center" }}>Actions</div>
+            <h2
+              style={{
+                fontSize: "22px",
+                fontWeight: "600",
+                margin: 0,
+                color: "#1e293b",
+              }}
+            >
+              Examinations
+              <span
+                style={{
+                  marginLeft: "12px",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  color: "#64748b",
+                  background: "#e0f2fe",
+                  padding: "4px 12px",
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                {exams.length}
+              </span>
+            </h2>
           </div>
+          <div style={{ position: "relative" }}>
+            <input
+              type="text"
+              placeholder="Search examinations..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "14px 20px",
+                marginBottom: "20px",
+                borderRadius: "12px",
+                border: "2px solid #e2e8f0",
+                background: "var(--input-bg)",
+                color: "#1e293b",
+                fontSize: "15px",
+                transition: "all 0.3s ease",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "#0ea5e9";
+                e.target.style.boxShadow = "0 4px 16px rgba(14, 165, 233, 0.2)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "#e2e8f0";
+                e.target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.08)";
+              }}
+            />
+          </div>
+        </div>
 
-          {/* Table Body */}
-          {filtered.map((exam) => (
+        {loading ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              background: "#ffffff",
+              borderRadius: "16px",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            <p style={{ color: "#64748b", fontSize: "16px" }}>
+              Loading examinations...
+            </p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              background: "#ffffff",
+              borderRadius: "16px",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            <p
+              style={{
+                color: "#1e293b",
+                fontSize: "18px",
+                fontWeight: "600",
+                marginBottom: "8px",
+              }}
+            >
+              {search ? "No Results Found" : "No Examinations"}
+            </p>
+            <p style={{ color: "#64748b", fontSize: "14px" }}>
+              {search
+                ? "Please refine your search criteria and try again"
+                : "This administrator has not created any examinations"}
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              border: "1px solid #e2e8f0",
+              overflow: "hidden",
+              boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+            }}
+          >
+            {/* Table Header */}
             <div
-              key={exam.id}
               style={{
                 display: "grid",
                 gridTemplateColumns: "2fr 1fr 1fr 1fr 120px",
-                padding: "20px 24px",
+                padding: "16px 24px",
+                background: "#f1f5f9",
                 borderBottom: "1px solid #e2e8f0",
-                alignItems: "center",
-                transition: "all 0.2s ease",
-                cursor: "pointer",
-              }}
-              onClick={() => handleExamClick(exam.id)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#f1f5f9";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
+                fontWeight: "700",
+                fontSize: "13px",
+                color: "#64748b",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
               }}
             >
-              {/* Exam Name */}
-              <div>
-                <div style={{ fontWeight: "600", color: "#1e293b", fontSize: "15px", marginBottom: "4px" }}>
-                  {exam.exam_name}
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
-                  {exam.settings.third_eye_enabled && (
-                    <span
-                      style={{
-                        padding: "4px 8px",
-                        background: "#d1fae5",
-                        color: "#10b981",
-                        borderRadius: "6px",
-                        fontSize: "10px",
-                        fontWeight: "600",
-                        border: "1px solid #10b981",
-                      }}
-                    >
-                      Third Eye
-                    </span>
-                  )}
-                  {exam.settings.eyeball_detection_enabled && (
-                    <span
-                      style={{
-                        padding: "4px 8px",
-                        background: "#d1fae5",
-                        color: "#10b981",
-                        borderRadius: "6px",
-                        fontSize: "10px",
-                        fontWeight: "600",
-                        border: "1px solid #10b981",
-                      }}
-                    >
-                      Eye Track
-                    </span>
-                  )}
-                  {exam.settings.object_detection_enabled && (
-                    <span
-                      style={{
-                        padding: "4px 8px",
-                        background: "#d1fae5",
-                        color: "#10b981",
-                        borderRadius: "6px",
-                        fontSize: "10px",
-                        fontWeight: "600",
-                        border: "1px solid #10b981",
-                      }}
-                    >
-                      Object Detect
-                    </span>
-                  )}
-                  {exam.settings.video_recording_enabled && (
-                    <span
-                      style={{
-                        padding: "4px 8px",
-                        background: "#d1fae5",
-                        color: "#10b981",
-                        borderRadius: "6px",
-                        fontSize: "10px",
-                        fontWeight: "600",
-                        border: "1px solid #10b981",
-                      }}
-                    >
-                      Recording
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Key Badge */}
-              <div>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    padding: "6px 12px",
-                    borderRadius: "8px",
-                    fontSize: "13px",
-                    fontWeight: "700",
-                    background: "#f1f5f9",
-                    color: "#1e293b",
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
-                  {exam.key}
-                </span>
-              </div>
-
-              {/* Participants Badge */}
-              <div>
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "6px 12px",
-                    borderRadius: "8px",
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    background: "#e0f2fe",
-                    color: "#0ea5e9",
-                    border: "1px solid #0ea5e9",
-                  }}
-                >
-                  <Users size={14} />
-                  {exam.totalParticipants}
-                </span>
-              </div>
-
-              {/* Created Date */}
-              <div style={{ fontSize: "14px", color: "#64748b" }}>
-                {new Date(exam.createdAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </div>
-
-              {/* Actions */}
-              <div style={{ textAlign: "center" }}>
-                <button
-                  style={{
-                    padding: "6px 12px",
-                    background: "transparent",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "8px",
-                    color: "#64748b",
-                    cursor: "pointer",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    transition: "all 0.2s ease",
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleExamClick(exam.id);
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#0ea5e9";
-                    e.currentTarget.style.color = "white";
-                    e.currentTarget.style.borderColor = "#0ea5e9";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "#64748b";
-                    e.currentTarget.style.borderColor = "#e2e8f0";
-                  }}
-                >
-                  View
-                </button>
-              </div>
+              <div>Exam Name</div>
+              <div>Key</div>
+              <div>Participants</div>
+              <div>Created</div>
+              <div style={{ textAlign: "center" }}>Actions</div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+
+            {/* Table Body */}
+            {filtered.map((exam) => (
+              <div
+                key={exam.id}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "2fr 1fr 1fr 1fr 120px",
+                  padding: "20px 24px",
+                  borderBottom: "1px solid #e2e8f0",
+                  alignItems: "center",
+                  transition: "all 0.2s ease",
+                  cursor: "pointer",
+                }}
+                onClick={() => handleExamClick(exam.id)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#f1f5f9";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                {/* Exam Name */}
+                <div>
+                  <div style={{ fontWeight: "600", color: "#1e293b", fontSize: "15px", marginBottom: "4px" }}>
+                    {exam.exam_name}
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                    {exam.settings.third_eye_enabled && (
+                      <span
+                        style={{
+                          padding: "4px 8px",
+                          background: "#d1fae5",
+                          color: "#10b981",
+                          borderRadius: "6px",
+                          fontSize: "10px",
+                          fontWeight: "600",
+                          border: "1px solid #10b981",
+                        }}
+                      >
+                        Third Eye
+                      </span>
+                    )}
+                    {exam.settings.eyeball_detection_enabled && (
+                      <span
+                        style={{
+                          padding: "4px 8px",
+                          background: "#d1fae5",
+                          color: "#10b981",
+                          borderRadius: "6px",
+                          fontSize: "10px",
+                          fontWeight: "600",
+                          border: "1px solid #10b981",
+                        }}
+                      >
+                        Eye Track
+                      </span>
+                    )}
+                    {exam.settings.object_detection_enabled && (
+                      <span
+                        style={{
+                          padding: "4px 8px",
+                          background: "#d1fae5",
+                          color: "#10b981",
+                          borderRadius: "6px",
+                          fontSize: "10px",
+                          fontWeight: "600",
+                          border: "1px solid #10b981",
+                        }}
+                      >
+                        Object Detect
+                      </span>
+                    )}
+                    {exam.settings.video_recording_enabled && (
+                      <span
+                        style={{
+                          padding: "4px 8px",
+                          background: "#d1fae5",
+                          color: "#10b981",
+                          borderRadius: "6px",
+                          fontSize: "10px",
+                          fontWeight: "600",
+                          border: "1px solid #10b981",
+                        }}
+                      >
+                        Recording
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Key Badge */}
+                <div>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      fontWeight: "700",
+                      background: "#f1f5f9",
+                      color: "#1e293b",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    {exam.key}
+                  </span>
+                </div>
+
+                {/* Participants Badge */}
+                <div>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      fontWeight: "600",
+                      background: "#e0f2fe",
+                      color: "#0ea5e9",
+                      border: "1px solid #0ea5e9",
+                    }}
+                  >
+                    <Users size={14} />
+                    {exam.totalParticipants}
+                  </span>
+                </div>
+
+                {/* Created Date */}
+                <div style={{ fontSize: "14px", color: "#64748b" }}>
+                  {new Date(exam.createdAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </div>
+
+                {/* Actions */}
+                <div style={{ textAlign: "center" }}>
+                  <button
+                    style={{
+                      padding: "6px 12px",
+                      background: "transparent",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      color: "#64748b",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      transition: "all 0.2s ease",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleExamClick(exam.id);
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#0ea5e9";
+                      e.currentTarget.style.color = "white";
+                      e.currentTarget.style.borderColor = "#0ea5e9";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "#64748b";
+                      e.currentTarget.style.borderColor = "#e2e8f0";
+                    }}
+                  >
+                    View
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </SuperAdminGuard>
   );
 };

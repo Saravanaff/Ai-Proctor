@@ -15,52 +15,33 @@ const EndPage = () => {
     console.log("User ID:", userId);
     console.log("Exam ID:", examId);
     console.log("=".repeat(60));
-    
+
     // ✅ Just show success after a brief moment
     // All data was already saved in FullScreen.tsx before navigation
     const timer = setTimeout(() => {
       console.log("✅ Showing success screen (data already saved)");
       setIsLoading(false);
     }, 1500);
-    
+
     return () => clearTimeout(timer);
   }, [userId, examId]);
 
-  // Professional High-Tech Black Theme
-  const themes = {
-    dark: {
-      background: "#0f172a",
-      cardBg: "rgba(30, 41, 59, 0.98)",
-      cardBorder: "rgba(71, 85, 105, 0.5)",
-      textPrimary: "#ffffff",
-      textSecondary: "#e2e8f0",
-      textMuted: "#94a3b8",
-      successBg: "rgba(34, 197, 94, 0.08)",
-      successBorder: "rgba(34, 197, 94, 0.4)",
-      successText: "#22c55e",
-      errorBg: "rgba(239, 68, 68, 0.08)",
-      errorBorder: "rgba(239, 68, 68, 0.4)",
-      errorText: "#ef4444",
-      iconBg: "#3b82f6",
-    },
-    light: {
-      background: "#f8fafc",
-      cardBg: "rgba(255, 255, 255, 0.95)",
-      cardBorder: "rgba(226, 232, 240, 0.9)",
-      textPrimary: "#0f172a",
-      textSecondary: "#475569",
-      textMuted: "#64748b",
-      successBg: "rgba(34, 197, 94, 0.1)",
-      successBorder: "rgba(34, 197, 94, 0.3)",
-      successText: "#16a34a",
-      errorBg: "rgba(239, 68, 68, 0.1)",
-      errorBorder: "rgba(239, 68, 68, 0.3)",
-      errorText: "#dc2626",
-      iconBg: "#3b82f6",
-    }
+  // Light theme only
+  const currentTheme = {
+    background: "#f8fafc",
+    cardBg: "rgba(255, 255, 255, 0.95)",
+    cardBorder: "rgba(226, 232, 240, 0.9)",
+    textPrimary: "#0f172a",
+    textSecondary: "#475569",
+    textMuted: "#64748b",
+    successBg: "rgba(34, 197, 94, 0.1)",
+    successBorder: "rgba(34, 197, 94, 0.3)",
+    successText: "#16a34a",
+    errorBg: "rgba(239, 68, 68, 0.1)",
+    errorBorder: "rgba(239, 68, 68, 0.3)",
+    errorText: "#dc2626",
+    iconBg: "#3b82f6",
   };
-
-  const currentTheme = themes.light;
 
   return (
     <div style={{
@@ -206,7 +187,7 @@ const EndPage = () => {
               marginBottom: "40px",
               transition: "color 0.3s ease",
             }}>Thank you for participating in the examination</p>
-            
+
             {/* Success Details Card */}
             <div style={{
               padding: "32px",
@@ -257,13 +238,13 @@ const EndPage = () => {
                   }}>#{userId}</p>
                 </div>
               </div>
-              
+
               <div style={{
                 height: "1px",
                 background: currentTheme.cardBorder,
                 marginBottom: "24px",
               }} />
-              
+
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
@@ -317,7 +298,7 @@ const EndPage = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Info Message */}
             <div style={{
               padding: "20px",

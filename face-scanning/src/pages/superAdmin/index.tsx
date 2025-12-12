@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import styles from "../../styles/CreateExamPage.module.css";
-import { ThemeToggle } from "../../components/ThemeToggle";
+// import { ThemeToggle } from "../../components/ThemeToggle"; // Removed - Light theme only
 import { SuperAdminGuard } from "../../components/guards";
 import { LoadingScreen } from "../../components/PageTransition";
 import axios from "axios";
@@ -50,7 +50,7 @@ interface Exam {
 
 const SuperAdminDashboard = () => {
   const router = useRouter();
-  
+
   // Use SWR hook for cached data fetching
   const { stats, isLoading, refresh } = useDashboardStats();
 
@@ -74,7 +74,7 @@ const SuperAdminDashboard = () => {
       try {
         const base = process.env.NEXT_PUBLIC_BACKEND_URL;
         const token = getTokenFromCookie();
-        
+
         const response = await axios.get(`${base}/exam`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -194,7 +194,7 @@ const SuperAdminDashboard = () => {
 
   // Pagination for ongoing exams
   const totalOngoingPages = Math.ceil(ongoingExams.length / ongoingPerPage);
-  const displayedOngoingExams = showAllOngoing 
+  const displayedOngoingExams = showAllOngoing
     ? ongoingExams.slice((ongoingPage - 1) * ongoingPerPage, ongoingPage * ongoingPerPage)
     : ongoingExams.slice(0, 2);
 
@@ -213,7 +213,7 @@ const SuperAdminDashboard = () => {
     document.body.style.background = "#f8fafc";
     document.body.style.minHeight = "100vh";
     document.documentElement.style.background = "#f8fafc";
-    
+
     return () => {
       document.body.style.background = "";
       document.body.style.minHeight = "";
@@ -426,9 +426,9 @@ const SuperAdminDashboard = () => {
         </aside>
 
         {/* Main Content */}
-        <div style={{ 
-          marginLeft: "260px", 
-          flex: 1, 
+        <div style={{
+          marginLeft: "260px",
+          flex: 1,
           padding: "32px",
           height: "100vh",
           overflowY: "auto",
@@ -477,10 +477,10 @@ const SuperAdminDashboard = () => {
           </header>
 
           {/* Stats Cards */}
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
-            gap: "24px", 
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+            gap: "24px",
             marginBottom: "32px"
           }}>
             {/* Total Admins */}
@@ -697,9 +697,9 @@ const SuperAdminDashboard = () => {
                 <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#1e293b" }}>
                   Ongoing Exams
                 </h3>
-                <span style={{ 
-                  padding: "4px 12px", 
-                  borderRadius: "12px", 
+                <span style={{
+                  padding: "4px 12px",
+                  borderRadius: "12px",
                   background: "rgba(16, 185, 129, 0.1)",
                   color: "#10b981",
                   fontSize: "12px",
@@ -740,12 +740,12 @@ const SuperAdminDashboard = () => {
             </div>
 
             {loadingExams ? (
-              <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center", 
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 padding: "60px 20px",
-                color: "#64748b" 
+                color: "#64748b"
               }}>
                 <div style={{ textAlign: "center" }}>
                   <div style={{
@@ -761,7 +761,7 @@ const SuperAdminDashboard = () => {
                 </div>
               </div>
             ) : ongoingExams.length === 0 ? (
-              <div style={{ 
+              <div style={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -790,14 +790,14 @@ const SuperAdminDashboard = () => {
               </div>
             ) : (
               <>
-                <div style={{ 
+                <div style={{
                   overflowX: "auto",
                   margin: "0 -24px",
                   padding: "0 24px"
                 }}>
-                  <table style={{ 
-                    width: "100%", 
-                    borderCollapse: "separate", 
+                  <table style={{
+                    width: "100%",
+                    borderCollapse: "separate",
                     borderSpacing: "0",
                     minWidth: "600px"
                   }}>
@@ -848,7 +848,7 @@ const SuperAdminDashboard = () => {
                       {displayedOngoingExams.map((exam, index) => {
                         const attendees = exam.attendances || [];
                         const participants = attendees.filter((a: any) => a.startTime).length;
-                        
+
                         return (
                           <tr
                             key={exam.id}
@@ -879,9 +879,9 @@ const SuperAdminDashboard = () => {
                                   <Clock size={18} color="#0ea5e9" />
                                 </div>
                                 <div>
-                                  <div style={{ 
-                                    fontSize: "14px", 
-                                    fontWeight: "600", 
+                                  <div style={{
+                                    fontSize: "14px",
+                                    fontWeight: "600",
                                     color: "#1e293b",
                                     marginBottom: "2px"
                                   }}>
@@ -897,7 +897,7 @@ const SuperAdminDashboard = () => {
                               </div>
                             </td>
                             <td style={{ padding: "16px" }}>
-                              <div style={{ 
+                              <div style={{
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: "6px",
@@ -913,7 +913,7 @@ const SuperAdminDashboard = () => {
                               </div>
                             </td>
                             <td style={{ padding: "16px", textAlign: "right" }}>
-                              <div style={{ 
+                              <div style={{
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: "6px",
@@ -937,15 +937,15 @@ const SuperAdminDashboard = () => {
 
                 {/* Pagination for Ongoing Exams */}
                 {showAllOngoing && totalOngoingPages > 1 && (
-                  <div style={{ 
-                    display: "flex", 
+                  <div style={{
+                    display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "center", 
+                    alignItems: "center",
                     marginTop: "20px",
                     paddingTop: "20px",
                     borderTop: "1px solid #e2e8f0"
                   }}>
-                    <div style={{ 
+                    <div style={{
                       fontSize: "13px",
                       color: "#64748b",
                       fontWeight: "500"
@@ -981,7 +981,7 @@ const SuperAdminDashboard = () => {
                       >
                         Previous
                       </button>
-                      <div style={{ 
+                      <div style={{
                         display: "flex",
                         gap: "4px"
                       }}>
@@ -1068,9 +1068,9 @@ const SuperAdminDashboard = () => {
                   <Calendar size={20} color="#0ea5e9" />
                   Scheduled Exams
                 </h3>
-                <span style={{ 
-                  padding: "4px 12px", 
-                  borderRadius: "12px", 
+                <span style={{
+                  padding: "4px 12px",
+                  borderRadius: "12px",
                   background: "rgba(14, 165, 233, 0.1)",
                   color: "#0ea5e9",
                   fontSize: "12px",
@@ -1135,7 +1135,7 @@ const SuperAdminDashboard = () => {
                       {displayedScheduledExams.map((exam) => {
                         const attendees = exam.attendances || [];
                         const totalStudents = attendees.length;
-                        
+
                         return (
                           <tr
                             key={exam.id}
@@ -1212,15 +1212,15 @@ const SuperAdminDashboard = () => {
 
                 {/* Pagination for Scheduled Exams */}
                 {showAllScheduled && totalScheduledPages > 1 && (
-                  <div style={{ 
-                    display: "flex", 
+                  <div style={{
+                    display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "center", 
+                    alignItems: "center",
                     marginTop: "20px",
                     paddingTop: "20px",
                     borderTop: "1px solid #e2e8f0"
                   }}>
-                    <div style={{ 
+                    <div style={{
                       fontSize: "13px",
                       color: "#64748b",
                       fontWeight: "500"
@@ -1256,7 +1256,7 @@ const SuperAdminDashboard = () => {
                       >
                         Previous
                       </button>
-                      <div style={{ 
+                      <div style={{
                         display: "flex",
                         gap: "4px"
                       }}>

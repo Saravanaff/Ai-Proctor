@@ -4,38 +4,38 @@ import styles from "../styles/ExamPage.module.css";
 import { sleep } from '@/utils/delay';
 import { getExamId, getUserId, hasValidExamId, hasValidUserId } from '@/constants/AuthStore';
 import socket from "@/components/socket";
-import { useTheme } from "@/contexts/ThemeContext";
+// import { useTheme } from "@/contexts/ThemeContext"; // Removed - Light theme only
 import useMicrophoneDevices from '@/hooks/useMicrophoneDevices';
 import axios from 'axios';
 import { getExamSettings } from '@/constants/examSettingsConsts';
 import { setNumberOfMicrophones } from '@/constants/violationConsts';
 import { useExamState } from '@/hooks/useExamState';
 import ExamStateError from '@/components/ExamStateError';
-import { 
-  CheckCircle, 
-  Monitor, 
-  AlertTriangle, 
-  Shield, 
-  Eye, 
-  Camera,
-  Volume2,
-  MousePointer
+import {
+    CheckCircle,
+    Monitor,
+    AlertTriangle,
+    Shield,
+    Eye,
+    Camera,
+    Volume2,
+    MousePointer
 } from 'lucide-react';
 
 
 const fullscreen = () => {
     // 1️⃣ Call ALL hooks first - before any conditional returns
     const examState = useExamState();
-    
+
     const [fullscreenAllowed, setFullscreenAllowed] = useState(false);
     const [rulesAccepted, setRulesAccepted] = useState(false);
     const [screenShareError, setScreenShareError] = useState(false);
-  
-    const { theme } = useTheme();
+
+    // const { theme } = useTheme(); // Removed - Light theme only
     const { getMicrophoneCount } = useMicrophoneDevices();
 
     // ✅ Save theme preference to localStorage when changed
-  
+
 
     // All useRef hooks must be called before any conditional returns
     const screenRecorderMediaRecorderRef = useRef<MediaRecorder>(null);
@@ -55,16 +55,16 @@ const fullscreen = () => {
     // 🔥 CRITICAL: ALL useEffect hooks MUST be called before ANY conditional returns
     // useEffect #1: Get microphone count and load theme
     useEffect(() => {
-        const getCount = async() => {
+        const getCount = async () => {
             let cnt = await getMicrophoneCount();
             return cnt;
         }
         getCount().then(cnt => {
             setNumberOfMicrophones(cnt);
         });
-        
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    },[])
+    }, [])
 
     // useEffect #2: Track fullscreen state changes
     useEffect(() => {
@@ -221,7 +221,7 @@ const fullscreen = () => {
                     resolve();
                 }
             }, 100); // Check every 100ms
-            
+
             // Safety timeout (10 seconds max)
             setTimeout(() => {
                 if (pendingScreenChunksRef.current.size > 0) {
@@ -282,14 +282,14 @@ const fullscreen = () => {
                     if (e && e.data && e.data.size > 0) {
                         const chunkNum = screenChunkCounterRef.current++;
                         const blob = e.data; // Store blob reference
-                        
+
                         // ✅ Track this chunk as pending
                         pendingScreenChunksRef.current.add(chunkNum);
-                        
+
                         blob.arrayBuffer().then((buffer: ArrayBuffer) => {
                             // ✅ Check if MediaRecorder is inactive (meaning this is likely the final chunk)
                             const isFinalChunk = screenRecorderMediaRecorderRef.current?.state === 'inactive';
-                            
+
                             const chunkData: any = {
                                 user_id: userId,
                                 exam_id: examId,
@@ -300,19 +300,19 @@ const fullscreen = () => {
                                 isFinal: isFinalChunk,
                                 totalChunks: isFinalChunk ? chunkNum + 1 : undefined,
                             };
-                            
+
                             if (isFinalChunk) {
                                 console.log(`🏁 Sending FINAL screen chunk #${chunkNum} (${buffer.byteLength} bytes)`);
                             } else {
                                 console.log(`📹 Sending screen chunk #${chunkNum} (${buffer.byteLength} bytes)`);
                             }
-                            
+
                             socket.emit("recorder-add-video-stream-chunk", chunkData);
-                            
+
                             // ✅ Remove from pending after successful emit
                             pendingScreenChunksRef.current.delete(chunkNum);
                             console.log(`✅ Screen chunk #${chunkNum} sent, ${pendingScreenChunksRef.current.size} pending`);
-                            
+
                             // ✅ CRITICAL: Clear buffer reference to allow garbage collection
                             // @ts-ignore
                             chunkData.chunk = null;
@@ -329,12 +329,12 @@ const fullscreen = () => {
 
             screenRecorderMediaRecorderRef.current.onstop = async () => {
                 console.log("🎬 Screen MediaRecorder stopped event fired");
-                
+
                 // ✅ Wait for all pending chunks to finish uploading
                 console.log(`⏳ Waiting for ${pendingScreenChunksRef.current.size} pending screen chunks...`);
                 await waitForPendingScreenChunks();
                 console.log("✅ All screen chunks sent!");
-                
+
                 // ✅ Stop screen stream tracks NOW (after recorder stopped)
                 if (screenStreamRef.current) {
                     try {
@@ -349,11 +349,11 @@ const fullscreen = () => {
                         console.warn("Error stopping screen stream tracks:", e);
                     }
                 }
-                
+
                 // ✅ Wait additional 500ms to ensure chunks are fully transmitted over network
                 console.log("⏳ Additional 500ms network safety delay...");
                 await new Promise(resolve => setTimeout(resolve, 500));
-                
+
                 // ✅ NOW emit stream-listener-off AFTER all chunks are sent
                 console.log("📤 Emitting stream-listener-off for screen_recording");
                 socket.emit("stream-listener-off", {
@@ -364,11 +364,11 @@ const fullscreen = () => {
                     totalChunks: screenChunkCounterRef.current,
                     isFinal: true,
                 });
-                
+
                 // ✅ Wait 3.5 seconds to ensure face camera completes and storage server drains all buffers
                 console.log("⏳ Waiting 3.5 seconds for face camera to complete and buffers to drain...");
                 await new Promise(resolve => setTimeout(resolve, 3500));
-                
+
                 // ✅ NOW emit end-exam AFTER ensuring both recordings are complete
                 console.log("📤 Emitting end-exam event");
                 socket.emit("end-exam", {
@@ -403,7 +403,7 @@ const fullscreen = () => {
             // User denied screen sharing permission or cancelled
             setScreenShareError(true);
             setFullscreenAllowed(false);
-            
+
             // Make sure any partial stream is stopped
             if (screenStreamRef.current) {
                 try {
@@ -610,7 +610,7 @@ const fullscreen = () => {
                                     }}>
                                         <strong>You cannot start the exam without enabling screen sharing.</strong>
                                         <br /><br />
-                                        Screen sharing is mandatory for this exam to ensure academic integrity. 
+                                        Screen sharing is mandatory for this exam to ensure academic integrity.
                                         Please click "Try Again" and allow screen sharing permission when prompted.
                                     </p>
                                 </div>
@@ -804,7 +804,7 @@ const fullscreen = () => {
                     zIndex: 1000,
                 }}>
                     <button
-                        
+
                         style={{
                             display: "flex",
                             alignItems: "center",
@@ -860,7 +860,7 @@ const fullscreen = () => {
     return (
         <>
             {fullscreenAllowed && (
-                <ExamPage 
+                <ExamPage
                     screenRecorderMediaRecorderRef={screenRecorderMediaRecorderRef}
                     screenStreamRef={screenStreamRef}
                     pendingScreenChunksRef={pendingScreenChunksRef}

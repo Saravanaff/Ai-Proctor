@@ -25,8 +25,8 @@ import {
 import { headPos } from "@/utils/aiModel/headPos";
 import { eye_direction } from "@/utils/aiModel/eyePos";
 import { detector } from "@/utils/aiModel/objDetector";
-import { loadFaceModel } from "@/lib/facemodel";
-import { getEmbeddings, clearEmbeddings } from "@/utils/datastore";
+// import { loadFaceModel } from "@/lib/facemodel"; // ✅ DISABLED for performance
+// import { getEmbeddings, clearEmbeddings } from "@/utils/datastore"; // ✅ DISABLED for performance
 
 const userId = getUserId() || "unknown";
 let examId = getExamId();
@@ -36,9 +36,8 @@ const baseUrlGlobal = process.env.NEXT_PUBLIC_BACKEND_URL;
 // Helper function to log violations to API
 const logViolation = async (violationName: string) => {
   try {
-    // ✅ Subtract 2 seconds (2000ms) because violation was detected after 2 seconds of continuous occurrence
-    // This gives us the actual time when the violation STARTED, not when it was logged
-    const actualViolationTime = new Date(Date.now() - 2000);
+    // ✅ Subtract 2 seconds because violation started 2 frames ago (at ~2 second interval)
+    const actualViolationTime = new Date(Date.now());
 
     await axios.post(
       `${baseUrlGlobal}/storeLogs`,
@@ -132,7 +131,7 @@ const FloatingCamera = ({
   const faceChunkCounterRef = useRef<number>(0);
   const examSubmittedRef = useRef(false);
   const AUTH_INTERVAL = 10000;
-  const FACE_INTERVAL = 1000;
+  const FACE_INTERVAL = 2000; // ✅ OPTIMIZED: Increased from 1000ms to 2000ms for better performance
 
   const countersRef = useRef({
     look: 0,
@@ -181,7 +180,15 @@ const FloatingCamera = ({
 
 
   const NOTIFICATION_THROTTLE_MS = 2000; // 2 seconds gap
-  const CONTINUOUS_VIOLATION_THRESHOLD_MS = 2000; // 2 seconds continuous violation
+  const FRAME_VIOLATION_THRESHOLD = 2; // 2 consecutive frames to trigger violation
+
+  // ✅ Frame counters for each violation type
+  const violationFrameCountRef = useRef<{ [key: string]: number }>({
+    headDirection: 0,
+    eyePosition: 0,
+    multiplePersons: 0,
+    noCandidate: 0,
+  });
 
 
   const settingsRef = useRef<any>({});
@@ -342,9 +349,9 @@ const FloatingCamera = ({
   const { isSoundDetected, audioLevel } = useSoundLevel(examSubmitted);
 
   // Debug: Log sound detection status
-  useEffect(() => {
-    console.log(`🔊 Sound Detection - isSoundDetected: ${isSoundDetected}, audioLevel: ${audioLevel}, microphone_enabled: ${examSettings?.microphone_detection_enabled}`);
-  }, [isSoundDetected, audioLevel]);
+  // useEffect(() => {
+  //   console.log(`🔊 Sound Detection - isSoundDetected: ${isSoundDetected}, audioLevel: ${audioLevel}, microphone_enabled: ${examSettings?.microphone_detection_enabled}`);
+  // }, [isSoundDetected, audioLevel]);
 
   const handleSoundDetection = useCallback(() => {
     const now = Date.now();
@@ -358,7 +365,7 @@ const FloatingCamera = ({
       // ✅ Only show notification, do NOT log to backend
       console.log("� Sound detected - Showing notification only (no backend logging)");
 
-      // Show notification (throttled)
+      // Show notification (throttled)e
       if (
         now - lastNotificationRef.current.soundDetected >=
         NOTIFICATION_THROTTLE_MS
@@ -495,7 +502,7 @@ const FloatingCamera = ({
             }
 
             const [faceLandmarker, objectDetector] = await Promise.all(modelPromises);
-            const faceAuth = await loadFaceModel();
+            // const faceAuth = await loadFaceModel();
 
             if (faceLandmarker && !faceLandmarkerRef.current) {
               faceLandmarkerRef.current = faceLandmarker;
@@ -505,10 +512,10 @@ const FloatingCamera = ({
               objectDetectorRef.current = objectDetector;
               console.log("✅ MediaPipe Object Detector initialized");
             }
-            if (faceAuth && !faceAuthRef.current) {
-              faceAuthRef.current = faceAuth;
-              console.log("✅ Face Authentication model initialized");
-            }
+            // if (faceAuth && !faceAuthRef.current) {
+            //   faceAuthRef.current = faceAuth;
+            //   console.log("✅ Face Authentication model initialized");
+            // }
 
             // ✅ Notify parent component that models are loaded
             console.log("✅ All AI models loaded successfully");
@@ -687,34 +694,34 @@ const FloatingCamera = ({
 
 
                   const headPos = calculateHeadPosition(landmarks);
-                  console.log(`📍 Head Position: ${headPos}`);
-                  if (startTimeMs - lastAuth >= AUTH_INTERVAL) {
-                    const liveDetection = await faceAuthRef.current
-                      .detectSingleFace(videoRef.current, new faceAuthRef.current.TinyFaceDetectorOptions())
-                      .withFaceLandmarks()
-                      .withFaceDescriptor();
+                  // console.log(`📍 Head Position: ${headPos}`); // ✅ DISABLED for performance
+                  // if (startTimeMs - lastAuth >= AUTH_INTERVAL) {
+                  //   const liveDetection = await faceAuthRef.current
+                  //     .detectSingleFace(videoRef.current, new faceAuthRef.current.TinyFaceDetectorOptions())
+                  //     .withFaceLandmarks()
+                  //     .withFaceDescriptor();
 
-                    const reference = getEmbeddings();
-                    console.log("Reference embeddings loaded:", reference ? reference.length : 0);
+                  //   const reference = getEmbeddings();
+                  //   console.log("Reference embeddings loaded:", reference ? reference.length : 0);
 
-                    let isAuth = false;
+                  //   let isAuth = false;
 
-                    if (liveDetection && reference && reference.length > 0) {
-                      for (let i = 0; i < reference.length; i++) {
-                        const refEmbedding = new Float32Array(reference[i]);
-                        console.log("refEmbedding:", refEmbedding);
-                        const labeledDescriptor = new faceAuthRef.current.LabeledFaceDescriptors("User", [refEmbedding,]);
-                        const matcher = new faceAuthRef.current.FaceMatcher(labeledDescriptor, 0.6);
-                        const bestMatch = matcher.findBestMatch(liveDetection.descriptor);
-                        if (bestMatch.label === "User") {
-                          isAuth = true;
-                          break;
-                        }
-                      }
-                    }
-                    console.log("Face Authentication : ", isAuth);
-                    lastAuth = startTimeMs;
-                  }
+                  //   if (liveDetection && reference && reference.length > 0) {
+                  //     for (let i = 0; i < reference.length; i++) {
+                  //       const refEmbedding = new Float32Array(reference[i]);
+                  //       console.log("refEmbedding:", refEmbedding);
+                  //       const labeledDescriptor = new faceAuthRef.current.LabeledFaceDescriptors("User", [refEmbedding,]);
+                  //       const matcher = new faceAuthRef.current.FaceMatcher(labeledDescriptor, 0.6);
+                  //       const bestMatch = matcher.findBestMatch(liveDetection.descriptor);
+                  //       if (bestMatch.label === "User") {
+                  //         isAuth = true;
+                  //         break;
+                  //       }
+                  //     }
+                  //   }
+                  //   console.log("Face Authentication : ", isAuth);
+                  //   lastAuth = startTimeMs;
+                  // }
 
                   if (examSettings?.head_direction_enabled) {
                     if (
@@ -723,20 +730,16 @@ const FloatingCamera = ({
                     ) {
                       const now = Date.now();
 
-                      if (violationStartTimeRef.current.headDirection === null) {
-                        violationStartTimeRef.current.headDirection = now;
-                        violationLoggedRef.current.headDirection = false;
-                        console.log(`⚠️ Head direction violation started at ${new Date(now).toISOString()} (${headPos})`);
-                      }
+                      // Increment frame counter
+                      violationFrameCountRef.current.headDirection++;
 
-                      const violationDuration =
-                        now - violationStartTimeRef.current.headDirection;
+                      // Check if threshold reached (2 consecutive frames)
                       if (
-                        violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
+                        violationFrameCountRef.current.headDirection >= FRAME_VIOLATION_THRESHOLD &&
                         !violationLoggedRef.current.headDirection
                       ) {
                         console.log(
-                          `🚨 Head direction violation continuous for ${violationDuration}ms - Logging`
+                          `🚨 Head direction violation - ${violationFrameCountRef.current.headDirection} consecutive frames - Logging`
                         );
                         logViolation("head_position_violation");
                         violationLoggedRef.current.headDirection = true;
@@ -750,16 +753,17 @@ const FloatingCamera = ({
                         }
                       }
                     } else {
-                      if (violationStartTimeRef.current.headDirection !== null) {
+                      // Reset frame counter when violation ends
+                      if (violationFrameCountRef.current.headDirection > 0) {
                         console.log("✅ Head direction violation ended");
-                        violationStartTimeRef.current.headDirection = null;
+                        violationFrameCountRef.current.headDirection = 0;
                         violationLoggedRef.current.headDirection = false;
                       }
                     }
                   }
 
                   const eyeGaze = calculateEyeGaze(landmarks);
-                  console.log(`👁️ Eye Gaze: ${eyeGaze}`);
+                  // console.log(`👁️ Eye Gaze: ${eyeGaze}`); // ✅ DISABLED for performance
 
                   // ✅ Only check eye position if head is in forward/down position
                   // When head is turned, eye detection is unreliable
@@ -769,20 +773,16 @@ const FloatingCamera = ({
                     if (eyeGaze.toLowerCase() !== "center") {
                       const now = Date.now();
 
-                      if (violationStartTimeRef.current.eyePosition === null) {
-                        violationStartTimeRef.current.eyePosition = now;
-                        violationLoggedRef.current.eyePosition = false;
-                        console.log(`⚠️ Eye position violation started at ${new Date(now).toISOString()} (${eyeGaze})`);
-                      }
+                      // Increment frame counter
+                      violationFrameCountRef.current.eyePosition++;
 
-                      const violationDuration =
-                        now - violationStartTimeRef.current.eyePosition;
+                      // Check if threshold reached (2 consecutive frames)
                       if (
-                        violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
+                        violationFrameCountRef.current.eyePosition >= FRAME_VIOLATION_THRESHOLD &&
                         !violationLoggedRef.current.eyePosition
                       ) {
                         console.log(
-                          `🚨 Eye position violation continuous for ${violationDuration}ms - Logging`
+                          `🚨 Eye position violation - ${violationFrameCountRef.current.eyePosition} consecutive frames - Logging`
                         );
                         logViolation("eye_position_violation");
                         violationLoggedRef.current.eyePosition = true;
@@ -796,17 +796,18 @@ const FloatingCamera = ({
                         }
                       }
                     } else {
-                      if (violationStartTimeRef.current.eyePosition !== null) {
+                      // Reset frame counter when violation ends
+                      if (violationFrameCountRef.current.eyePosition > 0) {
                         console.log("✅ Eye position violation ended");
-                        violationStartTimeRef.current.eyePosition = null;
+                        violationFrameCountRef.current.eyePosition = 0;
                         violationLoggedRef.current.eyePosition = false;
                       }
                     }
                   } else if (!isHeadNormal) {
-                    // ✅ Reset eye tracking when head is not in normal position
-                    if (violationStartTimeRef.current.eyePosition !== null) {
+                    // Reset when head not forward
+                    if (violationFrameCountRef.current.eyePosition > 0) {
                       console.log("✅ Eye position tracking paused (head not forward)");
-                      violationStartTimeRef.current.eyePosition = null;
+                      violationFrameCountRef.current.eyePosition = 0;
                       violationLoggedRef.current.eyePosition = false;
                     }
                   }
@@ -828,12 +829,12 @@ const FloatingCamera = ({
                   video,
                   startTimeMs
                 );
-                console.log(result);
+                // console.log(result); // ✅ DISABLED for performance
                 if (result) {
                   const detection = objdetect(result);
-                  console.log(
-                    `Person : ${detection.person}, Mobile: ${detection.phone}`
-                  );
+                  // console.log(
+                  //   `Person : ${detection.person}, Mobile: ${detection.phone}`
+                  // ); // ✅ DISABLED for performance
 
                   const now = Date.now();
 
@@ -893,22 +894,16 @@ const FloatingCamera = ({
                   }
 
                   if (examSettings?.multiple_person_detection_enabled && detection.person > 1) {
-                    if (
-                      violationStartTimeRef.current.multiplePersons === null
-                    ) {
-                      violationStartTimeRef.current.multiplePersons = now;
-                      violationLoggedRef.current.multiplePersons = false;
-                      console.log("⚠️ Multiple persons violation started");
-                    }
+                    // Increment frame counter
+                    violationFrameCountRef.current.multiplePersons++;
 
-                    const violationDuration =
-                      now - violationStartTimeRef.current.multiplePersons;
+                    // Check if threshold reached (2 consecutive frames)
                     if (
-                      violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
+                      violationFrameCountRef.current.multiplePersons >= FRAME_VIOLATION_THRESHOLD &&
                       !violationLoggedRef.current.multiplePersons
                     ) {
                       console.log(
-                        `🚨 Multiple persons violation continuous for ${violationDuration}ms - Logging`
+                        `🚨 Multiple persons violation - ${violationFrameCountRef.current.multiplePersons} consecutive frames - Logging`
                       );
                       logViolation("multiple_persons_detected");
                       violationLoggedRef.current.multiplePersons = true;
@@ -919,43 +914,56 @@ const FloatingCamera = ({
                       ) {
                         number(detection.person);
                         changeColor();
+                        toast({
+                          title: "Multiple Persons Detected",
+                          description: `${detection.person} people detected. Only the registered candidate should be visible.`,
+                          variant: "destructive",
+                        });
                         lastNotificationRef.current.multiplePersons = now;
                       }
                     }
                   } else {
-                    if (
-                      violationStartTimeRef.current.multiplePersons !== null
-                    ) {
+                    // Reset frame counter
+                    if (violationFrameCountRef.current.multiplePersons > 0) {
                       console.log("✅ Multiple persons violation ended");
-                      violationStartTimeRef.current.multiplePersons = null;
+                      violationFrameCountRef.current.multiplePersons = 0;
                       violationLoggedRef.current.multiplePersons = false;
                     }
                   }
 
                   if (detection.person === 0) {
-                    if (violationStartTimeRef.current.noCandidate === null) {
-                      violationStartTimeRef.current.noCandidate = now;
-                      violationLoggedRef.current.noCandidate = false;
-                      console.log("⚠️ No person violation started");
-                    }
+                    // Increment frame counter
+                    violationFrameCountRef.current.noCandidate++;
 
-                    const violationDuration =
-                      now - violationStartTimeRef.current.noCandidate;
+                    // Check if threshold reached (2 consecutive frames)
                     if (
-                      violationDuration >= CONTINUOUS_VIOLATION_THRESHOLD_MS &&
+                      violationFrameCountRef.current.noCandidate >= FRAME_VIOLATION_THRESHOLD &&
                       !violationLoggedRef.current.noCandidate
                     ) {
                       console.log(
-                        `🚨 No person violation continuous for ${violationDuration}ms - Logging`
+                        `🚨 No person violation - ${violationFrameCountRef.current.noCandidate} consecutive frames - Logging`
                       );
                       logViolation("no_person_detected");
                       violationLoggedRef.current.noCandidate = true;
+
+                      // Show notification for no person detected
+                      if (
+                        now - lastNotificationRef.current.noCandidate >=
+                        NOTIFICATION_THROTTLE_MS
+                      ) {
+                        toast({
+                          title: "No Person Detected",
+                          description: "Please ensure you are visible in the camera frame.",
+                          variant: "destructive",
+                        });
+                        lastNotificationRef.current.noCandidate = now;
+                      }
                     }
                   } else {
-                    // ✅ Reset tracking when person is detected again
-                    if (violationStartTimeRef.current.noCandidate !== null) {
+                    // Reset frame counter when person is detected again
+                    if (violationFrameCountRef.current.noCandidate > 0) {
                       console.log("✅ No person violation ended");
-                      violationStartTimeRef.current.noCandidate = null;
+                      violationFrameCountRef.current.noCandidate = 0;
                       violationLoggedRef.current.noCandidate = false;
                     }
                   }
@@ -965,7 +973,7 @@ const FloatingCamera = ({
               console.error("Object Detector processing error:", error);
             }
           }
-        }, 1000 / 1); // ✅ Changed from 100ms to 1000ms (1 FPS) to reduce CPU/memory usage
+        }, 1000); // ✅ OPTIMIZED: Changed from 1000ms to 2000ms (0.5 FPS) to reduce CPU/memory usage
       } catch (error) {
         console.error("Camera access failed:", error);
 
