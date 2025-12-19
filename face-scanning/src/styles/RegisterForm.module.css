@@ -642,7 +642,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--overlay-bg);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -651,9 +651,9 @@
 }
 
 .photoModal {
-  background: var(--card-bg, #fff);
+  background: var(--card-bg);
   border-radius: 16px;
-  box-shadow: 0 8px 32px var(--shadow, rgba(0, 0, 0, 0.18));
+  box-shadow: 0 8px 32px var(--shadow);
   padding: 2.5rem 2rem 2rem 2rem;
   min-width: 320px;
   max-width: 95vw;
@@ -683,20 +683,20 @@
   background: none;
   border: none;
   font-size: 1.7rem;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: color 0.15s;
   z-index: 2;
 }
 .photoModalClose:hover {
-  color: var(--text-primary, #222);
+  color: var(--text-primary);
 }
 
 .photoModal h3 {
   margin: 0 0 1.2rem 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--text-primary, #222);
+  color: var(--text-primary);
   text-align: center;
 }
 
@@ -728,7 +728,7 @@
 .photoModal h4 {
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
-  color: var(--text-primary, #222);
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -736,7 +736,7 @@
   margin: 0 auto 0.5rem auto;
   display: block;
   border-radius: 8px;
-  background: var(--secondary-bg, #222);
+  background: var(--secondary-bg);
 }
 
 /* Responsive */

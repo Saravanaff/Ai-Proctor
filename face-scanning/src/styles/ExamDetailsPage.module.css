@@ -99,9 +99,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #3b82f6;
+  background: var(--primary-color);
   border-radius: 20px;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 4px 16px var(--primary-shadow);
 }
 
 .examInfo {
@@ -202,7 +202,7 @@
   gap: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 12px var(--shadow);
   width: 100%;
   min-height: 80px;
   position: relative;
@@ -216,7 +216,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: #3b82f6;
+  background: var(--primary-color);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -227,7 +227,7 @@
 
 .participantCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px var(--shadow);
   border-color: var(--accent-color);
 }
 
@@ -235,7 +235,7 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--primary-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -243,8 +243,8 @@
   font-weight: 700;
   font-size: 22px;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-  border: 3px solid white;
+  box-shadow: 0 4px 12px var(--primary-shadow);
+  border: 3px solid var(--card-bg);
 }
 
 .participantInfo {
@@ -297,7 +297,7 @@
 
 .participantStats .statItem:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 .participantStats .statLabel {
@@ -318,7 +318,7 @@
 }
 
 .scoreValue {
-  color: #10b981; /* Green for scores */
+  color: var(--success-color);
 }
 
 .riskValue {
@@ -326,7 +326,7 @@
 }
 
 .violationValue {
-  color: #ef4444; /* Red for violations */
+  color: var(--error-color);
 }
 
 .participantAction {
@@ -342,10 +342,10 @@
 }
 
 .participantAction:hover {
-  background: #3b82f6;
+  background: var(--primary-color);
   color: white;
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px var(--primary-shadow);
 }
 
 /* Empty State */
@@ -694,7 +694,7 @@
 
 .searchInput:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px var(--primary-shadow);
 }
 
 .searchInput::placeholder {
@@ -728,7 +728,7 @@
 }
 
 .clearSearch:hover {
-  background: var(--hover-bg);
+  background: var(--button-hover);
   color: var(--text-primary);
 }
 

@@ -20,11 +20,11 @@
 
 /* Enhanced light theme card styling */
 [data-theme="light"] .card-theme {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(226, 232, 240, 0.6);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   box-shadow: 
-    0 2px 8px rgba(15, 23, 42, 0.06),
-    0 1px 3px rgba(15, 23, 42, 0.04),
+    0 2px 8px var(--shadow),
+    0 1px 3px var(--shadow),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -33,8 +33,8 @@
 [data-theme="light"] .card-theme:hover {
   transform: translateY(-3px);
   box-shadow: 
-    0 8px 20px rgba(15, 23, 42, 0.08),
-    0 4px 12px rgba(15, 23, 42, 0.06),
+    0 8px 20px var(--shadow),
+    0 4px 12px var(--shadow),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
@@ -76,26 +76,26 @@
 .input-theme:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 0 2px var(--primary-shadow);
 }
 
 /* Enhanced light theme input styling */
 [data-theme="light"] .input-theme {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #cbd5e0;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
   box-shadow: 
-    0 2px 4px rgba(15, 23, 42, 0.04),
-    inset 0 1px 2px rgba(15, 23, 42, 0.02);
+    0 2px 4px var(--shadow),
+    inset 0 1px 2px var(--shadow);
   transition: all 0.2s ease;
 }
 
 [data-theme="light"] .input-theme:focus {
-  border-color: #0ea5e9;
+  border-color: var(--primary-color);
   box-shadow: 
-    0 0 0 3px rgba(14, 165, 233, 0.1),
-    0 4px 8px rgba(15, 23, 42, 0.06),
-    inset 0 1px 2px rgba(15, 23, 42, 0.02);
-  background: rgba(255, 255, 255, 1);
+    0 0 0 3px var(--primary-shadow),
+    0 4px 8px var(--shadow),
+    inset 0 1px 2px var(--shadow);
+  background: var(--input-bg);
 }
 
 .text-primary {
@@ -152,25 +152,25 @@ html[data-theme="dark"] {
 /* Success/Error states */
 .success-theme {
   color: var(--success-color);
-  background: var(--success-bg, rgba(16, 185, 129, 0.1));
+  background: var(--success-bg);
   border-color: var(--success-color);
 }
 
 .error-theme {
   color: var(--error-color);
-  background: var(--error-bg, rgba(239, 68, 68, 0.1));
+  background: var(--error-bg);
   border-color: var(--error-color);
 }
 
 .warning-theme {
   color: var(--warning-color);
-  background: var(--warning-bg, rgba(245, 158, 11, 0.1));
+  background: var(--warning-bg);
   border-color: var(--warning-color);
 }
 
 .info-theme {
   color: var(--info-color);
-  background: var(--info-bg, rgba(59, 130, 246, 0.1));
+  background: var(--info-bg);
   border-color: var(--info-color);
 }
 

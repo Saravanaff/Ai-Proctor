@@ -35,10 +35,10 @@ const CreateExam = () => {
   }, []);
 
   useEffect(() => {
-    // Set light theme background
-    document.body.style.background = "#f8fafc";
+    // Set theme background using CSS variables
+    document.body.style.background = "var(--background)";
     document.body.style.minHeight = "100vh";
-    document.documentElement.style.background = "#f8fafc";
+    document.documentElement.style.background = "var(--background)";
 
     return () => {
       document.body.style.background = "";
@@ -236,7 +236,7 @@ const CreateExam = () => {
       <div
         style={{
           minHeight: "100vh",
-          background: "#f8fafc",
+          background: "var(--background)",
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
         }}
       >
@@ -246,14 +246,14 @@ const CreateExam = () => {
             position: "sticky",
             top: 0,
             zIndex: 100,
-            background: "white",
-            borderBottom: "1px solid #e2e8f0",
+            background: "var(--navbar-bg)",
+            borderBottom: "1px solid var(--border-color)",
             padding: "0 32px",
             height: "64px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+            boxShadow: "0 1px 2px var(--shadow)",
           }}
         >
           {/* Logo and Title */}
@@ -263,7 +263,7 @@ const CreateExam = () => {
                 width: "32px",
                 height: "32px",
                 borderRadius: "8px",
-                background: "#4f46e5",
+                background: "var(--primary-color)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -278,7 +278,7 @@ const CreateExam = () => {
                   margin: 0,
                   fontSize: "16px",
                   fontWeight: "600",
-                  color: "#0f172a",
+                  color: "var(--text-primary)",
                 }}
               >
                 Examiner Portal
@@ -294,8 +294,8 @@ const CreateExam = () => {
                 onClick={() => router.push("/examiner")}
                 style={{
                   padding: "8px 12px",
-                  background: "#eff6ff",
-                  color: "#4f46e5",
+                  background: "var(--primary-bg-light)",
+                  color: "var(--primary-color)",
                   border: "none",
                   borderRadius: "6px",
                   fontSize: "14px",
@@ -311,7 +311,7 @@ const CreateExam = () => {
               onClick={() => router.push("/examiner/NewExam")}
               style={{
                 padding: "8px 16px",
-                background: "#4f46e5",
+                background: "var(--primary-color)",
                 color: "white",
                 border: "none",
                 borderRadius: "6px",
@@ -324,10 +324,10 @@ const CreateExam = () => {
                 transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#4338ca";
+                e.currentTarget.style.background = "var(--primary-hover)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#4f46e5";
+                e.currentTarget.style.background = "var(--primary-color)";
               }}
             >
               <Plus size={16} />
@@ -339,7 +339,7 @@ const CreateExam = () => {
               style={{
                 width: "1px",
                 height: "24px",
-                background: "#e2e8f0",
+                background: "var(--border-color)",
               }}
             />
 
@@ -350,9 +350,9 @@ const CreateExam = () => {
                   width: "32px",
                   height: "32px",
                   borderRadius: "50%",
-                  background: "#f1f5f9",
-                  color: "#64748b",
-                  border: "1px solid #e2e8f0",
+                  background: "var(--secondary-bg)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border-color)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -367,7 +367,7 @@ const CreateExam = () => {
                   style={{
                     fontSize: "14px",
                     fontWeight: "500",
-                    color: "#0f172a",
+                    color: "var(--text-primary)",
                   }}
                 >
                   {profileName || "User"}
@@ -380,7 +380,7 @@ const CreateExam = () => {
               onClick={handleLogout}
               style={{
                 fontSize: "13px",
-                color: "#64748b",
+                color: "var(--text-secondary)",
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
@@ -396,8 +396,8 @@ const CreateExam = () => {
         <div style={{ padding: "32px", maxWidth: "100%", margin: "0 auto" }}>
           
           <div style={{ marginBottom: "32px" }}>
-             <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a", marginBottom: "8px" }}>Overview</h2>
-             <p style={{ color: "#64748b", margin: 0 }}>Manage your examinations and view performance stats.</p>
+             <h2 style={{ fontSize: "24px", fontWeight: "700", color: "var(--text-primary)", marginBottom: "8px" }}>Overview</h2>
+             <p style={{ color: "var(--text-secondary)", margin: 0 }}>Manage your examinations and view performance stats.</p>
           </div>
 
           {/* Stats */}
@@ -409,77 +409,77 @@ const CreateExam = () => {
           }}>
             {/* Total */}
             <div style={{
-              background: "white",
+              background: "var(--card-bg)",
               borderRadius: "8px",
               padding: "20px",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+              border: "1px solid var(--border-color)",
+              boxShadow: "0 1px 2px var(--shadow)"
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
-                 <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b", textTransform: "uppercase" }}>Total Exams</span>
-                 <FileText size={16} color="#94a3b8" />
+                 <span style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-secondary)", textTransform: "uppercase" }}>Total Exams</span>
+                 <FileText size={16} color="var(--text-tertiary)" />
               </div>
-              <div style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a" }}>{stats.total}</div>
+              <div style={{ fontSize: "24px", fontWeight: "700", color: "var(--text-primary)" }}>{stats.total}</div>
             </div>
 
             {/* Active */}
             <div style={{
-              background: "white",
+              background: "var(--card-bg)",
               borderRadius: "8px",
               padding: "20px",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+              border: "1px solid var(--border-color)",
+              boxShadow: "0 1px 2px var(--shadow)"
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
-                 <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b", textTransform: "uppercase" }}>Active</span>
-                 <Users size={16} color="#16a34a" />
+                 <span style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-secondary)", textTransform: "uppercase" }}>Active</span>
+                 <Users size={16} color="var(--success-color)" />
               </div>
-              <div style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a" }}>{stats.active}</div>
+              <div style={{ fontSize: "24px", fontWeight: "700", color: "var(--text-primary)" }}>{stats.active}</div>
             </div>
 
             {/* Suspended */}
             <div style={{
-              background: "white",
+              background: "var(--card-bg)",
               borderRadius: "8px",
               padding: "20px",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+              border: "1px solid var(--border-color)",
+              boxShadow: "0 1px 2px var(--shadow)"
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
-                 <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b", textTransform: "uppercase" }}>Suspended</span>
-                 <AlertCircle size={16} color="#ef4444" />
+                 <span style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-secondary)", textTransform: "uppercase" }}>Suspended</span>
+                 <AlertCircle size={16} color="var(--error-color)" />
               </div>
-              <div style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a" }}>{stats.suspended}</div>
+              <div style={{ fontSize: "24px", fontWeight: "700", color: "var(--text-primary)" }}>{stats.suspended}</div>
             </div>
 
             {/* Future */}
             <div style={{
-              background: "white",
+              background: "var(--card-bg)",
               borderRadius: "8px",
               padding: "20px",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+              border: "1px solid var(--border-color)",
+              boxShadow: "0 1px 2px var(--shadow)"
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
-                 <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b", textTransform: "uppercase" }}>Scheduled</span>
-                 <Clock size={16} color="#3b82f6" />
+                 <span style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-secondary)", textTransform: "uppercase" }}>Scheduled</span>
+                 <Clock size={16} color="var(--info-color)" />
               </div>
-              <div style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a" }}>{stats.future}</div>
+              <div style={{ fontSize: "24px", fontWeight: "700", color: "var(--text-primary)" }}>{stats.future}</div>
             </div>
 
             {/* Completed */}
             <div style={{
-              background: "white",
+              background: "var(--card-bg)",
               borderRadius: "8px",
               padding: "20px",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+              border: "1px solid var(--border-color)",
+              boxShadow: "0 1px 2px var(--shadow)"
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
-                 <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b", textTransform: "uppercase" }}>Completed</span>
-                 <CheckCircle size={16} color="#64748b" />
+                 <span style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-secondary)", textTransform: "uppercase" }}>Completed</span>
+                 <CheckCircle size={16} color="var(--text-secondary)" />
               </div>
-              <div style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a" }}>{stats.completed}</div>
+              <div style={{ fontSize: "24px", fontWeight: "700", color: "var(--text-primary)" }}>{stats.completed}</div>
             </div>
           </div>
 
@@ -493,7 +493,7 @@ const CreateExam = () => {
               gap: "16px",
             }}
           >
-            <div style={{ display: "flex", gap: "8px", background: "#f1f5f9", padding: "4px", borderRadius: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", background: "var(--input-bg)", padding: "4px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
               {/* Filter Buttons */}
               {["all", "active", "suspended"].map((status) => (
                 <button
@@ -505,9 +505,9 @@ const CreateExam = () => {
                     padding: "6px 16px",
                     borderRadius: "6px",
                     border: "none",
-                    background: filterStatus === status ? "white" : "transparent",
-                    color: filterStatus === status ? "#0f172a" : "#64748b",
-                    boxShadow: filterStatus === status ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                    background: filterStatus === status ? "var(--secondary-bg)" : "transparent",
+                    color: filterStatus === status ? "var(--text-primary)" : "var(--text-secondary)",
+                    boxShadow: filterStatus === status ? "0 1px 2px var(--shadow)" : "none",
                     cursor: "pointer",
                     fontSize: "13px",
                     fontWeight: 600,
@@ -521,7 +521,7 @@ const CreateExam = () => {
             </div>
             <div style={{ flex: 1, maxWidth: "320px" }}>
               <div style={{ position: "relative" }}>
-                 <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                 <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-tertiary)" }} />
                  <input 
                     type="text" 
                     placeholder="Search exams..." 
@@ -531,9 +531,11 @@ const CreateExam = () => {
                        width: "100%",
                        padding: "10px 10px 10px 36px",
                        borderRadius: "8px",
-                       border: "1px solid #e2e8f0",
+                       border: "1px solid var(--border-color)",
                        fontSize: "14px",
-                       outline: "none"
+                       outline: "none",
+                       background: "var(--input-bg)",
+                       color: "var(--text-primary)"
                     }}
                  />
               </div>
@@ -555,25 +557,25 @@ const CreateExam = () => {
 
             {!loading && filteredExams.length === 0 && (
               <div style={{
-                background: "white",
+                background: "var(--card-bg)",
                 borderRadius: "12px",
                 padding: "64px 32px",
                 textAlign: "center",
-                border: "1px solid #e2e8f0",
+                border: "1px solid var(--border-color)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 gap: "16px"
               }}>
                 <div style={{ 
-                   width: "64px", height: "64px", background: "#f8fafc", borderRadius: "50%", 
-                   display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8"
+                   width: "64px", height: "64px", background: "var(--secondary-bg)", borderRadius: "50%", 
+                   display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)"
                 }}>
                    <FileText size={32} />
                 </div>
                 <div>
                    <h3 style={{
-                     color: "#0f172a",
+                     color: "var(--text-primary)",
                      fontSize: "16px",
                      fontWeight: 600,
                      marginBottom: "4px",
@@ -581,7 +583,7 @@ const CreateExam = () => {
                      No exams found
                    </h3>
                    <p style={{
-                     color: "#64748b",
+                     color: "var(--text-secondary)",
                      fontSize: "14px",
                      margin: 0,
                    }}>
@@ -593,7 +595,7 @@ const CreateExam = () => {
                     onClick={() => router.push("/examiner/NewExam")}
                     style={{
                       padding: "8px 16px",
-                      background: "#4f46e5",
+                      background: "var(--primary-color)",
                       color: "white",
                       border: "none",
                       borderRadius: "6px",

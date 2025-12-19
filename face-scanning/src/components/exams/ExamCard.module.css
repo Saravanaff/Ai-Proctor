@@ -95,7 +95,7 @@
   align-items: center;
   margin-bottom: 12px;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(var(--border-color), 0.3);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .infoRow:last-child {
@@ -154,7 +154,7 @@
 
 .participantCount:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(var(--info-color), 0.3);
+  box-shadow: 0 4px 12px var(--primary-shadow);
 }
 
 .examId {
@@ -213,15 +213,15 @@
 
 /* Primary Button - Solid Blue */
 .primaryButton {
-  background: #3b82f6;
+  background: var(--primary-color);
   color: white;
-  border: 1px solid #2563eb;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+  border: 1px solid var(--primary-color);
+  box-shadow: 0 2px 8px var(--primary-shadow);
 }
 
 .primaryButton:hover {
-  background: #2563eb;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+  background: var(--accent-color);
+  box-shadow: 0 4px 16px var(--primary-shadow);
   transform: translateY(-1px);
 }
 
@@ -234,9 +234,9 @@
 
 .secondaryButton:hover {
   background: var(--button-hover);
-  border-color: #3b82f6;
-  color: #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  box-shadow: 0 2px 8px var(--primary-shadow);
   transform: translateY(-1px);
 }
 
@@ -245,32 +245,32 @@
 }
 
 .secondaryButton:hover .buttonIcon {
-  color: #3b82f6;
+  color: var(--primary-color);
 }
 
 .resultsButton {
-  background: #22c55e;
+  background: var(--success-color);
   color: white;
-  border: 1px solid #16a34a;
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+  border: 1px solid var(--success-color);
+  box-shadow: 0 2px 8px var(--success-bg);
 }
 
 .resultsButton:hover {
-  background: #16a34a;
-  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
+  filter: brightness(1.1);
+  box-shadow: 0 4px 16px var(--success-bg);
   transform: translateY(-1px);
 }
 
 .deleteButton {
-  background: #ef4444;
+  background: var(--error-color);
   color: white;
-  border: 1px solid #dc2626;
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+  border: 1px solid var(--error-color);
+  box-shadow: 0 2px 8px var(--error-bg);
 }
 
 .deleteButton:hover {
-  background: #dc2626;
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+  filter: brightness(1.1);
+  box-shadow: 0 4px 16px var(--error-bg);
   transform: translateY(-1px);
 }
 
@@ -323,29 +323,29 @@
 [data-theme="dark"] .examCard {
   background: linear-gradient(
     135deg,
-    rgba(30, 41, 59, 0.9) 0%,
-    rgba(51, 65, 85, 0.8) 100%
+    var(--card-bg) 0%,
+    var(--secondary-bg) 100%
   );
-  border-color: rgba(148, 163, 184, 0.2);
+  border-color: var(--border-color);
 }
 
 [data-theme="dark"] .examCard:hover {
   background: linear-gradient(
     135deg,
-    rgba(30, 41, 59, 0.95) 0%,
-    rgba(51, 65, 85, 0.9) 100%
+    var(--card-bg) 0%,
+    var(--secondary-bg) 100%
   );
   border-color: var(--accent-color);
 }
 
 [data-theme="light"] .examCard {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(226, 232, 240, 0.8);
+  background: var(--card-bg);
+  border-color: var(--border-color);
 }
 
 [data-theme="light"] .examCard:hover {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+  background: var(--secondary-bg);
+  box-shadow: 0 20px 40px var(--shadow);
 }
 
 @keyframes slideIn {

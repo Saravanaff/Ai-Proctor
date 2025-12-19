@@ -1,30 +1,30 @@
 /* Design System Variables */
 .pageWrapper {
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-light: #eff6ff;
+  --primary: var(--primary-color);
+  --primary-hover: var(--accent-color);
+  --primary-light: var(--primary-bg-light);
   
-  --secondary: #64748b;
-  --secondary-hover: #475569;
+  --secondary: var(--text-secondary);
+  --secondary-hover: var(--button-hover);
   
-  --danger: #ef4444;
-  --danger-hover: #dc2626;
-  --danger-light: #fef2f2;
+  --danger: var(--error-color);
+  --danger-hover: var(--error-color);
+  --danger-light: var(--error-bg);
   
-  --bg-page: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-surface-hover: #f1f5f9;
+  --bg-page: var(--background);
+  --bg-surface: var(--card-bg);
+  --bg-surface-hover: var(--button-hover);
   
-  --border: #e2e8f0;
-  --border-focus: #94a3b8;
+  --border: var(--border-color);
+  --border-focus: var(--primary-color);
   
-  --text-main: #0f172a;
-  --text-secondary: #64748b;
-  --text-tertiary: #94a3b8;
+  --text-main: var(--foreground);
+  --text-secondary: var(--text-secondary);
+  --text-tertiary: var(--input-border);
   
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-sm: 0 1px 2px 0 var(--shadow);
+  --shadow-md: 0 4px 6px -1px var(--shadow), 0 2px 4px -2px var(--shadow);
+  --shadow-lg: 0 10px 15px -3px var(--shadow), 0 4px 6px -4px var(--shadow);
   
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
@@ -43,7 +43,13 @@
   --text-primary: var(--text-main);
   /* --text-secondary is already defined in :root/container but redeclaring just in case of scope issues */
   --accent-color: var(--primary);
-  --accent-color-rgb: 37, 99, 235; /* RGB of #2563eb */
+  /* --accent-color-rgb is used for opacity. Since we use vars, we can't easily get RGB components. 
+     We'll approximate or use the global primary variable directly where needed. 
+     However, checking usage... it seems unused in this file but maybe used in JS?
+     Actually, it was L46 in search: --accent-color-rgb: 37, 99, 235; 
+     If I remove it, it might break something if JS reads it. I'll leave it but maybe comment it out or update it to match primary color approx.
+  */
+  --accent-color-rgb: 3, 105, 161; /* RGB of #0369a1 (primary-color) */
 }
 
 .mainLayout {
@@ -111,7 +117,7 @@
 }
 
 .btnSecondary {
-  background-color: white;
+  background-color: var(--bg-surface);
   border-color: var(--border);
   color: var(--text-main);
   box-shadow: var(--shadow-sm);
@@ -123,7 +129,7 @@
 }
 
 .btnDanger {
-  background-color: white;
+  background-color: var(--bg-surface);
   border-color: var(--danger-light);
   color: var(--danger);
 }
@@ -157,7 +163,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: white;
+  background-color: var(--bg-surface);
 }
 
 .cardTitleGroup {
@@ -205,7 +211,7 @@
   justify-content: center;
   padding: 4rem 2rem;
   text-align: center;
-  background-color: var(--bg-page); /* Slight contrast within the white card if needed, or keep white */
+  background-color: var(--bg-page);
   background-image: radial-gradient(var(--border) 1px, transparent 1px);
   background-size: 24px 24px;
 }
@@ -214,7 +220,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-color: white;
+  background-color: var(--bg-surface);
   border: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -249,7 +255,7 @@
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.4);
+  background-color: var(--overlay-bg);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;

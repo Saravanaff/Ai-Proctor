@@ -8,12 +8,12 @@
     --auth-bg-gradient,
     radial-gradient(
       1200px 800px at 10% 0%,
-      rgba(56, 189, 248, 0.12) 0%,
+      var(--primary-bg-light) 0%,
       transparent 60%
     ),
     radial-gradient(
       1000px 700px at 90% 100%,
-      rgba(147, 51, 234, 0.12) 0%,
+      var(--primary-shadow) 0%,
       transparent 60%
     ),
     linear-gradient(180deg, var(--background) 0%, var(--secondary-bg) 100%)
@@ -26,30 +26,30 @@
 :root[data-theme="light"] .container {
   --auth-bg-gradient: radial-gradient(
       1200px 800px at 10% 0%,
-      rgba(56, 189, 248, 0.08) 0%,
+      var(--primary-bg-light) 0%,
       transparent 60%
     ),
     radial-gradient(
       1000px 700px at 90% 100%,
-      rgba(147, 51, 234, 0.08) 0%,
+      var(--primary-shadow) 0%,
       transparent 60%
     ),
-    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    linear-gradient(180deg, var(--background) 0%, var(--secondary-bg) 100%);
 }
 
 /* Dark theme background */
 :root[data-theme="dark"] .container {
   --auth-bg-gradient: radial-gradient(
       1200px 800px at 10% 0%,
-      rgba(56, 189, 248, 0.12) 0%,
+      var(--primary-bg-light) 0%,
       transparent 60%
     ),
     radial-gradient(
       1000px 700px at 90% 100%,
-      rgba(147, 51, 234, 0.12) 0%,
+      var(--primary-shadow) 0%,
       transparent 60%
     ),
-    linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+    linear-gradient(180deg, var(--background) 0%, var(--secondary-bg) 100%);
 }
 
 /* Glassmorphism auth card */
@@ -71,7 +71,7 @@
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.01em;
-  background: linear-gradient(90deg, #38bdf8, #a78bfa);
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -121,14 +121,14 @@
 
 .input:focus {
   background: var(--input-bg);
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px var(--primary-shadow);
 }
 
 .error {
-  background: var(--error-bg, rgba(239, 68, 68, 0.14));
+  background: var(--error-bg);
   color: var(--error-color);
-  border: 1px solid var(--error-border, rgba(248, 113, 113, 0.35));
+  border: 1px solid var(--error-color);
   padding: 10px 12px;
   border-radius: 10px;
   font-size: 13px;
@@ -136,13 +136,13 @@
 }
 
 :root[data-theme="light"] .error {
-  --error-bg: rgba(239, 68, 68, 0.1);
-  --error-border: rgba(239, 68, 68, 0.3);
+  --error-bg: var(--error-bg);
+  --error-border: var(--error-color);
 }
 
 :root[data-theme="dark"] .error {
-  --error-bg: rgba(239, 68, 68, 0.14);
-  --error-border: rgba(248, 113, 113, 0.35);
+  --error-bg: var(--error-bg);
+  --error-border: var(--error-color);
 }
 
 .actions {
@@ -153,7 +153,7 @@
 
 .button {
   flex: 1;
-  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 12px 14px;
@@ -162,7 +162,7 @@
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.06s ease, box-shadow 0.18s ease, filter 0.18s ease;
-  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 10px 24px var(--primary-shadow);
 }
 
 .button:hover {
@@ -202,12 +202,12 @@
   background: none;
   border: none;
   padding: 0;
-  color: #93c5fd;
+  color: var(--primary-color);
   font-weight: 700;
   cursor: pointer;
   transition: color 0.3s ease;
 }
 
 .toggleBtn:hover {
-  color: #60a5fa;
+  color: var(--accent-color);
 }
