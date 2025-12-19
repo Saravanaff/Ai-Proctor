@@ -3,7 +3,7 @@ import { generateParticipantPdf } from "../../components/ParticipantPdfReport";
 import { useRouter } from "next/router";
 import axios from "axios";
 import LoadingIndicator from "../../components/LoadingIndicator";
-import styles from "../../styles/ParticipantDetailsPage.module.css";
+import styles from "../../styles/ParticipantDetailsRedesign.module.css";
 import { getTokenFromCookie } from "@/constants/AuthStore";
 import { createAuthenticatedAxiosInstance } from "@/utils/axiosConfig";
 import VideoPlayer from "../../components/VideoPlayer";
@@ -1772,2041 +1772,569 @@ const ParticipantDetailsPage: React.FC = () => {
   return (
     <ExaminerGuard>
     <div className={styles.container}>
-      {/* Header */}
-      <div className={styles.header}>
-        <button onClick={() => router.back()} className={styles.backButton}>
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Back to Exam
-        </button>
-        <h1 className={styles.title}>Participant Details</h1>
-      </div>
+      <div className={styles.layoutGrid}>
+        {/* LEFT SIDEBAR - Profile & Meta */}
+        <aside className={styles.sidebar}>
+          {/* Profile Card */}
+          <div className={styles.profileCard}>
+            <div className={styles.avatar}>
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <h2 className={styles.userName}>{user.name}</h2>
+            <p className={styles.userEmail}>{user.email}</p>
+            
+            <div className={styles.metaGrid}>
+              <div className={styles.metaItem}>
+                <span className={styles.metaLabel}>User ID</span>
+                <span className={styles.metaValue}>{user.id}</span>
+              </div>
+              <div className={styles.metaItem}>
+                <span className={styles.metaLabel}>Dept</span>
+                <span className={styles.metaValue}>{user.dept || "N/A"}</span>
+              </div>
+              <div className={styles.metaItem}>
+                <span className={styles.metaLabel}>Reg No</span>
+                <span className={styles.metaValue}>{user.reg || "N/A"}</span>
+              </div>
+              <div className={styles.metaItem}>
+                <span className={styles.metaLabel}>DOB</span>
+                <span className={styles.metaValue}>{user.dob || "N/A"}</span>
+              </div>
+            </div>
 
-      {/* Participant Info Card */}
-      <div className={styles.participantCard}>
-        <div className={styles.participantHeader}>
-          <div className={styles.participantAvatar}>
-            {user.name.charAt(0).toUpperCase()}
+            <div style={{ marginTop: '24px', width: '100%' }}>
+              <button
+                onClick={handleGeneratePDF}
+                className={styles.generatePdfBtn}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14,2 14,8 20,8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10,9 9,9 8,9" />
+                </svg>
+                Generate Report
+              </button>
+            </div>
           </div>
 
-          {/* Two Column Layout for Details */}
-          <div
-            style={{
-              display: "flex",
-              gap: "40px",
-              alignItems: "flex-start",
-              flex: 1,
-              width: "100%",
-            }}
-          >
-            {/* Student Details Column */}
-            <div
-              className={styles.participantInfo}
-              style={{
-                flex: 1,
-                maxWidth: "50%",
-              }}
-            >
-              <h3
-                style={{
-                  margin: "0 0 12px 0",
-                  fontSize: "18px",
-                  color: "#2c3e50",
-                  borderBottom: "2px solid #e9ecef",
-                  paddingBottom: "8px",
-                }}
-              >
-                Student Details
-              </h3>
-              <h2
-                className={styles.participantName}
-                style={{
-                  wordBreak: "break-word",
-                  overflowWrap: "break-word",
-                }}
-              >
-                {user.name}
-              </h2>
-              <p className={styles.participantEmail}>{user.email}</p>
-              <p className={styles.participantId}>
-                <strong style={{ color: "#495057" }}>User ID:</strong>{" "}
-                <span style={{ color: "#6c757d", fontWeight: "500" }}>
-                  {user.id}
-                </span>
-              </p>
-              <p className={styles.participantId}>
-                <strong style={{ color: "#495057" }}>Department:</strong>{" "}
-                <span style={{ color: "#6c757d", fontWeight: "500" }}>
-                  {user.dept || "N/A"}
-                </span>
-              </p>
-              <p className={styles.participantId}>
-                <strong style={{ color: "#495057" }}>Date of Birth:</strong>{" "}
-                <span style={{ color: "#6c757d", fontWeight: "500" }}>
-                  {user.dob || "N/A"}
-                </span>
-              </p>
-              <p className={styles.participantId}>
-                <strong style={{ color: "#495057" }}>Registration No:</strong>{" "}
-                <span style={{ color: "#6c757d", fontWeight: "500" }}>
-                  {user.reg || "N/A"}
-                </span>
-              </p>
-
-              {/* Clean Attendance Details */}
-              <div
-                style={{
-                  marginTop: "24px",
-                  paddingTop: "20px",
-                  borderTop: "2px solid #e9ecef",
-                }}
-              >
-                <h4
-                  style={{
-                    margin: "0 0 20px 0",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    color: "#2c3e50",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "18px",
-                    }}
-                  >
-                    ⏱
-                  </span>
-                  Exam Timeline
-                </h4>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gap: "16px",
-                  }}
-                >
-                  {/* Session Joined */}
-                  {attendance?.createdAt && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "12px 0",
-                        borderBottom: "1px solid #f1f3f4",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "16px",
-                            width: "24px",
-                            textAlign: "center",
-                          }}
-                        >
-                          <div className={styles.iconContainer}>
-                            <div className={styles.phoneIcon}></div>
-                          </div>
-                        </span>
-                        <div>
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: "#2c3e50",
-                              marginBottom: "2px",
-                            }}
-                          >
-                            Session Joined
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6c757d",
-                            }}
-                          >
-                            When user entered the exam room
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          textAlign: "right",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            color: "#2c3e50",
-                          }}
-                        >
-                          {new Date(attendance.createdAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            }
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#007bff",
-                            fontWeight: "500",
-                          }}
-                        >
-                          {new Date(attendance.createdAt).toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            }
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Exam Started */}
-                  {attendance?.startTime && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "12px 0",
-                        borderBottom: "1px solid #f1f3f4",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "16px",
-                            width: "24px",
-                            textAlign: "center",
-                          }}
-                        >
-                          ▶️
-                        </span>
-                        <div>
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: "#2c3e50",
-                              marginBottom: "2px",
-                            }}
-                          >
-                            Exam Started
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6c757d",
-                            }}
-                          >
-                            When user began taking the exam
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          textAlign: "right",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            color: "#2c3e50",
-                          }}
-                        >
-                          {new Date(attendance.startTime).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            }
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#28a745",
-                            fontWeight: "500",
-                          }}
-                        >
-                          {new Date(attendance.startTime).toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            }
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Exam Ended */}
-                  {attendance?.endTime && (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "12px 0",
-                        borderBottom: "1px solid #f1f3f4",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "16px",
-                            width: "24px",
-                            textAlign: "center",
-                          }}
-                        >
-                          ⏹️
-                        </span>
-                        <div>
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: "600",
-                              color: "#2c3e50",
-                              marginBottom: "2px",
-                            }}
-                          >
-                            Exam Ended
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6c757d",
-                            }}
-                          >
-                            When user completed the exam
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          textAlign: "right",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            color: "#2c3e50",
-                          }}
-                        >
-                          {new Date(attendance.endTime).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            }
-                          )}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#dc3545",
-                            fontWeight: "500",
-                          }}
-                        >
-                          {new Date(attendance.endTime).toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            }
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Duration Summary */}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "16px 0 8px 0",
-                      background: "#f8f9fa",
-                      borderRadius: "8px",
-                      paddingLeft: "16px",
-                      paddingRight: "16px",
-                      marginTop: "8px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "16px",
-                          width: "24px",
-                          textAlign: "center",
-                        }}
-                      >
-                        ⏳
-                      </span>
-                      <div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: "600",
-                            color: "#2c3e50",
-                            marginBottom: "2px",
-                          }}
-                        >
-                          Total Duration
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "#6c757d",
-                          }}
-                        >
-                          {attendance?.endTime
-                            ? "Exam completed"
-                            : "Currently ongoing"}
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        textAlign: "right",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "18px",
-                          fontWeight: "700",
-                          color: "#495057",
-                        }}
-                      >
-                        {calculateExamDuration()}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          color: attendance?.endTime ? "#28a745" : "#ffc107",
-                          fontWeight: "500",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "flex-end",
-                          gap: "4px",
-                        }}
-                      >
-                        <span>
-                          {attendance?.endTime ? (
-                            <div className={styles.iconContainer}>
-                              <div className={styles.checkIcon}></div>
-                            </div>
-                          ) : (
-                            <div className={styles.iconContainer}>
-                              <div className={styles.loadingIcon}></div>
-                            </div>
-                          )}
-                        </span>
-                        {attendance?.endTime ? "Completed" : "Ongoing"}
-                      </div>
-                    </div>
+          {/* Session Timeline Card */}
+          <div className={styles.examInfoCard}>
+            <div className={styles.sectionHeader}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Session Timeline
+            </div>
+            <div className={styles.metaGrid}>
+                {attendance?.createdAt && (
+                  <div className={styles.metaItem} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                    <span className={styles.metaLabel}>Session Joined</span>
+                    <span className={styles.metaValue} style={{ fontSize: '0.85rem' }}>
+                      {new Date(attendance.createdAt).toLocaleDateString()}
+                    </span>
+                    <span className={styles.metaValue} style={{ fontSize: '0.85rem', color: 'var(--primary-600)' }}>
+                      {new Date(attendance.createdAt).toLocaleTimeString()}
+                    </span>
                   </div>
+                )}
+                {attendance?.startTime && (
+                  <div className={styles.metaItem} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                    <span className={styles.metaLabel}>Exam Started</span>
+                    <span className={styles.metaValue} style={{ fontSize: '0.85rem' }}>
+                      {new Date(attendance.startTime).toLocaleDateString()}
+                    </span>
+                    <span className={styles.metaValue} style={{ fontSize: '0.85rem', color: 'var(--success-text)' }}>
+                      {new Date(attendance.startTime).toLocaleTimeString()}
+                    </span>
+                  </div>
+                )}
+                {attendance?.endTime && (
+                  <div className={styles.metaItem} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                    <span className={styles.metaLabel}>Exam Ended</span>
+                    <span className={styles.metaValue} style={{ fontSize: '0.85rem' }}>
+                      {new Date(attendance.endTime).toLocaleDateString()}
+                    </span>
+                    <span className={styles.metaValue} style={{ fontSize: '0.85rem', color: 'var(--error-text)' }}>
+                      {new Date(attendance.endTime).toLocaleTimeString()}
+                    </span>
+                  </div>
+                )}
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Total Duration</span>
+                  <span className={styles.metaValue}>{calculateExamDuration()}</span>
                 </div>
-              </div>
-            </div>
-
-            {/* Exam Details Column */}
-            <div
-              className={styles.examDetailsSection}
-              style={{
-                flex: 1,
-                maxWidth: "50%",
-              }}
-            >
-              <h3
-                style={{
-                  margin: "0 0 12px 0",
-                  fontSize: "18px",
-                  color: "#2c3e50",
-                  borderBottom: "2px solid #e9ecef",
-                  paddingBottom: "8px",
-                }}
-              >
-                Exam Details
-              </h3>
-              <h2
-                className={styles.participantName}
-                style={{
-                  fontSize: "2.5rem",
-                  wordBreak: "break-word",
-                  overflowWrap: "break-word",
-                }}
-              >
-                {examDetails.exam_name}
-              </h2>
-              <p className={styles.participantEmail}>
-                {new Date(examDetails.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-              <p className={styles.participantId}>
-                <strong style={{ color: "#495057" }}>Exam ID:</strong>{" "}
-                <span style={{ color: "#6c757d", fontWeight: "500" }}>
-                  {examDetails.id}
-                </span>
-              </p>
             </div>
           </div>
 
+          {/* Exam Details Card */}
+          <div className={styles.examInfoCard}>
+            <div className={styles.sectionHeader}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              Exam Details
+            </div>
+            <div className={styles.metaGrid}>
+                <div className={styles.metaItem} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                  <span className={styles.metaLabel}>Exam Name</span>
+                  <span className={styles.metaValue} style={{ fontSize: '1rem' }}>{examDetails.exam_name}</span>
+                </div>
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Exam ID</span>
+                  <span className={styles.metaValue}>{examDetails.id}</span>
+                </div>
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Date</span>
+                  <span className={styles.metaValue}>
+                    {new Date(examDetails.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Duration</span>
+                  <span className={styles.metaValue}>{calculateExamDuration()}</span>
+                </div>
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Status</span>
+                  <span className={styles.metaValue}>
+                    {attendance?.endTime ? (
+                      <span style={{ color: 'var(--success-text)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        ✓ Completed
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--warning-text)' }}>Ongoing</span>
+                    )}
+                  </span>
+                </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* RIGHT CONTENT - Main Dashboard */}
+        <main className={styles.mainContent}>
+          {/* Top Bar */}
+          <header className={styles.topBar}>
+            <h1 className={styles.pageTitle}>Participant Details</h1>
+            <button onClick={() => router.back()} className={styles.backButton}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              Back to Exam
+            </button>
+          </header>
+
+          {/* Stats Overview */}
           {scoreDetails?.success && (
-            <div className={styles.scoreSection}>
-              <div
-                className={styles.scoreChip}
-                style={{ backgroundColor: getScoreColor(scoreDetails.data) }}
-              >
-                <span className={styles.scoreValue}>{scoreDetails.data}%</span>
-                <span className={styles.scoreLabel}>
-                  {getScoreLabel(scoreDetails.data)}
-                </span>
-              </div>
-              <div className={styles.quickStats}>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>Total Violations</span>
+            <div className={styles.statsOverview}>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Risk Assessment</span>
+                  <span className={styles.statValue} style={{ color: getScoreColor(scoreDetails.data) }}>
+                      {getScoreLabel(scoreDetails.data)}
+                  </span>
+                  <span className={styles.statTrend} style={{ color: getScoreColor(scoreDetails.data) }}>
+                    Based on AI analysis
+                  </span>
+                </div>
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Proctor Score</span>
                   <span className={styles.statValue}>
-                    {violations.length ||
-                      (scoreDetails?.scoreBreakdown
-                        ? Object.entries(scoreDetails.scoreBreakdown).reduce(
-                            (sum, [key, val]) => {
-                              if (
-                                key !== "total_score" &&
-                                key !== "screen_sharing" &&
-                                key !== "safe_browser" &&
-                                typeof val === "number"
-                              ) {
-                                return sum + val;
-                              }
-                              return sum;
-                            },
-                            0
-                          )
-                        : 0)}
+                      {scoreDetails.data}%
+                  </span>
+                  <span className={styles.statTrend} style={{ color: scoreDetails.data > 80 ? 'var(--success-text)' : 'var(--warning-text)' }}>
+                    Trust Score
                   </span>
                 </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>Total Questions</span>
-                  <span className={styles.statValue} style={{ color: "#64748b" }}>
-                    {examResults 
-                      ? examResults.stats.totalQuestions
-                      : examResultsLoading 
-                      ? "Loading..." 
-                      : "Not loaded yet"}
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Total Violations</span>
+                  <span className={styles.statValue} style={{ color: getTotalViolations() > 0 ? 'var(--error-text)' : 'var(--text-primary)' }}>
+                      {getTotalViolations()}
+                  </span>
+                  <span className={styles.statTrend}>
+                    Detected incidents
                   </span>
                 </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>Obtained Marks</span>
-                  <span
-                    className={styles.statValue}
-                    style={{ 
-                      color: examResults 
-                        ? (() => {
-                            const [obtained, total] = examResults.stats.score.split('/').map(Number);
-                            const percentage = total > 0 ? Math.round((obtained / total) * 100) : 0;
-                            return percentage >= 70 ? "#10b981" : percentage >= 40 ? "#f59e0b" : "#ef4444";
-                          })()
-                        : examResultsLoading 
-                        ? "#64748b"
-                        : "#64748b"
-                    }}
-                  >
-                    {examResults 
-                      ? (() => {
-                          const [obtained, total] = examResults.stats.score.split('/').map(Number);
-                          return `${obtained} / ${total}`;
-                        })()
-                      : examResultsLoading 
-                      ? "Loading..." 
-                      : "Not loaded yet"}
+                <div className={styles.statCard}>
+                  <span className={styles.statLabel}>Exam Result</span>
+                  <span className={styles.statValue}>
+                      {examResults ? examResults.stats.score : "-"}
                   </span>
-                </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>Percentage</span>
-                  <span
-                    className={styles.statValue}
-                    style={{ 
-                      color: examResults 
-                        ? (() => {
-                            const [obtained, total] = examResults.stats.score.split('/').map(Number);
-                            const percentage = total > 0 ? Math.round((obtained / total) * 100) : 0;
-                            return percentage >= 70 ? "#10b981" : percentage >= 40 ? "#f59e0b" : "#ef4444";
-                          })()
-                        : examResultsLoading 
-                        ? "#64748b"
-                        : "#64748b"
-                    }}
-                  >
-                    {examResults 
-                      ? (() => {
+                  <span className={styles.statTrend}>
+                     {examResults ? (
+                       (() => {
                           const [obtained, total] = examResults.stats.score.split('/').map(Number);
                           const percentage = total > 0 ? Math.round((obtained / total) * 100) : 0;
-                          return `${percentage}%`;
+                          return `${percentage}% Score`;
                         })()
-                      : examResultsLoading 
-                      ? "Loading..." 
-                      : "Not loaded yet"}
+                     ) : "Loading..."}
                   </span>
                 </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statLabel}>Risk Level</span>
-                  <span
-                    className={styles.statValue}
-                    style={{ color: getScoreColor(scoreDetails.data) }}
-                  >
-                    {getScoreLabel(scoreDetails.data)}
-                  </span>
-                </div>
-              </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Generate PDF Button - Bottom left section */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-start",
-          margin: "30px 0",
-          width: "100%",
-        }}
-      >
-        <button
-          onClick={handleGeneratePDF}
-          className={styles.generatePdfButton}
-          style={{
-            background: "#6366f1",
-            border: "none",
-            borderRadius: "8px",
-            color: "white",
-            padding: "12px 24px",
-            fontSize: "14px",
-            fontWeight: "600",
-            cursor: "pointer",
-            boxShadow: "0 4px 15px rgba(99, 102, 241, 0.3)",
-            transition: "all 0.3s ease",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            minWidth: "180px",
-            justifyContent: "center",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-2px)";
-            e.currentTarget.style.boxShadow =
-              "0 6px 20px rgba(99, 102, 241, 0.4)";
-            e.currentTarget.style.background = "#4f46e5";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow =
-              "0 4px 15px rgba(99, 102, 241, 0.3)";
-            e.currentTarget.style.background = "#6366f1";
-          }}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14,2 14,8 20,8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-            <polyline points="10,9 9,9 8,9" />
-          </svg>
-          Generate Report
-        </button>
-      </div>
-
-      <div className={styles.tabNavigation}>
-        <button
-          className={`${styles.tab} ${
-            activeTab === "overview" ? styles.activeTab : ""
-          }`}
-          onClick={() => setActiveTab("overview")}
-        >
-          Violations ({getTotalViolations()})
-        </button>
-        <button
-          className={`${styles.tab} ${
-            activeTab === "timeline" ? styles.activeTab : ""
-          }`}
-          onClick={() => setActiveTab("timeline")}
-        >
-          Violation Details
-        </button>
-        <button
-          className={`${styles.tab} ${
-            activeTab === "review" ? styles.activeTab : ""
-          }`}
-          onClick={() => setActiveTab("review")}
-        >
-          Review Session
-        </button>
-        <button
-          className={`${styles.tab} ${
-            activeTab === "examResults" ? styles.activeTab : ""
-          }`}
-          onClick={() => setActiveTab("examResults")}
-        >
-          Exam Results
-        </button>
-      </div>
-
-      <div className={styles.tabContent}>
-        {activeTab === "overview" && (
-          <div className={styles.overviewTab}>
-            {scoreDetails?.success ? (
-              <>
-                {scoreDetails.scoreBreakdown && (
-                  <div className={styles.scoreBreakdown}>
-                    <div className={styles.breakdownGrid}>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Multiple Persons Detected
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.no_of_person_flagged}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Zero Person Detected
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.no_person_flagged}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Face Authentication Issues
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.auth_face_flagged}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Head Position Violations
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.head_position_flagged}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Eye Movement Violations
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.eyes_flagged}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Sound Violations
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.sound_flagged}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Unauthorized Devices Detected
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.object_detected_flagged}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Tab Switch Violations
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.tab_switch_violation}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Number of Microphones
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.number_of_microphone}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Mandatory Screen Sharing
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.screen_sharing
-                            ? "Yes"
-                            : "No"}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Mandatory Safe Browser
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.safe_browser
-                            ? "Yes"
-                            : "No"}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Desktop Apps Control
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.control_desktop_apps}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Blank Feed Incidents
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.blank_feed}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Super Proctor Feed
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {PDF_CONSTANTS.SUPER_PROCTOR_FEED}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Restricted Object
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {PDF_CONSTANTS.RESTRICTED_OBJECT}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Data Capture Interval
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {PDF_CONSTANTS.DATA_CAPTURE_INTERVAL}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Pause Exam Request
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {PDF_CONSTANTS.PAUSE_EXAM_REQUEST}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Individual Test Taker Settings
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {PDF_CONSTANTS.INDIVIDUAL_TEST_TAKER_SETTINGS}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Blank Feed Incidents
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {scoreDetails.scoreBreakdown.blank_feed}
-                        </span>
-                      </div>
-                      <div className={styles.breakdownItem}>
-                        <span className={styles.breakdownLabel}>
-                          Auto Test Abort
-                        </span>
-                        <span className={styles.breakdownValue}>
-                          {PDF_CONSTANTS.AUTO_TEST_ABORT}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className={styles.noDataMessage}>
-                <div className={styles.noDataIcon}></div>
-                <h3>No Score Data Available</h3>
-                <p>
-                  Score data for this participant is not yet available or the
-                  exam hasn't been completed.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === "timeline" && (
-          <div className={styles.timelineTab}>
-            <h3 className={styles.sectionTitle} style={{ marginBottom: 8 }}>
-              <div className={styles.iconContainer}>
-                <div className={styles.chartIcon}></div>
-              </div>
-              Exam Activity Timeline
-            </h3>
-            <div
-              style={{
-                fontSize: "0.9rem",
-                color: "#64748b",
-                marginBottom: 20,
-                background: "rgba(0,123,255,0.05)",
-                padding: "12px 16px",
-                borderRadius: "8px",
-                border: "1px solid rgba(0,123,255,0.15)",
-              }}
-            >
-              <div className={styles.iconContainer}>
-                <div className={styles.infoIcon}></div>
-              </div>
-              <strong>Interactive Timeline:</strong> Click on any violation
-              below to automatically jump to that moment in the video stream.
-              <br />
-              <div className={styles.iconContainer}>
-                <div className={styles.playIcon}></div>
-              </div>
-              The system will switch to the Review tab and seek to the exact
-              timestamp.
-            </div>
-            <div className={styles.timeline}>
-              {timelineEvents.length > 0 ? (
-                timelineEvents.map((event, index) => {
-                  const violationDate = violations.find((v) => {
-                    const violationTime = new Date(v.timestamp);
-                    const violationTimeStr = violationTime.toLocaleTimeString(
-                      "en-US",
-                      {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      }
-                    );
-                    return violationTimeStr === event.timestamp;
-                  });
-
-                  const fullDate = violationDate
-                    ? new Date(violationDate.timestamp)
-                    : new Date();
-                  const severity = violationDate
-                    ? violationDate.severity
-                    : "low";
-
-                  const formatDate = (dateStr: string) => {
-                    try {
-                      if (!dateStr) {
-                        return {
-                          formatted: "Date N/A",
-                          weekday: "Day N/A",
-                        };
-                      }
-
-                      // If it's in YYYY-DD-MM format, we need to rearrange to standard format
-                      if (dateStr && dateStr.includes("-")) {
-                        const parts = dateStr.split("T")[0].split("-"); // Get date part only, ignore time
-                        if (parts.length === 3) {
-                          const year = parts[0]; // 2025
-                          const day = parts[1]; // 12
-                          const month = parts[2]; // 09
-
-                          // Validate parts are numbers and in reasonable ranges
-                          const yearNum = parseInt(year, 10);
-                          const monthNum = parseInt(month, 10);
-                          const dayNum = parseInt(day, 10);
-
-                          if (
-                            yearNum >= 1970 &&
-                            yearNum <= 2100 &&
-                            monthNum >= 1 &&
-                            monthNum <= 12 &&
-                            dayNum >= 1 &&
-                            dayNum <= 31
-                          ) {
-                            // Create date in standard format: YYYY-MM-DD
-                            const standardDate = new Date(
-                              `${year}-${month}-${day}`
-                            );
-
-                            // Double-check if the date is valid
-                            if (!isNaN(standardDate.getTime())) {
-                              return {
-                                formatted: standardDate.toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  }
-                                ),
-                                weekday: standardDate.toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    weekday: "long",
-                                  }
-                                ),
-                              };
-                            }
-                          }
-                        }
-                      }
-
-                      // Fallback to standard parsing if format doesn't match
-                      const date = new Date(dateStr);
-                      if (!isNaN(date.getTime())) {
-                        return {
-                          formatted: date.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          }),
-                          weekday: date.toLocaleDateString("en-US", {
-                            weekday: "long",
-                          }),
-                        };
-                      } else {
-                        return {
-                          formatted: "Date N/A",
-                          weekday: "Day N/A",
-                        };
-                      }
-                    } catch (error) {
-                      // Fallback for any errors
-                      return {
-                        formatted: "Date N/A",
-                        weekday: "Day N/A",
-                      };
-                    }
-                  };
-
-                  const dateInfo = formatDate(
-                    violationDate
-                      ? violationDate.timestamp
-                      : new Date().toISOString()
-                  );
-
-                  return (
-                    <div
-                      key={index}
-                      className={styles.timelineItem}
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        marginBottom: 12,
-                        padding: "12px",
-                        borderRadius: "8px",
-                        transition: "all 0.2s ease",
-                        background: "white",
-                        border:
-                          event.violations.length > 0
-                            ? `1px solid ${getSeverityColor(severity)}`
-                            : "1px solid #e9ecef",
-                        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.04)",
-                        cursor:
-                          event.violations.length > 0 ? "pointer" : "default",
-                      }}
-                      onClick={() => {
-                        if (event.violations.length > 0 && violationDate) {
-                          seekToTimestamp(violationDate.timestamp);
-                        }
-                      }}
-                      onMouseEnter={(e) => {
-                        if (event.violations.length > 0) {
-                          e.currentTarget.style.transform = "translateY(-1px)";
-                          e.currentTarget.style.boxShadow =
-                            "0 4px 12px rgba(0, 0, 0, 0.08)";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow =
-                          "0 2px 6px rgba(0, 0, 0, 0.04)";
-                      }}
-                    >
-                      {/* Compact Header */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          marginBottom: "8px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "12px",
-                              height: "12px",
-                              borderRadius: "50%",
-                              backgroundColor:
-                                event.violations.length > 0
-                                  ? getSeverityColor(severity)
-                                  : "#28a745",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: "8px",
-                                color: "white",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              {event.violations.length > 0 ? "!" : "✓"}
-                            </span>
-                          </div>
-
-                          <div>
-                            <h4
-                              style={{
-                                margin: "0",
-                                fontSize: "14px",
-                                fontWeight: "600",
-                                color: "#2c3e50",
-                              }}
-                            >
-                              {event.violations.length > 0
-                                ? `${event.violations.length} Violation${
-                                    event.violations.length > 1 ? "s" : ""
-                                  }`
-                                : "Clean"}
-                            </h4>
-                          </div>
-                        </div>
-
-                        {event.violations.length > 0 && (
-                          <div
-                            style={{
-                              background: `${getSeverityColor(severity)}15`,
-                              color: getSeverityColor(severity),
-                              padding: "3px 8px",
-                              borderRadius: "12px",
-                              fontSize: "10px",
-                              fontWeight: "500",
-                            }}
-                          >
-                            <div className={styles.iconContainer}>
-                              <div className={styles.playIcon}></div>
-                            </div>
-                            Jump
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Compact Date and Time Row */}
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "16px",
-                          marginBottom: "8px",
-                          fontSize: "12px",
-                          color: "#6c757d",
-                        }}
-                      >
-                        <span>
-                          <div className={styles.iconContainer}>
-                            <div className={styles.calendarIcon}></div>
-                          </div>
-                          {dateInfo.formatted}
-                        </span>
-                        <span>
-                          <div className={styles.iconContainer}>
-                            <div className={styles.weekdayIcon}></div>
-                          </div>
-                          {dateInfo.weekday}
-                        </span>
-                        <span>
-                          <div className={styles.iconContainer}>
-                            <div className={styles.clockIcon}></div>
-                          </div>
-                          {event.timestamp}
-                        </span>
-                      </div>
-
-                      {/* Compact Violation Details */}
-                      {event.violations.length > 0 ? (
-                        <div className={styles.violationWithImage}>
-                          <div className={styles.violationContent}>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: "4px",
-                                marginBottom: "8px",
-                              }}
-                            >
-                              {event.violations.map((violation, vIndex) => (
-                                <div
-                                  key={vIndex}
-                                  style={{
-                                    background: `${getSeverityColor(
-                                      severity
-                                    )}15`,
-                                    color: getSeverityColor(severity),
-                                    padding: "4px 8px",
-                                    borderRadius: "4px",
-                                    fontSize: "11px",
-                                    fontWeight: "500",
-                                    border: `1px solid ${getSeverityColor(
-                                      severity
-                                    )}30`,
-                                    cursor: "pointer",
-                                  }}
-                                  onMouseEnter={(e) =>
-                                    showTooltip(e, violation)
-                                  }
-                                  onMouseLeave={hideTooltip}
-                                >
-                                  {violation}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Image on the right side */}
-                          <div
-                            className={styles.violationImageContainer}
-                            onClick={() =>
-                              openImageModal(
-                                `/api/violation-image/${user?.id}/${examDetails?.id}/${event.timestamp}`,
-                                `Violation at ${event.timestamp}`,
-                                event.timestamp,
-                                event.violations[0] || "Unknown"
-                              )
-                            }
-                            title="Click to view larger image"
-                          >
-                            <div className={styles.imageNotFound}>
-                              <div className={styles.iconContainer}>
-                                <div className={styles.imageIcon}></div>
-                              </div>
-                              Image Not Found
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div
-                          style={{
-                            textAlign: "center",
-                            padding: "6px",
-                            background: "#e8f5e8",
-                            borderRadius: "4px",
-                            color: "#28a745",
-                            fontSize: "12px",
-                          }}
-                        >
-                          <div className={styles.iconContainer}>
-                            <div className={styles.checkIcon}></div>
-                          </div>
-                          No violations
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              ) : (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "60px 40px",
-                    color: "#64748b",
-                    fontStyle: "italic",
-                    background: "#ffffff",
-                    borderRadius: "12px",
-                    border: "1px dashed #e2e8f0",
-                  }}
+          {/* Tabs Container */}
+          <div className={styles.tabsContainer}>
+              <div className={styles.tabsHeader}>
+                <button 
+                  className={`${styles.tab} ${activeTab === "overview" ? styles.activeTab : ""}`}
+                  onClick={() => setActiveTab("overview")}
                 >
-                  <div style={{ fontSize: "2rem", marginBottom: "16px" }}>
-                    <div
-                      className={styles.iconContainer}
-                      style={{
-                        fontSize: "2rem",
-                        width: "40px",
-                        height: "40px",
-                      }}
-                    >
-                      <div
-                        className={styles.chartIcon}
-                        style={{ width: "32px", height: "32px" }}
-                      ></div>
-                    </div>
-                  </div>
-                  <h4
-                    style={{
-                      margin: "0 0 8px 0",
-                      color: "#1e293b",
-                    }}
-                  >
-                    No Timeline Data Available
-                  </h4>
-                  <p style={{ margin: "0", fontSize: "0.9rem" }}>
-                    No activity timeline recorded for this exam session.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Review Session Tab */}
-        {activeTab === "review" && (
-          <div className={styles.reviewTab}>
-            <div className={styles.reviewHeader}>
-              <h3 className={styles.sectionTitle}>
-                <div className={styles.iconContainer}>
-                  <div className={styles.videoIcon}></div>
-                </div>
-                Review Session - Live Video Streaming
-              </h3>
-              <div className={styles.reviewDescription}>
-                <p
-                  style={{
-                    marginBottom: "8px",
-                    fontSize: "1rem",
-                    color: "#1e293b",
-                  }}
+                  Overview
+                </button>
+                <button 
+                  className={`${styles.tab} ${activeTab === "timeline" ? styles.activeTab : ""}`}
+                  onClick={() => setActiveTab("timeline")}
                 >
-                  <strong>Interactive Video Review:</strong> Stream exam
-                  recordings in real-time and navigate instantly to violation
-                  timestamps.
-                </p>
-                <div
-                  style={{
-                    fontSize: "0.9rem",
-                    color: "#64748b",
-                    background: "rgba(0,123,255,0.05)",
-                    padding: "12px 16px",
-                    borderRadius: "8px",
-                    border: "1px solid rgba(0,123,255,0.15)",
-                    marginBottom: "16px",
-                  }}
+                  Timeline
+                </button>
+                <button 
+                  className={`${styles.tab} ${activeTab === "review" ? styles.activeTab : ""}`}
+                  onClick={() => setActiveTab("review")}
                 >
-                  <div className={styles.iconContainer}>
-                    <div className={styles.infoIcon}></div>
-                  </div>
-                  <strong>How to use:</strong>
-                  <ul style={{ margin: "8px 0 0 20px", padding: 0 }}>
-                    <li>Select a video category below to start streaming</li>
-                    <li>
-                      Click on any violation in the timeline or violations list
-                      to jump to that exact moment
-                    </li>
-                    <li>
-                      Download videos for offline review or evidence collection
-                    </li>
-                    <li>
-                      Use standard video controls (play, pause, seek, volume,
-                      fullscreen)
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* Video Downloads in Review Tab */}
-            <div className={styles.videoSection}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: "16px",
-                }}
-              >
-                <h4 className={styles.subsectionTitle}>Videos</h4>
-                <button
-                  onClick={() => {
-                    console.log("Manual video availability refresh triggered");
-                    checkAllVideosAvailability();
-                  }}
-                  style={{
-                    background: "#3b82f6",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "8px 16px",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                  disabled={checkingVideoAvailability}
+                  Video Review
+                </button>
+                <button 
+                  className={`${styles.tab} ${activeTab === "examResults" ? styles.activeTab : ""}`}
+                  onClick={() => setActiveTab("examResults")}
                 >
-                  {checkingVideoAvailability ? (
-                    "Checking..."
-                  ) : (
-                    <>
-                      <div className={styles.refreshIcon}></div>
-                      Refresh Videos
-                    </>
-                  )}
+                  Results
                 </button>
               </div>
-              {checkingVideoAvailability ? (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "40px",
-                    color: "#64748b",
-                    fontStyle: "italic",
-                  }}
-                >
-                  Checking video availability...
-                  <div style={{ marginTop: "8px", fontSize: "0.8rem" }}>
-                    User ID: {user?.id}, Exam ID: {examDetails?.id}
-                  </div>
-                </div>
-              ) : Object.values(videosAvailability).some(
-                  (available) => available
-                ) ? (
-                <div className={styles.videoGrid}>
-                  <VideoPlayer
-                    user={user}
-                    examDetails={examDetails}
-                    videosAvailability={videosAvailability}
-                    checkingVideoAvailability={checkingVideoAvailability}
-                    videoRef={videoRef}
-                    baseUrl={baseUrl}
-                    onVideoDownload={handleVideoDownload}
-                    category="face_camera"
-                    title="Face Camera"
-                    isSelected={selectedVideoCategory === "face_camera"}
-                    onSelect={() => setSelectedVideoCategory("face_camera")}
-                  />
-                  <VideoPlayer
-                    user={user}
-                    examDetails={examDetails}
-                    videosAvailability={videosAvailability}
-                    checkingVideoAvailability={checkingVideoAvailability}
-                    videoRef={videoRef}
-                    baseUrl={baseUrl}
-                    onVideoDownload={handleVideoDownload}
-                    category="screen_recording"
-                    title="Screen Recording"
-                    isSelected={selectedVideoCategory === "screen_recording"}
-                    onSelect={() =>
-                      setSelectedVideoCategory("screen_recording")
-                    }
-                  />
-                  <VideoPlayer
-                    user={user}
-                    examDetails={examDetails}
-                    videosAvailability={videosAvailability}
-                    checkingVideoAvailability={checkingVideoAvailability}
-                    videoRef={videoRef}
-                    baseUrl={baseUrl}
-                    onVideoDownload={handleVideoDownload}
-                    category="third_eye"
-                    title="Third Eye"
-                    isSelected={selectedVideoCategory === "third_eye"}
-                    onSelect={() => setSelectedVideoCategory("third_eye")}
-                  />
-                </div>
-              ) : (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "60px 40px",
-                    color: "#64748b",
-                    background: "#ffffff",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
-                  <div style={{ fontSize: "2rem", marginBottom: "16px" }}>
-                    <div
-                      className={styles.iconContainer}
-                      style={{
-                        fontSize: "2rem",
-                        width: "40px",
-                        height: "40px",
-                      }}
-                    >
-                      <div
-                        className={styles.videoIcon}
-                        style={{ width: "32px", height: "32px" }}
-                      ></div>
-                    </div>
-                  </div>
-                  <h4
-                    style={{
-                      margin: "0 0 8px 0",
-                      color: "#1e293b",
-                    }}
-                  >
-                    No Video Data Available
-                  </h4>
-                  <p
-                    style={{
-                      margin: "0 0 16px 0",
-                      fontSize: "0.9rem",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    No video recordings were found for this exam session.
-                    <br />
-                    Videos may not have been recorded or are still being
-                    processed.
-                  </p>
-                  <div
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "#64748b",
-                      background: "rgba(0,0,0,0.05)",
-                      padding: "12px",
-                      borderRadius: "6px",
-                      fontFamily: "monospace",
-                    }}
-                  >
-                    <strong>Debug Info:</strong>
-                    <br />
-                    User ID: {user?.id}
-                    <br />
-                    Exam ID: {examDetails?.id}
-                    <br />
-                    Base URL: {baseUrl}
-                    <br />
-                    Availability Status: {JSON.stringify(videosAvailability)}
-                  </div>
-                </div>
-              )}
-            </div>
 
-            {/* Violations with Timestamps */}
-            <div className={styles.violationsSection}>
-              <h4 className={styles.subsectionTitle}>
-                Violations & Timeline Navigation
-              </h4>
-              <p
-                style={{
-                  fontSize: "0.9rem",
-                  color: "#64748b",
-                  marginBottom: "16px",
-                  fontStyle: "italic",
-                  background: "rgba(0,123,255,0.05)",
-                  padding: "8px 12px",
-                  borderRadius: "6px",
-                  border: "1px solid rgba(0,123,255,0.15)",
-                }}
-              >
-                <div className={styles.iconContainer}>
-                  <div className={styles.infoIcon}></div>
-                </div>
-                <strong>Interactive Timeline:</strong> Click on any violation
-                below to automatically jump to that exact moment in the video
-                stream. The video will seek to the timestamp and highlight
-                briefly to confirm the navigation.
-              </p>
-              <div className={styles.violationsList}>
-                {violations.length > 0 ? (
-                  violations.map((violation, index) => (
-                    <div
-                      key={violation.id}
-                      className={styles.violationItem}
-                      onClick={() => {
-                        console.log(
-                          `Seeking to violation: ${violation.type} at ${violation.timestamp}`
-                        );
-                        seekToTimestamp(violation.timestamp);
-                      }}
-                      style={{
-                        cursor: "pointer",
-                        transition: "all 0.3s ease",
-                        border: "1px solid transparent",
-                        borderRadius: "8px",
-                        padding: "12px",
-                        marginBottom: "8px",
-                        background: "#ffffff",
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(0,123,255,0.05)";
-                        e.currentTarget.style.borderColor =
-                          "#3b82f6";
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow =
-                          "0 4px 12px rgba(0,123,255,0.15)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "#ffffff";
-                        e.currentTarget.style.borderColor = "transparent";
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow =
-                          "0 2px 4px rgba(0,0,0,0.05)";
-                      }}
-                      title={`Click to jump to ${
-                        violation.type
-                      } at ${formatTimestamp(violation.timestamp)}`}
-                    >
-                      <div className={styles.violationHeader}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "12px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <span
-                            className={styles.violationSeverity}
-                            style={{
-                              backgroundColor: getSeverityColor(
-                                violation.severity
-                              ),
-                              color: "white",
-                              padding: "4px 8px",
-                              borderRadius: "4px",
-                              fontSize: "0.75rem",
-                              fontWeight: "600",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.5px",
-                            }}
-                          >
-                            {violation.severity}
-                          </span>
-                          <span
-                            className={styles.violationType}
-                            style={{
-                              fontWeight: "600",
-                              color: "#1e293b",
-                              fontSize: "1rem",
-                              cursor: "help",
-                            }}
-                            onMouseEnter={(e) => showTooltip(e, violation.type)}
-                            onMouseLeave={hideTooltip}
-                          >
-                            {violation.type}
-                          </span>
-                          <div
-                            style={{ marginLeft: "auto", textAlign: "right" }}
-                          >
-                            <div
-                              className={styles.violationTime}
-                              style={{
-                                fontSize: "0.85rem",
-                                color: "#3b82f6",
-                                fontWeight: "500",
-                              }}
-                            >
-                              <div className={styles.iconContainer}>
-                                <div className={styles.clockIcon}></div>
-                              </div>
-                              {formatTimestamp(violation.timestamp)}
+              <div className={styles.tabContent}>
+                {/* OVERVIEW TAB */}
+                {activeTab === "overview" && (
+                  <div className={styles.overviewTab}>
+                    {scoreDetails?.success ? (
+                      <div>
+                         <h3 className={styles.sectionHeader}>Violation Breakdown</h3>
+                         <div className={styles.statsOverview} style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
+                            {scoreDetails.scoreBreakdown && Object.entries(scoreDetails.scoreBreakdown).map(([key, val]) => {
+                                // Filter out non-display keys
+                                if (['total_score', 'screen_sharing', 'safe_browser'].includes(key)) return null;
+                                return (
+                                  <div key={key} className={styles.statCard} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: '80px' }}>
+                                      <span className={styles.statLabel} style={{ marginBottom: 0, textTransform: 'capitalize', flex: 1 }}>
+                                        {key.replace(/_/g, ' ')}
+                                      </span>
+                                      <span className={styles.statValue} style={{ fontSize: '1.5rem', color: val > 0 ? 'var(--error-text)' : 'var(--text-secondary)' }}>
+                                        {val}
+                                      </span>
+                                  </div>
+                                );
+                            })}
+                            
+                            {/* Static PDF Constants Display */}
+                            <div className={styles.statCard} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: '80px' }}>
+                                <span className={styles.statLabel} style={{ marginBottom: 0 }}>Super Proctor Feed</span>
+                                <span className={styles.statValue} style={{ fontSize: '1.5rem', color: 'var(--text-secondary)' }}>{PDF_CONSTANTS.SUPER_PROCTOR_FEED}</span>
                             </div>
-                            <small
-                              style={{
-                                color: "#64748b",
-                                fontSize: "0.75rem",
-                                display: "block",
-                                marginTop: "2px",
-                              }}
-                            >
-                              +
-                              {getRelativeTimeFromExamStart(
-                                violation.timestamp
-                              )}{" "}
-                              from start
-                            </small>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className={styles.violationWithImage}>
-                        <div className={styles.violationContent}>
-                          <p
-                            className={styles.violationDescription}
-                            style={{
-                              margin: "8px 0 0 0",
-                              color: "#64748b",
-                              fontSize: "0.9rem",
-                              lineHeight: "1.4",
-                            }}
-                          >
-                            {violation.description}
-                          </p>
-                          <div
-                            style={{
-                              marginTop: "8px",
-                              fontSize: "0.8rem",
-                              color: "#3b82f6",
-                              fontWeight: "500",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "4px",
-                            }}
-                          >
-                            <div className={styles.iconContainer}>
-                              <div className={styles.playIcon}></div>
+                            <div className={styles.statCard} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: '80px' }}>
+                                <span className={styles.statLabel} style={{ marginBottom: 0 }}>Restricted Object</span>
+                                <span className={styles.statValue} style={{ fontSize: '1.5rem', color: 'var(--text-secondary)' }}>{PDF_CONSTANTS.RESTRICTED_OBJECT}</span>
                             </div>
-                            Click to jump to video timestamp
-                          </div>
-                        </div>
-
-                        {/* Image on the right side */}
-                        <div
-                          className={styles.violationImageContainer}
-                          onClick={() =>
-                            openImageModal(
-                              `/api/violation-image/${user?.id}/${examDetails?.id}/${violation.timestamp}`,
-                              `${violation.type} at ${formatTimestamp(
-                                violation.timestamp
-                              )}`,
-                              violation.timestamp,
-                              violation.type
-                            )
-                          }
-                          title="Click to view larger image"
-                        >
-                          <div className={styles.imageNotFound}>
-                            <div className={styles.iconContainer}>
-                              <div className={styles.imageIcon}></div>
+                            <div className={styles.statCard} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: '80px' }}>
+                                <span className={styles.statLabel} style={{ marginBottom: 0 }}>Data Capture Interval</span>
+                                <span className={styles.statValue} style={{ fontSize: '1.5rem', color: 'var(--text-secondary)' }}>{PDF_CONSTANTS.DATA_CAPTURE_INTERVAL}</span>
                             </div>
-                            View Image
-                          </div>
-                        </div>
+                            <div className={styles.statCard} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: '80px' }}>
+                                <span className={styles.statLabel} style={{ marginBottom: 0 }}>Pause Exam Request</span>
+                                <span className={styles.statValue} style={{ fontSize: '1.5rem', color: 'var(--text-secondary)' }}>{PDF_CONSTANTS.PAUSE_EXAM_REQUEST}</span>
+                            </div>
+                            <div className={styles.statCard} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: '80px' }}>
+                                <span className={styles.statLabel} style={{ marginBottom: 0 }}>Individual Settings</span>
+                                <span className={styles.statValue} style={{ fontSize: '1.5rem', color: 'var(--text-secondary)' }}>{PDF_CONSTANTS.INDIVIDUAL_TEST_TAKER_SETTINGS}</span>
+                            </div>
+                            <div className={styles.statCard} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: '80px' }}>
+                                <span className={styles.statLabel} style={{ marginBottom: 0 }}>Auto Test Abort</span>
+                                <span className={styles.statValue} style={{ fontSize: '1.5rem', color: 'var(--text-secondary)' }}>{PDF_CONSTANTS.AUTO_TEST_ABORT}</span>
+                            </div>
+                         </div>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "60px 40px",
-                      color: "#64748b",
-                      fontStyle: "italic",
-                      background: "#ffffff",
-                      borderRadius: "12px",
-                      border: "1px dashed #e2e8f0",
-                    }}
-                  >
-                    <div style={{ fontSize: "2rem", marginBottom: "16px" }}>
-                      <div
-                        className={styles.iconContainer}
-                        style={{
-                          fontSize: "2rem",
-                          width: "40px",
-                          height: "40px",
-                        }}
-                      >
-                        <div
-                          className={styles.checkIcon}
-                          style={{
-                            width: "32px",
-                            height: "32px",
-                            border: "4px solid var(--success-color)",
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                    <h4
-                      style={{
-                        margin: "0 0 8px 0",
-                        color: "#1e293b",
-                      }}
-                    >
-                      No Violations Recorded
-                    </h4>
-                    <p style={{ margin: "0", fontSize: "0.9rem" }}>
-                      Great! No violations were detected during this exam
-                      session.
-                    </p>
+                    ) : (
+                      <div className={styles.noDataMessage}>No Data Available</div>
+                    )}
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Exam Results Tab */}
-        {activeTab === "examResults" && (
-          <div className={styles.examResultsTab}>
-            {examResultsLoading ? (
-              <div className={styles.loadingState}>Loading exam results...</div>
-            ) : examResults && examResults.stats && examResults.stats.score ? (
-              <div className={styles.examResultsContent}>
-                {/* Stats summary */}
-                <div className={styles.statsGrid}>
-                  <div className={styles.statCard}>
-                    <div className={styles.statLabel}>Total Questions</div>
-                    <div className={styles.statValue}>
-                      {examResults.stats.totalQuestions}
-                    </div>
-                  </div>
-                  <div className={styles.statCard}>
-                    <div className={styles.statLabel}>Correct</div>
-                    <div className={`${styles.statValue} ${styles.correct}`}>
-                      {examResults.stats.correct}
-                    </div>
-                  </div>
-                  <div className={styles.statCard}>
-                    <div className={styles.statLabel}>Wrong</div>
-                    <div className={`${styles.statValue} ${styles.wrong}`}>
-                      {examResults.stats.wrong}
-                    </div>
-                  </div>
-                  <div className={styles.statCard}>
-                    <div className={styles.statLabel}>Unanswered</div>
-                    <div className={`${styles.statValue} ${styles.unanswered}`}>
-                      {examResults.stats.unanswered}
-                    </div>
-                  </div>
-                  <div className={styles.statCard} style={{
-                    background: "linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)",
-                    color: "white",
-                    gridColumn: "1 / -1"
-                  }}>
-                    <div className={styles.statLabel} style={{ color: "rgba(255,255,255,0.9)" }}>
-                      Total Score
-                    </div>
-                    <div className={styles.statValue} style={{ 
-                      color: "white",
-                      fontSize: "2rem",
-                      fontWeight: 700,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "16px",
-                      justifyContent: "center"
-                    }}>
-                      <span>{examResults.stats.score}</span>
-                      <span style={{
-                        fontSize: "1.5rem",
-                        padding: "6px 16px",
-                        background: "rgba(255,255,255,0.2)",
-                        borderRadius: "8px",
-                        fontWeight: 600
-                      }}>
-                        {(() => {
-                          try {
-                            if (!examResults?.stats?.score) {
-                              console.warn('⚠️ No score available');
-                              return '0%';
-                            }
-                            
-                            console.log('🎯 Calculating percentage from:', examResults.stats.score);
-                            
-                            const scoreString = String(examResults.stats.score);
-                            const scoreParts = scoreString.split('/');
-                            console.log('🎯 Score parts:', scoreParts);
-                            
-                            if (scoreParts.length !== 2) {
-                              console.warn('⚠️ Invalid score format:', scoreString);
-                              return '0%';
-                            }
-                            
-                            const obtained = parseFloat(scoreParts[0].trim());
-                            const total = parseFloat(scoreParts[1].trim());
-                            
-                            console.log('🎯 Obtained:', obtained, 'Total:', total);
-                            
-                            if (isNaN(obtained) || isNaN(total)) {
-                              console.warn('⚠️ Invalid numbers in score');
-                              return '0%';
-                            }
-                            
-                            if (total === 0) {
-                              console.warn('⚠️ Total marks is 0');
-                              return '0%';
-                            }
-                            
-                            const percentage = Math.round((obtained / total) * 100);
-                            console.log('🎯 Final percentage:', percentage + '%');
-                            
-                            return `${percentage}%`;
-                          } catch (error) {
-                            console.error('❌ Error calculating percentage:', error);
-                            return '0%';
-                          }
-                        })()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                {/* TIMELINE TAB */}
+                {activeTab === "timeline" && (
+                  <div className={styles.timelineTab}>
+                    {timelineEvents.length > 0 ? (
+                      timelineEvents.map((event, index) => {
+                         const hasViolations = event.violations.length > 0;
+                         // Find exact violation date logic from original code
+                         const violationDate = violations.find((v) => {
+                            const violationTime = new Date(v.timestamp);
+                            const violationTimeStr = violationTime.toLocaleTimeString("en-US", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                            });
+                            return violationTimeStr === event.timestamp;
+                         });
 
-                {/* Questions list */}
-                <div className={styles.questionsContainer}>
-                  <h3 className={styles.questionsTitle}>Question Details</h3>
-                  {examResults.answers.map((item, index) => (
-                    <div
-                      key={item.question.id}
-                      className={`${styles.questionCard} ${
-                        item.isCorrect
-                          ? styles.correctAnswer
-                          : item.userAnswer
-                          ? styles.wrongAnswer
-                          : styles.notAnswered
-                      } theme-transition`}
-                    >
-                      <div className={styles.questionHeader}>
-                        <span className={styles.questionNumber}>
-                          Q{index + 1}
-                        </span>
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                          <span style={{ 
-                            fontSize: "14px", 
-                            fontWeight: 600,
-                            color: "#64748b",
-                            padding: "4px 12px",
-                            background: "#f1f5f9",
-                            borderRadius: "6px"
-                          }}>
-                            {item.isCorrect ? item.question.marks : 0}/{item.question.marks} marks
-                          </span>
-                          <span
-                            className={`${styles.questionStatus} ${
-                              item.isCorrect
-                                ? styles.statusCorrect
-                                : item.userAnswer
-                                ? styles.statusWrong
-                                : styles.statusUnanswered
-                            }`}
+                         return (
+                          <div key={index} className={styles.timelineItem}>
+                              <div className={styles.timelineIcon} style={{ 
+                                borderColor: hasViolations ? 'var(--error-text)' : 'var(--success-text)',
+                                color: hasViolations ? 'var(--error-text)' : 'var(--success-text)'
+                              }}>
+                                {hasViolations ? '!' : '✓'}
+                              </div>
+                              <div className={styles.timelineContent}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{event.timestamp}</span>
+                                      {violationDate && (
+                                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                           {new Date(violationDate.timestamp).toLocaleDateString()}
+                                         </span>
+                                      )}
+                                    </div>
+                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Trust Score: {event.score}%</span>
+                                </div>
+                                
+                                {hasViolations ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                        {event.violations.map((v, i) => (
+                                          <span key={i} className={`${styles.severityTag} ${styles.severityHigh}`}>
+                                            {v}
+                                          </span>
+                                        ))}
+                                      </div>
+                                      
+                                      <div style={{ display: 'flex', gap: '12px' }}>
+                                        <button 
+                                          className={styles.btn} 
+                                          style={{ fontSize: '0.8rem', padding: '6px 12px', background: 'var(--primary-50)', color: 'var(--primary-600)' }}
+                                          onClick={() => {
+                                             if (violationDate) seekToTimestamp(violationDate.timestamp);
+                                          }}
+                                        >
+                                          ▶ Jump to Video
+                                        </button>
+                                        
+                                        {violationDate && (
+                                            <button 
+                                              className={styles.btn} 
+                                              style={{ fontSize: '0.8rem', padding: '6px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+                                              onClick={() =>
+                                                openImageModal(
+                                                  `/api/violation-image/${user?.id}/${examDetails?.id}/${violationDate.timestamp}`,
+                                                  `Violation at ${event.timestamp}`,
+                                                  event.timestamp,
+                                                  event.violations[0] || "Unknown"
+                                                )
+                                              }
+                                            >
+                                              🖼 View Snapshot
+                                            </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                ) : (
+                                    <span style={{ color: 'var(--success-text)', fontSize: '0.9rem', fontWeight: 500 }}>Clean Interval - No anomalies detected</span>
+                                )}
+                              </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                       <div className={styles.noDataMessage}>No Timeline Data Available</div>
+                    )}
+                  </div>
+                )}
+
+                {/* REVIEW TAB */}
+                {activeTab === "review" && (
+                   <div className={styles.reviewTab}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                         <h3 className={styles.sectionHeader}>Video Playback</h3>
+                         <button
+                            onClick={() => checkAllVideosAvailability()}
+                            className={styles.btn}
+                            style={{ fontSize: '0.9rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+                            disabled={checkingVideoAvailability}
                           >
-                            {item.isCorrect
-                              ? "✓ Correct"
-                              : item.userAnswer
-                              ? "✗ Wrong"
-                              : "— Not Answered"}
-                          </span>
-                        </div>
+                            {checkingVideoAvailability ? "Checking..." : "Refresh Videos"}
+                          </button>
                       </div>
 
-                      <div className={styles.questionText}>
-                        {item.question.question_text}
+                      {/* Video Grid */}
+                      <div className={styles.videoGrid}>
+                         <VideoPlayer
+                            user={user}
+                            examDetails={examDetails}
+                            videosAvailability={videosAvailability}
+                            checkingVideoAvailability={checkingVideoAvailability}
+                            videoRef={videoRef}
+                            baseUrl={baseUrl}
+                            onVideoDownload={handleVideoDownload}
+                            category="face_camera"
+                            title="Face Camera"
+                            isSelected={selectedVideoCategory === "face_camera"}
+                            onSelect={() => setSelectedVideoCategory("face_camera")}
+                          />
+                          <VideoPlayer
+                            user={user}
+                            examDetails={examDetails}
+                            videosAvailability={videosAvailability}
+                            checkingVideoAvailability={checkingVideoAvailability}
+                            videoRef={videoRef}
+                            baseUrl={baseUrl}
+                            onVideoDownload={handleVideoDownload}
+                            category="screen_recording"
+                            title="Screen Recording"
+                            isSelected={selectedVideoCategory === "screen_recording"}
+                            onSelect={() => setSelectedVideoCategory("screen_recording")}
+                          />
+                          <VideoPlayer
+                            user={user}
+                            examDetails={examDetails}
+                            videosAvailability={videosAvailability}
+                            checkingVideoAvailability={checkingVideoAvailability}
+                            videoRef={videoRef}
+                            baseUrl={baseUrl}
+                            onVideoDownload={handleVideoDownload}
+                            category="third_eye"
+                            title="Third Eye"
+                            isSelected={selectedVideoCategory === "third_eye"}
+                            onSelect={() => setSelectedVideoCategory("third_eye")}
+                          />
                       </div>
 
-                      {/* Show user's selected answer */}
-                      {item.userAnswer && item.selectedOption && (
-                        <div style={{
-                          padding: "12px 16px",
-                          background: item.isCorrect ? "var(--success-bg)" : "var(--error-bg)",
-                          border: `2px solid ${item.isCorrect ? "var(--success-color)" : "var(--error-color)"}`,
-                          borderRadius: "8px",
-                          marginBottom: "12px"
-                        }}>
-                          <div style={{ fontSize: "13px", fontWeight: 600, marginBottom: "4px", color: "#64748b" }}>
-                            Student's Answer:
-                          </div>
-                          <div style={{ fontSize: "15px", fontWeight: 500, color: "#1e293b" }}>
-                            {item.selectedOption.option_text}
-                          </div>
+                      <div style={{ marginTop: '32px' }}>
+                        <h3 className={styles.sectionHeader}>Detected Violations</h3>
+                        <div className={styles.violationsList}>
+                           {violations.length > 0 ? violations.map(violation => (
+                              <div key={violation.id} className={styles.timelineItem} onClick={() => seekToTimestamp(violation.timestamp)} style={{ cursor: 'pointer', paddingBottom: '16px' }}>
+                                 <div className={styles.timelineIcon} style={{ 
+                                    background: getSeverityColor(violation.severity), 
+                                    color: 'white',
+                                    border: 'none',
+                                    fontSize: '10px'
+                                  }}>
+                                    {violation.severity.charAt(0).toUpperCase()}
+                                 </div>
+                                 <div className={styles.timelineContent} style={{ background: 'var(--bg-surface-hover)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                       <span style={{ fontWeight: 600 }}>{violation.type}</span>
+                                       <span className={styles.metaLabel}>{formatTimestamp(violation.timestamp)}</span>
+                                    </div>
+                                    <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{violation.description}</p>
+                                    <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem', color: 'var(--primary-600)' }}>
+                                       ▶ Click to jump to timestamp
+                                    </div>
+                                 </div>
+                              </div>
+                           )) : (
+                              <div className={styles.noDataMessage}>No violations detected.</div>
+                           )}
                         </div>
+                      </div>
+                   </div>
+                )}
+
+                {/* RESULTS TAB */}
+                {activeTab === "examResults" && (
+                   <div className={styles.examResultsTab}>
+                      {examResultsLoading ? (
+                        <div className={styles.noDataMessage}>Loading results...</div>
+                      ) : examResults ? (
+                         <div>
+                            <div className={styles.statsOverview} style={{ marginBottom: '32px' }}>
+                                <div className={styles.statCard}>
+                                  <span className={styles.statLabel}>Total Questions</span>
+                                  <span className={styles.statValue}>{examResults.stats.totalQuestions}</span>
+                                </div>
+                                <div className={styles.statCard}>
+                                  <span className={styles.statLabel}>Correct</span>
+                                  <span className={styles.statValue} style={{ color: 'var(--success-text)' }}>{examResults.stats.correct}</span>
+                                </div>
+                                <div className={styles.statCard}>
+                                  <span className={styles.statLabel}>Wrong</span>
+                                  <span className={styles.statValue} style={{ color: 'var(--error-text)' }}>{examResults.stats.wrong}</span>
+                                </div>
+                                <div className={styles.statCard}>
+                                  <span className={styles.statLabel}>Unanswered</span>
+                                  <span className={styles.statValue} style={{ color: 'var(--warning-text)' }}>{examResults.stats.unanswered}</span>
+                                </div>
+                                <div className={styles.statCard} style={{ gridColumn: '1 / -1', background: 'var(--primary-600)', color: 'white' }}>
+                                  <span className={styles.statLabel} style={{ color: 'rgba(255,255,255,0.8)' }}>Total Score</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <span className={styles.statValue} style={{ color: 'white' }}>{examResults.stats.score}</span>
+                                    <span style={{ padding: '4px 12px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px', fontWeight: 600 }}>
+                                      {(() => {
+                                          const [obtained, total] = examResults.stats.score.split('/').map(Number);
+                                          return total > 0 ? Math.round((obtained / total) * 100) + '%' : '0%';
+                                      })()}
+                                    </span>
+                                  </div>
+                                </div>
+                            </div>
+
+                            <h3 className={styles.sectionHeader}>Question Analysis</h3>
+                            <div className={styles.questionsContainer}>
+                               {examResults.answers.map((item, index) => (
+                                  <div key={index} className={`${styles.questionCard} ${item.isCorrect ? styles.correct : styles.wrong}`}>
+                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                           <span style={{ 
+                                             background: 'var(--bg-surface-hover)', 
+                                             padding: '4px 8px', 
+                                             borderRadius: '6px', 
+                                             fontSize: '0.85rem', 
+                                             fontWeight: 600 
+                                           }}>
+                                              Q{index + 1}
+                                           </span>
+                                           <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                              {item.isCorrect ? item.question.marks : 0} / {item.question.marks} marks
+                                           </span>
+                                        </div>
+                                        <span className={item.isCorrect ? styles.trendGood : styles.trendBad} style={{ fontSize: '0.9rem' }}>
+                                           {item.isCorrect ? '✓ Correct' : '✗ Wrong'}
+                                        </span>
+                                     </div>
+                                     
+                                     <h4 style={{ margin: '0 0 16px 0', fontSize: '1rem', fontWeight: 500 }}>
+                                        {item.question.question_text}
+                                     </h4>
+
+                                     <div className={styles.optionsList}>
+                                        {item.question.QuestionOptions.map(opt => (
+                                           <div key={opt.id} className={`${styles.optionItem} 
+                                              ${opt.is_correct ? styles.correct : ''}
+                                              ${!opt.is_correct && Number(opt.id) === Number(item.userAnswer?.option_id) ? styles.wrong : ''}
+                                              ${Number(opt.id) === Number(item.userAnswer?.option_id) ? styles.selected : ''}
+                                           `}>
+                                              <span>{opt.option_text}</span>
+                                              {Number(opt.id) === Number(item.userAnswer?.option_id) && (
+                                                <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                                                   {opt.is_correct ? '(Your Answer)' : '(Your Answer)'}
+                                                </span>
+                                              )}
+                                           </div>
+                                        ))}
+                                     </div>
+                                  </div>
+                               ))}
+                            </div>
+                         </div>
+                      ) : (
+                         <div className={styles.noDataMessage}>No results available.</div>
                       )}
-
-                      <div className={styles.optionsList}>
-                        {item.question.QuestionOptions.map((option: any) => (
-                          <div
-                            key={option.id}
-                            className={`${styles.optionItem} ${
-                              option.is_correct
-                                ? styles.correctOption
-                                : Number(option.id) === Number(item.userAnswer?.option_id)
-                                ? styles.selectedOption
-                                : ""
-                            }`}
-                          >
-                            <span className={styles.optionText}>
-                              {option.option_text}
-                            </span>
-                            {option.is_correct && (
-                              <span className={styles.correctBadge}>
-                                ✓ Correct Answer
-                              </span>
-                            )}
-                            {!option.is_correct &&
-                              Number(option.id) === Number(item.userAnswer?.option_id) && (
-                                <span className={styles.selectedBadge}>
-                                  Your Answer
-                                </span>
-                              )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                   </div>
+                )}
               </div>
-            ) : (
-              <div className={styles.emptyState}>
-                <div className={styles.emptyStateIcon}>📝</div>
-                <p>No exam results available for this participant</p>
-              </div>
-            )}
           </div>
-        )}
+        </main>
       </div>
 
       {/* Image Modal */}
