@@ -33,7 +33,7 @@ const ExamCard: React.FC<Props> = ({
   const [showEditDetailsModal, setShowEditDetailsModal] = useState(false);
   const [isLoadingExamDetails, setIsLoadingExamDetails] = useState(false);
   const [showAddStudentsModal, setShowAddStudentsModal] = useState(false);
-  const [newStudents, setNewStudents] = useState<Array<{email: string; password: string; name: string; reg: string; dept: string}>>([]);
+  const [newStudents, setNewStudents] = useState<Array<{ email: string; password: string; name: string; reg: string; dept: string }>>([]);
   const [showStudentForm, setShowStudentForm] = useState(false);
   const [newStudentEmail, setNewStudentEmail] = useState("");
   const [newStudentPassword, setNewStudentPassword] = useState("");
@@ -158,20 +158,20 @@ const ExamCard: React.FC<Props> = ({
       // Fetch complete exam details from backend
       const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const token = getTokenFromCookie();
-      
+
       const response = await fetch(`${baseUrl}/exam/${exam.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch exam details');
       }
-      
+
       const data = await response.json();
       const fullExam = data.exam;
-      
+
       // Format dates for datetime-local input
       const formatForInput = (dateStr: string | undefined) => {
         if (!dateStr) return '';
@@ -432,7 +432,7 @@ const ExamCard: React.FC<Props> = ({
     }
 
     const reader = new FileReader();
-    
+
     reader.onerror = () => {
       setStudentUploadError('Error reading file. Please try again.');
       event.target.value = '';
@@ -460,7 +460,7 @@ const ExamCard: React.FC<Props> = ({
 
         const extractedStudents: typeof newStudents = [];
         const errors: string[] = [];
-        
+
         jsonData.forEach((row, index) => {
           const email = row['Email'] || row['email'];
           const password = row['Password'] || row['password'];
@@ -527,11 +527,11 @@ const ExamCard: React.FC<Props> = ({
         }
 
         setNewStudents(prev => [...prev, ...extractedStudents]);
-        
+
         if (errors.length === 0) {
           setStudentUploadError('');
         }
-        
+
         event.target.value = '';
       } catch (parseError) {
         setStudentUploadError('Error parsing file. Please check the format.');
@@ -563,7 +563,7 @@ const ExamCard: React.FC<Props> = ({
     const worksheet = XLSX.utils.json_to_sheet(sampleData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
-    
+
     worksheet['!cols'] = [
       { wch: 30 },
       { wch: 15 },
@@ -600,11 +600,11 @@ const ExamCard: React.FC<Props> = ({
       if (response.data.success) {
         const { results } = response.data;
         let message = `Successfully invited ${results.successful}/${results.total} students!\n`;
-        
+
         if (results.failed > 0) {
           message += `\nFailed: ${results.failed}`;
         }
-        
+
         if (results.emailsFailed > 0) {
           message += `\n\nEmail delivery failed for ${results.emailsFailed} student(s). Accounts were created but emails could not be sent.`;
         }
@@ -619,8 +619,7 @@ const ExamCard: React.FC<Props> = ({
     } catch (error: any) {
       console.error('Error inviting students:', error);
       alert(
-        `Failed to invite students:\n${
-          error?.response?.data?.message || error.message
+        `Failed to invite students:\n${error?.response?.data?.message || error.message
         }`
       );
     } finally {
@@ -812,400 +811,459 @@ const ExamCard: React.FC<Props> = ({
 
   // List View
   const listView = (
-    <div 
-          className={styles.examListItem}
+    <div
+      className={styles.examListItem}
+      style={{
+        background: 'white',
+        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        padding: '16px 20px',
+        marginBottom: '12px',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px',
+        position: 'relative',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-1px)';
+        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
+        e.currentTarget.style.borderColor = '#0ea5e9';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+        e.currentTarget.style.borderColor = '#e2e8f0';
+      }}
+    >
+      {/* Exam Icon */}
+      <div
+        style={{
+          width: '44px',
+          height: '44px',
+          borderRadius: '10px',
+          background: 'linear-gradient(135deg, #0ea5e9, #3b82f6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '18px',
+          fontWeight: '700',
+          color: 'white',
+          flexShrink: 0,
+          boxShadow: '0 2px 8px rgba(14, 165, 233, 0.25)',
+        }}
+      >
+        {examName.charAt(0).toUpperCase()}
+      </div>
+
+      {/* Exam Name & Status */}
+      <div style={{ minWidth: '200px', flex: '0 0 auto' }}>
+        <h3
           style={{
-            background: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '12px',
-            padding: '20px 24px',
-            marginBottom: '12px',
-            transition: 'all 0.3s ease',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '20px',
-            position: 'relative',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateX(4px)';
-            e.currentTarget.style.boxShadow = '0 4px 20px var(--shadow)';
-            e.currentTarget.style.borderColor = 'var(--accent-color)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateX(0)';
-            e.currentTarget.style.boxShadow = 'none';
-            e.currentTarget.style.borderColor = 'var(--border-color)';
+            margin: '0 0 4px 0',
+            fontSize: '15px',
+            fontWeight: '700',
+            color: '#0f172a',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            letterSpacing: '-0.01em',
           }}
         >
-          {/* Status Badge */}
-          <div
-            style={{
-              minWidth: '100px',
-              display: 'flex',
-              justifyContent: 'center',
+          {examName}
+        </h3>
+        <span
+          style={{
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontSize: '10px',
+            fontWeight: '700',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            color: getStatusColor(displayStatus),
+            backgroundColor: getStatusBg(displayStatus),
+            border: `1px solid ${getStatusColor(displayStatus)}`,
+            whiteSpace: 'nowrap',
+            display: 'inline-block',
+          }}
+        >
+          {displayStatus}
+        </span>
+      </div>
+
+      {/* Exam Key */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '140px' }}>
+        <span style={{ fontSize: '11px', fontWeight: '600', color: '#64748b' }}>Key:</span>
+        <span style={{ fontFamily: 'monospace', fontSize: '13px', fontWeight: '700', color: '#0ea5e9' }}>
+          {examKey}
+        </span>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            copyToClipboard();
+          }}
+          style={{
+            background: copied ? '#dcfce7' : '#f1f5f9',
+            border: 'none',
+            borderRadius: '4px',
+            padding: '3px 6px',
+            cursor: 'pointer',
+            color: copied ? '#16a34a' : '#64748b',
+            fontSize: '11px',
+            fontWeight: '600',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+          }}
+          title={copied ? "Copied!" : "Copy exam key"}
+        >
+          {copied ? <Check size={11} /> : <Copy size={11} />}
+        </button>
+      </div>
+
+      {/* Participants */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '100px' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <span style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>{participantCount}</span>
+        <span style={{ fontSize: '12px', color: '#64748b' }}>students</span>
+      </div>
+
+      {/* Schedule */}
+      {(startTime || endTime) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span style={{ fontSize: '12px', fontWeight: '500', color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {formatRange(startTime, endTime)}
+          </span>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '6px',
+          flexShrink: 0,
+          marginLeft: 'auto',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {onViewDetails && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails(exam);
             }}
-          >
-            <span
-              style={{
-                padding: '6px 14px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: '600',
-                textTransform: 'capitalize',
-                color: getStatusColor(displayStatus),
-                backgroundColor: getStatusBg(displayStatus),
-                border: `1px solid ${getStatusColor(displayStatus)}`,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {displayStatus}
-            </span>
-          </div>
-
-          {/* Exam Info */}
-          <div style={{ flex: 1, minWidth: '0' }}>
-            <h3
-              style={{
-                margin: '0 0 8px 0',
-                fontSize: '16px',
-                fontWeight: '700',
-                color: 'var(--text-primary)',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {examName}
-            </h3>
-            <div
-              style={{
-                display: 'flex',
-                gap: '20px',
-                fontSize: '13px',
-                color: 'var(--text-secondary)',
-                flexWrap: 'wrap',
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <strong style={{ color: 'var(--text-primary)' }}>Key:</strong>
-                <span style={{ fontFamily: 'monospace', fontWeight: '600', color: 'var(--accent-color)' }}>
-                  {examKey}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    copyToClipboard();
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '2px',
-                    color: 'var(--text-secondary)',
-                    fontSize: '14px',
-                  }}
-                  title={copied ? "Copied!" : "Copy exam key"}
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                </button>
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                {participantCount} participants
-              </span>
-              {(startTime || endTime) && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                  {formatRange(startTime, endTime)}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div
             style={{
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: 'none',
+              background: '#0ea5e9',
+              color: 'white',
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
               display: 'flex',
-              gap: '8px',
-              flexShrink: 0,
+              alignItems: 'center',
+              gap: '4px',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#0284c7';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#0ea5e9';
+            }}
+            title="View exam details"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            Details
+          </button>
+        )}
+
+        {onEdit && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(exam);
+            }}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: '1px solid #e2e8f0',
+              background: 'white',
+              color: '#475569',
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#f8fafc';
+              e.currentTarget.style.borderColor = '#cbd5e1';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }}
+            title="Edit questions"
+          >
+            <Pencil size={12} />
+            Edit
+          </button>
+        )}
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            openEditDetailsModal();
+          }}
+          disabled={isLoadingExamDetails}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '6px',
+            border: '1px solid #e2e8f0',
+            background: 'white',
+            color: '#475569',
+            fontSize: '12px',
+            fontWeight: '600',
+            cursor: isLoadingExamDetails ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            whiteSpace: 'nowrap',
+            opacity: isLoadingExamDetails ? 0.6 : 1,
+          }}
+          onMouseEnter={(e) => {
+            if (!isLoadingExamDetails) {
+              e.currentTarget.style.background = '#f8fafc';
+              e.currentTarget.style.borderColor = '#cbd5e1';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isLoadingExamDetails) {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#e2e8f0';
+            }
+          }}
+          title="Edit exam settings"
+        >
+          {isLoadingExamDetails ? (
+            <>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+              </svg>
+              ...
+            </>
+          ) : (
+            <>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6m5.5-11.5l-4.2 4.2m0 4.6l4.2 4.2M23 12h-6m-6 0H5m11.5-5.5l-4.2 4.2m0 4.6l4.2 4.2"></path>
+              </svg>
+              Settings
+            </>
+          )}
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowAddStudentsModal(true);
+          }}
+          style={{
+            padding: '6px 10px',
+            borderRadius: '6px',
+            border: '1px solid #e2e8f0',
+            background: 'white',
+            color: '#475569',
+            fontSize: '12px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#f8fafc';
+            e.currentTarget.style.borderColor = '#cbd5e1';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'white';
+            e.currentTarget.style.borderColor = '#e2e8f0';
+          }}
+          title="Add students"
+        >
+          <UserPlus size={12} />
+        </button>
+
+        {onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(exam.id);
+            }}
+            style={{
+              padding: '6px 8px',
+              borderRadius: '6px',
+              border: '1px solid #fee2e2',
+              background: 'white',
+              color: '#ef4444',
+              fontSize: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
               alignItems: 'center',
             }}
-            onClick={(e) => e.stopPropagation()}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#fef2f2';
+              e.currentTarget.style.borderColor = '#fecaca';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#fee2e2';
+            }}
+            title="Delete exam"
           >
-            {onViewDetails && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewDetails(exam);
-                }}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--secondary-bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--accent-color)';
-                  e.currentTarget.style.color = 'white';
-                  e.currentTarget.style.borderColor = 'var(--accent-color)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--secondary-bg)';
-                  e.currentTarget.style.color = 'var(--text-primary)';
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                }}
-                title="View exam details"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                Details
-              </button>
-            )}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
-            {onEdit && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(exam);
-                }}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--secondary-bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--primary-color)';
-                  e.currentTarget.style.color = 'white';
-                  e.currentTarget.style.borderColor = 'var(--primary-color)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--secondary-bg)';
-                  e.currentTarget.style.color = 'var(--text-primary)';
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                }}
-                title="Edit questions"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-                Edit
-              </button>
-            )}
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                openEditDetailsModal();
-              }}
-              disabled={isLoadingExamDetails}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-color)',
-                background: 'var(--secondary-bg)',
-                color: 'var(--text-primary)',
-                fontSize: '13px',
-                fontWeight: '600',
-                cursor: isLoadingExamDetails ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                whiteSpace: 'nowrap',
-                opacity: isLoadingExamDetails ? 0.6 : 1,
-              }}
-              onMouseEnter={(e) => {
-                if (!isLoadingExamDetails) {
-                  e.currentTarget.style.background = 'var(--info-color)';
-                  e.currentTarget.style.color = 'white';
-                  e.currentTarget.style.borderColor = 'var(--info-color)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isLoadingExamDetails) {
-                  e.currentTarget.style.background = 'var(--secondary-bg)';
-                  e.currentTarget.style.color = 'var(--text-primary)';
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                }
-              }}
-              title="Edit exam settings"
-            >
-              {isLoadingExamDetails ? (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-                  </svg>
-                  ...
-                </>
-              ) : (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M12 1v6m0 6v6m5.5-11.5l-4.2 4.2m0 4.6l4.2 4.2M23 12h-6m-6 0H5m11.5-5.5l-4.2 4.2m0 4.6l4.2 4.2"></path>
-                  </svg>
-                  Settings
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowAddStudentsModal(true);
-              }}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-color)',
-                background: 'var(--secondary-bg)',
-                color: 'var(--text-primary)',
-                fontSize: '13px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--primary-color)';
-                e.currentTarget.style.color = 'white';
-                e.currentTarget.style.borderColor = 'var(--primary-color)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--secondary-bg)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-                e.currentTarget.style.borderColor = 'var(--border-color)';
-              }}
-              title="Add students and send invitations"
-            >
-              <UserPlus size={14} />
-              Add Students
-            </button>
-
-            {onDelete && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(exam.id);
-                }}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--secondary-bg)',
-                  color: 'var(--text-secondary)',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--error-bg)';
-                  e.currentTarget.style.color = 'var(--error-color)';
-                  e.currentTarget.style.borderColor = 'var(--error-color)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--secondary-bg)';
-                  e.currentTarget.style.color = 'var(--text-secondary)';
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                }}
-                title="Delete exam"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-              </button>
-            )}
-          </div>
-        </div>
-      );
 
   // Grid View (existing card view)
   const gridView = (
     <div className={styles.examCard}>
-        {/* Status Badge */}
-        <div className={styles.statusContainer}>
+      {/* Status Badge */}
+      <div className={styles.statusContainer}>
+        <span
+          className={styles.statusBadge}
+          style={{
+            color: getStatusColor(displayStatus),
+            backgroundColor: getStatusBg(displayStatus),
+            borderColor: getStatusColor(displayStatus),
+          }}
+        >
+          {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
+        </span>
+      </div>
+
+      {/* Header */}
+      <div className={styles.header}>
+        <h3 className={styles.title} title={examName}>
+          {examName}
+        </h3>
+      </div>
+
+      {/* Content */}
+      <div className={styles.content}>
+        {/* Exam Key */}
+        <div className={styles.infoRow}>
+          <span className={styles.label}>Exam Key:</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span className={styles.value}>{examKey}</span>
+            <button
+              onClick={copyToClipboard}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px",
+                borderRadius: "4px",
+                color: "var(--text-secondary)",
+                fontSize: "12px",
+                transition: "all 0.2s ease",
+              }}
+              title={copied ? "Copied!" : "Copy exam key"}
+            >
+              {copied ? <Check size={12} /> : <Copy size={12} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Participants */}
+        <div className={styles.infoRow}>
+          <div className={styles.iconText}>
+            <svg
+              className={styles.icon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span
+              className={styles.label}
+              style={{ cursor: onManage ? "pointer" : "default" }}
+              onClick={onManage ? () => onManage(exam) : undefined}
+            >
+              Participants:
+            </span>
+          </div>
           <span
-            className={styles.statusBadge}
-            style={{
-              color: getStatusColor(displayStatus),
-              backgroundColor: getStatusBg(displayStatus),
-              borderColor: getStatusColor(displayStatus),
-            }}
+            className={styles.participantCount}
+            onClick={onManage ? () => onManage(exam) : undefined}
+            style={{ cursor: onManage ? "pointer" : "default" }}
+            title={
+              onManage ? "Click to view participants" : "Participants count"
+            }
           >
-            {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
+            {participantCount}
           </span>
         </div>
 
-        {/* Header */}
-        <div className={styles.header}>
-          <h3 className={styles.title} title={examName}>
-            {examName}
-          </h3>
+        {/* Created Date */}
+        <div className={styles.infoRow}>
+          <div className={styles.iconText}>
+            <svg
+              className={styles.icon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span className={styles.label}>Created:</span>
+          </div>
+          <span className={styles.value}>
+            {new Date(createdAt).toLocaleDateString()}
+          </span>
         </div>
 
-        {/* Content */}
-        <div className={styles.content}>
-          {/* Exam Key */}
-          <div className={styles.infoRow}>
-            <span className={styles.label}>Exam Key:</span>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span className={styles.value}>{examKey}</span>
-              <button
-                onClick={copyToClipboard}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "4px",
-                  borderRadius: "4px",
-                  color: "var(--text-secondary)",
-                  fontSize: "12px",
-                  transition: "all 0.2s ease",
-                }}
-                title={copied ? "Copied!" : "Copy exam key"}
-              >
-                {copied ? <Check size={12} /> : <Copy size={12} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Participants */}
+        {/* Time Range */}
+        {(startTime || endTime) && (
           <div className={styles.infoRow}>
             <div className={styles.iconText}>
               <svg
@@ -1215,110 +1273,31 @@ const ExamCard: React.FC<Props> = ({
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12,6 12,12 16,14"></polyline>
               </svg>
-              <span
-                className={styles.label}
-                style={{ cursor: onManage ? "pointer" : "default" }}
-                onClick={onManage ? () => onManage(exam) : undefined}
-              >
-                Participants:
-              </span>
-            </div>
-            <span
-              className={styles.participantCount}
-              onClick={onManage ? () => onManage(exam) : undefined}
-              style={{ cursor: onManage ? "pointer" : "default" }}
-              title={
-                onManage ? "Click to view participants" : "Participants count"
-              }
-            >
-              {participantCount}
-            </span>
-          </div>
-
-          {/* Created Date */}
-          <div className={styles.infoRow}>
-            <div className={styles.iconText}>
-              <svg
-                className={styles.icon}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              <span className={styles.label}>Created:</span>
+              <span className={styles.label}>Schedule:</span>
             </div>
             <span className={styles.value}>
-              {new Date(createdAt).toLocaleDateString()}
+              {formatRange(startTime, endTime)}
             </span>
           </div>
+        )}
 
-          {/* Time Range */}
-          {(startTime || endTime) && (
-            <div className={styles.infoRow}>
-              <div className={styles.iconText}>
-                <svg
-                  className={styles.icon}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12,6 12,12 16,14"></polyline>
-                </svg>
-                <span className={styles.label}>Schedule:</span>
-              </div>
-              <span className={styles.value}>
-                {formatRange(startTime, endTime)}
-              </span>
-            </div>
-          )}
-
-          {/* Exam ID */}
-          <div className={styles.examId}>
-            <span className={styles.idLabel}>ID: {exam.id}</span>
-          </div>
+        {/* Exam ID */}
+        <div className={styles.examId}>
+          <span className={styles.idLabel}>ID: {exam.id}</span>
         </div>
+      </div>
 
-        {/* Actions */}
-        <div className={styles.actions}>
-          {onViewDetails && (
-            <button
-              className={`${styles.button} ${styles.primaryButton}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewDetails(exam);
-              }}
-            >
-              <svg
-                className={styles.buttonIcon}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-              View Details
-            </button>
-          )}
-
+      {/* Actions */}
+      <div className={styles.actions}>
+        {onViewDetails && (
           <button
-            className={`${styles.button} ${styles.secondaryButton}`}
+            className={`${styles.button} ${styles.primaryButton}`}
             onClick={(e) => {
               e.stopPropagation();
-              if (onManage) {
-                onManage(exam);
-              }
+              onViewDetails(exam);
             }}
           >
             <svg
@@ -1328,124 +1307,147 @@ const ExamCard: React.FC<Props> = ({
               stroke="currentColor"
               strokeWidth="2"
             >
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
-            Manage
+            View Details
           </button>
+        )}
 
+        <button
+          className={`${styles.button} ${styles.secondaryButton}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onManage) {
+              onManage(exam);
+            }
+          }}
+        >
+          <svg
+            className={styles.buttonIcon}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+          Manage
+        </button>
+
+        <button
+          className={`${styles.button} ${styles.secondaryButton}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            openEditDetailsModal();
+          }}
+          disabled={isLoadingExamDetails}
+          title="Edit exam details (name, time, duration)"
+          style={{ opacity: isLoadingExamDetails ? 0.6 : 1 }}
+        >
+          {isLoadingExamDetails ? (
+            <>
+              <svg
+                className={styles.buttonIcon}
+                style={{ animation: 'spin 1s linear infinite' }}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+              </svg>
+              Loading...
+            </>
+          ) : (
+            <>
+              <svg
+                className={styles.buttonIcon}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              Edit Details
+            </>
+          )}
+        </button>
+
+        {onEdit && (
           <button
             className={`${styles.button} ${styles.secondaryButton}`}
             onClick={(e) => {
               e.stopPropagation();
-              openEditDetailsModal();
+              onEdit(exam);
             }}
-            disabled={isLoadingExamDetails}
-            title="Edit exam details (name, time, duration)"
-            style={{ opacity: isLoadingExamDetails ? 0.6 : 1 }}
           >
-            {isLoadingExamDetails ? (
-              <>
-                <svg
-                  className={styles.buttonIcon}
-                  style={{ animation: 'spin 1s linear infinite' }}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-                </svg>
-                Loading...
-              </>
-            ) : (
-              <>
-                <svg
-                  className={styles.buttonIcon}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-                Edit Details
-              </>
-            )}
+            <svg
+              className={styles.buttonIcon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+            Edit Questions
           </button>
+        )}
 
-          {onEdit && (
-            <button
-              className={`${styles.button} ${styles.secondaryButton}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(exam);
-              }}
+        {onViewResults && (
+          <button
+            className={`${styles.button} ${styles.resultsButton}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewResults(exam);
+            }}
+          >
+            <svg
+              className={styles.buttonIcon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              <svg
-                className={styles.buttonIcon}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M9 11l3 3L22 4"></path>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-              </svg>
-              Edit Questions
-            </button>
-          )}
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="9" y1="9" x2="15" y2="9"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            View Results
+          </button>
+        )}
 
-          {onViewResults && (
-            <button
-              className={`${styles.button} ${styles.resultsButton}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewResults(exam);
-              }}
+        {onDelete && (
+          <button
+            className={`${styles.button} ${styles.deleteButton}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(exam.id);
+            }}
+            title="Delete exam"
+          >
+            <svg
+              className={styles.buttonIcon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              <svg
-                className={styles.buttonIcon}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="9" y1="9" x2="15" y2="9"></line>
-                <line x1="9" y1="15" x2="15" y2="15"></line>
-              </svg>
-              View Results
-            </button>
-          )}
-
-          {onDelete && (
-            <button
-              className={`${styles.button} ${styles.deleteButton}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(exam.id);
-              }}
-              title="Delete exam"
-            >
-              <svg
-                className={styles.buttonIcon}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-              </svg>
-              Delete
-            </button>
-          )}
-        </div>
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+            Delete
+          </button>
+        )}
       </div>
+    </div>
   );
 
   // Render the appropriate view
@@ -1705,45 +1707,45 @@ const ExamCard: React.FC<Props> = ({
 
                     {/* End Time */}
                     <div style={{ marginBottom: "20px" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "8px",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    End Time
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={editFormData.endTime}
-                    onChange={(e) =>
-                      setEditFormData({
-                        ...editFormData,
-                        endTime: e.target.value,
-                      })
-                    }
-                    disabled={isSavingDetails}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "var(--secondary-bg)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "10px",
-                      fontSize: "14px",
-                      color: "var(--text-primary)",
-                      outline: "none",
-                      transition: "border-color 0.2s",
-                      boxSizing: "border-box",
-                    }}
-                    onFocus={(e) =>
-                      (e.currentTarget.style.borderColor = "var(--accent-color)")
-                    }
-                    onBlur={(e) =>
-                      (e.currentTarget.style.borderColor = "var(--border-color)")
-                    }
+                      <label
+                        style={{
+                          display: "block",
+                          marginBottom: "8px",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "var(--text-primary)",
+                        }}
+                      >
+                        End Time
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={editFormData.endTime}
+                        onChange={(e) =>
+                          setEditFormData({
+                            ...editFormData,
+                            endTime: e.target.value,
+                          })
+                        }
+                        disabled={isSavingDetails}
+                        style={{
+                          width: "100%",
+                          padding: "12px 16px",
+                          background: "var(--secondary-bg)",
+                          border: "1px solid var(--border-color)",
+                          borderRadius: "10px",
+                          fontSize: "14px",
+                          color: "var(--text-primary)",
+                          outline: "none",
+                          transition: "border-color 0.2s",
+                          boxSizing: "border-box",
+                        }}
+                        onFocus={(e) =>
+                          (e.currentTarget.style.borderColor = "var(--accent-color)")
+                        }
+                        onBlur={(e) =>
+                          (e.currentTarget.style.borderColor = "var(--border-color)")
+                        }
                       />
                     </div>
 
@@ -2090,7 +2092,7 @@ const ExamCard: React.FC<Props> = ({
                             type="checkbox"
                             checked={
                               editFormData[
-                                item.key as keyof typeof editFormData
+                              item.key as keyof typeof editFormData
                               ] as boolean
                             }
                             onChange={(e) =>
@@ -2256,7 +2258,7 @@ const ExamCard: React.FC<Props> = ({
                             type="checkbox"
                             checked={
                               editFormData[
-                                item.key as keyof typeof editFormData
+                              item.key as keyof typeof editFormData
                               ] as boolean
                             }
                             onChange={(e) =>
@@ -2404,7 +2406,7 @@ const ExamCard: React.FC<Props> = ({
                             borderRadius: "8px",
                             cursor:
                               isSavingDetails ||
-                              !editFormData.recordedManualProctoring
+                                !editFormData.recordedManualProctoring
                                 ? "not-allowed"
                                 : "pointer",
                             opacity: !editFormData.recordedManualProctoring ? 0.5 : 1,
@@ -2427,7 +2429,7 @@ const ExamCard: React.FC<Props> = ({
                             type="checkbox"
                             checked={
                               editFormData[
-                                item.key as keyof typeof editFormData
+                              item.key as keyof typeof editFormData
                               ] as boolean
                             }
                             onChange={(e) =>
@@ -2445,7 +2447,7 @@ const ExamCard: React.FC<Props> = ({
                               height: "16px",
                               cursor:
                                 isSavingDetails ||
-                                !editFormData.recordedManualProctoring
+                                  !editFormData.recordedManualProctoring
                                   ? "not-allowed"
                                   : "pointer",
                             }}

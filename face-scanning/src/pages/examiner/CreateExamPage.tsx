@@ -39,7 +39,7 @@ const CreateExam = () => {
     document.body.style.background = "#f8fafc";
     document.body.style.minHeight = "100vh";
     document.documentElement.style.background = "#f8fafc";
-    
+
     return () => {
       document.body.style.background = "";
       document.body.style.minHeight = "";
@@ -53,7 +53,7 @@ const CreateExam = () => {
       console.log("📊 Fetching exams...");
       setLoading(true);
       const startTime = Date.now();
-      
+
       try {
         const base = process.env.NEXT_PUBLIC_BACKEND_URL;
         const res = await axios.get(`${base}/exam`);
@@ -74,11 +74,11 @@ const CreateExam = () => {
           );
           setExams(examsWithParticipants);
         }
-        
+
         // Ensure minimum display time of 500ms for loading screen
         const elapsedTime = Date.now() - startTime;
         const remainingTime = Math.max(0, 500 - elapsedTime);
-        
+
         await new Promise(resolve => setTimeout(resolve, remainingTime));
         console.log("✅ Exams loaded");
       } catch (e: unknown) {
@@ -126,7 +126,7 @@ const CreateExam = () => {
 
       // Remove exam from local state
       setExams((prevExams) => prevExams.filter((exam) => exam.id !== examId));
-      
+
       alert("Exam deleted successfully!");
     } catch (err) {
       console.error("Failed to delete exam:", err);
@@ -144,13 +144,13 @@ const CreateExam = () => {
         const matchesSearch = examName
           .toLowerCase()
           .includes(search.toLowerCase());
-        
+
         // Check if exam is expired
         const now = new Date();
-        const end = 
+        const end =
           e.endTime || (e as unknown as { end_time?: string }).end_time;
         const isExpired = end && new Date(end) < now;
-        
+
         // Determine if exam should be shown based on filter
         let matchesFilter: boolean;
         if (filterStatus === "all") {
@@ -166,7 +166,7 @@ const CreateExam = () => {
         } else {
           matchesFilter = e.status === filterStatus;
         }
-        
+
         return matchesSearch && matchesFilter;
       }),
     [exams, search, filterStatus]
@@ -178,14 +178,14 @@ const CreateExam = () => {
       active: exams.filter((e) => {
         const start =
           e.startTime || (e as unknown as { start_time?: string }).start_time;
-        const end = 
+        const end =
           e.endTime || (e as unknown as { end_time?: string }).end_time;
         const isFuture = start && new Date(start) > now;
         const isExpired = end && new Date(end) < now;
         return e.status === "active" && !isFuture && !isExpired;
       }).length,
       suspended: exams.filter((e) => {
-        const end = 
+        const end =
           e.endTime || (e as unknown as { end_time?: string }).end_time;
         const isExpired = end && new Date(end) < now;
         // Show as suspended if status is suspended OR if exam has expired
@@ -237,6 +237,7 @@ const CreateExam = () => {
         style={{
           minHeight: "100vh",
           background: "#f8fafc",
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
         }}
       >
         {/* Top Navigation Bar */}
@@ -440,11 +441,11 @@ const CreateExam = () => {
         {/* Main Content */}
         <div style={{ padding: "32px", maxWidth: "1400px", margin: "0 auto" }}>
           {/* Stats */}
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "repeat(5, 1fr)", 
-            gap: "20px", 
-            marginBottom: "32px" 
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            gap: "20px",
+            marginBottom: "32px"
           }}>
             <div style={{
               background: "white",
@@ -453,17 +454,17 @@ const CreateExam = () => {
               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
               border: "1px solid #e2e8f0",
             }}>
-              <div style={{ 
-                fontSize: "36px", 
-                fontWeight: "700", 
+              <div style={{
+                fontSize: "36px",
+                fontWeight: "700",
                 color: "#0f172a",
                 marginBottom: "8px",
               }}>
                 {stats.total}
               </div>
-              <div style={{ 
-                fontSize: "13px", 
-                fontWeight: "600", 
+              <div style={{
+                fontSize: "13px",
+                fontWeight: "600",
                 color: "#64748b",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
@@ -479,17 +480,17 @@ const CreateExam = () => {
               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
               border: "1px solid #e2e8f0",
             }}>
-              <div style={{ 
-                fontSize: "36px", 
-                fontWeight: "700", 
+              <div style={{
+                fontSize: "36px",
+                fontWeight: "700",
                 color: "#22c55e",
                 marginBottom: "8px",
               }}>
                 {stats.active}
               </div>
-              <div style={{ 
-                fontSize: "13px", 
-                fontWeight: "600", 
+              <div style={{
+                fontSize: "13px",
+                fontWeight: "600",
                 color: "#64748b",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
@@ -505,17 +506,17 @@ const CreateExam = () => {
               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
               border: "1px solid #e2e8f0",
             }}>
-              <div style={{ 
-                fontSize: "36px", 
-                fontWeight: "700", 
+              <div style={{
+                fontSize: "36px",
+                fontWeight: "700",
                 color: "#ef4444",
                 marginBottom: "8px",
               }}>
                 {stats.suspended}
               </div>
-              <div style={{ 
-                fontSize: "13px", 
-                fontWeight: "600", 
+              <div style={{
+                fontSize: "13px",
+                fontWeight: "600",
                 color: "#64748b",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
@@ -531,17 +532,17 @@ const CreateExam = () => {
               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
               border: "1px solid #e2e8f0",
             }}>
-              <div style={{ 
-                fontSize: "36px", 
-                fontWeight: "700", 
+              <div style={{
+                fontSize: "36px",
+                fontWeight: "700",
                 color: "#3b82f6",
                 marginBottom: "8px",
               }}>
                 {stats.future}
               </div>
-              <div style={{ 
-                fontSize: "13px", 
-                fontWeight: "600", 
+              <div style={{
+                fontSize: "13px",
+                fontWeight: "600",
                 color: "#64748b",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
@@ -557,17 +558,17 @@ const CreateExam = () => {
               boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
               border: "1px solid #e2e8f0",
             }}>
-              <div style={{ 
-                fontSize: "36px", 
-                fontWeight: "700", 
+              <div style={{
+                fontSize: "36px",
+                fontWeight: "700",
                 color: "#64748b",
                 marginBottom: "8px",
               }}>
                 {stats.completed}
               </div>
-              <div style={{ 
-                fontSize: "13px", 
-                fontWeight: "600", 
+              <div style={{
+                fontSize: "13px",
+                fontWeight: "600",
                 color: "#64748b",
                 textTransform: "uppercase",
                 letterSpacing: "0.05em",
@@ -661,11 +662,11 @@ const CreateExam = () => {
                   fontWeight: 600,
                   marginBottom: "8px",
                 }}>
-                  {filterStatus === "suspended" 
-                    ? "No Suspended Exams" 
+                  {filterStatus === "suspended"
+                    ? "No Suspended Exams"
                     : filterStatus === "active"
-                    ? "No Active Exams"
-                    : "No Exams Found"}
+                      ? "No Active Exams"
+                      : "No Exams Found"}
                 </h3>
                 <p style={{
                   color: "#64748b",
@@ -675,8 +676,8 @@ const CreateExam = () => {
                   {filterStatus === "suspended"
                     ? "No exams are currently suspended or expired."
                     : search
-                    ? "Try adjusting your search criteria."
-                    : "Get started by creating your first exam."}
+                      ? "Try adjusting your search criteria."
+                      : "Get started by creating your first exam."}
                 </p>
                 {filterStatus !== "suspended" && (
                   <button

@@ -66,11 +66,11 @@ export class Scores extends Model<Scores> {
   number_of_microphone!: number;
 
   @AllowNull(false)
-  @Column({ type: DataType.BOOLEAN, defaultValue: 1 })
+  @Column({ type: DataType.BOOLEAN, defaultValue:  true})
   screen_sharing!: boolean;
 
   @AllowNull(false)
-  @Column({ type: DataType.BOOLEAN, defaultValue: 1 })
+  @Column({ type: DataType.BOOLEAN, defaultValue: true })
   safe_browser!: boolean;
 
   @AllowNull(false)

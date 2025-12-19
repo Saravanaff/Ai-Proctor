@@ -13,11 +13,23 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export const sequelize = new Sequelize({
-  database: process.env.DB_NAME,
-  dialect: "mysql",
-  username: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+export const sequelize = new Sequelize(process.env.DATABASE_URL!, {
+  dialect: "postgres",
+
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
+
+  pool: {
+    max: 5,
+    min: 0,
+  },
+
+  logging: false,
+
   models: [
     User,
     Exam,

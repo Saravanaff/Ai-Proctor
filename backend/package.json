@@ -29,6 +29,7 @@
     "mysql2": "^3.9.7",
     "nodemailer": "^7.0.10",
     "otp-generator": "^4.0.1",
+    "pg": "^8.16.3",
     "reflect-metadata": "^0.1.13",
     "sequelize": "^6.37.3",
     "sequelize-typescript": "^2.1.6",

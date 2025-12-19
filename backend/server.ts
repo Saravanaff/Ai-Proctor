@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import express from "express";
-import { createServer as createHttpsServer } from "https";
+import { createServer as createHttpsServer } from "http";
 import path from "path";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -62,7 +62,7 @@ async function startServer() {
   const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
   const ca = fs.readFileSync(path.join(__dirname, "rootCA.pem"));
 
-  const httpsServer = createHttpsServer({key,cert,ca},app);
+  const httpsServer = createHttpsServer(app);
 
   initSocket(httpsServer);
 
