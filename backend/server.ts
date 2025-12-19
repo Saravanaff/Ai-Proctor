@@ -41,11 +41,11 @@ async function startServer() {
     res.send("DVD");
   });
 
-  app.get("/ca", (req, res) => {
-    const caPath = path.join(__dirname, "rootCA.pem");
-    res.setHeader("Content-Type", "application/x-pem-file");
-    res.download(caPath, "rootCA.pem");
-  });
+  // app.get("/ca", (req, res) => {
+  //   const caPath = path.join(__dirname, "rootCA.pem");
+  //   res.setHeader("Content-Type", "application/x-pem-file");
+  //   res.download(caPath, "rootCA.pem");
+  // });
   app.use("/uploads", express.static(path.join(process.cwd(), "..", "uploads")));
   app.use("/", authRoutes);
   app.use("/otp", otpRoutes);
@@ -58,9 +58,9 @@ async function startServer() {
   app.use("/", logRoute);
   app.use("/", generatorRoute);
 
-  const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
-  const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
-  const ca = fs.readFileSync(path.join(__dirname, "rootCA.pem"));
+  // const key = fs.readFileSync(path.join(__dirname, "localhost-key.pem"));
+  // const cert = fs.readFileSync(path.join(__dirname, "localhost-cert.pem"));
+  // const ca = fs.readFileSync(path.join(__dirname, "rootCA.pem"));
 
   const httpsServer = createHttpsServer(app);
 
