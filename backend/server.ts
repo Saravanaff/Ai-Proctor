@@ -20,7 +20,7 @@ import fs from "fs";
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
-const serverPort = 3001;
+const serverPort = process.env.PORT;
 
 async function startServer() {
   const app = express();
