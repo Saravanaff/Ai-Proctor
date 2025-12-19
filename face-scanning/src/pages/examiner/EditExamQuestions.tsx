@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import styles from "../../styles/CreateExamPage.module.css";
+import styles from "../../styles/EditExamQuestions.module.css"; // UPDATED IMPORT
 import { useRouter } from "next/router";
 import MCQQuestionEditor from "../../components/exam/MCQQuestionEditor";
-import MCQQuestionList from "../../components/exam/MCQQuestionList";
+// Note: Assuming MCQQuestionList is not used in the final render based on the original code (it used QuestionTableEditor)
 import QuestionTableEditor from "../../components/exam/QuestionTableEditor";
 import PDFQuestionUploader from "../../components/exam/PDFQuestionUploader";
 import { MCQQuestion } from "../../types/mcq";
@@ -12,9 +12,20 @@ import axios from "axios";
 import * as XLSX from 'xlsx';
 import { downloadQuestionsTemplate } from "@/utils/excelUtils";
 import { getTokenFromCookie } from "@/constants/AuthStore";
-import { LoadingScreen } from "@/components/PageTransition";
 import { ExaminerGuard } from "@/components/guards";
-import { Plus, FileText, Upload, Download, FolderOpen, PenLine, Trash2, X, FileSpreadsheet, AlertTriangle } from "lucide-react";
+import { 
+  Plus, 
+  FileText, 
+  Upload, 
+  Download, 
+  FolderOpen, 
+  PenLine, 
+  Trash2, 
+  X, 
+  FileSpreadsheet, 
+  AlertTriangle,
+  ChevronLeft
+} from "lucide-react";
 
 const EditExamQuestions = () => {
   const router = useRouter();
@@ -39,7 +50,6 @@ const EditExamQuestions = () => {
       (config) => {
         const token = getTokenFromCookie();
         if (token) {
-          // Ensure headers exists and use a safe cast so TypeScript accepts setting the Authorization header
           if (!config.headers) {
             config.headers = {} as any;
           }
@@ -55,18 +65,7 @@ const EditExamQuestions = () => {
     };
   }, []);
 
-  useEffect(() => {
-    // Set light theme background
-    document.body.style.background = "#f8fafc";
-    document.body.style.minHeight = "100vh";
-    document.documentElement.style.background = "#f8fafc";
-    
-    return () => {
-      document.body.style.background = "";
-      document.body.style.minHeight = "";
-      document.documentElement.style.background = "";
-    };
-  }, []);
+  // Removed the manual body style manipulation useEffect as we now use a wrapper class
 
   // Fetch existing questions when component mounts
   useEffect(() => {
@@ -79,19 +78,9 @@ const EditExamQuestions = () => {
         const response = await axios.get(`${base}/getExamQuestions/${examId}`);
 
         if (response.data?.success && response.data?.questions) {
-          // Log raw backend data for debugging
-          console.log('Backend Questions:', JSON.stringify(response.data.questions, null, 2));
-          
-          // Convert backend format to frontend MCQQuestion format
           const convertedQuestions: MCQQuestion[] = response.data.questions.map(
             (q: any, index: number) => {
-              // Get existing options or create empty array
-              // Backend sends "options" not "QuestionOptions"
               const backendOptions = q.options || q.QuestionOptions || [];
-              
-              console.log(`Question ${index + 1} backend options:`, backendOptions);
-              
-              // Ensure we always have exactly 4 options
               const options = [];
               for (let i = 0; i < 4; i++) {
                 if (backendOptions[i]) {
@@ -107,9 +96,6 @@ const EditExamQuestions = () => {
                 }
               }
               
-              console.log(`Question ${index + 1} converted options:`, options);
-              
-              // Find correct option ID
               const correctOption = backendOptions.find((opt: any) => opt.is_correct);
               const correctOptionId = correctOption?.id?.toString() || options[0]?.id || '';
               
@@ -122,8 +108,6 @@ const EditExamQuestions = () => {
               };
             }
           );
-          
-          console.log('Final converted questions:', JSON.stringify(convertedQuestions, null, 2));
           setMcqQuestions(convertedQuestions);
         }
         setExamTitle((examName as string) || "");
@@ -291,7 +275,6 @@ const EditExamQuestions = () => {
     try {
       setSaving(true);
 
-      // Convert frontend format to backend format
       const questionsPayload = mcqQuestions.map((q) => {
         const correctIndex = q.options.findIndex(
           (opt) => opt.id === q.correctOptionId
@@ -345,607 +328,325 @@ const EditExamQuestions = () => {
     router.push("/examiner/CreateExamPage");
   };
 
+  // Loading State
   if (loading) {
     return (
-      <div
-        className={`${styles.examinerContainer} ${styles.enterpriseRoot} theme-transition`}
-        style={{
-          background:
-            "var(--app-bg, var(--background, var(--body-bg, #0f1115)))",
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div style={{ textAlign: "center", color: "#1e293b" }}>
-          <div
-            style={{
-              fontSize: "48px",
-              marginBottom: "16px",
-              animation: "spin 1s linear infinite",
-            }}
-          >
-            ⏳
-          </div>
-          <p>Loading questions...</p>
+      <div className={styles.pageWrapper}>
+        <div className={styles.loadingContainer}>
+          <div className={styles.loader}></div>
+          <p>Loading questions for {examName}...</p>
         </div>
       </div>
     );
-  };
+  }
 
   return (
     <ExaminerGuard>
-    <div
-      className={`${styles.examinerContainer} ${styles.enterpriseRoot}`}
-      style={{
-        background: "#f8fafc",
-        minHeight: "100vh",
-        color: "#1e293b",
-      }}
-    >
-      <header className={`${styles.header} ${styles.fadeIn} theme-transition`}>
-        <div className={styles.headerContent}>
-          <h1
-            className={`${styles.title} theme-transition`}
-            style={{ color: "#1e293b" }}
-          >
-            Edit Questions - {examTitle}
-          </h1>
-          <p
-            className={`${styles.subtitle} theme-transition`}
-            style={{ color: "#64748b" }}
-          >
-            Update the questions for this exam
-          </p>
-        </div>
-        <div className={styles.headerActions}>
-          <button
-            onClick={handleCancel}
-            className={`${styles.btn} ${styles.btnSecondary} theme-transition`}
-            disabled={saving}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSaveQuestions}
-            className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
-            disabled={saving || mcqQuestions.length === 0}
-            style={{ marginLeft: "8px" }}
-          >
-            {saving ? "Saving..." : "Save Questions"}
-          </button>
-        </div>
-      </header>
-
-      <section
-        className={`${styles.examsSection} ${styles.fadeIn} theme-transition`}
-        style={{
-          background: "transparent",
-          width: "100%",
-          maxWidth: "100%",
-          margin: "0",
-          padding: "28px 60px",
-        }}
-      >
-        <div
-          className={`${styles.glassPanel} theme-transition`}
-          style={{
-            padding: "40px",
-            borderRadius: "16px",
-            background: "#ffffff",
-            border: "1px solid #e2e8f0",
-            minHeight: "calc(100vh - 180px)",
-            display: "flex",
-            flexDirection: "column",
-            width:"100%",
-            maxWidth: "100%"
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "28px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              <div style={{ 
-                width: "52px", 
-                height: "52px", 
-                borderRadius: "14px",
-                background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}>
-                <FileText size={28} color="#0ea5e9" />
-              </div>
-              <div>
-                <h2
-                  className="theme-transition"
-                  style={{
-                    fontSize: "24px",
-                    fontWeight: "700",
-                    color: "#1e293b",
-                    margin: 0,
+      <div className={styles.pageWrapper}>
+        <div className={styles.mainLayout}> 
+          
+          {/* Header */}
+          <header className={styles.header}>
+            <div className={styles.headerContent}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <button 
+                  onClick={handleCancel}
+                  style={{ 
+                    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                    color: 'var(--text-tertiary)', display: 'flex' 
                   }}
                 >
-                  Questions ({mcqQuestions.length})
-                </h2>
-                <span style={{ fontSize: "15px", color: "#64748b" }}>
-                  Click cells to edit directly
-                </span>
+                  <ChevronLeft />
+                </button>
+                <div>
+                  <h1>Edit Questions</h1>
+                  <p>{examTitle || "Update exam questions"}</p>
+                </div>
               </div>
             </div>
-            {/* Action Buttons */}
-            <div style={{ display: "flex", gap: "12px" }}>
-              {mcqQuestions.length > 0 && (
-                <button
-                  onClick={handleDeleteAllQuestions}
-                  className={`${styles.btn} theme-transition`}
-                  style={{ 
-                    fontSize: "15px", 
-                    padding: "12px 24px", 
-                    display: "flex", 
-                    alignItems: "center", 
-                    gap: "10px",
-                    background: "rgba(239, 68, 68, 0.1)",
-                    border: "1px solid rgba(239, 68, 68, 0.3)",
-                    color: "#ef4444",
-                  }}
-                >
-                  <Trash2 size={18} /> Delete All
-                </button>
-              )}
+            <div className={styles.headerActions}>
               <button
-                onClick={() => setShowAddOptionsPopup(true)}
-                className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
-                style={{ fontSize: "15px", padding: "12px 24px", display: "flex", alignItems: "center", gap: "10px" }}
+                onClick={handleCancel}
+                className={`${styles.btn} ${styles.btnSecondary}`}
+                disabled={saving}
               >
-                <Plus size={18} /> Add More Questions
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveQuestions}
+                className={`${styles.btn} ${styles.btnPrimary}`}
+                disabled={saving || mcqQuestions.length === 0}
+              >
+                {saving ? "Saving..." : "Save Questions"}
               </button>
             </div>
-          </div>
+          </header>
 
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-            {mcqQuestions.length === 0 ? (
-              <div
-                className="theme-transition"
-                style={{
-                  textAlign: "center",
-                  padding: "80px 40px",
-                  color: "#64748b",
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "#f1f5f9",
-                  borderRadius: "16px",
-                  border: "2px dashed #e2e8f0",
-                }}
-              >
-                <FileSpreadsheet size={64} color="var(--text-tertiary)" strokeWidth={1.5} style={{ marginBottom: "24px" }} />
-                <h3
-                  className="theme-transition"
-                  style={{
-                    fontSize: "22px",
-                    fontWeight: 700,
-                    color: "#1e293b",
-                    marginBottom: "12px",
+          {/* Main Content Card */}
+          <main className={styles.contentCard}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardTitleGroup}>
+                <div className={styles.iconBox}>
+                  <FileText size={24} />
+                </div>
+                <div className={styles.cardTitle}>
+                  <h2>Questions</h2>
+                  <span>{mcqQuestions.length} added</span>
+                </div>
+              </div>
+
+              {/* Toolbar Actions */}
+              <div className={styles.headerActions}>
+                {mcqQuestions.length > 0 && (
+                  <button
+                    onClick={handleDeleteAllQuestions}
+                    className={`${styles.btn} ${styles.btnDanger}`}
+                  >
+                    <Trash2 size={16} /> Delete All
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowAddOptionsPopup(true)}
+                  className={`${styles.btn} ${styles.btnPrimary}`}
+                >
+                  <Plus size={18} /> Add Questions
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.cardBody}>
+              {mcqQuestions.length === 0 ? (
+                // Empty State
+                <div className={styles.emptyState}>
+                  <div className={styles.emptyStateIcon}>
+                    <FileSpreadsheet size={32} />
+                  </div>
+                  <h3 className={styles.emptyStateTitle}>No questions yet</h3>
+                  <p className={styles.emptyStateText}>
+                    Get started by uploading an Excel file, a PDF, or manually adding questions to this exam.
+                  </p>
+                  <div className={styles.emptyStateActions}>
+                    <button
+                      onClick={() => setShowUploadPopup(true)}
+                      className={`${styles.btn} ${styles.btnPrimary}`}
+                    >
+                      <Upload size={18} /> Upload Excel
+                    </button>
+                    <button
+                      onClick={() => setShowPDFUploader(true)}
+                      className={`${styles.btn} ${styles.btnSecondary}`}
+                    >
+                      <FileText size={18} /> Upload PDF
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingQuestion(undefined);
+                        setShowQuestionEditor(true);
+                      }}
+                      className={`${styles.btn} ${styles.btnSecondary}`}
+                    >
+                      <PenLine size={18} /> Add Manually
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Question Table
+                <QuestionTableEditor
+                  questions={mcqQuestions}
+                  onUpdate={(updatedQuestions) => setMcqQuestions(updatedQuestions)}
+                  onDelete={handleDeleteQuestion}
+                />
+              )}
+            </div>
+          </main>
+        </div>
+
+        {/* --- Modals --- */}
+
+        {/* Question Editor Modal */}
+        {showQuestionEditor && (
+          <MCQQuestionEditor
+            initialQuestion={editingQuestion}
+            onSave={handleAddQuestion}
+            onCancel={handleCancelQuestionEditor}
+          />
+        )}
+
+        {/* PDF Uploader Modal */}
+        {showPDFUploader && (
+          <PDFQuestionUploader
+            onQuestionsExtracted={handlePDFQuestionsExtracted}
+            onClose={handleCancelPDFUploader}
+          />
+        )}
+
+        {/* Upload Excel Popup */}
+        {showUploadPopup && (
+          <div className={styles.modalOverlay} onClick={() => setShowUploadPopup(false)}>
+            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div className={styles.iconBox} style={{ width: 36, height: 36, borderRadius: '8px' }}>
+                    <FileSpreadsheet size={20} />
+                  </div>
+                  <h3 className={styles.modalTitle}>Upload Excel/CSV</h3>
+                </div>
+                <button
+                  onClick={() => setShowUploadPopup(false)}
+                  className={styles.modalClose}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className={styles.modalBody}>
+                <button
+                  type="button"
+                  onClick={downloadSampleTemplate}
+                  className={`${styles.btn} ${styles.btnSecondary}`}
+                  style={{ width: '100%', marginBottom: '1.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                >
+                  <Download size={18} /> Download Sample Template
+                </button>
+
+                {uploadError && (
+                  <div style={{
+                    padding: '0.75rem',
+                    marginBottom: '1rem',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--danger-light)',
+                    color: 'var(--danger)',
+                    fontSize: '0.875rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <AlertTriangle size={16} /> {uploadError}
+                  </div>
+                )}
+
+                <div
+                  className={styles.uploadArea}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.borderColor = "var(--primary)";
+                    e.currentTarget.style.backgroundColor = "var(--primary-light)";
+                  }}
+                  onDragLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.backgroundColor = "var(--bg-page)";
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.backgroundColor = "var(--bg-page)";
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                      const input = document.getElementById('popup-file-upload') as HTMLInputElement;
+                      if (input) {
+                        input.files = files;
+                        handleFileUpload({ target: input } as any);
+                      }
+                    }
                   }}
                 >
-                  No questions yet
-                </h3>
-                <p style={{ fontSize: "16px", marginBottom: "32px", maxWidth: "400px" }}>
-                  Upload an Excel/CSV file, PDF, or add questions manually to get started
-                </p>
-                <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center" }}>
+                  <input
+                    id="popup-file-upload"
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleFileUpload}
+                    style={{ display: "none" }}
+                  />
+                  <label htmlFor="popup-file-upload" style={{ cursor: "pointer", display: "block" }}>
+                    <FolderOpen size={48} color="var(--primary)" strokeWidth={1.5} style={{ marginBottom: "1rem" }} />
+                    <p style={{ margin: "0 0 0.5rem 0", fontWeight: 600, color: "var(--text-main)" }}>
+                      Click to upload or drag and drop
+                    </p>
+                    <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-tertiary)" }}>
+                      Excel (.xlsx, .xls) or CSV files
+                    </p>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Options Popup */}
+        {showAddOptionsPopup && (
+          <div className={styles.modalOverlay} onClick={() => setShowAddOptionsPopup(false)}>
+            <div className={styles.modalContent} style={{ maxWidth: '480px' }} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h3 className={styles.modalTitle}>Add Questions</h3>
+                <button
+                  onClick={() => setShowAddOptionsPopup(false)}
+                  className={styles.modalClose}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className={styles.modalBody}>
+                <div className={styles.optionMenu}>
+                  {/* Option 1: Excel */}
                   <button
-                    onClick={() => setShowUploadPopup(true)}
-                    className={`${styles.btn} ${styles.btnPrimary} theme-transition`}
-                    style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 28px", fontSize: "15px" }}
-                  >
-                    <Upload size={20} /> Upload Excel/CSV
-                  </button>
-                  <button
-                    onClick={() => setShowPDFUploader(true)}
-                    className={`${styles.btn} ${styles.btnSecondary} theme-transition`}
-                    style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 28px", fontSize: "15px" }}
-                  >
-                    📄 Upload PDF
-                  </button>
-                  <button
+                    className={styles.optionItem}
                     onClick={() => {
+                      setShowAddOptionsPopup(false);
+                      setShowUploadPopup(true);
+                    }}
+                  >
+                    <div className={styles.optionIcon} style={{ backgroundColor: '#eff6ff', color: '#2563eb' }}>
+                      <Upload size={20} />
+                    </div>
+                    <div className={styles.optionText}>
+                      <h4>Upload Excel/CSV</h4>
+                      <p>Import multiple questions from a spreadsheet</p>
+                    </div>
+                  </button>
+
+                  {/* Option 2: PDF */}
+                  <button
+                    className={styles.optionItem}
+                    onClick={() => {
+                      setShowAddOptionsPopup(false);
+                      setShowPDFUploader(true);
+                    }}
+                  >
+                    <div className={styles.optionIcon} style={{ backgroundColor: '#f3e8ff', color: '#9333ea' }}>
+                      <FileText size={20} />
+                    </div>
+                    <div className={styles.optionText}>
+                      <h4>Upload PDF</h4>
+                      <p>Extract questions automatically from a PDF document</p>
+                    </div>
+                  </button>
+
+                  {/* Option 3: Manual */}
+                  <button
+                    className={styles.optionItem}
+                    onClick={() => {
+                      setShowAddOptionsPopup(false);
                       setEditingQuestion(undefined);
                       setShowQuestionEditor(true);
                     }}
-                    className={`${styles.btn} ${styles.btnSecondary} theme-transition`}
-                    style={{ display: "flex", alignItems: "center", gap: "10px", padding: "14px 28px", fontSize: "15px" }}
                   >
-                    <PenLine size={20} /> Add Manually
+                    <div className={styles.optionIcon} style={{ backgroundColor: '#f0fdf4', color: '#16a34a' }}>
+                      <PenLine size={20} />
+                    </div>
+                    <div className={styles.optionText}>
+                      <h4>Add Manually</h4>
+                      <p>Create questions one by one using the editor</p>
+                    </div>
                   </button>
                 </div>
               </div>
-            ) : (
-              <QuestionTableEditor
-                questions={mcqQuestions}
-                onUpdate={(updatedQuestions) => setMcqQuestions(updatedQuestions)}
-                onDelete={handleDeleteQuestion}
-              />
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Question Editor Modal */}
-      {showQuestionEditor && (
-        <MCQQuestionEditor
-          initialQuestion={editingQuestion}
-          onSave={handleAddQuestion}
-          onCancel={handleCancelQuestionEditor}
-        />
-      )}
-
-      {/* PDF Uploader Modal */}
-      {showPDFUploader && (
-        <PDFQuestionUploader
-          onQuestionsExtracted={handlePDFQuestionsExtracted}
-          onClose={handleCancelPDFUploader}
-        />
-      )}
-
-      {/* Upload Excel Popup Modal */}
-      {showUploadPopup && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.6)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-          onClick={() => {
-            setShowUploadPopup(false);
-            setUploadError('');
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#ffffff",
-              borderRadius: "16px",
-              padding: "32px",
-              maxWidth: "900px",
-              width: "90%",
-              maxHeight: "85vh",
-              overflow: "auto",
-              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-              border: "1px solid #e2e8f0",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ 
-                  width: "44px", 
-                  height: "44px", 
-                  borderRadius: "12px",
-                  background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}>
-                  <FileSpreadsheet size={24} color="#0ea5e9" />
-                </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>Upload Questions</h3>
-                  <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>Excel or CSV file</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setShowUploadPopup(false);
-                  setUploadError('');
-                }}
-                style={{
-                  background: "#f1f5f9",
-                  border: "none",
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#64748b",
-                }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Download Template */}
-            <button
-              type="button"
-              onClick={downloadSampleTemplate}
-              style={{
-                width: "100%",
-                padding: "14px 20px",
-                borderRadius: "10px",
-                border: "1px solid #0ea5e9",
-                background: "rgba(14, 165, 233, 0.1)",
-                color: "#0ea5e9",
-                fontSize: "14px",
-                fontWeight: 600,
-                cursor: "pointer",
-                marginBottom: "20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "10px",
-              }}
-            >
-              <Download size={18} /> Download Sample Template
-            </button>
-
-            {uploadError && (
-              <div
-                style={{
-                  padding: "14px",
-                  background: "rgba(239, 68, 68, 0.1)",
-                  border: "1px solid rgba(239, 68, 68, 0.3)",
-                  borderRadius: "10px",
-                  color: "#ef4444",
-                  fontSize: "13px",
-                  marginBottom: "20px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                <AlertTriangle size={18} /> {uploadError}
-              </div>
-            )}
-
-            {/* File Drop Zone */}
-            <div
-              style={{
-                border: "2px dashed #0ea5e9",
-                borderRadius: "12px",
-                padding: "40px",
-                textAlign: "center",
-                background: "#f1f5f9",
-                cursor: "pointer",
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.currentTarget.style.background = "rgba(14, 165, 233, 0.1)";
-              }}
-              onDragLeave={(e) => {
-                e.currentTarget.style.background = "#f1f5f9";
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.currentTarget.style.background = "#f1f5f9";
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                  const input = document.getElementById('popup-file-upload') as HTMLInputElement;
-                  if (input) {
-                    input.files = files;
-                    handleFileUpload({ target: input } as any);
-                  }
-                }
-              }}
-            >
-              <input
-                id="popup-file-upload"
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleFileUpload}
-                style={{ display: "none" }}
-              />
-              <label htmlFor="popup-file-upload" style={{ cursor: "pointer", display: "block" }}>
-                <FolderOpen size={52} color="#0ea5e9" strokeWidth={1.5} style={{ marginBottom: "16px" }} />
-                <p style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: 600, color: "#1e293b" }}>
-                  Click to upload or drag and drop
-                </p>
-                <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
-                  Excel (.xlsx, .xls) or CSV files
-                </p>
-              </label>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Add Options Popup Modal */}
-      {showAddOptionsPopup && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.6)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-          onClick={() => setShowAddOptionsPopup(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#ffffff",
-              borderRadius: "16px",
-              padding: "28px",
-              maxWidth: "520px",
-              width: "90%",
-              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-              border: "1px solid #e2e8f0",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#1e293b" }}>Add Questions</h3>
-              <button
-                onClick={() => setShowAddOptionsPopup(false)}
-                style={{
-                  background: "#f1f5f9",
-                  border: "none",
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#64748b",
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {/* Upload Excel Option */}
-              <button
-                onClick={() => {
-                  setShowAddOptionsPopup(false);
-                  setShowUploadPopup(true);
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "16px",
-                  background: "#f1f5f9",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "12px",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  textAlign: "left",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#0ea5e9";
-                  e.currentTarget.style.background = "rgba(14, 165, 233, 0.05)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#e2e8f0";
-                  e.currentTarget.style.background = "#f1f5f9";
-                }}
-              >
-                <div style={{ 
-                  width: "44px", height: "44px", borderRadius: "10px",
-                  background: "linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0.05) 100%)",
-                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-                }}>
-                  <Upload size={22} color="#0ea5e9" />
-                </div>
-                <div>
-                  <div style={{ fontSize: "15px", fontWeight: 600, color: "#1e293b", marginBottom: "2px" }}>Upload Excel/CSV</div>
-                  <div style={{ fontSize: "12px", color: "#64748b" }}>Import questions from spreadsheet</div>
-                </div>
-              </button>
-
-              {/* Upload PDF Option */}
-              <button
-                onClick={() => {
-                  setShowAddOptionsPopup(false);
-                  setShowPDFUploader(true);
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "16px",
-                  background: "#f1f5f9",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "12px",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  textAlign: "left",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#0ea5e9";
-                  e.currentTarget.style.background = "rgba(14, 165, 233, 0.05)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#e2e8f0";
-                  e.currentTarget.style.background = "#f1f5f9";
-                }}
-              >
-                <div style={{ 
-                  width: "44px", height: "44px", borderRadius: "10px",
-                  background: "linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%)",
-                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-                }}>
-                  <FileText size={22} color="#a855f7" />
-                </div>
-                <div>
-                  <div style={{ fontSize: "15px", fontWeight: 600, color: "#1e293b", marginBottom: "2px" }}>Upload PDF</div>
-                  <div style={{ fontSize: "12px", color: "#64748b" }}>Extract questions from PDF file</div>
-                </div>
-              </button>
-
-              {/* Add Manually Option */}
-              <button
-                onClick={() => {
-                  setShowAddOptionsPopup(false);
-                  setEditingQuestion(undefined);
-                  setShowQuestionEditor(true);
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "16px",
-                  background: "#f1f5f9",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "12px",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  textAlign: "left",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#0ea5e9";
-                  e.currentTarget.style.background = "rgba(14, 165, 233, 0.05)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#e2e8f0";
-                  e.currentTarget.style.background = "#f1f5f9";
-                }}
-              >
-                <div style={{ 
-                  width: "44px", height: "44px", borderRadius: "10px",
-                  background: "linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%)",
-                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-                }}>
-                  <PenLine size={22} color="#22c55e" />
-                </div>
-                <div>
-                  <div style={{ fontSize: "15px", fontWeight: 600, color: "#1e293b", marginBottom: "2px" }}>Add Manually</div>
-                  <div style={{ fontSize: "12px", color: "#64748b" }}>Create questions one by one</div>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
     </ExaminerGuard>
   );
 };
 
 export default EditExamQuestions;
-

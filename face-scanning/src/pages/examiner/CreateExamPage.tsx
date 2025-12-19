@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import styles from "../../styles/CreateExamPage.module.css";
 import { Exam } from "../../types/exam";
-import SearchBar from "../../components/exams/SearchBar";
+
 import ExamsGrid from "../../components/exams/ExamsGrid";
 import ExamResultsModal from "../../components/exams/ExamResultsModal";
 import { ExaminerGuard } from "../../components/guards";
@@ -10,7 +10,7 @@ import { getTokenFromCookie } from "@/constants/AuthStore";
 import { configureAxiosInterceptor } from "@/utils/axiosConfig";
 import { logout as authLogout, getUserName, getUserInitials } from "@/utils/auth";
 import { useRouter } from "next/router";
-import { LayoutDashboard, Plus } from "lucide-react";
+import { LayoutDashboard, Plus, Users, CheckCircle, AlertCircle, Clock, FileText, Search } from "lucide-react";
 import { LoadingScreen } from "@/components/PageTransition";
 
 const CreateExam = () => {
@@ -248,96 +248,75 @@ const CreateExam = () => {
             zIndex: 100,
             background: "white",
             borderBottom: "1px solid #e2e8f0",
-            padding: "16px 32px",
+            padding: "0 32px",
+            height: "64px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
           }}
         >
           {/* Logo and Title */}
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div
               style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "12px",
-                background: "#0ea5e9",
+                width: "32px",
+                height: "32px",
+                borderRadius: "8px",
+                background: "#4f46e5",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: "18px",
-                fontWeight: "700",
                 color: "white",
               }}
             >
-              EX
+              <LayoutDashboard size={18} />
             </div>
             <div>
               <h1
                 style={{
                   margin: 0,
-                  fontSize: "20px",
-                  fontWeight: "700",
+                  fontSize: "16px",
+                  fontWeight: "600",
                   color: "#0f172a",
                 }}
               >
-                Exam Dashboard
-              </h1>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "12px",
-                  color: "#64748b",
-                }}
-              >
                 Examiner Portal
-              </p>
+              </h1>
             </div>
           </div>
 
           {/* Right Side - Navigation, Theme Toggle, Profile, Logout */}
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
             {/* Navigation Buttons */}
-            <button
-              onClick={() => router.push("/examiner")}
-              style={{
-                padding: "10px 20px",
-                background: "transparent",
-                color: "#64748b",
-                border: "1px solid #e2e8f0",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#f1f5f9";
-                e.currentTarget.style.borderColor = "#cbd5e1";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.borderColor = "#e2e8f0";
-              }}
-            >
-              <LayoutDashboard size={16} />
-              Dashboard
-            </button>
+            <nav style={{ display: "flex", gap: "4px" }}>
+              <button
+                onClick={() => router.push("/examiner")}
+                style={{
+                  padding: "8px 12px",
+                  background: "#eff6ff",
+                  color: "#4f46e5",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                }}
+              >
+                Dashboard
+              </button>
+            </nav>
 
             <button
               onClick={() => router.push("/examiner/NewExam")}
               style={{
-                padding: "10px 20px",
-                background: "#0ea5e9",
+                padding: "8px 16px",
+                background: "#4f46e5",
                 color: "white",
                 border: "none",
-                borderRadius: "8px",
+                borderRadius: "6px",
                 fontSize: "14px",
-                fontWeight: "600",
+                fontWeight: "500",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -345,21 +324,21 @@ const CreateExam = () => {
                 transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#0284c7";
+                e.currentTarget.style.background = "#4338ca";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#0ea5e9";
+                e.currentTarget.style.background = "#4f46e5";
               }}
             >
               <Plus size={16} />
-              New Exam
+              Create Exam
             </button>
 
             {/* Divider */}
             <div
               style={{
                 width: "1px",
-                height: "32px",
+                height: "24px",
                 background: "#e2e8f0",
               }}
             />
@@ -368,15 +347,16 @@ const CreateExam = () => {
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div
                 style={{
-                  width: "40px",
-                  height: "40px",
+                  width: "32px",
+                  height: "32px",
                   borderRadius: "50%",
-                  background: "#0ea5e9",
-                  color: "white",
+                  background: "#f1f5f9",
+                  color: "#64748b",
+                  border: "1px solid #e2e8f0",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "16px",
+                  fontSize: "14px",
                   fontWeight: "600",
                 }}
               >
@@ -386,23 +366,11 @@ const CreateExam = () => {
                 <div
                   style={{
                     fontSize: "14px",
-                    fontWeight: "600",
+                    fontWeight: "500",
                     color: "#0f172a",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    maxWidth: "150px",
                   }}
                 >
                   {profileName || "User"}
-                </div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#64748b",
-                  }}
-                >
-                  Examiner
                 </div>
               </div>
             </div>
@@ -411,170 +379,107 @@ const CreateExam = () => {
             <button
               onClick={handleLogout}
               style={{
-                padding: "10px 16px",
+                fontSize: "13px",
+                color: "#64748b",
                 background: "transparent",
-                color: "#ef4444",
-                border: "1px solid #fee2e2",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "600",
+                border: "none",
                 cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#fef2f2";
-                e.currentTarget.style.borderColor = "#fecaca";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.borderColor = "#fee2e2";
+                padding: "4px",
               }}
             >
-              Logout
+              Sign out
             </button>
           </div>
         </header>
 
         {/* Main Content */}
-        <div style={{ padding: "32px", maxWidth: "1400px", margin: "0 auto" }}>
+        <div style={{ padding: "32px", maxWidth: "100%", margin: "0 auto" }}>
+          
+          <div style={{ marginBottom: "32px" }}>
+             <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a", marginBottom: "8px" }}>Overview</h2>
+             <p style={{ color: "#64748b", margin: 0 }}>Manage your examinations and view performance stats.</p>
+          </div>
+
           {/* Stats */}
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(5, 1fr)",
-            gap: "20px",
-            marginBottom: "32px"
+            gap: "16px",
+            marginBottom: "40px"
           }}>
+            {/* Total */}
             <div style={{
               background: "white",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+              borderRadius: "8px",
+              padding: "20px",
               border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
             }}>
-              <div style={{
-                fontSize: "36px",
-                fontWeight: "700",
-                color: "#0f172a",
-                marginBottom: "8px",
-              }}>
-                {stats.total}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+                 <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b", textTransform: "uppercase" }}>Total Exams</span>
+                 <FileText size={16} color="#94a3b8" />
               </div>
-              <div style={{
-                fontSize: "13px",
-                fontWeight: "600",
-                color: "#64748b",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}>
-                TOTAL
-              </div>
+              <div style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a" }}>{stats.total}</div>
             </div>
 
+            {/* Active */}
             <div style={{
               background: "white",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+              borderRadius: "8px",
+              padding: "20px",
               border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
             }}>
-              <div style={{
-                fontSize: "36px",
-                fontWeight: "700",
-                color: "#22c55e",
-                marginBottom: "8px",
-              }}>
-                {stats.active}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+                 <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b", textTransform: "uppercase" }}>Active</span>
+                 <Users size={16} color="#16a34a" />
               </div>
-              <div style={{
-                fontSize: "13px",
-                fontWeight: "600",
-                color: "#64748b",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}>
-                ACTIVE
-              </div>
+              <div style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a" }}>{stats.active}</div>
             </div>
 
+            {/* Suspended */}
             <div style={{
               background: "white",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+              borderRadius: "8px",
+              padding: "20px",
               border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
             }}>
-              <div style={{
-                fontSize: "36px",
-                fontWeight: "700",
-                color: "#ef4444",
-                marginBottom: "8px",
-              }}>
-                {stats.suspended}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+                 <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b", textTransform: "uppercase" }}>Suspended</span>
+                 <AlertCircle size={16} color="#ef4444" />
               </div>
-              <div style={{
-                fontSize: "13px",
-                fontWeight: "600",
-                color: "#64748b",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}>
-                SUSPENDED
-              </div>
+              <div style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a" }}>{stats.suspended}</div>
             </div>
 
+            {/* Future */}
             <div style={{
               background: "white",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+              borderRadius: "8px",
+              padding: "20px",
               border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
             }}>
-              <div style={{
-                fontSize: "36px",
-                fontWeight: "700",
-                color: "#3b82f6",
-                marginBottom: "8px",
-              }}>
-                {stats.future}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+                 <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b", textTransform: "uppercase" }}>Scheduled</span>
+                 <Clock size={16} color="#3b82f6" />
               </div>
-              <div style={{
-                fontSize: "13px",
-                fontWeight: "600",
-                color: "#64748b",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}>
-                FUTURE
-              </div>
+              <div style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a" }}>{stats.future}</div>
             </div>
 
+            {/* Completed */}
             <div style={{
               background: "white",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+              borderRadius: "8px",
+              padding: "20px",
               border: "1px solid #e2e8f0",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
             }}>
-              <div style={{
-                fontSize: "36px",
-                fontWeight: "700",
-                color: "#64748b",
-                marginBottom: "8px",
-              }}>
-                {stats.completed}
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+                 <span style={{ fontSize: "12px", fontWeight: "600", color: "#64748b", textTransform: "uppercase" }}>Completed</span>
+                 <CheckCircle size={16} color="#64748b" />
               </div>
-              <div style={{
-                fontSize: "13px",
-                fontWeight: "600",
-                color: "#64748b",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}>
-                COMPLETED
-              </div>
+              <div style={{ fontSize: "24px", fontWeight: "700", color: "#0f172a" }}>{stats.completed}</div>
             </div>
           </div>
 
@@ -588,7 +493,7 @@ const CreateExam = () => {
               gap: "16px",
             }}
           >
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", background: "#f1f5f9", padding: "4px", borderRadius: "8px" }}>
               {/* Filter Buttons */}
               {["all", "active", "suspended"].map((status) => (
                 <button
@@ -597,13 +502,14 @@ const CreateExam = () => {
                     setFilterStatus(status as "all" | "active" | "suspended")
                   }
                   style={{
-                    padding: "8px 16px",
-                    borderRadius: "8px",
-                    border: "1px solid #e2e8f0",
-                    background: filterStatus === status ? "#0ea5e9" : "white",
-                    color: filterStatus === status ? "white" : "#64748b",
+                    padding: "6px 16px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: filterStatus === status ? "white" : "transparent",
+                    color: filterStatus === status ? "#0f172a" : "#64748b",
+                    boxShadow: filterStatus === status ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
                     cursor: "pointer",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: 600,
                     textTransform: "capitalize",
                     transition: "all 0.2s ease",
@@ -613,23 +519,25 @@ const CreateExam = () => {
                 </button>
               ))}
             </div>
-            <div style={{ flex: 1, maxWidth: "400px" }}>
-              <SearchBar value={search} onChange={setSearch} />
+            <div style={{ flex: 1, maxWidth: "320px" }}>
+              <div style={{ position: "relative" }}>
+                 <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+                 <input 
+                    type="text" 
+                    placeholder="Search exams..." 
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    style={{
+                       width: "100%",
+                       padding: "10px 10px 10px 36px",
+                       borderRadius: "8px",
+                       border: "1px solid #e2e8f0",
+                       fontSize: "14px",
+                       outline: "none"
+                    }}
+                 />
+              </div>
             </div>
-          </div>
-
-          {/* Exams Header */}
-          <div style={{ marginBottom: "16px" }}>
-            <h2
-              style={{
-                color: "#0f172a",
-                fontSize: "18px",
-                fontWeight: "600",
-                margin: 0,
-              }}
-            >
-              Exams ({filteredExams.length})
-            </h2>
           </div>
 
           {/* Content */}
@@ -652,48 +560,50 @@ const CreateExam = () => {
                 padding: "64px 32px",
                 textAlign: "center",
                 border: "1px solid #e2e8f0",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "16px"
               }}>
-                <div style={{ fontSize: "48px", marginBottom: "16px" }}>
-                  {filterStatus === "suspended" ? "🚫" : "📁"}
+                <div style={{ 
+                   width: "64px", height: "64px", background: "#f8fafc", borderRadius: "50%", 
+                   display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8"
+                }}>
+                   <FileText size={32} />
                 </div>
-                <h3 style={{
-                  color: "#0f172a",
-                  fontSize: "18px",
-                  fontWeight: 600,
-                  marginBottom: "8px",
-                }}>
-                  {filterStatus === "suspended"
-                    ? "No Suspended Exams"
-                    : filterStatus === "active"
-                      ? "No Active Exams"
-                      : "No Exams Found"}
-                </h3>
-                <p style={{
-                  color: "#64748b",
-                  fontSize: "14px",
-                  marginBottom: "24px",
-                }}>
-                  {filterStatus === "suspended"
-                    ? "No exams are currently suspended or expired."
-                    : search
-                      ? "Try adjusting your search criteria."
-                      : "Get started by creating your first exam."}
-                </p>
-                {filterStatus !== "suspended" && (
+                <div>
+                   <h3 style={{
+                     color: "#0f172a",
+                     fontSize: "16px",
+                     fontWeight: 600,
+                     marginBottom: "4px",
+                   }}>
+                     No exams found
+                   </h3>
+                   <p style={{
+                     color: "#64748b",
+                     fontSize: "14px",
+                     margin: 0,
+                   }}>
+                     {search ? "Adjust your search terms" : "Get started by creating your first exam"}
+                   </p>
+                </div>
+                {filterStatus !== "suspended" && !search && (
                   <button
                     onClick={() => router.push("/examiner/NewExam")}
                     style={{
-                      padding: "10px 20px",
-                      background: "#0ea5e9",
+                      padding: "8px 16px",
+                      background: "#4f46e5",
                       color: "white",
                       border: "none",
-                      borderRadius: "8px",
+                      borderRadius: "6px",
                       fontSize: "14px",
-                      fontWeight: "600",
+                      fontWeight: "500",
                       cursor: "pointer",
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "8px",
+                      marginTop: "8px"
                     }}
                   >
                     <Plus size={16} /> Create Exam
