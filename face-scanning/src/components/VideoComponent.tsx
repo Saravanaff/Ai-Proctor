@@ -739,8 +739,3 @@ const VideoComponent: React.FC<VideoComponentProps> = ({
 };
 
 export default VideoComponent;
-    </div>
-  );
-};
-
-export default VideoComponent;
