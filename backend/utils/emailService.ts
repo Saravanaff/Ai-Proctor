@@ -41,7 +41,7 @@ const createTransporter = () => {
       },
     });
   } else {
-    // Use service name (gmail, yahoo, outlook, etc.)
+    // Use service name (gmail , yahoo, outlook, etc.)
     return nodemailer.createTransport({
       service: emailService,
       auth: {
@@ -165,7 +165,7 @@ export const sendAdminCreationEmail = async (
   email: string,
   password: string
 ): Promise<void> => {
-  const loginUrl = process.env.FRONTEND_URL || "https://localhost:3000";
+  const loginUrl = process.env.FRONTEND_URL || "https://ai-proctor-cyan.vercel.app/";
   
   const mailOptions = {
     from: process.env.EMAIL_USER,
@@ -348,7 +348,7 @@ export const sendStudentExamInvitationEmail = async (
   endTime: string,
   duration: number
 ): Promise<void> => {
-  const loginUrl = process.env.FRONTEND_URL || "https://localhost:3000";
+  const loginUrl = process.env.FRONTEND_URL || "https://ai-proctor-cyan.vercel.app/";
   
   const mailOptions = {
     from: process.env.EMAIL_USER,
