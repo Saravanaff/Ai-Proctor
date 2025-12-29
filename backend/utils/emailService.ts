@@ -145,7 +145,7 @@ export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
     console.log(`✅ OTP email sent successfully to ${to}`);
   } catch (error: any) {
     console.error("❌ Error sending OTP email:", error);
-    
+
     // Provide helpful error messages
     if (error.code === 'EAUTH') {
       throw new Error("Email authentication failed. Please check your EMAIL_USER and EMAIL_PASSWORD. For Gmail, use an App Password.");
@@ -166,7 +166,7 @@ export const sendAdminCreationEmail = async (
   password: string
 ): Promise<void> => {
   const loginUrl = process.env.FRONTEND_URL || "https://localhost:3000";
-  
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to,
@@ -324,7 +324,7 @@ export const sendAdminCreationEmail = async (
     console.log(`✅ Admin creation email sent successfully to ${to}`);
   } catch (error: any) {
     console.error("❌ Error sending admin creation email:", error);
-    
+
     if (error.code === 'EAUTH') {
       throw new Error("Email authentication failed. Please check your EMAIL_USER and EMAIL_PASSWORD. For Gmail, use an App Password.");
     } else if (error.code === 'ESOCKET') {
@@ -348,12 +348,18 @@ export const sendStudentExamInvitationEmail = async (
   endTime: string,
   duration: number
 ): Promise<void> => {
-  const loginUrl = process.env.FRONTEND_URL || "https://localhost:3000";
-  
+  const sebFilePath = process.env.SEB_FILE_PATH || "c:\\Users\\mjpra\\Ai-Proctor\\backend\\Proctor.seb";
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to,
     subject: `Exam Invitation: ${examName} - AI Proctor`,
+    attachments: [
+      {
+        filename: 'Proctor.seb',
+        path: sebFilePath,
+      }
+    ],
     html: `
       <!DOCTYPE html>
       <html>
@@ -449,15 +455,22 @@ export const sendStudentExamInvitationEmail = async (
             font-family: monospace;
             font-size: 16px;
           }
-          .login-button {
+          .seb-download {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+          }
+          .download-button {
             display: inline-block;
             padding: 15px 40px;
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
             color: white;
             text-decoration: none;
             border-radius: 8px;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 10px 0;
             font-size: 16px;
           }
           .warning {
@@ -494,6 +507,14 @@ export const sendStudentExamInvitationEmail = async (
           li {
             margin: 8px 0;
           }
+          .attachment-notice {
+            background-color: #fff9e6;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+          }
         </style>
       </head>
       <body>
@@ -514,25 +535,25 @@ export const sendStudentExamInvitationEmail = async (
               </div>
               <div class="detail-item">
                 <span class="detail-label">Start Time:</span>
-                <span class="detail-value">${new Date(startTime).toLocaleString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric', 
-                  hour: '2-digit', 
-                  minute: '2-digit'
-                })}</span>
+                <span class="detail-value">${new Date(startTime).toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">End Time:</span>
-                <span class="detail-value">${new Date(endTime).toLocaleString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric', 
-                  hour: '2-digit', 
-                  minute: '2-digit'
-                })}</span>
+                <span class="detail-value">${new Date(endTime).toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })}</span>
               </div>
               <div class="detail-item">
                 <span class="detail-label">Duration:</span>
@@ -547,7 +568,7 @@ export const sendStudentExamInvitationEmail = async (
 
             <div class="credentials-box">
               <h3 style="margin-top: 0; color: #2196F3;">🔐 Login Credentials</h3>
-              <p style="margin-bottom: 15px;">Use these credentials to log in to the platform:</p>
+              <p style="margin-bottom: 15px;">Use these credentials when prompted by Safe Exam Browser:</p>
               <div class="credential-item">
                 <span class="credential-label">Email:</span>
                 <span class="credential-value">${email}</span>
@@ -558,28 +579,40 @@ export const sendStudentExamInvitationEmail = async (
               </div>
             </div>
 
+            <div class="attachment-notice">
+              <strong>📎 ATTACHMENT:</strong> This email contains a <strong>Proctor.seb</strong> file. You will need this file to access the exam.
+            </div>
+
             <div class="important">
               <strong>⚠️ IMPORTANT:</strong> Please attend the exam before the end time. Late submissions will not be accepted.
             </div>
 
+            <div class="seb-download">
+              <h3 style="margin-top: 0; color: #4CAF50;">🔒 How to Take the Exam</h3>
+              <p><strong>Step 1:</strong> Download and install Safe Exam Browser (SEB) from the official website:</p>
+              <div style="text-align: center; margin: 15px 0;">
+                <a href="https://safeexambrowser.org/download_en.html" class="download-button">Download Safe Exam Browser</a>
+              </div>
+              <p><strong>Step 2:</strong> Download the attached <strong>Proctor.seb</strong> file from this email.</p>
+              <p><strong>Step 3:</strong> Double-click the <strong>Proctor.seb</strong> file to open it with Safe Exam Browser.</p>
+              <p><strong>Step 4:</strong> The browser will automatically launch and navigate to the exam platform. Use your login credentials provided above.</p>
+            </div>
+
             <div class="instructions">
-              <h3 style="margin-top: 0; color: #17a2b8;">📌 Instructions</h3>
+              <h3 style="margin-top: 0; color: #17a2b8;">📌 Important Instructions</h3>
               <ul>
-                <li>Log in to AI Proctor at least 15 minutes before the exam start time</li>
-                <li>Enter the exam key provided above to access the exam</li>
+                <li><strong>Install Safe Exam Browser</strong> at least 15 minutes before the exam start time</li>
+                <li><strong>Do NOT use a regular web browser</strong> - you must use the attached SEB file</li>
+                <li>Enter the exam key provided above when prompted</li>
                 <li>Ensure you have a stable internet connection</li>
                 <li>Have your webcam and microphone ready for proctoring</li>
-                <li>Close all unnecessary applications and browser tabs</li>
+                <li>Close all unnecessary applications before opening the SEB file</li>
                 <li>Find a quiet, well-lit place to take the exam</li>
               </ul>
             </div>
 
             <div class="warning">
               <strong>🔒 Security Note:</strong> Please change your password after your first login for security purposes.
-            </div>
-
-            <div style="text-align: center; margin-top: 30px;">
-              <a href="${loginUrl}" class="login-button">Login to AI Proctor</a>
             </div>
 
             <p style="margin-top: 30px;">If you have any questions or face any technical issues, please contact your exam administrator immediately.</p>
@@ -617,15 +650,23 @@ export const sendStudentExamInvitationEmail = async (
       
       IMPORTANT: Please attend the exam before the end time. Late submissions will not be accepted.
       
-      INSTRUCTIONS:
-      - Log in at least 15 minutes before the exam
-      - Enter the exam key to access the exam
+      ATTACHMENT: This email contains a Proctor.seb file. You will need this file to access the exam.
+      
+      HOW TO TAKE THE EXAM:
+      ---------------------
+      Step 1: Download and install Safe Exam Browser (SEB) from https://safeexambrowser.org/download_en.html
+      Step 2: Download the attached Proctor.seb file from this email
+      Step 3: Double-click the Proctor.seb file to open it with Safe Exam Browser
+      Step 4: The browser will automatically launch and navigate to the exam platform. Use your login credentials provided above.
+      
+      IMPORTANT INSTRUCTIONS:
+      - Install Safe Exam Browser at least 15 minutes before the exam start time
+      - Do NOT use a regular web browser - you must use the attached SEB file
+      - Enter the exam key when prompted
       - Ensure stable internet connection
       - Have webcam and microphone ready
-      - Close unnecessary applications
+      - Close unnecessary applications before opening the SEB file
       - Find a quiet, well-lit place
-      
-      Login URL: ${loginUrl}
       
       Good luck!
       The AI Proctor Team
@@ -640,7 +681,7 @@ export const sendStudentExamInvitationEmail = async (
     console.log(`✅ Exam invitation email sent successfully to ${to}`);
   } catch (error: any) {
     console.error("❌ Error sending exam invitation email:", error);
-    
+
     if (error.code === 'EAUTH') {
       throw new Error("Email authentication failed. Please check your EMAIL_USER and EMAIL_PASSWORD. For Gmail, use an App Password.");
     } else if (error.code === 'ESOCKET') {
