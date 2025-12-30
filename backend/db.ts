@@ -21,14 +21,23 @@ export const sequelize = new Sequelize(process.env.DATABASE_URL!, {
       require: true,
       rejectUnauthorized: false,
     },
+    connectTimeout: 60000, // 60 seconds
   },
 
   pool: {
-    max: 5,
-    min: 0,
+    max: 10, // Increased from 5
+    min: 2, // Keep minimum connections alive
+    acquire: 60000, // 60 seconds - maximum time to acquire connection
+    idle: 10000, // 10 seconds - maximum time connection can be idle
+    evict: 1000, // Check for idle connections every second
   },
 
   logging: false,
+
+  // Retry configuration for cloud environments
+  retry: {
+    max: 3, // Retry failed queries up to 3 times
+  },
 
   models: [
     User,
